@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>建造者模式 | AsterXu Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="介绍 建造者模式（Builder Pattern）又叫生成器模式，是一种对象构建模式。它可以将复杂对象的建造过程抽象出来（抽象类别），使这个抽象过程的不同实现方法可以构造出不同表现（属性）的对象 建造者模式是一步一步创建一个复杂的对象，它允许用户只通过指定复杂对象的类型和内容就可以构建它们，用户不需要知道内部的构建细节  建造者模式的四个角色   Product（产品角色）：一个具体的产品对象 B">
+<meta property="og:type" content="article">
+<meta property="og:title" content="建造者模式">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2020/09/10/108504900/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="介绍 建造者模式（Builder Pattern）又叫生成器模式，是一种对象构建模式。它可以将复杂对象的建造过程抽象出来（抽象类别），使这个抽象过程的不同实现方法可以构造出不同表现（属性）的对象 建造者模式是一步一步创建一个复杂的对象，它允许用户只通过指定复杂对象的类型和内容就可以构建它们，用户不需要知道内部的构建细节  建造者模式的四个角色   Product（产品角色）：一个具体的产品对象 B">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-09-09T16:15:50.000Z">
+<meta property="article:modified_time" content="2026-07-03T01:42:50.227Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">AsterXu Lab</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Where code blooms like stardust.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS 订阅"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://aster-xu-lab.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-108504900" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2020/09/10/108504900/" class="article-date">
+  <time class="dt-published" datetime="2020-09-09T16:15:50.000Z" itemprop="datePublished">2020-09-10</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">设计模式</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      建造者模式
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><ol>
+<li>建造者模式（Builder Pattern）又叫生成器模式，是一种对象构建模式。它可以将复杂对象的建造过程抽象出来（抽象类别），使这个抽象过程的不同实现方法可以构造出不同表现（属性）的对象</li>
+<li>建造者模式是一步一步创建一个复杂的对象，它允许用户只通过指定复杂对象的类型和内容就可以构建它们，用户不需要知道内部的构建细节</li>
+</ol>
+<p><strong>建造者模式的四个角色</strong></p>
+<blockquote>
+<ol>
+<li>Product（产品角色）：一个具体的产品对象</li>
+<li>Builder（抽象建造者）：创将一个Product对象的各个部件指定的接口&#x2F;抽象类</li>
+<li>ConcreteBuilder（具体建造者）：实现接口，构建和装配各个部件</li>
+<li>Director（指挥者）： 构建一个使用Builder接口的对象。它主要用于创建一个复杂的对象。它主要有两个作用，一是：隔离了客户与对象的生产过程，二是：负责控制产品对象的生产过程</li>
+</ol>
+</blockquote>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Client</span> &#123;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">		</span><br><span class="line">		<span class="comment">//盖普通房子</span></span><br><span class="line">		<span class="type">CommonHouse</span> <span class="variable">commonHouse</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">CommonHouse</span>();</span><br><span class="line">		<span class="comment">//准备创建房子的指挥者</span></span><br><span class="line">		<span class="type">HouseDirector</span> <span class="variable">houseDirector</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HouseDirector</span>(commonHouse);</span><br><span class="line">		</span><br><span class="line">		<span class="comment">//完成盖房子，返回产品(普通房子)</span></span><br><span class="line">		<span class="type">House</span> <span class="variable">house</span> <span class="operator">=</span> houseDirector.constructHouse();</span><br><span class="line">		</span><br><span class="line">		<span class="comment">//System.out.println(&quot;输出流程&quot;);</span></span><br><span class="line">		</span><br><span class="line">		System.out.println(<span class="string">&quot;--------------------------&quot;</span>);</span><br><span class="line">		<span class="comment">//盖高楼</span></span><br><span class="line">		<span class="type">HighBuilding</span> <span class="variable">highBuilding</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">HighBuilding</span>();</span><br><span class="line">		<span class="comment">//重置建造者</span></span><br><span class="line">		houseDirector.setHouseBuilder(highBuilding);</span><br><span class="line">		<span class="comment">//完成盖房子，返回产品(高楼)</span></span><br><span class="line">		houseDirector.constructHouse();</span><br><span class="line">		</span><br><span class="line">		</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//产品-&gt;Product</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">House</span> &#123;</span><br><span class="line">	<span class="keyword">private</span> String baise;</span><br><span class="line">	<span class="keyword">private</span> String wall;</span><br><span class="line">	<span class="keyword">private</span> String roofed;</span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">getBaise</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> baise;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setBaise</span><span class="params">(String baise)</span> &#123;</span><br><span class="line">		<span class="built_in">this</span>.baise = baise;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">getWall</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> wall;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setWall</span><span class="params">(String wall)</span> &#123;</span><br><span class="line">		<span class="built_in">this</span>.wall = wall;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">getRoofed</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> roofed;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setRoofed</span><span class="params">(String roofed)</span> &#123;</span><br><span class="line">		<span class="built_in">this</span>.roofed = roofed;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 抽象的建造者</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">class</span> <span class="title class_">HouseBuilder</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">protected</span> <span class="type">House</span> <span class="variable">house</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">House</span>();</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//将建造的流程写好, 抽象的方法</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title function_">buildBasic</span><span class="params">()</span>;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title function_">buildWalls</span><span class="params">()</span>;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">abstract</span> <span class="keyword">void</span> <span class="title function_">roofed</span><span class="params">()</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//建造房子好， 将产品(房子) 返回</span></span><br><span class="line">	<span class="keyword">public</span> House <span class="title function_">buildHouse</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> house;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 具体的建造者</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CommonHouse</span> <span class="keyword">extends</span> <span class="title class_">HouseBuilder</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">buildBasic</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">&quot; 普通房子打地基5米 &quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">buildWalls</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">&quot; 普通房子砌墙10cm &quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">roofed</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		System.out.println(<span class="string">&quot; 普通房子屋顶 &quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//指挥者，这里去指定制作流程，返回产品</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HouseDirector</span> &#123;</span><br><span class="line">	</span><br><span class="line">	<span class="type">HouseBuilder</span> <span class="variable">houseBuilder</span> <span class="operator">=</span> <span class="literal">null</span>;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//构造器传入 houseBuilder</span></span><br><span class="line">	<span class="keyword">public</span> <span class="title function_">HouseDirector</span><span class="params">(HouseBuilder houseBuilder)</span> &#123;</span><br><span class="line">		<span class="built_in">this</span>.houseBuilder = houseBuilder;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//通过setter 传入 houseBuilder</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setHouseBuilder</span><span class="params">(HouseBuilder houseBuilder)</span> &#123;</span><br><span class="line">		<span class="built_in">this</span>.houseBuilder = houseBuilder;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//如何处理建造房子的流程，交给指挥者</span></span><br><span class="line">	<span class="keyword">public</span> House <span class="title function_">constructHouse</span><span class="params">()</span> &#123;</span><br><span class="line">		houseBuilder.buildBasic();</span><br><span class="line">		houseBuilder.buildWalls();</span><br><span class="line">		houseBuilder.roofed();</span><br><span class="line">		<span class="keyword">return</span> houseBuilder.buildHouse();</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>StringBuilder分析</p>
+<ul>
+<li>Appendable接口定义了多个append方法（抽象方法），即Appendable为抽象建造者，定义了抽象方法</li>
+<li>AbstractStringBuilder实现了Appendable接口方法，这里的AbstractStringBuilder已经是建造者，只是不能实例化</li>
+<li>StringBuilder既充当了指挥者角色，同时担当了具体的建造者，建造方法的实现是由AbstractStringBuilder完成。而StringBuilder继承了AbstractStringBuilder</li>
+</ul>
+<h1 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h1><ol>
+<li>客户端（使用程序）不必知道产品内部组成的细节，将产品本身与产品的创建过程解耦，是的相同的创建过程可以创建不同的产品对象</li>
+<li>每一个具体建造者都相对独立，而与其他的具体建造者无关，因此可以很方便的替换具体建造者或增加新的具体建造者，用户使用不同的具体建造者即可得到不同的产品对象</li>
+<li>可以更加精细的控制产品的创建过程。将复杂产品的床架步骤分解在不同的方法中，使得创建过程更加清晰，也更方便使用程序来控制创建过程</li>
+<li>增加新的具体建造者无需修改原有类库的代码，指挥者类针对抽象建造者类编程，系统扩展方便，符合“开闭原则”</li>
+<li>建造者模式所创建的穿屏一般具有较多的共通点，其组成部分相似，<strong>如果产品之间的差异性很大，则不适合使用建造者模式</strong>，因此其适用范围受到一定的限制</li>
+<li>如果产品的内部变化复杂，可能会导致需要定义很多具体建造者类来实现这种变化，导致系统变得很庞大，因此在这种情况下，要考虑是否选择建造者模式</li>
+<li><strong>抽象工厂模式VS建造者模式</strong><br> 抽象工厂模式实现对产品家族的创建，一个产品家族是这样的一系列产品：具有不同分类维度的产品组合，采用抽象工厂模式不需要关心构建过程，只关心什么产品由什么工厂生产即可。而建造者模式则是要求按照指定的蓝图建造产品，它的主要目的是通过组装零配件而产生一个新的产品</li>
+</ol>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://aster-xu-lab.github.io/2020/09/10/108504900/" data-id="cuidXLSh5-KqBA624svaiT9Ao" data-title="建造者模式" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/09/10/108521975/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          适配器模式
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/09/09/108504542/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">原型模式</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">Java并发编程</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%8B%E7%BA%A2%E5%BA%B7%E8%AE%B2JVM%E6%A2%B3%E7%90%86/">宋红康讲JVM梳理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6/">自学</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B0%8F%E9%A9%AC%E5%93%A5%E8%AF%BE%E7%BA%B2/">自学,小马哥课纲</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B7%A5%E4%BD%9C%E6%95%B4%E7%90%86/">自学,工作整理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">设计模式</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%B8%A9%E5%9D%91/">踩坑</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">三月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">五月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">三月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">九月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">九月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/07/02/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2024/03/29/137139580/">排序算法：冒泡排序</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791648/">线程安全集合类概述</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791593/">JUC-CyclicBarrier</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124788567/">JUC-CountdownLatch</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 AsterXu<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

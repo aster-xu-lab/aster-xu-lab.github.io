@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>5、共享模式之无锁(下） | AsterXu Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="7、原子累加器累加器性能比较12345678910111213141516171819202122private static &lt;T&gt; void demo(Supplier&lt;T&gt; adderSupplier, Consumer&lt;T&gt; action) &#123;        T adder &#x3D; adderSupplier.get();        List&amp;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5、共享模式之无锁(下）">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/12/123391555/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="7、原子累加器累加器性能比较12345678910111213141516171819202122private static &lt;T&gt; void demo(Supplier&lt;T&gt; adderSupplier, Consumer&lt;T&gt; action) &#123;        T adder &#x3D; adderSupplier.get();        List&amp;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8202efd29bf3f979d78c34ba3d3db0f3.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e8f833eabe3b15fbbb667239a04ff369.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f0abf38b28acc5fa0a0d298bd612ee65.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e7efa072495239f4df4afcd0edb456aa.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b2ce725b35ccd71a1824f27a558c683.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/96e6b06dcf83a67d12000fed3baaeba3.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b471329c000e7105ddb00ccd453de010.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/21ae6fd6276c735c3ad2a6938fa3d7c8.png">
+<meta property="article:published_time" content="2022-03-12T08:21:06.000Z">
+<meta property="article:modified_time" content="2026-07-03T02:44:32.831Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8202efd29bf3f979d78c34ba3d3db0f3.png">
+  
+    <link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">AsterXu Lab</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Where code blooms like stardust.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS 订阅"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://aster-xu-lab.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-123391555" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/03/12/123391555/" class="article-date">
+  <time class="dt-published" datetime="2022-03-12T08:21:06.000Z" itemprop="datePublished">2022-03-12</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">Java并发编程</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      5、共享模式之无锁(下）
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="7、原子累加器"><a href="#7、原子累加器" class="headerlink" title="7、原子累加器"></a>7、原子累加器</h1><h2 id="累加器性能比较"><a href="#累加器性能比较" class="headerlink" title="累加器性能比较"></a>累加器性能比较</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span> <span class="keyword">static</span> &lt;T&gt; <span class="keyword">void</span> <span class="title function_">demo</span><span class="params">(Supplier&lt;T&gt; adderSupplier, Consumer&lt;T&gt; action)</span> &#123;</span><br><span class="line">        <span class="type">T</span> <span class="variable">adder</span> <span class="operator">=</span> adderSupplier.get();</span><br><span class="line">        List&lt;Thread&gt; threads = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        <span class="type">long</span> <span class="variable">start</span> <span class="operator">=</span> System.nanoTime();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">40</span>; i++) &#123;</span><br><span class="line">            threads.add(<span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">                <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">j</span> <span class="operator">=</span> <span class="number">0</span>; j &lt; <span class="number">500000</span>; j++) &#123;</span><br><span class="line">                    action.accept(adder);</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;));</span><br><span class="line">        &#125;</span><br><span class="line">        threads.forEach(Thread::start);</span><br><span class="line">        threads.forEach(t -&gt; &#123;</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                t.join();</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br><span class="line">        <span class="type">long</span> <span class="variable">end</span> <span class="operator">=</span> System.nanoTime();</span><br><span class="line">        System.out.println(adder + <span class="string">&quot; cost :&quot;</span> + (end - start) / <span class="number">1000_000</span> + <span class="string">&quot;ms&quot;</span>);</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>比较AtomicLong 与 LongAdder</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">5</span>; i++)</span><br><span class="line">            demo(() -&gt; <span class="keyword">new</span> <span class="title class_">LongAdder</span>(), adder -&gt; adder.increment());</span><br><span class="line">        System.out.println();</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">5</span>; i++)</span><br><span class="line">            demo(() -&gt; <span class="keyword">new</span> <span class="title class_">AtomicLong</span>(), adder -&gt; adder.getAndIncrement());</span><br></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">20000000 cost :54ms</span><br><span class="line">20000000 cost :52ms</span><br><span class="line">20000000 cost :45ms</span><br><span class="line">20000000 cost :49ms</span><br><span class="line">20000000 cost :50ms</span><br><span class="line"></span><br><span class="line">20000000 cost :486ms</span><br><span class="line">20000000 cost :462ms</span><br><span class="line">20000000 cost :468ms</span><br><span class="line">20000000 cost :451ms</span><br><span class="line">20000000 cost :491ms</span><br></pre></td></tr></table></figure>
+<p>性能提升的原因很简单，就是在有竞争时，设置多个累加单元，Thread-0累加Cell[0]，Thread-1累加Cell[1]…最后将结果汇总。这样他们在累加时操作的不同Cell变量，因此减少了CAS重试失败，从而提高性能。</p>
+<h2 id="源码之LongAdder"><a href="#源码之LongAdder" class="headerlink" title="源码之LongAdder"></a>源码之LongAdder</h2><p>LongAdder 是并发大师 @author Dong Lea（大哥李）的作品，设计的非常精巧</p>
+<p>LongAdder类有几个关键域</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 累加单元数组，懒惰初始化</span></span><br><span class="line"><span class="keyword">transient</span> <span class="keyword">volatile</span> Cell[] cells;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 基础值，如果没有竞争，则用cas累加这个域</span></span><br><span class="line"><span class="keyword">transient</span> <span class="keyword">volatile</span> <span class="type">long</span> base;</span><br><span class="line"></span><br><span class="line"><span class="comment">// 在cells创建或扩容时，置为1，表示加锁</span></span><br><span class="line"><span class="keyword">transient</span> <span class="keyword">volatile</span> <span class="type">int</span> cellBusy;</span><br></pre></td></tr></table></figure>
+<h2 id="cas锁"><a href="#cas锁" class="headerlink" title="cas锁"></a>cas锁</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 不要用于实践</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">LockCas</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="type">AtomicInteger</span> <span class="variable">state</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicInteger</span>(<span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">lock</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="keyword">if</span> (state.compareAndSet(<span class="number">0</span>, <span class="number">1</span>))</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">unlock</span><span class="params">()</span> &#123;</span><br><span class="line">        state.set(<span class="number">0</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        <span class="type">LockCas</span> <span class="variable">lockCas</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">LockCas</span>();</span><br><span class="line"></span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">            log.debug(<span class="string">&quot;begin&quot;</span>);</span><br><span class="line">            lockCas.lock();</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                log.debug(<span class="string">&quot;locked&quot;</span>);</span><br><span class="line">                Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                lockCas.unlock();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, <span class="string">&quot;t1&quot;</span>).start();</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">        <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">            log.debug(<span class="string">&quot;begin&quot;</span>);</span><br><span class="line">            lockCas.lock();</span><br><span class="line">            <span class="keyword">try</span> &#123;</span><br><span class="line">                log.debug(<span class="string">&quot;locked&quot;</span>);</span><br><span class="line">                Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">            &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                e.printStackTrace();</span><br><span class="line">            &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">                lockCas.unlock();</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;, <span class="string">&quot;t2&quot;</span>).start();</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">2022/03/12-15:38:37.607 [t1] c.Test10 - begin</span><br><span class="line">2022/03/12-15:38:37.607 [t2] c.Test10 - begin</span><br><span class="line">2022/03/12-15:38:37.610 [t1] c.Test10 - locked</span><br><span class="line">2022/03/12-15:38:38.619 [t2] c.Test10 - locked</span><br></pre></td></tr></table></figure>
+<h2 id="原理之伪共享"><a href="#原理之伪共享" class="headerlink" title="原理之伪共享"></a>原理之伪共享</h2><p>其中Cell即为累加单元</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 防止缓存行伪共享</span></span><br><span class="line"><span class="meta">@sun</span>.misc.Contended</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">Cell</span> &#123;</span><br><span class="line"> <span class="keyword">volatile</span> <span class="type">long</span> value;</span><br><span class="line"> Cell(<span class="type">long</span> x) &#123; value = x; &#125;</span><br><span class="line"> </span><br><span class="line"> <span class="comment">// 最重要的方法, 用来 cas 方式进行累加, prev 表示旧值, next 表示新值</span></span><br><span class="line"> <span class="keyword">final</span> <span class="type">boolean</span> <span class="title function_">cas</span><span class="params">(<span class="type">long</span> prev, <span class="type">long</span> next)</span> &#123;</span><br><span class="line"> <span class="keyword">return</span> UNSAFE.compareAndSwapLong(<span class="built_in">this</span>, valueOffset, prev, next);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="comment">// 省略不重要代码</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>得从缓存说起<br>缓存与内存的速度比较<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8202efd29bf3f979d78c34ba3d3db0f3.png" alt="在这里插入图片描述"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e8f833eabe3b15fbbb667239a04ff369.png" alt="在这里插入图片描述"><br>因为CPU与内存的速度差异很大，苏姚靠预读数据至缓存来提升效率。</p>
+<p>而缓存以缓存行为单位，每个缓存对应着一块内存，一般是64byte（8个long）</p>
+<p>缓存的加入会造成数据副本的产生，即同一份数据会缓存在不同核心的缓存行中</p>
+<p>CPU要保证数据的一致性，如果某个CPU核心更改了数据，其他CPU核心对应的整个缓存行必须失效</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f0abf38b28acc5fa0a0d298bd612ee65.png" alt="在这里插入图片描述"><br>因为Cell是数组形式，在内存中是连续存储的，一个Cell为24字节（16字节的对象头和6字节的value），因此缓存行可以存下两个的Cell对象。问题来了：</p>
+<ul>
+<li>Core-0要修改Cell[0]</li>
+<li>Core-1要修改Cell[1]</li>
+</ul>
+<p>无论谁修改成功，都会导致对方Core的缓存行失效，比如Cell[0]中 Cell[0]&#x3D;6000，Cell[1]&#x3D;8000要累加Cell[0]&#x3D;6001，Cell[1]&#x3D;8001，这时会让Core-1的缓存行失效</p>
+<p>@sun.misc.Contended用来解决这个问题，它的原理时在使用次注解的对象或字段的前后各增加128字节大小的padding，从而让CPU将对象予读至缓存时占用不同的缓存行，这样，不会造成对方缓存行的失效</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e7efa072495239f4df4afcd0edb456aa.png" alt="在这里插入图片描述"><br>累加主要调用下面的方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">add</span><span class="params">(<span class="type">long</span> x)</span> &#123;</span><br><span class="line"> 	<span class="comment">// as 为累加单元数组</span></span><br><span class="line"> 	<span class="comment">// b 为基础值</span></span><br><span class="line"> 	<span class="comment">// x 为累加值</span></span><br><span class="line"> 	Cell[] as; <span class="type">long</span> b, v; <span class="type">int</span> m; Cell a;</span><br><span class="line"> 	<span class="comment">// 进入 if 的两个条件</span></span><br><span class="line"> 	<span class="comment">// 1. as 有值, 表示已经发生过竞争, 进入 if</span></span><br><span class="line">	<span class="comment">// 2. cas 给 base 累加时失败了, 表示 base 发生了竞争, 进入 if</span></span><br><span class="line"> 	<span class="keyword">if</span> ((as = cells) != <span class="literal">null</span> || !casBase(b = base, b + x)) &#123;</span><br><span class="line"> 	<span class="comment">// uncontended 表示 cell 没有竞争</span></span><br><span class="line"> 	<span class="type">boolean</span> <span class="variable">uncontended</span> <span class="operator">=</span> <span class="literal">true</span>;</span><br><span class="line"> 	<span class="keyword">if</span> (</span><br><span class="line"> 	<span class="comment">// as 还没有创建</span></span><br><span class="line"> 	as == <span class="literal">null</span> || (m = as.length - <span class="number">1</span>) &lt; <span class="number">0</span> ||</span><br><span class="line"> 	<span class="comment">// 当前线程对应的 cell 还没有</span></span><br><span class="line"> 	(a = as[getProbe() &amp; m]) == <span class="literal">null</span> ||</span><br><span class="line"> 	<span class="comment">// cas 给当前线程的 cell 累加失败 uncontended=false ( a 为当前线程的 cell )</span></span><br><span class="line"> 	!(uncontended = a.cas(v = a.value, v + x))</span><br><span class="line"> 	) &#123;</span><br><span class="line"> 		<span class="comment">// 进入 cell 数组创建、cell 创建的流程</span></span><br><span class="line"> 		longAccumulate(x, <span class="literal">null</span>, uncontended);</span><br><span class="line"> 	&#125;</span><br><span class="line"> 	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>add流程图<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b2ce725b35ccd71a1824f27a558c683.png" alt="在这里插入图片描述"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">final</span> <span class="keyword">void</span> <span class="title function_">longAccumulate</span><span class="params">(<span class="type">long</span> x, LongBinaryOperator fn,</span></span><br><span class="line"><span class="params">                              <span class="type">boolean</span> wasUncontended)</span> &#123;</span><br><span class="line">        <span class="type">int</span> h;</span><br><span class="line">        <span class="comment">// 当前线程还没有对应的 cell, 需要随机生成一个 h 值用来将当前线程绑定到 cell</span></span><br><span class="line">        <span class="keyword">if</span> ((h = getProbe()) == <span class="number">0</span>) &#123;</span><br><span class="line">            <span class="comment">// 初始化 probe</span></span><br><span class="line">            ThreadLocalRandom.current();</span><br><span class="line">            <span class="comment">// h 对应新的 probe 值, 用来对应 cell</span></span><br><span class="line">            h = getProbe();</span><br><span class="line">            wasUncontended = <span class="literal">true</span>;</span><br><span class="line">        &#125;</span><br><span class="line">        <span class="comment">// collide 为 true 表示需要扩容</span></span><br><span class="line">        <span class="type">boolean</span> <span class="variable">collide</span> <span class="operator">=</span> <span class="literal">false</span>;</span><br><span class="line">        <span class="keyword">for</span> (; ; ) &#123;</span><br><span class="line">            Cell[] as;</span><br><span class="line">            Cell a;</span><br><span class="line">            <span class="type">int</span> n;</span><br><span class="line">            <span class="type">long</span> v;</span><br><span class="line">            <span class="comment">// 已经有了 cells</span></span><br><span class="line">            <span class="keyword">if</span> ((as = cells) != <span class="literal">null</span> &amp;&amp; (n = as.length) &gt; <span class="number">0</span>) &#123;</span><br><span class="line">                <span class="comment">// 还没有 cell</span></span><br><span class="line">                <span class="keyword">if</span> ((a = as[(n - <span class="number">1</span>) &amp; h]) == <span class="literal">null</span>) &#123;</span><br><span class="line">                    <span class="comment">// 为 cellsBusy 加锁, 创建 cell, cell 的初始累加值为 x</span></span><br><span class="line">                    <span class="comment">// 成功则 break, 否则继续 continue 循环</span></span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 有竞争, 改变线程对应的 cell 来重试 cas</span></span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (!wasUncontended)</span><br><span class="line">                    wasUncontended = <span class="literal">true</span>;</span><br><span class="line">                    <span class="comment">// cas 尝试累加, fn 配合 LongAccumulator 不为 null, 配合 LongAdder 为 null</span></span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (a.cas(v = a.value, ((fn == <span class="literal">null</span>) ? v + x : fn.applyAsLong(v, x))))</span><br><span class="line">                    <span class="keyword">break</span>;</span><br><span class="line">                    <span class="comment">// 如果 cells 长度已经超过了最大长度, 或者已经扩容, 改变线程对应的 cell 来重试 cas</span></span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (n &gt;= NCPU || cells != as)</span><br><span class="line">                    collide = <span class="literal">false</span>;</span><br><span class="line">                    <span class="comment">// 确保 collide 为 false 进入此分支, 就不会进入下面的 else if 进行扩容了</span></span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (!collide)</span><br><span class="line">                    collide = <span class="literal">true</span>;</span><br><span class="line">                    <span class="comment">// 加锁</span></span><br><span class="line">                <span class="keyword">else</span> <span class="keyword">if</span> (cellsBusy == <span class="number">0</span> &amp;&amp; casCellsBusy()) &#123;</span><br><span class="line">                    <span class="comment">// 加锁成功, 扩容</span></span><br><span class="line">                    <span class="keyword">continue</span>;</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="comment">// 改变线程对应的 cell</span></span><br><span class="line">                h = advanceProbe(h);</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 还没有 cells, 尝试给 cellsBusy 加锁</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (cellsBusy == <span class="number">0</span> &amp;&amp; cells == as &amp;&amp; casCellsBusy()) &#123;</span><br><span class="line">                <span class="comment">// 加锁成功, 初始化 cells, 最开始长度为 2, 并填充一个 cell</span></span><br><span class="line">                <span class="comment">// 成功则 break;</span></span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 上两种情况失败, 尝试给 base 累加</span></span><br><span class="line">            <span class="keyword">else</span> <span class="keyword">if</span> (casBase(v = base, ((fn == <span class="literal">null</span>) ? v + x : fn.applyAsLong(v, x))))</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>longAccumulate 流程图<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/96e6b06dcf83a67d12000fed3baaeba3.png" alt="在这里插入图片描述"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b471329c000e7105ddb00ccd453de010.png" alt="在这里插入图片描述"><br>每个线程刚进入longAccumulate时，会尝试对应一个Cell对象（找到一个坑位）<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/21ae6fd6276c735c3ad2a6938fa3d7c8.png" alt="在这里插入图片描述"><br>获得最终结果通过sum方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="type">long</span> <span class="title function_">sum</span><span class="params">()</span> &#123;</span><br><span class="line"> 	Cell[] as = cells; Cell a;</span><br><span class="line"> 	<span class="type">long</span> <span class="variable">sum</span> <span class="operator">=</span> base;</span><br><span class="line"> 	<span class="keyword">if</span> (as != <span class="literal">null</span>) &#123;</span><br><span class="line"> 		<span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; as.length; ++i) &#123;</span><br><span class="line"> 			<span class="keyword">if</span> ((a = as[i]) != <span class="literal">null</span>)</span><br><span class="line"> 				sum += a.value;</span><br><span class="line"> 		&#125;</span><br><span class="line"> 	&#125;</span><br><span class="line"> 	<span class="keyword">return</span> sum;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h1 id="8、Unsafe"><a href="#8、Unsafe" class="headerlink" title="8、Unsafe"></a>8、Unsafe</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Unsafe对象提供了非常低层的，操作内存、线程的方法，Unsafe对象不能直接调用，只能通过反射获得</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">UnsafeAccessor</span> &#123;</span><br><span class="line">    <span class="keyword">static</span> Unsafe unsafe;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="type">Field</span> <span class="variable">theUnsafe</span> <span class="operator">=</span> Unsafe.class.getDeclaredField(<span class="string">&quot;theUnsafe&quot;</span>);</span><br><span class="line">            theUnsafe.setAccessible(<span class="literal">true</span>);</span><br><span class="line">            unsafe = (Unsafe) theUnsafe.get(<span class="literal">null</span>);</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchFieldException | IllegalAccessException e) &#123;</span><br><span class="line">            <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">Error</span>(e);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> Unsafe <span class="title function_">getUnsafe</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> unsafe;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="Unsafe-CAS操作"><a href="#Unsafe-CAS操作" class="headerlink" title="Unsafe CAS操作"></a>Unsafe CAS操作</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Student</span> &#123;</span><br><span class="line">    <span class="keyword">volatile</span> <span class="type">int</span> id;</span><br><span class="line">    <span class="keyword">volatile</span> String name;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Student&#123;&quot;</span> +</span><br><span class="line">                <span class="string">&quot;id=&quot;</span> + id +</span><br><span class="line">                <span class="string">&quot;, name=&#x27;&quot;</span> + name + <span class="string">&#x27;\&#x27;&#x27;</span> +</span><br><span class="line">                <span class="string">&#x27;&#125;&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> NoSuchFieldException &#123;</span><br><span class="line">        <span class="type">Unsafe</span> <span class="variable">unsafe</span> <span class="operator">=</span> UnsafeAccessor.getUnsafe();</span><br><span class="line">        <span class="type">Field</span> <span class="variable">id</span> <span class="operator">=</span> Student.class.getDeclaredField(<span class="string">&quot;id&quot;</span>);</span><br><span class="line">        <span class="type">Field</span> <span class="variable">name</span> <span class="operator">=</span> Student.class.getDeclaredField(<span class="string">&quot;name&quot;</span>);</span><br><span class="line"><span class="comment">// 获得成员变量的偏移量</span></span><br><span class="line">        <span class="type">long</span> <span class="variable">idOffset</span> <span class="operator">=</span> UnsafeAccessor.unsafe.objectFieldOffset(id);</span><br><span class="line">        <span class="type">long</span> <span class="variable">nameOffset</span> <span class="operator">=</span> UnsafeAccessor.unsafe.objectFieldOffset(name);</span><br><span class="line">        <span class="type">Student</span> <span class="variable">student</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Student</span>();</span><br><span class="line"><span class="comment">// 使用 cas 方法替换成员变量的值</span></span><br><span class="line">        UnsafeAccessor.unsafe.compareAndSwapInt(student, idOffset, <span class="number">0</span>, <span class="number">20</span>); <span class="comment">// 返回 true</span></span><br><span class="line">        UnsafeAccessor.unsafe.compareAndSwapObject(student, nameOffset, <span class="literal">null</span>, <span class="string">&quot;张三&quot;</span>); <span class="comment">// 返回 true</span></span><br><span class="line">        System.out.println(student);</span><br><span class="line"></span><br><span class="line">    &#125;</span><br></pre></td></tr></table></figure>
+<p>使用自定义的AtomicDate实现直线线程安全的原子整数Account实现</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">AtomicData</span> &#123;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">volatile</span> <span class="type">int</span> data;</span><br><span class="line">    <span class="keyword">static</span> <span class="keyword">final</span> Unsafe unsafe;</span><br><span class="line">    <span class="keyword">static</span> <span class="type">long</span> DATA_OFFSET;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">static</span> &#123;</span><br><span class="line">        unsafe = UnsafeAccessor.getUnsafe();</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            DATA_OFFSET = unsafe.objectFieldOffset(AtomicData.class.getDeclaredField(<span class="string">&quot;data&quot;</span>));</span><br><span class="line">        &#125; <span class="keyword">catch</span> (NoSuchFieldException e) &#123;</span><br><span class="line">            e.printStackTrace();</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">AtomicData</span><span class="params">(<span class="type">int</span> data)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.data = data;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">decrease</span><span class="params">(<span class="type">int</span> amount)</span> &#123;</span><br><span class="line">        <span class="type">int</span> oldValue;</span><br><span class="line">        <span class="keyword">while</span>(<span class="literal">true</span>) &#123;</span><br><span class="line">            oldValue = data;</span><br><span class="line">            <span class="keyword">if</span> (unsafe.compareAndSwapInt(<span class="built_in">this</span>, DATA_OFFSET, oldValue, oldValue - amount))</span><br><span class="line">                <span class="keyword">return</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="type">int</span> <span class="title function_">getData</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> data;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>Account实现</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">Account.demo(<span class="keyword">new</span> <span class="title class_">Account</span>() &#123;</span><br><span class="line">            <span class="keyword">final</span> <span class="type">AtomicData</span> <span class="variable">atomicData</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">AtomicData</span>(<span class="number">10000</span>);</span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> Integer <span class="title function_">getBalance</span><span class="params">()</span> &#123;</span><br><span class="line">                <span class="keyword">return</span> atomicData.getData();</span><br><span class="line">            &#125;</span><br><span class="line"></span><br><span class="line">            <span class="meta">@Override</span></span><br><span class="line">            <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">withdraw</span><span class="params">(Integer amount)</span> &#123;</span><br><span class="line">                atomicData.decrease(amount);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;);</span><br></pre></td></tr></table></figure>
+<h1 id="本章小结"><a href="#本章小结" class="headerlink" title="本章小结"></a>本章小结</h1><ul>
+<li>CAS与volatile</li>
+<li>API<ul>
+<li>原子整数</li>
+<li>原子引用</li>
+<li>原子整数</li>
+<li>字段更新器</li>
+<li>原子累加器</li>
+</ul>
+</li>
+<li>Unsafe</li>
+<li>*原理相关<ul>
+<li>LongAdder 源码</li>
+<li>伪共享</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://aster-xu-lab.github.io/2022/03/12/123391555/" data-id="cuidoKFJma7z9Q8lX94HopeO-" data-title="5、共享模式之无锁(下）" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/03/13/123445654/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          6、共享模型之不可变
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/03/10/123364447/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">5、共享模式之无锁(上），CAS，原子类</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">Java并发编程</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%8B%E7%BA%A2%E5%BA%B7%E8%AE%B2JVM%E6%A2%B3%E7%90%86/">宋红康讲JVM梳理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6/">自学</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B0%8F%E9%A9%AC%E5%93%A5%E8%AF%BE%E7%BA%B2/">自学,小马哥课纲</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B7%A5%E4%BD%9C%E6%95%B4%E7%90%86/">自学,工作整理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">设计模式</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%B8%A9%E5%9D%91/">踩坑</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">三月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">五月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">三月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">九月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">九月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/07/02/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2024/03/29/137139580/">排序算法：冒泡排序</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791648/">线程安全集合类概述</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791593/">JUC-CyclicBarrier</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124788567/">JUC-CountdownLatch</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 AsterXu<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

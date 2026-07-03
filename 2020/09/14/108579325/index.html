@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>迭代器模式 | AsterXu Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="介绍 迭代器模式（Iterator Pattern）是常用的设计模式，属于行为型模式 如果我们的集合元素是不同的方式实现的，有数组，还有java集合类，或者还有其他方式，当客户端要遍历这些集合元素的时候就要使用多种遍历方式，而且还会暴露元素的内部结构，可以考虑使用迭代器模式解决 迭代器模式，提供一种便利集合元素的统一接口，用已知的当打便利集合元素，不需要知道集合对象的底层表示，即：不暴露内部的结构">
+<meta property="og:type" content="article">
+<meta property="og:title" content="迭代器模式">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2020/09/14/108579325/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="介绍 迭代器模式（Iterator Pattern）是常用的设计模式，属于行为型模式 如果我们的集合元素是不同的方式实现的，有数组，还有java集合类，或者还有其他方式，当客户端要遍历这些集合元素的时候就要使用多种遍历方式，而且还会暴露元素的内部结构，可以考虑使用迭代器模式解决 迭代器模式，提供一种便利集合元素的统一接口，用已知的当打便利集合元素，不需要知道集合对象的底层表示，即：不暴露内部的结构">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-09-14T07:15:45.000Z">
+<meta property="article:modified_time" content="2026-07-03T01:42:44.177Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">AsterXu Lab</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Where code blooms like stardust.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS 订阅"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://aster-xu-lab.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-108579325" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2020/09/14/108579325/" class="article-date">
+  <time class="dt-published" datetime="2020-09-14T07:15:45.000Z" itemprop="datePublished">2020-09-14</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">设计模式</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      迭代器模式
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><ol>
+<li>迭代器模式（Iterator Pattern）是常用的设计模式，属于行为型模式</li>
+<li>如果我们的集合元素是不同的方式实现的，有数组，还有java集合类，或者还有其他方式，当客户端要遍历这些集合元素的时候就要使用多种遍历方式，而且还会暴露元素的内部结构，可以考虑使用迭代器模式解决</li>
+<li>迭代器模式，提供一种便利集合元素的统一接口，用已知的当打便利集合元素，不需要知道集合对象的底层表示，即：不暴露内部的结构</li>
+</ol>
+<h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><ol>
+<li>Iterator：迭代器接口，是系统提供，含有hasNext，next，remove</li>
+<li>ConcreteIterator：具体的迭代器类，管理迭代</li>
+<li>Aggregate：一过统一的聚合接口，将和护短和具体聚合解耦</li>
+<li>ConcreteAggregate：具体的聚合持有对象集合，并提供一个方法，放回一个迭代器，该迭代器可以正确便利集合</li>
+<li>Client：客户端，通过Iterator和Aggregate依赖子类</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">//创建学院</span></span><br><span class="line">List&lt;College&gt; collegeList = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;College&gt;();</span><br><span class="line"></span><br><span class="line"><span class="type">ComputerCollege</span> <span class="variable">computerCollege</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">ComputerCollege</span>();</span><br><span class="line"><span class="type">InfoCollege</span> <span class="variable">infoCollege</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">InfoCollege</span>();</span><br><span class="line"></span><br><span class="line">collegeList.add(computerCollege);</span><br><span class="line">collegeList.add(infoCollege);</span><br><span class="line"></span><br><span class="line"><span class="type">OutPutImpl</span> <span class="variable">outPutImpl</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">OutPutImpl</span>(collegeList);</span><br><span class="line">outPutImpl.printCollege();</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OutPutImpl</span> &#123;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//学院集合</span></span><br><span class="line">	List&lt;College&gt; collegeList;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="title function_">OutPutImpl</span><span class="params">(List&lt;College&gt; collegeList)</span> &#123;</span><br><span class="line">		</span><br><span class="line">		<span class="built_in">this</span>.collegeList = collegeList;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="comment">//遍历所有学院,然后调用printDepartment 输出各个学院的系</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">printCollege</span><span class="params">()</span> &#123;</span><br><span class="line">		</span><br><span class="line">		<span class="comment">//从collegeList 取出所有学院, Java 中的 List 已经实现Iterator</span></span><br><span class="line">		Iterator&lt;College&gt; iterator = collegeList.iterator();</span><br><span class="line">		</span><br><span class="line">		<span class="keyword">while</span>(iterator.hasNext()) &#123;</span><br><span class="line">			<span class="comment">//取出一个学院</span></span><br><span class="line">			<span class="type">College</span> <span class="variable">college</span> <span class="operator">=</span> iterator.next();</span><br><span class="line">			System.out.println(<span class="string">&quot;=== &quot;</span>+college.getName() +<span class="string">&quot;=====&quot;</span> );</span><br><span class="line">			printDepartment(college.createIterator()); <span class="comment">//得到对应迭代器</span></span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//输出 学院输出 系</span></span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">printDepartment</span><span class="params">(Iterator iterator)</span> &#123;</span><br><span class="line">		<span class="keyword">while</span>(iterator.hasNext()) &#123;</span><br><span class="line">			<span class="type">Department</span> <span class="variable">d</span> <span class="operator">=</span> (Department)iterator.next();</span><br><span class="line">			System.out.println(d.getName());</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">interface</span> <span class="title class_">College</span> &#123;</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">getName</span><span class="params">()</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//增加系的方法</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addDepartment</span><span class="params">(String name, String desc)</span>;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//返回一个迭代器,遍历</span></span><br><span class="line">	<span class="keyword">public</span> Iterator  <span class="title function_">createIterator</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">InfoCollege</span> <span class="keyword">implements</span> <span class="title class_">College</span> &#123;</span><br><span class="line"></span><br><span class="line">	List&lt;Department&gt; departmentList;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	<span class="keyword">public</span> <span class="title function_">InfoCollege</span><span class="params">()</span> &#123;</span><br><span class="line">		departmentList = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;Department&gt;();</span><br><span class="line">		addDepartment(<span class="string">&quot;信息安全专业&quot;</span>, <span class="string">&quot; 信息安全专业 &quot;</span>);</span><br><span class="line">		addDepartment(<span class="string">&quot;网络安全专业&quot;</span>, <span class="string">&quot; 网络安全专业 &quot;</span>);</span><br><span class="line">		addDepartment(<span class="string">&quot;服务器安全专业&quot;</span>, <span class="string">&quot; 服务器安全专业 &quot;</span>);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">getName</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">return</span> <span class="string">&quot;信息工程学院&quot;</span>;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">addDepartment</span><span class="params">(String name, String desc)</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="type">Department</span> <span class="variable">department</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Department</span>(name, desc);</span><br><span class="line">		departmentList.add(department);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> Iterator <span class="title function_">createIterator</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">InfoColleageIterator</span>(departmentList);</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">InfoColleageIterator</span> <span class="keyword">implements</span> <span class="title class_">Iterator</span> &#123;</span><br><span class="line"></span><br><span class="line">	</span><br><span class="line">	List&lt;Department&gt; departmentList; <span class="comment">// 信息工程学院是以List方式存放系</span></span><br><span class="line">	<span class="type">int</span> <span class="variable">index</span> <span class="operator">=</span> -<span class="number">1</span>;<span class="comment">//索引</span></span><br><span class="line">	</span><br><span class="line"></span><br><span class="line">	<span class="keyword">public</span> <span class="title function_">InfoColleageIterator</span><span class="params">(List&lt;Department&gt; departmentList)</span> &#123;</span><br><span class="line">		<span class="built_in">this</span>.departmentList = departmentList;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="comment">//判断list中还有没有下一个元素</span></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> <span class="type">boolean</span> <span class="title function_">hasNext</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">if</span>(index &gt;= departmentList.size() - <span class="number">1</span>) &#123;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line">		&#125; <span class="keyword">else</span> &#123;</span><br><span class="line">			index += <span class="number">1</span>;</span><br><span class="line">			<span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	<span class="meta">@Override</span></span><br><span class="line">	<span class="keyword">public</span> Object <span class="title function_">next</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="comment">// TODO Auto-generated method stub</span></span><br><span class="line">		<span class="keyword">return</span> departmentList.get(index);</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	<span class="comment">//空实现remove</span></span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">remove</span><span class="params">()</span> &#123;</span><br><span class="line">		</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Department</span> &#123;</span><br><span class="line"></span><br><span class="line">	<span class="keyword">private</span> String name;</span><br><span class="line">	<span class="keyword">private</span> String desc;</span><br><span class="line">	<span class="keyword">public</span> <span class="title function_">Department</span><span class="params">(String name, String desc)</span> &#123;</span><br><span class="line">		<span class="built_in">super</span>();</span><br><span class="line">		<span class="built_in">this</span>.name = name;</span><br><span class="line">		<span class="built_in">this</span>.desc = desc;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">getName</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> name;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setName</span><span class="params">(String name)</span> &#123;</span><br><span class="line">		<span class="built_in">this</span>.name = name;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">public</span> String <span class="title function_">getDesc</span><span class="params">()</span> &#123;</span><br><span class="line">		<span class="keyword">return</span> desc;</span><br><span class="line">	&#125;</span><br><span class="line">	<span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">setDesc</span><span class="params">(String desc)</span> &#123;</span><br><span class="line">		<span class="built_in">this</span>.desc = desc;</span><br><span class="line">	&#125;</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="JDK的ArrayList-集合中就使用了迭代器模式"><a href="#JDK的ArrayList-集合中就使用了迭代器模式" class="headerlink" title="JDK的ArrayList 集合中就使用了迭代器模式"></a>JDK的ArrayList 集合中就使用了迭代器模式</h1><ol>
+<li>内部类Itr 充当具体实现迭代器Iterator 的类， 作为ArrayList 内部类 </li>
+<li>List 就是充当了聚合接口，含有一个iterator() 方法，返回一个迭代器对象 </li>
+<li>ArrayList 是实现聚合接口List 的子类，实现了iterator() </li>
+<li>Iterator 接口系统提供 </li>
+<li>迭代器模式解决了 不同集合(ArrayList ,LinkedList) 统一遍历问题</li>
+</ol>
+<h1 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h1><h3 id="优点："><a href="#优点：" class="headerlink" title="优点："></a>优点：</h3><ol>
+<li>提供了一个统一的方法遍历对象，客户不用再考虑聚合的类型，使用一种方法就可以遍历对象了</li>
+<li>隐藏了聚合的内部结构，客户端要遍历聚合的时候只能取到迭代器，而不会知道具合的具体组成</li>
+<li>提供了一种设计思想，就是一个类应该只有一个引起变化的原因（单一职责原则）。在聚合类中，我们把迭代器分开，就是要把管理对象集合和遍历对象集合的责任分开，这样一来集合改变的话，只影响到聚合对象。而如果遍历方式改变的话，只影响到了迭代器</li>
+<li>当要展示一组相似对象，或者遍历一组相同对象时，适合使用迭代器模式</li>
+</ol>
+<h3 id="缺点："><a href="#缺点：" class="headerlink" title="缺点："></a>缺点：</h3><p>每个聚合对象都要一个迭代器，会生成多个迭代器，不好管理类</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://aster-xu-lab.github.io/2020/09/14/108579325/" data-id="cuid8RNVmeciAaictzHjMdoj3" data-title="迭代器模式" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2020/09/14/108580047/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          观察者模式
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2020/09/14/108578817/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">访问者模式</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">Java并发编程</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%8B%E7%BA%A2%E5%BA%B7%E8%AE%B2JVM%E6%A2%B3%E7%90%86/">宋红康讲JVM梳理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6/">自学</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B0%8F%E9%A9%AC%E5%93%A5%E8%AF%BE%E7%BA%B2/">自学,小马哥课纲</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B7%A5%E4%BD%9C%E6%95%B4%E7%90%86/">自学,工作整理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">设计模式</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%B8%A9%E5%9D%91/">踩坑</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">三月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">五月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">三月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">九月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">九月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/07/02/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2024/03/29/137139580/">排序算法：冒泡排序</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791648/">线程安全集合类概述</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791593/">JUC-CyclicBarrier</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124788567/">JUC-CountdownLatch</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 AsterXu<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

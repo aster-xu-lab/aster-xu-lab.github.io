@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>3、共享模型之管程 -- 3.1、共享带来的问题 | AsterXu Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="1、共享带来的问题小故事 老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快  小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用 但小南不能一天24小事使用算盘，他经常要小憩一会儿（sleep），又或者是去吃饭上厕所（阻塞io操作），有时还需要一根烟，没烟的时候思绪全无（wait），这些情况称为阻塞  在这些时候，算盘没有利用起来（不能收钱了），老王">
+<meta property="og:type" content="article">
+<meta property="og:title" content="3、共享模型之管程 -- 3.1、共享带来的问题">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/06/123304850/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="1、共享带来的问题小故事 老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快  小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用 但小南不能一天24小事使用算盘，他经常要小憩一会儿（sleep），又或者是去吃饭上厕所（阻塞io操作），有时还需要一根烟，没烟的时候思绪全无（wait），这些情况称为阻塞  在这些时候，算盘没有利用起来（不能收钱了），老王">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://aster-xu-lab.github.io/123304850/226feb641c0b0e9a3a1fb99600d96279.png">
+<meta property="og:image" content="https://aster-xu-lab.github.io/123304850/f208fe0ddfc89d0d2e16214954173c87.png">
+<meta property="og:image" content="https://aster-xu-lab.github.io/123304850/7aca2f8c442ab4cf327c4cbe79f2b908.png">
+<meta property="og:image" content="https://aster-xu-lab.github.io/123304850/09c00785ce0ad885cf324f8ce710b8ac.png">
+<meta property="og:image" content="https://aster-xu-lab.github.io/123304850/3b1995e5662821a23c1fec6c9c9e6c0b.png">
+<meta property="og:image" content="https://aster-xu-lab.github.io/123304850/dafe09f04fdb03becd8318044ccc3287.png">
+<meta property="og:image" content="https://aster-xu-lab.github.io/123304850/5ca2d7d4423c741afaa4bb9094650d97.png">
+<meta property="og:image" content="https://aster-xu-lab.github.io/123304850/a9f50f13054a3138f4bc9ba8ac03833b.png">
+<meta property="article:published_time" content="2022-03-05T19:01:27.000Z">
+<meta property="article:modified_time" content="2026-07-03T01:40:51.521Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://aster-xu-lab.github.io/123304850/226feb641c0b0e9a3a1fb99600d96279.png">
+  
+    <link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">AsterXu Lab</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Where code blooms like stardust.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS 订阅"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://aster-xu-lab.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-123304850" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/03/06/123304850/" class="article-date">
+  <time class="dt-published" datetime="2022-03-05T19:01:27.000Z" itemprop="datePublished">2022-03-06</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">Java并发编程</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      3、共享模型之管程 -- 3.1、共享带来的问题
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="1、共享带来的问题"><a href="#1、共享带来的问题" class="headerlink" title="1、共享带来的问题"></a>1、共享带来的问题</h1><h2 id="小故事"><a href="#小故事" class="headerlink" title="小故事"></a>小故事</h2><ul>
+<li>老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快</li>
+<li><img src="/123304850/226feb641c0b0e9a3a1fb99600d96279.png" alt="在这里插入图片描述"></li>
+<li>小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用</li>
+<li>但小南不能一天24小事使用算盘，他经常要小憩一会儿（sleep），又或者是去吃饭上厕所（阻塞io操作），有时还需要一根烟，没烟的时候思绪全无（wait），这些情况称为阻塞</li>
+<li><img src="/123304850/f208fe0ddfc89d0d2e16214954173c87.png" alt="在这里插入图片描述"></li>
+<li>在这些时候，算盘没有利用起来（不能收钱了），老王觉得有点不划算</li>
+<li>另外，小女也想用用算盘，如果总是让小南占着算盘，小女觉得不公平</li>
+<li>于是，老王灵机一动，想了个办法[让他们每个人用一会，轮流着使用算盘]</li>
+<li>这样，小南阻塞的时候，算盘可以分给小女使用，反之亦然</li>
+<li>最近执行的计算比较复杂，需要存储一些中间结果，而学生们的脑容量（工作内存）不够，所以老王申请了一个笔记本（主内存），把一些中间结果先记在本上</li>
+<li>计算流程是这样的</li>
+<li><img src="/123304850/7aca2f8c442ab4cf327c4cbe79f2b908.png" alt="在这里插入图片描述"></li>
+<li>但是由于分时系统，有一天还是发生了事故</li>
+<li>小南刚读取到初始值0做了个+1运算，还没来得及写会结果</li>
+<li>老王说[小南，你的时间到了，该别人了，记住结果走吧]，于是小南念叨着[结果是1，结果是1…]，不甘心的到一边待着去了（上下文切换）</li>
+<li>老王说[小女，该你了]，小女看到笔记本上还写着0做了个-1运算，将结果-1写入笔记本</li>
+<li>这时小女的时间也用完了，老王又叫醒了小南[小南，把你上次的题目算完吧]，小南将他脑中的结果1写入了笔记本</li>
+<li><img src="/123304850/09c00785ce0ad885cf324f8ce710b8ac.png" alt="在这里插入图片描述"></li>
+<li>小南和小女都觉得自己没做错，单笔记本里的结果是1而不是0</li>
+</ul>
+<h2 id="Java的体现"><a href="#Java的体现" class="headerlink" title="Java的体现"></a>Java的体现</h2><p>两个线程对初始值为0的静态变量一个做自增，一个做自建，各做5000次，结果是0吗？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">int</span> <span class="variable">counter</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">times</span> <span class="operator">=</span> <span class="number">5000</span>;</span><br><span class="line"></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line"></span><br><span class="line">    <span class="type">Thread</span> <span class="variable">t1</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; times; i++) &#123;</span><br><span class="line">            counter++;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;, <span class="string">&quot;t1&quot;</span>);</span><br><span class="line"></span><br><span class="line">    <span class="type">Thread</span> <span class="variable">t2</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; times; i++) &#123;</span><br><span class="line">            counter--;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;, <span class="string">&quot;t2&quot;</span>);</span><br><span class="line">    t1.start();</span><br><span class="line">    t2.start();</span><br><span class="line">    t1.join();</span><br><span class="line">    t2.join();</span><br><span class="line">    log.debug(<span class="string">&quot;结果：&#123;&#125;&quot;</span>, counter);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">2022/03/04-00:15:33.287 [main] c.Test1 - 结果：332</span><br></pre></td></tr></table></figure>
+
+<p><strong>问题分析</strong><br>以上的结果可能是正数、负数、零。为什么呢？因为Java中对静态变量的自增、自减并不是原子操作，要彻底理解，必须从字节码来进行分析。<br>例如对于<code>i++</code>而言（i为静态变量），事假会产生如下的JVM字节码指令：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">getstatic i // 获取静态变量i的值</span><br><span class="line">iconst_1 // 准备常量1</span><br><span class="line">iadd // 自增</span><br><span class="line">putstatic i // 将修改后的值存入静态变量i</span><br></pre></td></tr></table></figure>
+<p>而对应<code>i--</code>也是类似的：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">getstatic i // 获取静态变量i的值</span><br><span class="line">iconst_1 // 准备常量1</span><br><span class="line">isub // 自减</span><br><span class="line">putstatic i // 将修改后的值存入静态变量i</span><br></pre></td></tr></table></figure>
+<p>Java的内存模型如下，完成静态变量的自增、自减需要在主内存和工作内存中进行数据交换（这块会在别的章节进行叙述）：<br><img src="/123304850/3b1995e5662821a23c1fec6c9c9e6c0b.png" alt="在这里插入图片描述"><br>如果单线程，以上8行代码是顺序执行（不会交错）没有问题：<br><img src="/123304850/dafe09f04fdb03becd8318044ccc3287.png" alt="在这里插入图片描述"><br>但多线程下这8航大吗可能交错运行：<br>出现负数的情况：<br><img src="/123304850/5ca2d7d4423c741afaa4bb9094650d97.png" alt="在这里插入图片描述"><br>出现正数的情况：<br><img src="/123304850/a9f50f13054a3138f4bc9ba8ac03833b.png" alt="在这里插入图片描述"></p>
+<h2 id="临界区-Critical-Section"><a href="#临界区-Critical-Section" class="headerlink" title="临界区 Critical Section"></a>临界区 Critical Section</h2><ul>
+<li>一个程序运行多个线程本身是没有偶问题的</li>
+<li>问题出在多个线程访问<strong>共享资源</strong><ul>
+<li>多个线程读<strong>共享资源</strong>其实也没有问题</li>
+<li>在多个线程对<strong>共享资源</strong>读写操作时发生指令交错，就会出现问题</li>
+</ul>
+</li>
+<li>一段代码内如果存在对<strong>共享资源</strong>的多线程读写操作，称这段代码为<strong>临界区</strong><br>例如，下面代码中的临界区</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">static</span> <span class="type">int</span> <span class="variable">counter</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">increment</span><span class="params">()</span> </span><br><span class="line"><span class="comment">// 临界区</span></span><br><span class="line">&#123;</span><br><span class="line">	counter++;</span><br><span class="line">&#125;</span><br><span class="line"><span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">decrement</span><span class="params">()</span> </span><br><span class="line"><span class="comment">// 临界区</span></span><br><span class="line">&#123;</span><br><span class="line">	counter--;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="竞态条件-Race-Condition"><a href="#竞态条件-Race-Condition" class="headerlink" title="竞态条件 Race Condition"></a>竞态条件 Race Condition</h2><p>多个线程在临界区内执行，由于代码的<strong>执行序列不同</strong>而导致结果无法预测，称之发生了<strong>竞态条件</strong></p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://aster-xu-lab.github.io/2022/03/06/123304850/" data-id="cuidJmtOCagz3veOTCC8YXLdi" data-title="3、共享模型之管程 -- 3.1、共享带来的问题" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/03/06/123304857/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          3.2、synchronized关键字 解决竞争的方案
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/03/03/123173394/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">2、Java线程</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">Java并发编程</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%8B%E7%BA%A2%E5%BA%B7%E8%AE%B2JVM%E6%A2%B3%E7%90%86/">宋红康讲JVM梳理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6/">自学</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B0%8F%E9%A9%AC%E5%93%A5%E8%AF%BE%E7%BA%B2/">自学,小马哥课纲</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B7%A5%E4%BD%9C%E6%95%B4%E7%90%86/">自学,工作整理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">设计模式</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%B8%A9%E5%9D%91/">踩坑</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">三月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">五月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">三月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">九月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">九月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/07/02/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2024/03/29/137139580/">排序算法：冒泡排序</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791648/">线程安全集合类概述</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791593/">JUC-CyclicBarrier</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124788567/">JUC-CountdownLatch</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 AsterXu<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>

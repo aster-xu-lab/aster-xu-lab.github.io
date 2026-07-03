@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  
+  <title>6、共享模型之不可变 | AsterXu Lab</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="本章内容 不可变类的使用 不可变类设计 无状态类设计  1、日期转换问题问题提出下面代码在运行时，由于SimpleDateFormat 不是线程安全的 12345678910SimpleDateFormat sdf &#x3D; new SimpleDateFormat(&quot;yyyy-MM-dd&quot;);        for (int i &#x3D; 0; i &lt; 10; i++) &amp;#123">
+<meta property="og:type" content="article">
+<meta property="og:title" content="6、共享模型之不可变">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/13/123445654/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="本章内容 不可变类的使用 不可变类设计 无状态类设计  1、日期转换问题问题提出下面代码在运行时，由于SimpleDateFormat 不是线程安全的 12345678910SimpleDateFormat sdf &#x3D; new SimpleDateFormat(&quot;yyyy-MM-dd&quot;);        for (int i &#x3D; 0; i &lt; 10; i++) &amp;#123">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-03-12T18:00:53.000Z">
+<meta property="article:modified_time" content="2026-07-03T01:40:26.014Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
+<meta name="twitter:card" content="summary">
+  
+    <link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+  
+  
+    <link rel="shortcut icon" href="/favicon.png">
+  
+  
+  
+<link rel="stylesheet" href="/css/style.css">
+
+  
+    
+<link rel="stylesheet" href="/fancybox/jquery.fancybox.min.css">
+
+  
+  
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fork-awesome@1.2.0/css/fork-awesome.min.css">
+
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">AsterXu Lab</a>
+      </h1>
+      
+        <h2 id="subtitle-wrap">
+          <a href="/" id="subtitle">Where code blooms like stardust.</a>
+        </h2>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"><span class="fa fa-bars"></span></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+        
+          <a class="nav-icon" href="/atom.xml" title="RSS 订阅"><span class="fa fa-rss"></span></a>
+        
+        <a class="nav-icon nav-search-btn" title="搜索"><span class="fa fa-search"></span></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="搜索"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="https://aster-xu-lab.github.io"></form>
+      </div>
+    </div>
+  </div>
+</header>
+
+      <div class="outer">
+        <section id="main"><article id="post-123445654" class="h-entry article article-type-post" itemprop="blogPost" itemscope itemtype="https://schema.org/BlogPosting">
+  <div class="article-meta">
+    <a href="/2022/03/13/123445654/" class="article-date">
+  <time class="dt-published" datetime="2022-03-12T18:00:53.000Z" itemprop="datePublished">2022-03-13</time>
+</a>
+    
+  <div class="article-category">
+    <a class="article-category-link" href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">Java并发编程</a>
+  </div>
+
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="p-name article-title" itemprop="headline name">
+      6、共享模型之不可变
+    </h1>
+  
+
+      </header>
+    
+    <div class="e-content article-entry" itemprop="articleBody">
+      
+        <h1 id="本章内容"><a href="#本章内容" class="headerlink" title="本章内容"></a>本章内容</h1><ul>
+<li>不可变类的使用</li>
+<li>不可变类设计</li>
+<li>无状态类设计</li>
+</ul>
+<h1 id="1、日期转换问题"><a href="#1、日期转换问题" class="headerlink" title="1、日期转换问题"></a>1、日期转换问题</h1><h2 id="问题提出"><a href="#问题提出" class="headerlink" title="问题提出"></a>问题提出</h2><p>下面代码在运行时，由于SimpleDateFormat 不是线程安全的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">SimpleDateFormat</span> <span class="variable">sdf</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SimpleDateFormat</span>(<span class="string">&quot;yyyy-MM-dd&quot;</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    log.debug(<span class="string">&quot;&#123;&#125;&quot;</span>,sdf.parse(<span class="string">&quot;1951-04-21&quot;</span>));</span><br><span class="line">                &#125; <span class="keyword">catch</span> (ParseException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;).start();</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>有很大几率出现java.lang.NumberFormatException</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread &quot;Thread-1&quot; Exception in thread &quot;Thread-5&quot; Exception in thread &quot;Thread-2&quot; Exception in thread &quot;Thread-3&quot; java.lang.NumberFormatException: multiple points</span><br><span class="line">	at sun.misc.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:1890)</span><br><span class="line">	at sun.misc.FloatingDecimal.parseDouble(FloatingDecimal.java:110)</span><br><span class="line">	at java.lang.Double.parseDouble(Double.java:538)</span><br><span class="line">	at java.text.DigitList.getDouble(DigitList.java:169)</span><br><span class="line">	at java.text.DecimalFormat.parse(DecimalFormat.java:2056)</span><br><span class="line">	at java.text.SimpleDateFormat.subParse(SimpleDateFormat.java:1869)</span><br><span class="line">	at java.text.SimpleDateFormat.parse(SimpleDateFormat.java:1514)</span><br><span class="line">	at java.text.DateFormat.parse(DateFormat.java:364)</span><br><span class="line">	at notchange.Test1.lambda$main$0(Test1.java:19)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:748)</span><br><span class="line">java.lang.NumberFormatException: empty String</span><br><span class="line">	at sun.misc.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:1842)</span><br><span class="line">	at sun.misc.FloatingDecimal.parseDouble(FloatingDecimal.java:110)</span><br><span class="line">	at java.lang.Double.parseDouble(Double.java:538)</span><br><span class="line">	at java.text.DigitList.getDouble(DigitList.java:169)</span><br><span class="line">	at java.text.DecimalFormat.parse(DecimalFormat.java:2056)</span><br><span class="line">	at java.text.SimpleDateFormat.subParse(SimpleDateFormat.java:2162)</span><br><span class="line">	at java.text.SimpleDateFormat.parse(SimpleDateFormat.java:1514)</span><br><span class="line">	at java.text.DateFormat.parse(DateFormat.java:364)</span><br><span class="line">	at notchange.Test1.lambda$main$0(Test1.java:19)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:748)</span><br><span class="line">java.lang.NumberFormatException: multiple points</span><br><span class="line">	at sun.misc.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:1890)</span><br><span class="line">	at sun.misc.FloatingDecimal.parseDouble(FloatingDecimal.java:110)</span><br><span class="line">	at java.lang.Double.parseDouble(Double.java:538)</span><br><span class="line">	at java.text.DigitList.getDouble(DigitList.java:169)</span><br><span class="line">	at java.text.DecimalFormat.parse(DecimalFormat.java:2056)</span><br><span class="line">	at java.text.SimpleDateFormat.subParse(SimpleDateFormat.java:2162)</span><br><span class="line">	at java.text.SimpleDateFormat.parse(SimpleDateFormat.java:1514)</span><br><span class="line">	at java.text.DateFormat.parse(DateFormat.java:364)</span><br><span class="line">	at notchange.Test1.lambda$main$0(Test1.java:19)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:748)</span><br><span class="line">java.lang.NumberFormatException: multiple points</span><br><span class="line">	at sun.misc.FloatingDecimal.readJavaFormatString(FloatingDecimal.java:1890)</span><br><span class="line">	at sun.misc.FloatingDecimal.parseDouble(FloatingDecimal.java:110)</span><br><span class="line">	at java.lang.Double.parseDouble(Double.java:538)</span><br><span class="line">	at java.text.DigitList.getDouble(DigitList.java:169)</span><br><span class="line">	at java.text.DecimalFormat.parse(DecimalFormat.java:2056)</span><br><span class="line">	at java.text.SimpleDateFormat.subParse(SimpleDateFormat.java:1869)</span><br><span class="line">	at java.text.SimpleDateFormat.parse(SimpleDateFormat.java:1514)</span><br><span class="line">	at java.text.DateFormat.parse(DateFormat.java:364)</span><br><span class="line">	at notchange.Test1.lambda$main$0(Test1.java:19)</span><br><span class="line">	at java.lang.Thread.run(Thread.java:748)</span><br><span class="line">2022/03/13-01:00:11.983 [Thread-8] c.Test1 - Sat Apr 21 00:00:00 CST 1951</span><br><span class="line">2022/03/13-01:00:11.983 [Thread-9] c.Test1 - Sat Apr 21 00:00:00 CST 1951</span><br><span class="line">2022/03/13-01:00:11.983 [Thread-6] c.Test1 - Fri Aug 21 00:00:00 CST 176769542</span><br><span class="line">2022/03/13-01:00:11.983 [Thread-7] c.Test1 - Sat Mar 31 00:00:00 CST 1951</span><br><span class="line">2022/03/13-01:00:11.983 [Thread-4] c.Test1 - Fri Aug 21 00:00:00 CST 176769542</span><br><span class="line">2022/03/13-01:00:11.983 [Thread-0] c.Test1 - Fri Aug 21 00:00:00 CST 176769542</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+<h2 id="思路-同步锁"><a href="#思路-同步锁" class="headerlink" title="思路-同步锁"></a>思路-同步锁</h2><p>这样虽然能解决问题，但带来的是性能的损失，并不算好：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">SimpleDateFormat</span> <span class="variable">sdf</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">SimpleDateFormat</span>(<span class="string">&quot;yyyy-MM-dd&quot;</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">                <span class="keyword">synchronized</span> (sdf) &#123;</span><br><span class="line">                    <span class="keyword">try</span> &#123;</span><br><span class="line">                        log.debug(<span class="string">&quot;&#123;&#125;&quot;</span>,sdf.parse(<span class="string">&quot;1951-04-21&quot;</span>));</span><br><span class="line">                    &#125; <span class="keyword">catch</span> (ParseException e) &#123;</span><br><span class="line">                        e.printStackTrace();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;).start();</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<h2 id="思路-不可变"><a href="#思路-不可变" class="headerlink" title="思路-不可变"></a>思路-不可变</h2><p>如果对象在一个不能修改其内部状态（属性），那么它就是线程安全的，因为不存在并发修改，这样的对象在java中有很多，例如java8之后，提供了一个新的日期格式化类：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">DateTimeFormatter</span> <span class="variable">dtf</span> <span class="operator">=</span> DateTimeFormatter.ofPattern(<span class="string">&quot;yyyy-MM-dd&quot;</span>);</span><br><span class="line">      <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">10</span>; i++) &#123;</span><br><span class="line">          <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">              log.debug(<span class="string">&quot;&#123;&#125;&quot;</span>, dtf.parse(<span class="string">&quot;1951-04-21&quot;</span>));</span><br><span class="line">          &#125;).start();</span><br><span class="line">      &#125;</span><br></pre></td></tr></table></figure>
+<p>可以看DateTimeFormatter</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">* @implSpec</span><br><span class="line">* This class is immutable and thread-safe.</span><br></pre></td></tr></table></figure>
+
+<h1 id="2、不可变设计"><a href="#2、不可变设计" class="headerlink" title="2、不可变设计"></a>2、不可变设计</h1><p>另一个大家更为熟悉的String类也是不可变的，以它为例，说明一下不可变的要素</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">final</span> <span class="keyword">class</span> <span class="title class_">String</span></span><br><span class="line"> 	<span class="keyword">implements</span> <span class="title class_">java</span>.io.Serializable, Comparable&lt;String&gt;,  CharSequence &#123;</span><br><span class="line"> 	<span class="comment">/** The value is used for character storage. */</span></span><br><span class="line"> 	<span class="keyword">private</span> <span class="keyword">final</span> <span class="type">char</span> value[];</span><br><span class="line"> 	<span class="comment">/** Cache the hash code for the string */</span></span><br><span class="line"> 	<span class="keyword">private</span> <span class="type">int</span> hash; <span class="comment">// Default to 0</span></span><br><span class="line"> </span><br><span class="line"> 	<span class="comment">// ...</span></span><br><span class="line"> </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h2 id="final的使用"><a href="#final的使用" class="headerlink" title="final的使用"></a>final的使用</h2><p>发现该类，类中所有属性都是final的</p>
+<ul>
+<li>属性用final修饰保证了该属性是只读的，不能修改</li>
+<li>类用final修饰保证了该类中的方法不能覆盖，防止子类无意间破坏不可变性</li>
+</ul>
+<h2 id="保护性拷贝"><a href="#保护性拷贝" class="headerlink" title="保护性拷贝"></a>保护性拷贝</h2><p>但有同学会说，使用字符串时，也有一些跟修改相关的方法啊，比如substring等，下面就看一看这些方法是如何实现的</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> String <span class="title function_">substring</span><span class="params">(<span class="type">int</span> beginIndex)</span> &#123;</span><br><span class="line"> 	<span class="keyword">if</span> (beginIndex &lt; <span class="number">0</span>) &#123;</span><br><span class="line"> 		<span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">StringIndexOutOfBoundsException</span>(beginIndex);</span><br><span class="line"> 	&#125;</span><br><span class="line"> 	<span class="type">int</span> <span class="variable">subLen</span> <span class="operator">=</span> value.length - beginIndex;</span><br><span class="line"> 	<span class="keyword">if</span> (subLen &lt; <span class="number">0</span>) &#123;</span><br><span class="line"> 		<span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">StringIndexOutOfBoundsException</span>(subLen);</span><br><span class="line"> 	&#125;</span><br><span class="line"> 	<span class="keyword">return</span> (beginIndex == <span class="number">0</span>) ? <span class="built_in">this</span> : <span class="keyword">new</span> <span class="title class_">String</span>(value, beginIndex, subLen);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>发现其内部是调用String的构造方法创建了一个新字符串，再进入这个构造看看啊，是否对final char[] value做出了修改</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="title function_">String</span><span class="params">(<span class="type">char</span> value[], <span class="type">int</span> offset, <span class="type">int</span> count)</span> &#123;</span><br><span class="line"> <span class="keyword">if</span> (offset &lt; <span class="number">0</span>) &#123;</span><br><span class="line"> <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">StringIndexOutOfBoundsException</span>(offset);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">if</span> (count &lt;= <span class="number">0</span>) &#123;</span><br><span class="line"> <span class="keyword">if</span> (count &lt; <span class="number">0</span>) &#123;</span><br><span class="line"> <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">StringIndexOutOfBoundsException</span>(count);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">if</span> (offset &lt;= value.length) &#123;</span><br><span class="line"> <span class="built_in">this</span>.value = <span class="string">&quot;&quot;</span>.value;</span><br><span class="line"> <span class="keyword">return</span>;</span><br><span class="line"> &#125;</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="keyword">if</span> (offset &gt; value.length - count) &#123;</span><br><span class="line"> <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">StringIndexOutOfBoundsException</span>(offset + count);</span><br><span class="line"> &#125;</span><br><span class="line"> <span class="built_in">this</span>.value = Arrays.copyOfRange(value, offset, offset+count);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>结果发现也没用，构造新字符串对象时，会生成新的char[] value，对其内容进行复制。这种通过创建副本对象来避免共享的手段称之为【保护性拷贝（defensive copy）】</p>
+<h1 id="3、模式之享元"><a href="#3、模式之享元" class="headerlink" title="3、模式之享元"></a>3、模式之享元</h1><h2 id="1、简介"><a href="#1、简介" class="headerlink" title="1、简介"></a>1、简介</h2><p><strong>定义</strong> 英文名称：Flyweight pattern，当需要重用数量有线的同一类对象映射时</p>
+<blockquote>
+<p>wikipedia： A flyweight is an object that minimizes memory usage by sharing as much data as<br>possible with other similar objects</p>
+</blockquote>
+<p><strong>出自</strong> “Gang of Four”design patterns<br><strong>归类</strong> Structual patterns</p>
+<h2 id="2、体现"><a href="#2、体现" class="headerlink" title="2、体现"></a>2、体现</h2><h3 id="2-1、包装类"><a href="#2-1、包装类" class="headerlink" title="2.1、包装类"></a>2.1、包装类</h3><p>在JDK中Boolean，Byte，Short，Integer，Long，Character等包装类提供了valueOf方法，例如Long的valueOf会缓存-128~127之间的Long对象，在这个范围之间会重用对象，大于这个范围，才会新建Long对象：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">static</span> Long <span class="title function_">valueOf</span><span class="params">(<span class="type">long</span> l)</span> &#123;</span><br><span class="line"> 	<span class="keyword">final</span> <span class="type">int</span> <span class="variable">offset</span> <span class="operator">=</span> <span class="number">128</span>;</span><br><span class="line"> 	<span class="keyword">if</span> (l &gt;= -<span class="number">128</span> &amp;&amp; l &lt;= <span class="number">127</span>) &#123; <span class="comment">// will cache</span></span><br><span class="line"> 		<span class="keyword">return</span> LongCache.cache[(<span class="type">int</span>)l + offset];</span><br><span class="line"> 	&#125;</span><br><span class="line"> 	<span class="keyword">return</span> <span class="keyword">new</span> <span class="title class_">Long</span>(l);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>注意</strong></p>
+<ul>
+<li>Byte、Short、Long缓存的范围都是-128~127</li>
+<li>Character缓存的范围是0~127</li>
+<li>Integer的默认范围是-128~127</li>
+<li>最小值不能变</li>
+<li>但最大值可以通过调整虚拟机参数<code>-Djava.lang.IntegerCache.high</code>来改变</li>
+<li>Boolean缓存了TRUE和FALSE</li>
+</ul>
+</blockquote>
+<h3 id="2-2-String-串池"><a href="#2-2-String-串池" class="headerlink" title="2.2 String 串池"></a>2.2 String 串池</h3><h3 id="2-3-Bigdecimal-BigInteger"><a href="#2-3-Bigdecimal-BigInteger" class="headerlink" title="2.3 Bigdecimal BigInteger"></a>2.3 Bigdecimal BigInteger</h3><h2 id="3、DIY"><a href="#3、DIY" class="headerlink" title="3、DIY"></a>3、DIY</h2><p>例如：一个线上商城应用，QPS达到数千，如果每次都重新传建和关闭数据库连接，性能会受到极大影响。这是预先创建好一批连接，放入连接池。一次请求到达后，从连接池获取连接，使用完毕后再还给连接池，这样既节约了连接的创建和关闭时间，也实现了连接的重用，不至于让庞大的连接数压垮数据库。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">@Slf4j(topic = &quot;c.Pool&quot;)</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">Pool</span> &#123;</span><br><span class="line">    <span class="comment">// 1.连接池大小</span></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> <span class="type">int</span> poolSize;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 2.连接对象数组</span></span><br><span class="line">    <span class="keyword">private</span> Connection[] connections;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 连接状态数组 0表示空闲，1表示繁忙</span></span><br><span class="line">    <span class="keyword">private</span> AtomicIntegerArray states;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 4.构造方法初始化</span></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Pool</span><span class="params">(<span class="type">int</span> poolSize)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.poolSize = poolSize;</span><br><span class="line">        <span class="built_in">this</span>.connections = <span class="keyword">new</span> <span class="title class_">Connection</span>[poolSize];</span><br><span class="line">        <span class="built_in">this</span>.states = <span class="keyword">new</span> <span class="title class_">AtomicIntegerArray</span>(poolSize);</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; poolSize; i++) &#123;</span><br><span class="line">            connections[i] = <span class="keyword">new</span> <span class="title class_">MockConnection</span>(<span class="string">&quot;连接&quot;</span> + (i + <span class="number">1</span>));</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 5.借连接</span></span><br><span class="line">    <span class="keyword">public</span> Connection <span class="title function_">borrow</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">            <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; poolSize; i++) &#123;</span><br><span class="line">                <span class="keyword">if</span> (states.get(i) == <span class="number">0</span>) &#123;</span><br><span class="line">                    <span class="keyword">if</span> (states.compareAndSet(i, <span class="number">0</span>, <span class="number">1</span>)) &#123;</span><br><span class="line">                        log.debug(<span class="string">&quot;borrow &#123;&#125;&quot;</span>, connections[i]);</span><br><span class="line">                        <span class="keyword">return</span> connections[i];</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">            <span class="comment">// 如果没有空闲，进入锁等待</span></span><br><span class="line">            <span class="keyword">synchronized</span> (<span class="built_in">this</span>) &#123;</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    <span class="built_in">this</span>.wait();</span><br><span class="line">                &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="comment">// 6.归还连接</span></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">free</span><span class="params">(Connection conn)</span> &#123;</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; poolSize; i++) &#123;</span><br><span class="line">            <span class="keyword">if</span> (conn == connections[i]) &#123;</span><br><span class="line">                states.set(i, <span class="number">0</span>);</span><br><span class="line">                log.debug(<span class="string">&quot;free &#123;&#125;&quot;</span>, conn);</span><br><span class="line">                <span class="keyword">synchronized</span> (<span class="built_in">this</span>) &#123;</span><br><span class="line">                    <span class="built_in">this</span>.notifyAll();</span><br><span class="line">                &#125;</span><br><span class="line">                <span class="keyword">break</span>;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">MockConnection</span> <span class="keyword">implements</span> <span class="title class_">Connection</span> &#123;</span><br><span class="line">    String name;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">MockConnection</span><span class="params">(String name)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.name = name;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;MockConnection&#123;&quot;</span> +</span><br><span class="line">                <span class="string">&quot;name=&#x27;&quot;</span> + name + <span class="string">&#x27;\&#x27;&#x27;</span> +</span><br><span class="line">                <span class="string">&#x27;&#125;&#x27;</span>;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="keyword">interface</span> <span class="title class_">Connection</span> &#123;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Pool</span> <span class="variable">pool</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Pool</span>(<span class="number">2</span>);</span><br><span class="line">        <span class="keyword">for</span> (<span class="type">int</span> <span class="variable">i</span> <span class="operator">=</span> <span class="number">0</span>; i &lt; <span class="number">5</span>; i++) &#123;</span><br><span class="line">            <span class="keyword">new</span> <span class="title class_">Thread</span>(() -&gt; &#123;</span><br><span class="line">                <span class="type">Connection</span> <span class="variable">connection</span> <span class="operator">=</span> pool.borrow();</span><br><span class="line">                <span class="keyword">try</span> &#123;</span><br><span class="line">                    Thread.sleep(<span class="number">1000</span>);</span><br><span class="line">                &#125; <span class="keyword">catch</span> (InterruptedException e) &#123;</span><br><span class="line">                    e.printStackTrace();</span><br><span class="line">                &#125;</span><br><span class="line">                pool.free(connection);</span><br><span class="line">            &#125;).start();</span><br><span class="line">        &#125;</span><br></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">2022/03/13-01:46:50.896 [Thread-1] c.Pool - borrow MockConnection&#123;name=&#x27;连接2&#x27;&#125;</span><br><span class="line">2022/03/13-01:46:50.896 [Thread-0] c.Pool - borrow MockConnection&#123;name=&#x27;连接1&#x27;&#125;</span><br><span class="line">2022/03/13-01:46:51.903 [Thread-1] c.Pool - free MockConnection&#123;name=&#x27;连接2&#x27;&#125;</span><br><span class="line">2022/03/13-01:46:51.903 [Thread-0] c.Pool - free MockConnection&#123;name=&#x27;连接1&#x27;&#125;</span><br><span class="line">2022/03/13-01:46:51.903 [Thread-4] c.Pool - borrow MockConnection&#123;name=&#x27;连接1&#x27;&#125;</span><br><span class="line">2022/03/13-01:46:51.903 [Thread-3] c.Pool - borrow MockConnection&#123;name=&#x27;连接2&#x27;&#125;</span><br><span class="line">2022/03/13-01:46:52.908 [Thread-4] c.Pool - free MockConnection&#123;name=&#x27;连接1&#x27;&#125;</span><br><span class="line">2022/03/13-01:46:52.908 [Thread-3] c.Pool - free MockConnection&#123;name=&#x27;连接2&#x27;&#125;</span><br><span class="line">2022/03/13-01:46:52.908 [Thread-2] c.Pool - borrow MockConnection&#123;name=&#x27;连接1&#x27;&#125;</span><br><span class="line">2022/03/13-01:46:53.918 [Thread-2] c.Pool - free MockConnection&#123;name=&#x27;连接1&#x27;&#125;</span><br></pre></td></tr></table></figure>
+<p>以上实现没有考虑：</p>
+<ul>
+<li>连接池的动态增长与收缩</li>
+<li>连接保活（可用性检测）</li>
+<li>等待超时处理</li>
+<li>分布式hash<br>对于关系型数据库，有比较成熟的连接池实现，例如c3p0，druid等 ，对于更通用的对象池，可以考虑apache commons pool，例如redis连接池可以参考jedis中关于连接池的实现</li>
+</ul>
+<h1 id="原理之final"><a href="#原理之final" class="headerlink" title="原理之final"></a>原理之final</h1><h2 id="1、设置final变量的原理"><a href="#1、设置final变量的原理" class="headerlink" title="1、设置final变量的原理"></a>1、设置final变量的原理</h2><p>理解了volatile原理，再对比final的实现就比较简单了</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> vlass TestFinal&#123;</span><br><span class="line">	<span class="keyword">final</span> <span class="type">int</span> <span class="variable">a</span> <span class="operator">=</span> <span class="number">20</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>字节码</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">0: aload_0</span><br><span class="line">1: invokespecial #1 // Method java/lang/Object.&quot;&lt;init&gt;&quot;:()V</span><br><span class="line">4: aload_0</span><br><span class="line">5: bipush 20</span><br><span class="line">7: putfield #2 // Field a:I</span><br><span class="line"> &lt;-- 写屏障</span><br><span class="line">10: return</span><br></pre></td></tr></table></figure>
+<p>发现final变量的赋值也会通过putfield指令完成，同样在这条指令之后也会加入写屏障，保证其他线程读到它的值时不会出现0的情况</p>
+<h2 id="2、获取final变量的原理"><a href="#2、获取final变量的原理" class="headerlink" title="2、获取final变量的原理"></a>2、获取final变量的原理</h2><h1 id="5、无状态"><a href="#5、无状态" class="headerlink" title="5、无状态"></a>5、无状态</h1><p>在web学习阶段时，设计Servlet时为了保证其线程安全，都会有这样的建议，不要为Servlet设置成员变量，这种没有任何成员变量的类是线程安全的</p>
+<blockquote>
+<p>因为成员变量保存的数据也可以称为状态信息，因此没有成员变量就称之为【无状态】</p>
+</blockquote>
+<h1 id="本章小结"><a href="#本章小结" class="headerlink" title="本章小结"></a>本章小结</h1><ul>
+<li>不可变类使用</li>
+<li>不可变类设计</li>
+<li>原理方面<ul>
+<li>final</li>
+</ul>
+</li>
+<li>模式方面<ul>
+<li>享元模式</li>
+</ul>
+</li>
+</ul>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="https://aster-xu-lab.github.io/2022/03/13/123445654/" data-id="cuidpWpGNv-j0LbNfrzTD5Lwf" data-title="6、共享模型之不可变" class="article-share-link"><span class="fa fa-share">分享</span></a>
+      
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+    <a href="/2022/03/23/123672793/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">前一篇</strong>
+      <div class="article-nav-title">
+        
+          7、共享模型之工具 - 1、自定义线程池
+        
+      </div>
+    </a>
+  
+  
+    <a href="/2022/03/12/123391555/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">后一篇</strong>
+      <div class="article-nav-title">5、共享模式之无锁(下）</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">分类</h3>
+    <div class="widget">
+      <ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/">Java并发编程</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%AE%8B%E7%BA%A2%E5%BA%B7%E8%AE%B2JVM%E6%A2%B3%E7%90%86/">宋红康讲JVM梳理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6/">自学</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B0%8F%E9%A9%AC%E5%93%A5%E8%AF%BE%E7%BA%B2/">自学,小马哥课纲</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%87%AA%E5%AD%A6-%E5%B7%A5%E4%BD%9C%E6%95%B4%E7%90%86/">自学,工作整理</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">设计模式</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%B8%A9%E5%9D%91/">踩坑</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">归档</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2026/07/">七月 2026</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2024/03/">三月 2024</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/05/">五月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/03/">三月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2022/02/">二月 2022</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/11/">十一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/09/">九月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2021/01/">一月 2021</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">九月 2020</a></li><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/06/">六月 2020</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">最新文章</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2026/07/02/hello-world/">Hello World</a>
+          </li>
+        
+          <li>
+            <a href="/2024/03/29/137139580/">排序算法：冒泡排序</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791648/">线程安全集合类概述</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124791593/">JUC-CyclicBarrier</a>
+          </li>
+        
+          <li>
+            <a href="/2022/05/16/124788567/">JUC-CountdownLatch</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      
+      &copy; 2026 AsterXu<br>
+      Powered by <a href="https://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+
+<script src="/js/jquery-3.6.4.min.js"></script>
+
+
+
+  
+<script src="/fancybox/jquery.fancybox.min.js"></script>
+
+
+
+
+<script src="/js/script.js"></script>
+
+
+
+
+
+  </div>
+</body>
+</html>
