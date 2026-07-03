@@ -1,171 +1,418 @@
-<!DOCTYPE html><html lang="zh-CN" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>堆 | AsterXu Lab</title><meta name="author" content="AsterXu"><meta name="copyright" content="AsterXu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="堆的核心概念堆针对一个JVM进程来说是唯一的，也就是一个进程只有一个JVM，但是进程包含多个线程，他们是共享同一堆空间的。一个JVM实例只存在一个堆内存，堆也是Java内存管理的核心区域。Java堆区在JVM启动的时候即被创建，其空间大小也就确定了。是JVM管理的最大一块内存空间。  堆内存的大小是可以调节的。  《Java虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视">
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="堆的核心概念堆针对一个JVM进程来说是唯一的，也就是一个进程只有一个JVM，但是进程包含多个线程，他们是共享同一堆空间的。一个JVM实例只存在一个堆内存，堆也是Java内存管理的核心区域。Java堆区在JVM启动的时候即被创建，其空间大小也就确定了。是JVM管理的最大一块内存空间。  堆内存的大小是可以调节的。  《Java虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视">
 <meta property="og:type" content="article">
 <meta property="og:title" content="堆">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/01/04/112177628/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="堆的核心概念堆针对一个JVM进程来说是唯一的，也就是一个进程只有一个JVM，但是进程包含多个线程，他们是共享同一堆空间的。一个JVM实例只存在一个堆内存，堆也是Java内存管理的核心区域。Java堆区在JVM启动的时候即被创建，其空间大小也就确定了。是JVM管理的最大一块内存空间。  堆内存的大小是可以调节的。  《Java虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/butterfly-icon.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9b1435f2df9f207579d66aa99b1a4221.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2666bde7d7f67366dcb3d3114c2225ab.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e8dd0604ac6323b8779bcc8ad71cb083.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/03b34abcb406bafc76ea232400cc6de3.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e717a15dce0192838df8ee13d287413f.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/aa713070b02421655b922e2bb76c176a.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57e6f1b44e7489c0e0200c5d0a6006de.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e2921ef68c3736074c746ff0547d5e35.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1eb8c396f776fcf199ddc6149c3db4e4.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8531e8d3d4285356ac478b9dda598428.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f34d7d0a25c58da602877a679b7d5467.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4dbd5824aa6f75c2267b00741f574e16.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b01ffa2f60b92d2b2b2415a411406867.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3f4a219041d3741b9131c71050533487.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1a82f2128d3af495a6fe24ca86c77b5d.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1d24762d1336641460d1e451859e3aae.gif#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5834bf7cb3c53ae526b5780e1dd3d53d.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/473a901be652b2ed083a3add3a90782f.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c79736727f8f98e7ecc34c26a045d30.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2be4d7828e5c01481fd6c8c1e9b8b3bc.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ddf3dedbad7ff5f3d58c8b68439e213.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/27eb1d00db54da0124b853253b61af94.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/acb456d3b384b2a43e57ba5bff04f115.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/dd8c118335019fa574d769331892c9a9.png">
 <meta property="article:published_time" content="2021-01-04T09:09:43.000Z">
 <meta property="article:modified_time" content="2026-07-03T02:56:53.179Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/butterfly-icon.png"><script type="application/ld+json">{
-  "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  "headline": "堆",
-  "url": "https://aster-xu-lab.github.io/2021/01/04/112177628/",
-  "image": "https://aster-xu-lab.github.io/img/butterfly-icon.png",
-  "datePublished": "2021-01-04T09:09:43.000Z",
-  "dateModified": "2026-07-03T02:56:53.179Z",
-  "author": [
-    {
-      "@type": "Person",
-      "name": "AsterXu",
-      "url": "https://aster-xu-lab.github.io"
-    }
-  ]
-}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://aster-xu-lab.github.io/2021/01/04/112177628/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.5"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.2.0/css/all.min.css"><script>
-    (() => {
-      
-    const saveToLocal = {
-      set: (key, value, ttl) => {
-        if (!ttl) return
-        const expiry = Date.now() + ttl * 86400000
-        localStorage.setItem(key, JSON.stringify({ value, expiry }))
-      },
-      get: key => {
-        const itemStr = localStorage.getItem(key)
-        if (!itemStr) return undefined
-        const { value, expiry } = JSON.parse(itemStr)
-        if (Date.now() > expiry) {
-          localStorage.removeItem(key)
-          return undefined
-        }
-        return value
-      }
-    }
-
-    window.btf = {
-      saveToLocal,
-      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
-        const script = document.createElement('script')
-        script.src = url
-        script.async = true
-        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
-        script.onload = script.onreadystatechange = () => {
-          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
-        }
-        script.onerror = reject
-        document.head.appendChild(script)
-      }),
-      getCSS: (url, id) => new Promise((resolve, reject) => {
-        const link = document.createElement('link')
-        link.rel = 'stylesheet'
-        link.href = url
-        if (id) link.id = id
-        link.onload = link.onreadystatechange = () => {
-          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
-        }
-        link.onerror = reject
-        document.head.appendChild(link)
-      }),
-      addGlobalFn: (key, fn, name = false, parent = window) => {
-        if (!false && key.startsWith('pjax')) return
-        const globalFn = parent.globalFn || {}
-        globalFn[key] = globalFn[key] || {}
-        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
-        parent.globalFn = globalFn
-      }
-    }
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9b1435f2df9f207579d66aa99b1a4221.png">
   
-      
-      const activateDarkMode = () => {
-        document.documentElement.setAttribute('data-theme', 'dark')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
-        }
-      }
-      const activateLightMode = () => {
-        document.documentElement.setAttribute('data-theme', 'light')
-        if (document.querySelector('meta[name="theme-color"]') !== null) {
-          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
-        }
-      }
+  
+  
+  <title>堆 - AsterXu Lab</title>
 
-      btf.activateDarkMode = activateDarkMode
-      btf.activateLightMode = activateLightMode
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
-      const theme = saveToLocal.get('theme')
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
     
-          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
         
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="堆"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2021-01-04 17:09" pubdate>
+          2021年1月4日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          16k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          136 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
       
-      const asideStatus = saveToLocal.get('aside-status')
-      if (asideStatus !== undefined) {
-        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
-      }
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
     
       
-    const detectApple = () => {
-      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
-        document.documentElement.classList.add('apple')
-      }
-    }
-    detectApple()
-  
-    })()
-  </script><script>const GLOBAL_CONFIG = {
-  root: '/',
-  algolia: undefined,
-  localSearch: undefined,
-  translate: undefined,
-  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
-  copy: {
-    success: '复制成功',
-    error: '复制失败',
-    noSupport: '浏览器不支持'
-  },
-  relativeDate: {
-    homepage: false,
-    post: false
-  },
-  runtime: '',
-  dateSuffix: {
-    just: '刚刚',
-    min: '分钟前',
-    hour: '小时前',
-    day: '天前',
-    month: '个月前'
-  },
-  copyright: undefined,
-  lightbox: 'null',
-  Snackbar: undefined,
-  infinitegrid: {
-    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.13.0/dist/infinitegrid.min.js',
-    buttonText: '加载更多'
-  },
-  isPhotoFigcaption: false,
-  islazyloadPlugin: false,
-  isAnchor: false,
-  percent: {
-    toc: true,
-    rightside: false,
-  },
-  autoDarkmode: false
-}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
-  title: '堆',
-  isHighlightShrink: false,
-  isToc: true,
-  pageType: 'post'
-}</script><meta name="generator" content="Hexo 8.1.2"></head><body><div class="post" id="body-wrap"><header class="post-bg" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">AsterXu Lab</span></a><a class="nav-page-title" href="/"><span class="site-name">堆</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  返回首页</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">堆</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">发表于</span><time class="post-meta-date-created" datetime="2021-01-04T09:09:43.000Z" title="发表于 2021-01-04 17:09:43">2021-01-04</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">更新于</span><time class="post-meta-date-updated" datetime="2026-07-03T02:56:53.179Z" title="更新于 2026-07-03 10:56:53">2026-07-03</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E5%AE%8B%E7%BA%A2%E5%BA%B7%E8%AE%B2JVM%E6%A2%B3%E7%90%86/">宋红康讲JVM梳理</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">浏览量:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><h1 id="堆的核心概念"><a href="#堆的核心概念" class="headerlink" title="堆的核心概念"></a>堆的核心概念</h1><p>堆针对一个JVM进程来说是唯一的，也就是一个进程只有一个JVM，但是进程包含多个线程，他们是共享同一堆空间的。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9b1435f2df9f207579d66aa99b1a4221.png" alt="在这里插入图片描述"><br>一个JVM实例只存在一个堆内存，堆也是Java内存管理的核心区域。<br>Java堆区在JVM启动的时候即被创建，其空间大小也就确定了。是JVM管理的最大一块内存空间。</p>
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">堆</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="堆的核心概念"><a href="#堆的核心概念" class="headerlink" title="堆的核心概念"></a>堆的核心概念</h1><p>堆针对一个JVM进程来说是唯一的，也就是一个进程只有一个JVM，但是进程包含多个线程，他们是共享同一堆空间的。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9b1435f2df9f207579d66aa99b1a4221.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>一个JVM实例只存在一个堆内存，堆也是Java内存管理的核心区域。<br>Java堆区在JVM启动的时候即被创建，其空间大小也就确定了。是JVM管理的最大一块内存空间。</p>
 <ul>
 <li>堆内存的大小是可以调节的。</li>
 </ul>
 <p>《Java虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视为连续的。</p>
 <p>所有的线程共享Java堆，在这里还可以划分线程私有的缓冲区（Thread Local Allocation Buffer，TLAB）。</p>
-<p>下图就是使用：Java VisualVM查看堆空间的内容，通过 jdk bin提供的插件<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2666bde7d7f67366dcb3d3114c2225ab.png" alt="在这里插入图片描述"><br>《Java虚拟机规范》中对Java堆的描述是：所有的对象实例以及数组都应当在运行时分配在堆上。（The heap is the run-time data area from which memory for all class instances and arrays is allocated）</p>
+<p>下图就是使用：Java VisualVM查看堆空间的内容，通过 jdk bin提供的插件<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2666bde7d7f67366dcb3d3114c2225ab.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>《Java虚拟机规范》中对Java堆的描述是：所有的对象实例以及数组都应当在运行时分配在堆上。（The heap is the run-time data area from which memory for all class instances and arrays is allocated）</p>
 <p>我要说的是：“几乎”所有的对象实例都在这里分配内存。—从实际使用角度看的。</p>
 <ul>
 <li>因为还有一些对象是在栈上分配的</li>
@@ -176,7 +423,7 @@
 <li>也就是触发了GC的时候，才会进行回收</li>
 <li>如果堆中对象马上被回收，那么用户线程就会收到影响，因为有stop the word</li>
 </ul>
-<p>堆，是GC（Garbage Collection，垃圾收集器）执行垃圾回收的重点区域。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e8dd0604ac6323b8779bcc8ad71cb083.png" alt="在这里插入图片描述"></p>
+<p>堆，是GC（Garbage Collection，垃圾收集器）执行垃圾回收的重点区域。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e8dd0604ac6323b8779bcc8ad71cb083.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h2 id="堆内存细分"><a href="#堆内存细分" class="headerlink" title="堆内存细分"></a>堆内存细分</h2><p>Java 7及之前堆内存逻辑上分为三部分：新生区+养老区+永久区</p>
 <ul>
 <li>Young Generation Space 新生区 Young&#x2F;New 又被划分为Eden区和Survivor区</li>
@@ -187,7 +434,7 @@
 <ul>
 <li>Young Generation Space新生区 Young&#x2F;New 又被划分为Eden区和Survivor区</li>
 <li>Tenure generation space 养老区 Old&#x2F;Tenure</li>
-<li>Meta Space 元空间 Meta<br>约定：新生区 -&gt; 新生代 -&gt; 年轻代 、 养老区 -&gt; 老年区 -&gt; 老年代、 永久区 -&gt; 永久代<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/03b34abcb406bafc76ea232400cc6de3.png" alt="在这里插入图片描述"><br>堆空间内部结构，JDK1.8之前从永久代 替换成 元空间<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e717a15dce0192838df8ee13d287413f.png" alt="在这里插入图片描述"></li>
+<li>Meta Space 元空间 Meta<br>约定：新生区 -&gt; 新生代 -&gt; 年轻代 、 养老区 -&gt; 老年区 -&gt; 老年代、 永久区 -&gt; 永久代<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/03b34abcb406bafc76ea232400cc6de3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>堆空间内部结构，JDK1.8之前从永久代 替换成 元空间<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e717a15dce0192838df8ee13d287413f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
 </ul>
 <h2 id="设置堆内存大小与OOM"><a href="#设置堆内存大小与OOM" class="headerlink" title="设置堆内存大小与OOM"></a>设置堆内存大小与OOM</h2><p>Java堆区用于存储Java对象实例，那么堆的大小在JVM启动时就已经设定好了，大家可以通过选项”-Xmx”和”-Xms”来进行设置。</p>
 <ul>
@@ -207,19 +454,19 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">-Xms:245M</span><br><span class="line">-Xmx:3614M</span><br></pre></td></tr></table></figure>
 <p>如何查看堆内存的内存分配情况</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jps  -&gt;  jstat -gc 进程id</span><br></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/aa713070b02421655b922e2bb76c176a.png" alt="在这里插入图片描述"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/aa713070b02421655b922e2bb76c176a.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-XX:+PrintGCDetails</span><br></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57e6f1b44e7489c0e0200c5d0a6006de.png" alt="在这里插入图片描述"><br><strong>OutOfMemory举例</strong></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57e6f1b44e7489c0e0200c5d0a6006de.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><strong>OutOfMemory举例</strong></p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * OOM测试</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">OOMTest</span> &#123;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> &#123;</span><br><span class="line">        List&lt;Integer&gt; list = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span>(<span class="literal">true</span>) &#123;</span><br><span class="line">            list.add(<span class="number">999999999</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>然后设置启动参数</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-Xms10m -Xmx:10m</span><br></pre></td></tr></table></figure>
-<p>运行后，就出现OOM了，那么我们可以通过 VisualVM这个工具查看具体是什么参数造成的OOM<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e2921ef68c3736074c746ff0547d5e35.png" alt="在这里插入图片描述"></p>
+<p>运行后，就出现OOM了，那么我们可以通过 VisualVM这个工具查看具体是什么参数造成的OOM<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e2921ef68c3736074c746ff0547d5e35.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h2 id="年轻代与老年代"><a href="#年轻代与老年代" class="headerlink" title="年轻代与老年代"></a>年轻代与老年代</h2><p>存储在JVM中的Java对象可以被划分为两类：</p>
 <ul>
 <li>一类是生命周期较短的瞬时对象，这类对象的创建和消亡都非常迅速，生命周期短的，及时回收即可</li>
 <li>另外一类对象的生命周期却非常长，在某些极端的情况下还能够与JVM的生命周期保持一致<br>Java堆区进一步细分的话，可以划分为年轻代（YoungGen）和老年代（oldGen）</li>
 </ul>
-<p>其中年轻代又可以划分为Eden空间、Survivor0空间和Survivor1空间（有时也叫做from区、to区）<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1eb8c396f776fcf199ddc6149c3db4e4.png" alt="在这里插入图片描述"><br>下面这参数开发中一般不会调：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8531e8d3d4285356ac478b9dda598428.png" alt="在这里插入图片描述"></p>
+<p>其中年轻代又可以划分为Eden空间、Survivor0空间和Survivor1空间（有时也叫做from区、to区）<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1eb8c396f776fcf199ddc6149c3db4e4.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>下面这参数开发中一般不会调：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8531e8d3d4285356ac478b9dda598428.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Eden：From：to -&gt; 8:1:1</span><br><span class="line">新生代：老年代 - &gt; 1 : 2</span><br></pre></td></tr></table></figure>
 <p>配置新生代与老年代在堆结构的占比。</p>
 <ul>
@@ -228,7 +475,7 @@
 <li><p>可以修改-XX:NewRatio&#x3D;4，表示新生代占1，老年代占4，新生代占整个堆的1&#x2F;5</p>
 </li>
 </ul>
-<p>当发现在整个项目中，生命周期长的对象偏多，那么就可以通过调整 老年代的大小，来进行调优。<br>在HotSpot中，Eden空间和另外两个survivor空间缺省所占的比例是8：1：1当然开发人员可以通过选项“-xx:SurvivorRatio”调整这个空间比例。比如-xx:SurvivorRatio&#x3D;8。<br>几乎所有的Java对象都是在Eden区被new出来的。绝大部分的Java对象的销毁都在新生代进行了。（有些大的对象在Eden区无法存储时候，将直接进入老年代）。<br>IBM公司的专门研究表明，新生代中80%的对象都是“朝生夕死”的。<br>可以使用选项”-Xmn”设置新生代最大内存大小<br>这个参数一般使用默认值就可以了。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f34d7d0a25c58da602877a679b7d5467.png" alt="在这里插入图片描述"></p>
+<p>当发现在整个项目中，生命周期长的对象偏多，那么就可以通过调整 老年代的大小，来进行调优。<br>在HotSpot中，Eden空间和另外两个survivor空间缺省所占的比例是8：1：1当然开发人员可以通过选项“-xx:SurvivorRatio”调整这个空间比例。比如-xx:SurvivorRatio&#x3D;8。<br>几乎所有的Java对象都是在Eden区被new出来的。绝大部分的Java对象的销毁都在新生代进行了。（有些大的对象在Eden区无法存储时候，将直接进入老年代）。<br>IBM公司的专门研究表明，新生代中80%的对象都是“朝生夕死”的。<br>可以使用选项”-Xmn”设置新生代最大内存大小<br>这个参数一般使用默认值就可以了。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f34d7d0a25c58da602877a679b7d5467.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h1 id="图解对象分配过程"><a href="#图解对象分配过程" class="headerlink" title="图解对象分配过程"></a>图解对象分配过程</h1><h2 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h2><p>为新对象分配内存是一件非常严谨和复杂的任务，JVM的设计者们不仅需要考虑内存如何分配、在哪里分配等问题，并且由于内存分配算法与内存回收算法密切相关，所以还需要考虑GC执行完内存回收后是否会在内存空间中产生内存碎片。</p>
 <ul>
 <li>new的对象先放伊甸园区。此区有大小限制。</li>
@@ -240,19 +487,19 @@
 <li>在养老区，相对悠闲。当养老区内存不足时，再次触发GC：Major GC，进行养老区的内存清理</li>
 <li>若养老区执行了Major GC之后，发现依然无法进行对象的保存，就会产生OOM异常。<br>可以设置参数：-Xx:MaxTenuringThreshold&#x3D; N进行设置</li>
 </ul>
-<h3 id="图解过程"><a href="#图解过程" class="headerlink" title="图解过程"></a>图解过程</h3><p>我们创建的对象，一般都是存放在Eden区的，当我们Eden区满了后，就会触发GC操作，一般被称为 YGC &#x2F; Minor GC操作<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4dbd5824aa6f75c2267b00741f574e16.png" alt="在这里插入图片描述"><br>当我们进行一次垃圾收集后，红色的将会被回收，而绿色的还会被占用着，存放在S0(Survivor From)区。同时我们给每个对象设置了一个年龄计数器，一次回收后就是1。</p>
-<p>同时Eden区继续存放对象，当Eden区再次存满的时候，又会触发一个MinorGC操作，此时GC将会把 Eden和Survivor From中的对象 进行一次收集，把存活的对象放到 Survivor To区，同时让年龄 + 1<img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b01ffa2f60b92d2b2b2415a411406867.png" alt="在这里插入图片描述"><br>我们继续不断的进行对象生成 和 垃圾回收，当Survivor中的对象的年龄达到15的时候，将会触发一次 Promotion晋升的操作，也就是将年轻代中的对象 晋升到 老年代中<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3f4a219041d3741b9131c71050533487.png" alt="在这里插入图片描述"><br><strong>思考：幸存区区满了后？</strong></p>
+<h3 id="图解过程"><a href="#图解过程" class="headerlink" title="图解过程"></a>图解过程</h3><p>我们创建的对象，一般都是存放在Eden区的，当我们Eden区满了后，就会触发GC操作，一般被称为 YGC &#x2F; Minor GC操作<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4dbd5824aa6f75c2267b00741f574e16.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>当我们进行一次垃圾收集后，红色的将会被回收，而绿色的还会被占用着，存放在S0(Survivor From)区。同时我们给每个对象设置了一个年龄计数器，一次回收后就是1。</p>
+<p>同时Eden区继续存放对象，当Eden区再次存满的时候，又会触发一个MinorGC操作，此时GC将会把 Eden和Survivor From中的对象 进行一次收集，把存活的对象放到 Survivor To区，同时让年龄 + 1<img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b01ffa2f60b92d2b2b2415a411406867.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>我们继续不断的进行对象生成 和 垃圾回收，当Survivor中的对象的年龄达到15的时候，将会触发一次 Promotion晋升的操作，也就是将年轻代中的对象 晋升到 老年代中<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3f4a219041d3741b9131c71050533487.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><strong>思考：幸存区区满了后？</strong></p>
 <p>特别注意，在Eden区满了的时候，才会触发MinorGC，而幸存者区满了后，不会触发MinorGC操作</p>
 <p>如果Survivor区满了后，将会触发一些特殊的规则，也就是可能直接晋升老年代</p>
 <p>举例：以当兵为例，正常人的晋升可能是 ： 新兵 -&gt; 班长 -&gt; 排长 -&gt; 连长</p>
 <p>但是也有可能有些人因为做了非常大的贡献，直接从 新兵 -&gt; 排长</p>
-<p><strong>对象分配的特殊情况</strong><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1a82f2128d3af495a6fe24ca86c77b5d.png" alt="在这里插入图片描述"></p>
+<p><strong>对象分配的特殊情况</strong><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1a82f2128d3af495a6fe24ca86c77b5d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h3 id="代码演示对象分配过程"><a href="#代码演示对象分配过程" class="headerlink" title="代码演示对象分配过程"></a>代码演示对象分配过程</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * 代码演示对象创建过程</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">HeapInstanceTest</span> &#123;</span><br><span class="line">    <span class="type">byte</span> [] buffer = <span class="keyword">new</span> <span class="title class_">byte</span>[<span class="keyword">new</span> <span class="title class_">Random</span>().nextInt(<span class="number">1024</span> * <span class="number">200</span>)];</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title function_">main</span><span class="params">(String[] args)</span> <span class="keyword">throws</span> InterruptedException &#123;</span><br><span class="line">        ArrayList&lt;HeapInstanceTest&gt; list = <span class="keyword">new</span> <span class="title class_">ArrayList</span>&lt;&gt;();</span><br><span class="line">        <span class="keyword">while</span> (<span class="literal">true</span>) &#123;</span><br><span class="line">            list.add(<span class="keyword">new</span> <span class="title class_">HeapInstanceTest</span>());</span><br><span class="line">            Thread.sleep(<span class="number">10</span>);</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>然后设置JVM参数</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-Xms600m -Xmx600m</span><br></pre></td></tr></table></figure>
 <p>然后cmd输入下面命令，打开VisualVM图形化界面</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">jvisualvm</span><br></pre></td></tr></table></figure>
-<p>然后通过执行上面代码，通过VisualGC进行动态化查看<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1d24762d1336641460d1e451859e3aae.gif#pic_center" alt="在这里插入图片描述"><br>最终，在老年代和新生代都满了，就出现OOM</p>
+<p>然后通过执行上面代码，通过VisualGC进行动态化查看<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1d24762d1336641460d1e451859e3aae.gif#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>最终，在老年代和新生代都满了，就出现OOM</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Exception in thread &quot;main&quot; java.lang.OutOfMemoryError: Java heap space</span><br><span class="line">	at com.atguigu.java.chapter08.HeapInstanceTest.&lt;init&gt;(HeapInstanceTest.java:13)</span><br><span class="line">	at com.atguigu.java.chapter08.HeapInstanceTest.main(HeapInstanceTest.java:17)</span><br></pre></td></tr></table></figure>
 <h1 id="常用的调优工具"><a href="#常用的调优工具" class="headerlink" title="常用的调优工具"></a>常用的调优工具</h1><ul>
 <li>JDK命令行</li>
@@ -298,7 +545,7 @@
 <h2 id="Minor-GC"><a href="#Minor-GC" class="headerlink" title="Minor GC"></a>Minor GC</h2><p>当年轻代空间不足时，就会触发MinorGC，这里的年轻代满指的是Eden代满，Survivor满不会引发GC。（每次Minor GC会清理年轻代的内存。）</p>
 <p>因为Java对象大多都具备 朝生夕灭 的特性，所以Minor GC非常频繁，一般回收速度也比较快。这一定义既清晰又易于理解。</p>
 <p>Minor GC会引发STW，暂停其它用户的线程，等垃圾回收结束，用户线程才恢复运行</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5834bf7cb3c53ae526b5780e1dd3d53d.png" alt="在这里插入图片描述"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5834bf7cb3c53ae526b5780e1dd3d53d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h2 id="Major-GC"><a href="#Major-GC" class="headerlink" title="Major GC"></a>Major GC</h2><p>指发生在老年代的GC，对象从老年代消失时，我们说 “Major GC” 或 “Full GC” 发生了</p>
 <p>出现了MajorGC，经常会伴随至少一次的Minor GC（但非绝对的，在Paralle1 Scavenge收集器的收集策略里就有直接进行MajorGC的策略选择过程）</p>
 <ul>
@@ -324,7 +571,7 @@
 <blockquote>
 <p>新生代：有Eden、两块大小相同的survivor（又称为from&#x2F;to，s0&#x2F;s1）构成，to总为空。 老年代：存放新生代中经历多次GC仍然存活的对象。</p>
 </blockquote>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/473a901be652b2ed083a3add3a90782f.png" alt="在这里插入图片描述"><br>其实不分代完全可以，分代的唯一理由就是优化GC性能。如果没有分代，那所有的对象都在一块，就如同把一个学校的人都关在一个教室。GC的时候要找到哪些对象没用，这样就会对堆的所有区域进行扫描。而很多对象都是朝生夕死的，如果分代的话，把新创建的对象放到某一地方，当GC的时候先把这块存储“朝生夕死”对象的区域进行回收，这样就会腾出很大的空间出来。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c79736727f8f98e7ecc34c26a045d30.png" alt="在这里插入图片描述"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/473a901be652b2ed083a3add3a90782f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>其实不分代完全可以，分代的唯一理由就是优化GC性能。如果没有分代，那所有的对象都在一块，就如同把一个学校的人都关在一个教室。GC的时候要找到哪些对象没用，这样就会对堆的所有区域进行扫描。而很多对象都是朝生夕死的，如果分代的话，把新创建的对象放到某一地方，当GC的时候先把这块存储“朝生夕死”对象的区域进行回收，这样就会腾出很大的空间出来。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c79736727f8f98e7ecc34c26a045d30.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h1 id="内存分配策略"><a href="#内存分配策略" class="headerlink" title="内存分配策略"></a>内存分配策略</h1><p>如果对象在Eden出生并经过第一次Minor GC后仍然存活，并且能被Survivor容纳的话，将被移动到survivor空间中，并将对象年龄设为1。对象在survivor区中每熬过一次MinorGC，年龄就增加1岁，当它的年龄增加到一定程度（默认为15岁，其实每个JVM、每个GC都有所不同）时，就会被晋升到老年代</p>
 <p>对象晋升老年代的年龄阀值，可以通过选项-xx:MaxTenuringThreshold来设置</p>
 <p>针对不同年龄段的对象分配原则如下所示：</p>
@@ -354,11 +601,11 @@
 <p>为避免多个线程操作同一地址，需要使用加锁等机制，进而影响分配速度。</p>
 <h2 id="什么是TLAB"><a href="#什么是TLAB" class="headerlink" title="什么是TLAB"></a>什么是TLAB</h2><p>从内存模型而不是垃圾收集的角度，对Eden区域继续进行划分，JVM为每个线程分配了一个私有缓存区域，它包含在Eden空间内。</p>
 <p>多线程同时分配内存时，使用TLAB可以避免一系列的非线程安全问题，同时还能够提升内存分配的吞吐量，因此我们可以将这种内存分配方式称之为快速分配策略。</p>
-<p>据我所知所有OpenJDK衍生出来的JVM都提供了TLAB的设计。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2be4d7828e5c01481fd6c8c1e9b8b3bc.png" alt="在这里插入图片描述"><br>尽管不是所有的对象实例都能够在TLAB中成功分配内存，但JVM确实是将TLAB作为内存分配的首选。</p>
+<p>据我所知所有OpenJDK衍生出来的JVM都提供了TLAB的设计。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2be4d7828e5c01481fd6c8c1e9b8b3bc.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>尽管不是所有的对象实例都能够在TLAB中成功分配内存，但JVM确实是将TLAB作为内存分配的首选。</p>
 <p>在程序中，开发人员可以通过选项“-Xx:UseTLAB”设置是否开启TLAB空间。</p>
 <p>默认情况下，TLAB空间的内存非常小，仅占有整个Eden空间的1，当然我们可以通过选项“-Xx:TLABWasteTargetPercent”设置TLAB空间所占用Eden空间的百分比大小。</p>
 <p>一旦对象在TLAB空间分配内存失败时，JVM就会尝试着通过使用加锁机制确保数据操作的原子性，从而直接在Eden空间中分配内存。</p>
-<h2 id="TLAB分配过程"><a href="#TLAB分配过程" class="headerlink" title="TLAB分配过程"></a>TLAB分配过程</h2><p>对象首先是通过TLAB开辟空间，如果不能放入，那么需要通过Eden来进行分配<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ddf3dedbad7ff5f3d58c8b68439e213.png" alt="在这里插入图片描述"></p>
+<h2 id="TLAB分配过程"><a href="#TLAB分配过程" class="headerlink" title="TLAB分配过程"></a>TLAB分配过程</h2><p>对象首先是通过TLAB开辟空间，如果不能放入，那么需要通过Eden来进行分配<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ddf3dedbad7ff5f3d58c8b68439e213.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h1 id="小结：堆空间的参数设置"><a href="#小结：堆空间的参数设置" class="headerlink" title="小结：堆空间的参数设置"></a>小结：堆空间的参数设置</h1><ul>
 <li><p>-XX：+PrintFlagsInitial：查看所有的参数的默认初始值</p>
 </li>
@@ -436,12 +683,12 @@
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-Xmx1G -Xms1G -XX:-DoEscapeAnalysis -XX:+PrintGCDetails</span><br></pre></td></tr></table></figure>
 <p>运行结果，同时还触发了GC操作</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">花费的时间为：664 ms</span><br></pre></td></tr></table></figure>
-<p>然后查看内存的情况，发现有大量的User存储在堆中<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/27eb1d00db54da0124b853253b61af94.png" alt="在这里插入图片描述"><br>我们再开启逃逸分析</p>
+<p>然后查看内存的情况，发现有大量的User存储在堆中<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/27eb1d00db54da0124b853253b61af94.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>我们再开启逃逸分析</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">-Xmx1G -Xms1G -XX:+DoEscapeAnalysis -XX:+PrintGCDetails</span><br></pre></td></tr></table></figure>
 <p>然后查看运行时间，我们能够发现花费的时间快速减少，同时不会发生GC操作</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">花费的时间为：5 ms</span><br></pre></td></tr></table></figure>
 <p>在看内存情况，我们发现只有很少的User对象，说明User未发生逃逸，因为它存储在栈中，随着栈的销毁而消失</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/acb456d3b384b2a43e57ba5bff04f115.png" alt="在这里插入图片描述"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/acb456d3b384b2a43e57ba5bff04f115.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h2 id="同步省略"><a href="#同步省略" class="headerlink" title="同步省略"></a>同步省略</h2><p>线程同步的代价是相当高的，同步的后果是降低并发性和性能。</p>
 <p>在动态编译同步块的时候，JIT编译器可以借助逃逸分析来判断同步块所使用的锁对象是否只能够被一个线程访问而没有被发布到其他线程。如果没有，那么JIT编译器在编译这个同步块的时候就会取消对这部分代码的同步。这样就能大大提高并发性和性能。这个取消同步的过程就叫同步省略，也叫锁消除。</p>
 <p>例如下面的代码</p>
@@ -449,7 +696,7 @@
 <p>代码中对hellis这个对象加锁，但是hellis对象的生命周期只在f()方法中，并不会被其他线程所访问到，所以在JIT编译阶段就会被优化掉，优化成：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title function_">f</span><span class="params">()</span> &#123;</span><br><span class="line">    <span class="type">Object</span> <span class="variable">hellis</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">Object</span>();</span><br><span class="line">	System.out.println(hellis);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 
-<p>我们将其转换成字节码<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/dd8c118335019fa574d769331892c9a9.png" alt="在这里插入图片描述"></p>
+<p>我们将其转换成字节码<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/dd8c118335019fa574d769331892c9a9.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h2 id="分离对象和标量替换"><a href="#分离对象和标量替换" class="headerlink" title="分离对象和标量替换"></a>分离对象和标量替换</h2><p>标量（scalar）是指一个无法再分解成更小的数据的数据。Java中的原始数据类型就是标量。</p>
 <p>相对的，那些还可以分解的数据叫做聚合量（Aggregate），Java中的对象就是聚合量，因为他可以分解成其他聚合量和标量。</p>
 <p>在JIT阶段，如果经过逃逸分析，发现一个对象不会被外界访问的话，那么经过JIT优化，就会把这个对象拆解成若干个其中包含的若干个成员变量来代替。这个过程就是标量替换。</p>
@@ -475,4 +722,429 @@
 <h1 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h1><p>年轻代是对象的诞生、成长、消亡的区域，一个对象在这里产生、应用，最后被垃圾回收器收集、结束生命。</p>
 <p>老年代放置长生命周期的对象，通常都是从survivor区域筛选拷贝过来的Java对象。当然，也有特殊情况，我们知道普通的对象会被分配在TLAB上；如果对象较大，JVM会试图直接分配在Eden其他位置上；如果对象太大，完全无法在新生代找到足够长的连续空闲空间，JVM就会直接分配到老年代。当GC只发生在年轻代中，回收年轻代对象的行为被称为MinorGc。</p>
 <p>当GC发生在老年代时则被称为MajorGc或者FullGC。一般的，MinorGc的发生频率要比MajorGC高很多，即老年代中垃圾回收发生的频率将大大低于年轻代。</p>
-</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>文章作者: </span><span class="post-copyright-info"><a href="https://aster-xu-lab.github.io">AsterXu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>文章链接: </span><span class="post-copyright-info"><a href="https://aster-xu-lab.github.io/2021/01/04/112177628/">https://aster-xu-lab.github.io/2021/01/04/112177628/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>版权声明: </span><span class="post-copyright-info">本博客所有文章除特别声明外，均采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/" target="_blank">CC BY-NC-SA 4.0</a> 许可协议。转载请注明来源 <a href="https://aster-xu-lab.github.io" target="_blank">AsterXu Lab</a>！</span></div></div><div class="tag_share"><div class="post-share"><div class="social-share" data-image="/img/butterfly-icon.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2021/01/05/112241875/" title="方法区"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info"><div class="info-1"><div class="info-item-1">上一篇</div><div class="info-item-2">方法区</div></div><div class="info-2"><div class="info-item-1">前言这次所讲述的是运行时数据区的最后一个部分从线程共享与否的角度来看ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理 栈、堆、方法区的交互关系下面就涉及了对象的访问定位  Person：存放在元空间，也可以说方法区 person：存放在Java栈的局部变量表中 new Person()：存放在Java堆中  方法区的理解《Java虚拟机规范》中明确说明：“尽管所有的方法区在逻辑上是属于堆的一部分，但一些简单的实现可能不会选择去进行垃圾收集或者进行压缩。”但对于HotSpotJVM而言，方法区还有一个别名叫做Non-Heap（非堆），目的就是要和堆分开。 所以，方法区看作是一块独立于Java堆的内存空间。方法区主要存放的是 Class，而堆中主要存放的是 实例化的对象  方法区（Method Area）与Java堆一样，是各个线程共享的内存区域。 方法区在JVM启动的时候被创建，并且它的实际的物理内存空间中和Java堆区一样都可以是不连续的。 方法区的大小，跟堆空间一样，可以选择固定大小或者可扩展。 方法区的大小决定了系统可以保...</div></div></div></a><a class="pagination-related" href="/2021/01/04/112168194/" title="本地方法栈"><div class="cover" style="background: var(--default-bg-color)"></div><div class="info text-right"><div class="info-1"><div class="info-item-1">下一篇</div><div class="info-item-2">本地方法栈</div></div><div class="info-2"><div class="info-item-1">Java虚拟机栈于管理Java方法的调用，而本地方法栈用于管理本地方法的调用。 本地方法栈，也是线程私有的。 允许被实现成固定或者是可动态扩展的内存大小。（在内存溢出方面是相同的）  如果线程请求分配的栈容量超过本地方法栈允许的最大容量，Java虚拟机将会抛出一个stackoverflowError 异常。 如果本地方法栈可以动态扩展，并且在尝试扩展的时候无法申请到足够的内存，或者在创建新的线程时没有足够的内存去创建对应的本地方法栈，那么Java虚拟机将会抛出一个outofMemoryError异常。本地方法是使用C语言实现的。  它的具体做法是Native Method Stack中登记native方法，在Execution Engine 执行时加载本地方法库。当某个线程调用一个本地方法时，它就进入了一个全新的并且不再受虚拟机限制的世界。它和虚拟机拥有同样的权限。  本地方法可以通过本地方法接口来访问虚拟机内部的运行时数据区。 它甚至可以直接使用本地处理器中的寄存器直接从本地内存的堆中分配任意数量的内存。 并不是所有的JVM都支持本地方法。因为Java虚拟机规范并没有明确要求本...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/img/butterfly-icon.png" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">AsterXu</div><div class="author-info-description">AsterXu Lab 的技术笔记与思考</div><div class="site-data"><a href="/archives/"><div class="headline">文章</div><div class="length-num">77</div></a><a href="/tags/"><div class="headline">标签</div><div class="length-num">0</div></a><a href="/categories/"><div class="headline">分类</div><div class="length-num">7</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/xxxxxx"><i class="fab fa-github"></i><span>Follow Me</span></a></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>公告</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>目录</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%A0%86%E7%9A%84%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5"><span class="toc-number">1.</span> <span class="toc-text">堆的核心概念</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%A0%86%E5%86%85%E5%AD%98%E7%BB%86%E5%88%86"><span class="toc-number">1.1.</span> <span class="toc-text">堆内存细分</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E8%AE%BE%E7%BD%AE%E5%A0%86%E5%86%85%E5%AD%98%E5%A4%A7%E5%B0%8F%E4%B8%8EOOM"><span class="toc-number">1.2.</span> <span class="toc-text">设置堆内存大小与OOM</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%B9%B4%E8%BD%BB%E4%BB%A3%E4%B8%8E%E8%80%81%E5%B9%B4%E4%BB%A3"><span class="toc-number">1.3.</span> <span class="toc-text">年轻代与老年代</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%9B%BE%E8%A7%A3%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D%E8%BF%87%E7%A8%8B"><span class="toc-number">2.</span> <span class="toc-text">图解对象分配过程</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A6%82%E5%BF%B5"><span class="toc-number">2.1.</span> <span class="toc-text">概念</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%9B%BE%E8%A7%A3%E8%BF%87%E7%A8%8B"><span class="toc-number">2.1.1.</span> <span class="toc-text">图解过程</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E6%BC%94%E7%A4%BA%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D%E8%BF%87%E7%A8%8B"><span class="toc-number">2.1.2.</span> <span class="toc-text">代码演示对象分配过程</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B8%B8%E7%94%A8%E7%9A%84%E8%B0%83%E4%BC%98%E5%B7%A5%E5%85%B7"><span class="toc-number">3.</span> <span class="toc-text">常用的调优工具</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">4.</span> <span class="toc-text">总结</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#Minor-GC%EF%BC%8CMajorGC%E3%80%81Full-GC"><span class="toc-number">5.</span> <span class="toc-text">Minor GC，MajorGC、Full GC</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Minor-GC"><span class="toc-number">5.1.</span> <span class="toc-text">Minor GC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Major-GC"><span class="toc-number">5.2.</span> <span class="toc-text">Major GC</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Full-GC"><span class="toc-number">5.3.</span> <span class="toc-text">Full GC</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#GC-%E4%B8%BE%E4%BE%8B"><span class="toc-number">6.</span> <span class="toc-text">GC 举例</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%A0%86%E7%A9%BA%E9%97%B4%E5%88%86%E4%BB%A3%E6%80%9D%E6%83%B3"><span class="toc-number">7.</span> <span class="toc-text">堆空间分代思想</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5"><span class="toc-number">8.</span> <span class="toc-text">内存分配策略</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E4%B8%BA%E5%AF%B9%E8%B1%A1%E5%88%86%E9%85%8D%E5%86%85%E5%AD%98%EF%BC%9ATLAB"><span class="toc-number">9.</span> <span class="toc-text">为对象分配内存：TLAB</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%97%AE%E9%A2%98%EF%BC%9A%E5%A0%86%E7%A9%BA%E9%97%B4%E9%83%BD%E6%98%AF%E5%85%B1%E4%BA%AB%E7%9A%84%E4%B9%88%EF%BC%9F"><span class="toc-number">9.1.</span> <span class="toc-text">问题：堆空间都是共享的么？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9C%89TLAB%EF%BC%9F"><span class="toc-number">9.2.</span> <span class="toc-text">为什么有TLAB？</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%80%E4%B9%88%E6%98%AFTLAB"><span class="toc-number">9.3.</span> <span class="toc-text">什么是TLAB</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#TLAB%E5%88%86%E9%85%8D%E8%BF%87%E7%A8%8B"><span class="toc-number">9.4.</span> <span class="toc-text">TLAB分配过程</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93%EF%BC%9A%E5%A0%86%E7%A9%BA%E9%97%B4%E7%9A%84%E5%8F%82%E6%95%B0%E8%AE%BE%E7%BD%AE"><span class="toc-number">10.</span> <span class="toc-text">小结：堆空间的参数设置</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%A0%86%E6%98%AF%E5%88%86%E9%85%8D%E5%AF%B9%E8%B1%A1%E7%9A%84%E5%94%AF%E4%B8%80%E9%80%89%E6%8B%A9%E4%B9%88%EF%BC%9F"><span class="toc-number">11.</span> <span class="toc-text">堆是分配对象的唯一选择么？</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90"><span class="toc-number">11.1.</span> <span class="toc-text">逃逸分析</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90%E4%B8%BE%E4%BE%8B"><span class="toc-number">11.1.1.</span> <span class="toc-text">逃逸分析举例</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%82%E6%95%B0%E8%AE%BE%E7%BD%AE"><span class="toc-number">11.1.2.</span> <span class="toc-text">参数设置</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%93%E8%AE%BA"><span class="toc-number">11.1.3.</span> <span class="toc-text">结论</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%88%E4%B8%8A%E5%88%86%E9%85%8D"><span class="toc-number">11.2.</span> <span class="toc-text">栈上分配</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BE%E4%BE%8B"><span class="toc-number">11.2.1.</span> <span class="toc-text">举例</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%90%8C%E6%AD%A5%E7%9C%81%E7%95%A5"><span class="toc-number">11.3.</span> <span class="toc-text">同步省略</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%86%E7%A6%BB%E5%AF%B9%E8%B1%A1%E5%92%8C%E6%A0%87%E9%87%8F%E6%9B%BF%E6%8D%A2"><span class="toc-number">11.4.</span> <span class="toc-text">分离对象和标量替换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E4%BC%98%E5%8C%96%E4%B9%8B%E6%A0%87%E9%87%8F%E6%9B%BF%E6%8D%A2"><span class="toc-number">11.5.</span> <span class="toc-text">代码优化之标量替换</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E9%80%83%E9%80%B8%E5%88%86%E6%9E%90%E7%9A%84%E4%B8%8D%E8%B6%B3"><span class="toc-number">11.6.</span> <span class="toc-text">逃逸分析的不足</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#%E5%B0%8F%E7%BB%93"><span class="toc-number">12.</span> <span class="toc-text">小结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>最新文章</span></div><div class="aside-list"><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2026/07/02/hello-world/" title="Hello World">Hello World</a><time datetime="2026-07-02T02:14:13.001Z" title="发表于 2026-07-02 10:14:13">2026-07-02</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2024/03/29/137139580/" title="排序算法：冒泡排序">排序算法：冒泡排序</a><time datetime="2024-03-29T03:25:04.000Z" title="发表于 2024-03-29 11:25:04">2024-03-29</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/05/16/124791648/" title="线程安全集合类概述">线程安全集合类概述</a><time datetime="2022-05-15T17:03:39.000Z" title="发表于 2022-05-16 01:03:39">2022-05-16</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/05/16/124791593/" title="JUC-CyclicBarrier">JUC-CyclicBarrier</a><time datetime="2022-05-15T16:54:10.000Z" title="发表于 2022-05-16 00:54:10">2022-05-16</time></div></div><div class="aside-list-item no-cover"><div class="content"><a class="title" href="/2022/05/16/124788567/" title="JUC-CountdownLatch">JUC-CountdownLatch</a><time datetime="2022-05-15T16:33:51.000Z" title="发表于 2022-05-16 00:33:51">2022-05-16</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By AsterXu</span><span class="framework-info"><span>框架 </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 8.1.2</a><span class="footer-separator">|</span><span>主题 </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.5</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="阅读模式"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="日间和夜间模式切换"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="单栏和双栏切换"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="设置"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="目录"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="回到顶部"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.5"></script><script src="/js/main.js?v=5.5.5"></script><div class="js-pjax"></div><script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%AE%8B%E7%BA%A2%E5%BA%B7%E8%AE%B2JVM%E6%A2%B3%E7%90%86/" class="category-chain-item">宋红康讲JVM梳理</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>堆</div>
+      <div>https://aster-xu-lab.github.io/2021/01/04/112177628/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2021年1月4日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2021/01/05/112241875/" title="方法区">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">方法区</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/01/04/112168194/" title="本地方法栈">
+                        <span class="hidden-mobile">本地方法栈</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
