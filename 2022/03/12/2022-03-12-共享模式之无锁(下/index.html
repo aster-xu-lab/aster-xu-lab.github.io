@@ -1,0 +1,895 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="7、原子累加器累加器性能比较12345678910111213141516171819202122private static &lt;T&gt; void demo(Supplier&lt;T&gt; adderSupplier, Consumer&lt;T&gt; action) &#123;        T adder &#x3D; adderSupplier.get();        List&amp;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5、共享模式之无锁(下）">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/12/2022-03-12-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8B/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="7、原子累加器累加器性能比较12345678910111213141516171819202122private static &lt;T&gt; void demo(Supplier&lt;T&gt; adderSupplier, Consumer&lt;T&gt; action) &#123;        T adder &#x3D; adderSupplier.get();        List&amp;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8202efd29bf3f979d78c34ba3d3db0f3.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e8f833eabe3b15fbbb667239a04ff369.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f0abf38b28acc5fa0a0d298bd612ee65.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e7efa072495239f4df4afcd0edb456aa.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b2ce725b35ccd71a1824f27a558c683.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/96e6b06dcf83a67d12000fed3baaeba3.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b471329c000e7105ddb00ccd453de010.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/21ae6fd6276c735c3ad2a6938fa3d7c8.png">
+<meta property="article:published_time" content="2022-03-12T08:21:06.000Z">
+<meta property="article:modified_time" content="2026-07-03T08:40:43.324Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="CAS">
+<meta property="article:tag" content="JUC">
+<meta property="article:tag" content="Java并发">
+<meta property="article:tag" content="原子类">
+<meta property="article:tag" content="无锁并发">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8202efd29bf3f979d78c34ba3d3db0f3.png">
+  
+  
+  
+  <title>5、共享模式之无锁(下） - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="5、共享模式之无锁(下）"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-03-12 16:21" pubdate>
+          2022年3月12日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          64 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">5、共享模式之无锁(下）</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="7、原子累加器"><a href="#7、原子累加器" class="headerlink" title="7、原子累加器"></a>7、原子累加器</h1><h2 id="累加器性能比较"><a href="#累加器性能比较" class="headerlink" title="累加器性能比较"></a>累加器性能比较</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> &lt;T&gt; <span class="hljs-keyword">void</span> <span class="hljs-title function_">demo</span><span class="hljs-params">(Supplier&lt;T&gt; adderSupplier, Consumer&lt;T&gt; action)</span> &#123;<br>        <span class="hljs-type">T</span> <span class="hljs-variable">adder</span> <span class="hljs-operator">=</span> adderSupplier.get();<br>        List&lt;Thread&gt; threads = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;&gt;();<br>        <span class="hljs-type">long</span> <span class="hljs-variable">start</span> <span class="hljs-operator">=</span> System.nanoTime();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">40</span>; i++) &#123;<br>            threads.add(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>                <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">j</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; j &lt; <span class="hljs-number">500000</span>; j++) &#123;<br>                    action.accept(adder);<br>                &#125;<br>            &#125;));<br>        &#125;<br>        threads.forEach(Thread::start);<br>        threads.forEach(t -&gt; &#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                t.join();<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                e.printStackTrace();<br>            &#125;<br>        &#125;);<br>        <span class="hljs-type">long</span> <span class="hljs-variable">end</span> <span class="hljs-operator">=</span> System.nanoTime();<br>        System.out.println(adder + <span class="hljs-string">&quot; cost :&quot;</span> + (end - start) / <span class="hljs-number">1000_000</span> + <span class="hljs-string">&quot;ms&quot;</span>);<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>比较AtomicLong 与 LongAdder</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">5</span>; i++)<br>            demo(() -&gt; <span class="hljs-keyword">new</span> <span class="hljs-title class_">LongAdder</span>(), adder -&gt; adder.increment());<br>        System.out.println();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">5</span>; i++)<br>            demo(() -&gt; <span class="hljs-keyword">new</span> <span class="hljs-title class_">AtomicLong</span>(), adder -&gt; adder.getAndIncrement());<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight basic"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs basic"><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">54</span>ms<br><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">52</span>ms<br><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">45</span>ms<br><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">49</span>ms<br><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">50</span>ms<br><br><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">486</span>ms<br><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">462</span>ms<br><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">468</span>ms<br><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">451</span>ms<br><span class="hljs-symbol">20000000 </span>cost :<span class="hljs-number">491</span>ms<br></code></pre></td></tr></table></figure>
+<p>性能提升的原因很简单，就是在有竞争时，设置多个累加单元，Thread-0累加Cell[0]，Thread-1累加Cell[1]…最后将结果汇总。这样他们在累加时操作的不同Cell变量，因此减少了CAS重试失败，从而提高性能。</p>
+<h2 id="源码之LongAdder"><a href="#源码之LongAdder" class="headerlink" title="源码之LongAdder"></a>源码之LongAdder</h2><p>LongAdder 是并发大师 @author Dong Lea（大哥李）的作品，设计的非常精巧</p>
+<p>LongAdder类有几个关键域</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 累加单元数组，懒惰初始化</span><br><span class="hljs-keyword">transient</span> <span class="hljs-keyword">volatile</span> Cell[] cells;<br><br><span class="hljs-comment">// 基础值，如果没有竞争，则用cas累加这个域</span><br><span class="hljs-keyword">transient</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">long</span> base;<br><br><span class="hljs-comment">// 在cells创建或扩容时，置为1，表示加锁</span><br><span class="hljs-keyword">transient</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">int</span> cellBusy;<br></code></pre></td></tr></table></figure>
+<h2 id="cas锁"><a href="#cas锁" class="headerlink" title="cas锁"></a>cas锁</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 不要用于实践</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">LockCas</span> &#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">AtomicInteger</span> <span class="hljs-variable">state</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">AtomicInteger</span>(<span class="hljs-number">0</span>);<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">lock</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>            <span class="hljs-keyword">if</span> (state.compareAndSet(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>))<br>                <span class="hljs-keyword">break</span>;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">unlock</span><span class="hljs-params">()</span> &#123;<br>        state.set(<span class="hljs-number">0</span>);<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">LockCas</span> <span class="hljs-variable">lockCas</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">LockCas</span>();<br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            log.debug(<span class="hljs-string">&quot;begin&quot;</span>);<br>            lockCas.lock();<br>            <span class="hljs-keyword">try</span> &#123;<br>                log.debug(<span class="hljs-string">&quot;locked&quot;</span>);<br>                Thread.sleep(<span class="hljs-number">1000</span>);<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                e.printStackTrace();<br>            &#125; <span class="hljs-keyword">finally</span> &#123;<br>                lockCas.unlock();<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t1&quot;</span>).start();<br><br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            log.debug(<span class="hljs-string">&quot;begin&quot;</span>);<br>            lockCas.lock();<br>            <span class="hljs-keyword">try</span> &#123;<br>                log.debug(<span class="hljs-string">&quot;locked&quot;</span>);<br>                Thread.sleep(<span class="hljs-number">1000</span>);<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                e.printStackTrace();<br>            &#125; <span class="hljs-keyword">finally</span> &#123;<br>                lockCas.unlock();<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t2&quot;</span>).start();<br><br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/12</span>-<span class="hljs-number">15</span>:<span class="hljs-number">38:37.607</span> [t1] c.Test10 - begin<br><span class="hljs-number">2022/03/12</span>-<span class="hljs-number">15</span>:<span class="hljs-number">38:37.607</span> [t2] c.Test10 - begin<br><span class="hljs-number">2022/03/12</span>-<span class="hljs-number">15</span>:<span class="hljs-number">38:37.610</span> [t1] c.Test10 - locked<br><span class="hljs-number">2022/03/12</span>-<span class="hljs-number">15</span>:<span class="hljs-number">38:38.619</span> [t2] c.Test10 - locked<br></code></pre></td></tr></table></figure>
+<h2 id="原理之伪共享"><a href="#原理之伪共享" class="headerlink" title="原理之伪共享"></a>原理之伪共享</h2><p>其中Cell即为累加单元</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 防止缓存行伪共享</span><br><span class="hljs-meta">@sun</span>.misc.Contended<br><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Cell</span> &#123;<br> <span class="hljs-keyword">volatile</span> <span class="hljs-type">long</span> value;<br> Cell(<span class="hljs-type">long</span> x) &#123; value = x; &#125;<br> <br> <span class="hljs-comment">// 最重要的方法, 用来 cas 方式进行累加, prev 表示旧值, next 表示新值</span><br> <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">cas</span><span class="hljs-params">(<span class="hljs-type">long</span> prev, <span class="hljs-type">long</span> next)</span> &#123;<br> <span class="hljs-keyword">return</span> UNSAFE.compareAndSwapLong(<span class="hljs-built_in">this</span>, valueOffset, prev, next);<br> &#125;<br> <span class="hljs-comment">// 省略不重要代码</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>得从缓存说起<br>缓存与内存的速度比较<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8202efd29bf3f979d78c34ba3d3db0f3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e8f833eabe3b15fbbb667239a04ff369.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>因为CPU与内存的速度差异很大，苏姚靠预读数据至缓存来提升效率。</p>
+<p>而缓存以缓存行为单位，每个缓存对应着一块内存，一般是64byte（8个long）</p>
+<p>缓存的加入会造成数据副本的产生，即同一份数据会缓存在不同核心的缓存行中</p>
+<p>CPU要保证数据的一致性，如果某个CPU核心更改了数据，其他CPU核心对应的整个缓存行必须失效</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f0abf38b28acc5fa0a0d298bd612ee65.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>因为Cell是数组形式，在内存中是连续存储的，一个Cell为24字节（16字节的对象头和6字节的value），因此缓存行可以存下两个的Cell对象。问题来了：</p>
+<ul>
+<li>Core-0要修改Cell[0]</li>
+<li>Core-1要修改Cell[1]</li>
+</ul>
+<p>无论谁修改成功，都会导致对方Core的缓存行失效，比如Cell[0]中 Cell[0]&#x3D;6000，Cell[1]&#x3D;8000要累加Cell[0]&#x3D;6001，Cell[1]&#x3D;8001，这时会让Core-1的缓存行失效</p>
+<p>@sun.misc.Contended用来解决这个问题，它的原理时在使用次注解的对象或字段的前后各增加128字节大小的padding，从而让CPU将对象予读至缓存时占用不同的缓存行，这样，不会造成对方缓存行的失效</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e7efa072495239f4df4afcd0edb456aa.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>累加主要调用下面的方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">add</span><span class="hljs-params">(<span class="hljs-type">long</span> x)</span> &#123;<br> 	<span class="hljs-comment">// as 为累加单元数组</span><br> 	<span class="hljs-comment">// b 为基础值</span><br> 	<span class="hljs-comment">// x 为累加值</span><br> 	Cell[] as; <span class="hljs-type">long</span> b, v; <span class="hljs-type">int</span> m; Cell a;<br> 	<span class="hljs-comment">// 进入 if 的两个条件</span><br> 	<span class="hljs-comment">// 1. as 有值, 表示已经发生过竞争, 进入 if</span><br>	<span class="hljs-comment">// 2. cas 给 base 累加时失败了, 表示 base 发生了竞争, 进入 if</span><br> 	<span class="hljs-keyword">if</span> ((as = cells) != <span class="hljs-literal">null</span> || !casBase(b = base, b + x)) &#123;<br> 	<span class="hljs-comment">// uncontended 表示 cell 没有竞争</span><br> 	<span class="hljs-type">boolean</span> <span class="hljs-variable">uncontended</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;<br> 	<span class="hljs-keyword">if</span> (<br> 	<span class="hljs-comment">// as 还没有创建</span><br> 	as == <span class="hljs-literal">null</span> || (m = as.length - <span class="hljs-number">1</span>) &lt; <span class="hljs-number">0</span> ||<br> 	<span class="hljs-comment">// 当前线程对应的 cell 还没有</span><br> 	(a = as[getProbe() &amp; m]) == <span class="hljs-literal">null</span> ||<br> 	<span class="hljs-comment">// cas 给当前线程的 cell 累加失败 uncontended=false ( a 为当前线程的 cell )</span><br> 	!(uncontended = a.cas(v = a.value, v + x))<br> 	) &#123;<br> 		<span class="hljs-comment">// 进入 cell 数组创建、cell 创建的流程</span><br> 		longAccumulate(x, <span class="hljs-literal">null</span>, uncontended);<br> 	&#125;<br> 	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>add流程图<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b2ce725b35ccd71a1824f27a558c683.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">longAccumulate</span><span class="hljs-params">(<span class="hljs-type">long</span> x, LongBinaryOperator fn,</span><br><span class="hljs-params">                              <span class="hljs-type">boolean</span> wasUncontended)</span> &#123;<br>        <span class="hljs-type">int</span> h;<br>        <span class="hljs-comment">// 当前线程还没有对应的 cell, 需要随机生成一个 h 值用来将当前线程绑定到 cell</span><br>        <span class="hljs-keyword">if</span> ((h = getProbe()) == <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-comment">// 初始化 probe</span><br>            ThreadLocalRandom.current();<br>            <span class="hljs-comment">// h 对应新的 probe 值, 用来对应 cell</span><br>            h = getProbe();<br>            wasUncontended = <span class="hljs-literal">true</span>;<br>        &#125;<br>        <span class="hljs-comment">// collide 为 true 表示需要扩容</span><br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">collide</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br>        <span class="hljs-keyword">for</span> (; ; ) &#123;<br>            Cell[] as;<br>            Cell a;<br>            <span class="hljs-type">int</span> n;<br>            <span class="hljs-type">long</span> v;<br>            <span class="hljs-comment">// 已经有了 cells</span><br>            <span class="hljs-keyword">if</span> ((as = cells) != <span class="hljs-literal">null</span> &amp;&amp; (n = as.length) &gt; <span class="hljs-number">0</span>) &#123;<br>                <span class="hljs-comment">// 还没有 cell</span><br>                <span class="hljs-keyword">if</span> ((a = as[(n - <span class="hljs-number">1</span>) &amp; h]) == <span class="hljs-literal">null</span>) &#123;<br>                    <span class="hljs-comment">// 为 cellsBusy 加锁, 创建 cell, cell 的初始累加值为 x</span><br>                    <span class="hljs-comment">// 成功则 break, 否则继续 continue 循环</span><br>                &#125;<br>                <span class="hljs-comment">// 有竞争, 改变线程对应的 cell 来重试 cas</span><br>                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!wasUncontended)<br>                    wasUncontended = <span class="hljs-literal">true</span>;<br>                    <span class="hljs-comment">// cas 尝试累加, fn 配合 LongAccumulator 不为 null, 配合 LongAdder 为 null</span><br>                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (a.cas(v = a.value, ((fn == <span class="hljs-literal">null</span>) ? v + x : fn.applyAsLong(v, x))))<br>                    <span class="hljs-keyword">break</span>;<br>                    <span class="hljs-comment">// 如果 cells 长度已经超过了最大长度, 或者已经扩容, 改变线程对应的 cell 来重试 cas</span><br>                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (n &gt;= NCPU || cells != as)<br>                    collide = <span class="hljs-literal">false</span>;<br>                    <span class="hljs-comment">// 确保 collide 为 false 进入此分支, 就不会进入下面的 else if 进行扩容了</span><br>                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (!collide)<br>                    collide = <span class="hljs-literal">true</span>;<br>                    <span class="hljs-comment">// 加锁</span><br>                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (cellsBusy == <span class="hljs-number">0</span> &amp;&amp; casCellsBusy()) &#123;<br>                    <span class="hljs-comment">// 加锁成功, 扩容</span><br>                    <span class="hljs-keyword">continue</span>;<br>                &#125;<br>                <span class="hljs-comment">// 改变线程对应的 cell</span><br>                h = advanceProbe(h);<br>            &#125;<br>            <span class="hljs-comment">// 还没有 cells, 尝试给 cellsBusy 加锁</span><br>            <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (cellsBusy == <span class="hljs-number">0</span> &amp;&amp; cells == as &amp;&amp; casCellsBusy()) &#123;<br>                <span class="hljs-comment">// 加锁成功, 初始化 cells, 最开始长度为 2, 并填充一个 cell</span><br>                <span class="hljs-comment">// 成功则 break;</span><br>            &#125;<br>            <span class="hljs-comment">// 上两种情况失败, 尝试给 base 累加</span><br>            <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (casBase(v = base, ((fn == <span class="hljs-literal">null</span>) ? v + x : fn.applyAsLong(v, x))))<br>                <span class="hljs-keyword">break</span>;<br>        &#125;<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>longAccumulate 流程图<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/96e6b06dcf83a67d12000fed3baaeba3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b471329c000e7105ddb00ccd453de010.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>每个线程刚进入longAccumulate时，会尝试对应一个Cell对象（找到一个坑位）<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/21ae6fd6276c735c3ad2a6938fa3d7c8.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>获得最终结果通过sum方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-type">long</span> <span class="hljs-title function_">sum</span><span class="hljs-params">()</span> &#123;<br> 	Cell[] as = cells; Cell a;<br> 	<span class="hljs-type">long</span> <span class="hljs-variable">sum</span> <span class="hljs-operator">=</span> base;<br> 	<span class="hljs-keyword">if</span> (as != <span class="hljs-literal">null</span>) &#123;<br> 		<span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; as.length; ++i) &#123;<br> 			<span class="hljs-keyword">if</span> ((a = as[i]) != <span class="hljs-literal">null</span>)<br> 				sum += a.value;<br> 		&#125;<br> 	&#125;<br> 	<span class="hljs-keyword">return</span> sum;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h1 id="8、Unsafe"><a href="#8、Unsafe" class="headerlink" title="8、Unsafe"></a>8、Unsafe</h1><h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>Unsafe对象提供了非常低层的，操作内存、线程的方法，Unsafe对象不能直接调用，只能通过反射获得</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">UnsafeAccessor</span> &#123;<br>    <span class="hljs-keyword">static</span> Unsafe unsafe;<br><br>    <span class="hljs-keyword">static</span> &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-type">Field</span> <span class="hljs-variable">theUnsafe</span> <span class="hljs-operator">=</span> Unsafe.class.getDeclaredField(<span class="hljs-string">&quot;theUnsafe&quot;</span>);<br>            theUnsafe.setAccessible(<span class="hljs-literal">true</span>);<br>            unsafe = (Unsafe) theUnsafe.get(<span class="hljs-literal">null</span>);<br>        &#125; <span class="hljs-keyword">catch</span> (NoSuchFieldException | IllegalAccessException e) &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(e);<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">static</span> Unsafe <span class="hljs-title function_">getUnsafe</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> unsafe;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h2 id="Unsafe-CAS操作"><a href="#Unsafe-CAS操作" class="headerlink" title="Unsafe CAS操作"></a>Unsafe CAS操作</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">class</span> <span class="hljs-title class_">Student</span> &#123;<br>    <span class="hljs-keyword">volatile</span> <span class="hljs-type">int</span> id;<br>    <span class="hljs-keyword">volatile</span> String name;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> String <span class="hljs-title function_">toString</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;Student&#123;&quot;</span> +<br>                <span class="hljs-string">&quot;id=&quot;</span> + id +<br>                <span class="hljs-string">&quot;, name=&#x27;&quot;</span> + name + <span class="hljs-string">&#x27;\&#x27;&#x27;</span> +<br>                <span class="hljs-string">&#x27;&#125;&#x27;</span>;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> NoSuchFieldException &#123;<br>        <span class="hljs-type">Unsafe</span> <span class="hljs-variable">unsafe</span> <span class="hljs-operator">=</span> UnsafeAccessor.getUnsafe();<br>        <span class="hljs-type">Field</span> <span class="hljs-variable">id</span> <span class="hljs-operator">=</span> Student.class.getDeclaredField(<span class="hljs-string">&quot;id&quot;</span>);<br>        <span class="hljs-type">Field</span> <span class="hljs-variable">name</span> <span class="hljs-operator">=</span> Student.class.getDeclaredField(<span class="hljs-string">&quot;name&quot;</span>);<br><span class="hljs-comment">// 获得成员变量的偏移量</span><br>        <span class="hljs-type">long</span> <span class="hljs-variable">idOffset</span> <span class="hljs-operator">=</span> UnsafeAccessor.unsafe.objectFieldOffset(id);<br>        <span class="hljs-type">long</span> <span class="hljs-variable">nameOffset</span> <span class="hljs-operator">=</span> UnsafeAccessor.unsafe.objectFieldOffset(name);<br>        <span class="hljs-type">Student</span> <span class="hljs-variable">student</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Student</span>();<br><span class="hljs-comment">// 使用 cas 方法替换成员变量的值</span><br>        UnsafeAccessor.unsafe.compareAndSwapInt(student, idOffset, <span class="hljs-number">0</span>, <span class="hljs-number">20</span>); <span class="hljs-comment">// 返回 true</span><br>        UnsafeAccessor.unsafe.compareAndSwapObject(student, nameOffset, <span class="hljs-literal">null</span>, <span class="hljs-string">&quot;张三&quot;</span>); <span class="hljs-comment">// 返回 true</span><br>        System.out.println(student);<br><br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>使用自定义的AtomicDate实现直线线程安全的原子整数Account实现</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AtomicData</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">int</span> data;<br>    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Unsafe unsafe;<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">long</span> DATA_OFFSET;<br><br>    <span class="hljs-keyword">static</span> &#123;<br>        unsafe = UnsafeAccessor.getUnsafe();<br>        <span class="hljs-keyword">try</span> &#123;<br>            DATA_OFFSET = unsafe.objectFieldOffset(AtomicData.class.getDeclaredField(<span class="hljs-string">&quot;data&quot;</span>));<br>        &#125; <span class="hljs-keyword">catch</span> (NoSuchFieldException e) &#123;<br>            e.printStackTrace();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">AtomicData</span><span class="hljs-params">(<span class="hljs-type">int</span> data)</span> &#123;<br>        <span class="hljs-built_in">this</span>.data = data;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">decrease</span><span class="hljs-params">(<span class="hljs-type">int</span> amount)</span> &#123;<br>        <span class="hljs-type">int</span> oldValue;<br>        <span class="hljs-keyword">while</span>(<span class="hljs-literal">true</span>) &#123;<br>            oldValue = data;<br>            <span class="hljs-keyword">if</span> (unsafe.compareAndSwapInt(<span class="hljs-built_in">this</span>, DATA_OFFSET, oldValue, oldValue - amount))<br>                <span class="hljs-keyword">return</span>;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">getData</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> data;<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>Account实现</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java">Account.demo(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Account</span>() &#123;<br>            <span class="hljs-keyword">final</span> <span class="hljs-type">AtomicData</span> <span class="hljs-variable">atomicData</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">AtomicData</span>(<span class="hljs-number">10000</span>);<br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-keyword">public</span> Integer <span class="hljs-title function_">getBalance</span><span class="hljs-params">()</span> &#123;<br>                <span class="hljs-keyword">return</span> atomicData.getData();<br>            &#125;<br><br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">withdraw</span><span class="hljs-params">(Integer amount)</span> &#123;<br>                atomicData.decrease(amount);<br>            &#125;<br>        &#125;);<br></code></pre></td></tr></table></figure>
+<h1 id="本章小结"><a href="#本章小结" class="headerlink" title="本章小结"></a>本章小结</h1><ul>
+<li>CAS与volatile</li>
+<li>API<ul>
+<li>原子整数</li>
+<li>原子引用</li>
+<li>原子整数</li>
+<li>字段更新器</li>
+<li>原子累加器</li>
+</ul>
+</li>
+<li>Unsafe</li>
+<li>*原理相关<ul>
+<li>LongAdder 源码</li>
+<li>伪共享</li>
+</ul>
+</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Java%E5%B9%B6%E5%8F%91/" class="print-no-link">#Java并发</a>
+      
+        <a href="/tags/JUC/" class="print-no-link">#JUC</a>
+      
+        <a href="/tags/CAS/" class="print-no-link">#CAS</a>
+      
+        <a href="/tags/%E5%8E%9F%E5%AD%90%E7%B1%BB/" class="print-no-link">#原子类</a>
+      
+        <a href="/tags/%E6%97%A0%E9%94%81%E5%B9%B6%E5%8F%91/" class="print-no-link">#无锁并发</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>5、共享模式之无锁(下）</div>
+      <div>https://aster-xu-lab.github.io/2022/03/12/2022-03-12-共享模式之无锁(下/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年3月12日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/03/13/2022-03-13-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E4%B8%8D%E5%8F%AF%E5%8F%98/" title="6、共享模型之不可变">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">6、共享模型之不可变</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/03/10/2022-03-10-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8ACAS%E5%8E%9F%E5%AD%90%E7%B1%BB/" title="5、共享模式之无锁(上），CAS，原子类">
+                        <span class="hidden-mobile">5、共享模式之无锁(上），CAS，原子类</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,880 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="基本使用信号量，用来限制能通知访问共享资源的线程上限 123456789101112131415161718192021public static void main(String[] args) &#123;        Semaphore semaphore &#x3D; new Semaphore(3);        for (int i &#x3D; 0; i &lt; 10; i++) &#123;">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JUC-Semaphore">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/05/15/2022-05-15-JUC-Semaphore/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="基本使用信号量，用来限制能通知访问共享资源的线程上限 123456789101112131415161718192021public static void main(String[] args) &#123;        Semaphore semaphore &#x3D; new Semaphore(3);        for (int i &#x3D; 0; i &lt; 10; i++) &#123;">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/94d7a9218fb319f6d86956c40aa78820.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/925e5af0f9bc5c0a519e6e4fbd8de19d.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61584fc67cb8a64b944b283e96b7c0a9.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b0df29061cb83b29cb61c93fb149cdbe.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7c07c30d8a02e9038cf67711aa5264a1.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7941a749ae1832f86474a197db7eab9b.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2e88a994f77f99a5b96ce03b4df3a6ed.png">
+<meta property="article:published_time" content="2022-05-15T07:06:17.000Z">
+<meta property="article:modified_time" content="2026-07-03T08:40:43.623Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="JUC">
+<meta property="article:tag" content="Java并发">
+<meta property="article:tag" content="Semaphore">
+<meta property="article:tag" content="信号量">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/94d7a9218fb319f6d86956c40aa78820.png">
+  
+  
+  
+  <title>JUC-Semaphore - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="JUC-Semaphore"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-05-15 15:06" pubdate>
+          2022年5月15日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          8.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          69 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">JUC-Semaphore</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h1><p>信号量，用来限制能通知访问共享资源的线程上限</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">Semaphore</span> <span class="hljs-variable">semaphore</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Semaphore</span>(<span class="hljs-number">3</span>);<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>            <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>                <span class="hljs-keyword">try</span> &#123;<br>                    semaphore.acquire();<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>                <span class="hljs-keyword">try</span> &#123;<br>                    log.debug(<span class="hljs-string">&quot;running&quot;</span>);<br>                    Thread.sleep(<span class="hljs-number">1000</span>);<br>                    log.debug(<span class="hljs-string">&quot;end&quot;</span>);<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125; <span class="hljs-keyword">finally</span> &#123;<br>                    semaphore.release();<br>                &#125;<br>            &#125;).start();<br>        &#125;<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:02.327</span> [Thread-<span class="hljs-number">0</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:02.327</span> [Thread-<span class="hljs-number">3</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:02.327</span> [Thread-<span class="hljs-number">1</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">0</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">1</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">3</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">4</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">2</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">5</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">4</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">5</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">8</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">2</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">9</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">6</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:05.355</span> [Thread-<span class="hljs-number">9</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:05.355</span> [Thread-<span class="hljs-number">6</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:05.355</span> [Thread-<span class="hljs-number">8</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:05.355</span> [Thread-<span class="hljs-number">7</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:06.367</span> [Thread-<span class="hljs-number">7</span>] c.Test - end<br></code></pre></td></tr></table></figure>
+
+<h1 id="应用"><a href="#应用" class="headerlink" title="应用"></a>应用</h1><ul>
+<li>使用Semaphore限流，在访问高峰期时，让请求线程阻塞，高峰期过去在释放许可，当然她只适合限制单机线程数量，而不是限制资源数（例如连接数，请对比 Tomcat LimitLatch实现）</li>
+<li>用Semaphore实现简单连接池，对比【享元模式】下的实现（用wait notify），性能和可读性显然更好，注意下面的实现中线程数和数据库连接数相等。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Slf4j(topic = &quot;c.Pool&quot;)</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Pool</span> &#123;<br>    <span class="hljs-comment">// 1. 连接池大小</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> poolSize;<br>    <span class="hljs-comment">// 2. 连接对象数组</span><br>    <span class="hljs-keyword">private</span> Connection[] connections;<br>    <span class="hljs-comment">// 3. 连接状态数组 0 表示空闲， 1 表示繁忙</span><br>    <span class="hljs-keyword">private</span> AtomicIntegerArray states;<br>    <span class="hljs-keyword">private</span> Semaphore semaphore;<br><br>    <span class="hljs-comment">// 4. 构造方法初始化</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">Pool</span><span class="hljs-params">(<span class="hljs-type">int</span> poolSize)</span> &#123;<br>        <span class="hljs-built_in">this</span>.poolSize = poolSize;<br>        <span class="hljs-comment">// 让许可数与资源数一致</span><br>        <span class="hljs-built_in">this</span>.semaphore = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Semaphore</span>(poolSize);<br>        <span class="hljs-built_in">this</span>.connections = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Connection</span>[poolSize];<br>        <span class="hljs-built_in">this</span>.states = <span class="hljs-keyword">new</span> <span class="hljs-title class_">AtomicIntegerArray</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">int</span>[poolSize]);<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; poolSize; i++) &#123;<br>            connections[i] = <span class="hljs-keyword">new</span> <span class="hljs-title class_">MockConnection</span>(<span class="hljs-string">&quot;连接&quot;</span> + (i + <span class="hljs-number">1</span>));<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-comment">// 5. 借连接</span><br>    <span class="hljs-keyword">public</span> Connection <span class="hljs-title function_">borrow</span><span class="hljs-params">()</span> &#123;<span class="hljs-comment">// t1, t2, t3</span><br>        <span class="hljs-comment">// 获取许可</span><br>        <span class="hljs-keyword">try</span> &#123;<br>            semaphore.acquire(); <span class="hljs-comment">// 没有许可的线程，在此等待</span><br>        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>            e.printStackTrace();<br>        &#125;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; poolSize; i++) &#123;<br>            <span class="hljs-comment">// 获取空闲连接</span><br>            <span class="hljs-keyword">if</span> (states.get(i) == <span class="hljs-number">0</span>) &#123;<br>                <span class="hljs-keyword">if</span> (states.compareAndSet(i, <span class="hljs-number">0</span>, <span class="hljs-number">1</span>)) &#123;<br>                    log.debug(<span class="hljs-string">&quot;borrow &#123;&#125;&quot;</span>, connections[i]);<br>                    <span class="hljs-keyword">return</span> connections[i];<br>                &#125;<br>            &#125;<br>        &#125;<br>        <span class="hljs-comment">// 不会执行到这里</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;<br>    &#125;<br><br>    <span class="hljs-comment">// 6. 归还连接</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">free</span><span class="hljs-params">(Connection conn)</span> &#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; poolSize; i++) &#123;<br>            <span class="hljs-keyword">if</span> (connections[i] == conn) &#123;<br>                states.set(i, <span class="hljs-number">0</span>);<br>                log.debug(<span class="hljs-string">&quot;free &#123;&#125;&quot;</span>, conn);<br>                semaphore.release();<br>                <span class="hljs-keyword">break</span>;<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><h2 id="1、加锁解锁流程"><a href="#1、加锁解锁流程" class="headerlink" title="1、加锁解锁流程"></a>1、加锁解锁流程</h2><p>Semaphore有点像一个停车场，permits就好像停车位数量，当线程获得了permits就像是获得了停车位，然后停车场显示空余车位数量减一</p>
+<p>刚开始，permits(state)为3，这时5个线程来获取资源<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/94d7a9218fb319f6d86956c40aa78820.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>假设其中Thread-1，Thread-2，Thread-4 cas竞争成功，而Thread-0和Thread-3竞争失败，进入AQS队列park阻塞<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/925e5af0f9bc5c0a519e6e4fbd8de19d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>这时Thread-4释放了permits，状态如下<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61584fc67cb8a64b944b283e96b7c0a9.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>接下来Thread-0竞争成功，permits再次设置为0，设置自己为head结点，断开原来的head结点，unpark接下来的Thread-3，但由于permits是0，因此Thread-3在尝试不成功后再次进入park状态<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b0df29061cb83b29cb61c93fb149cdbe.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h2 id="2、源码分析"><a href="#2、源码分析" class="headerlink" title="2、源码分析"></a>2、源码分析</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">NonfairSync</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Sync</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> -<span class="hljs-number">2694183684443567898L</span>;<br><br>    NonfairSync(<span class="hljs-type">int</span> <span class="hljs-keyword">permits</span>) &#123;<br>        <span class="hljs-comment">// permits 即 state</span><br>        <span class="hljs-built_in">super</span>(<span class="hljs-keyword">permits</span>);<br>    &#125;<br><br>    <span class="hljs-comment">// Semaphore 方法, 方便阅读, 放在此处</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">acquire</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br>        sync.acquireSharedInterruptibly(<span class="hljs-number">1</span>);<br>    &#125;<br><br>    <span class="hljs-comment">// AQS 继承过来的方法, 方便阅读, 放在此处</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">acquireSharedInterruptibly</span><span class="hljs-params">(<span class="hljs-type">int</span> arg)</span><br>            <span class="hljs-keyword">throws</span> InterruptedException &#123;<br>        <span class="hljs-keyword">if</span> (Thread.interrupted())<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InterruptedException</span>();<br>        <span class="hljs-keyword">if</span> (tryAcquireShared(arg) &lt; <span class="hljs-number">0</span>)<br>            doAcquireSharedInterruptibly(arg);<br>    &#125;<br><br>    <span class="hljs-comment">// 尝试获得共享锁</span><br>    <span class="hljs-keyword">protected</span> <span class="hljs-type">int</span> <span class="hljs-title function_">tryAcquireShared</span><span class="hljs-params">(<span class="hljs-type">int</span> acquires)</span> &#123;<br>        <span class="hljs-keyword">return</span> nonfairTryAcquireShared(acquires);<br>    &#125;<br><br>    <span class="hljs-comment">// Sync 继承过来的方法, 方便阅读, 放在此处</span><br>    <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-title function_">nonfairTryAcquireShared</span><span class="hljs-params">(<span class="hljs-type">int</span> acquires)</span> &#123;<br>        <span class="hljs-keyword">for</span> (; ; ) &#123;<br>            <span class="hljs-type">int</span> <span class="hljs-variable">available</span> <span class="hljs-operator">=</span> getState();<br>            <span class="hljs-type">int</span> <span class="hljs-variable">remaining</span> <span class="hljs-operator">=</span> available - acquires;<br>            <span class="hljs-keyword">if</span> (<br>                <span class="hljs-comment">// 如果许可已经用完, 返回负数, 表示获取失败, 进入 doAcquireSharedInterruptibly</span><br>                    remaining &lt; <span class="hljs-number">0</span> ||<br>                            <span class="hljs-comment">// 如果 cas 重试成功, 返回正数, 表示获取成功</span><br>                            compareAndSetState(available, remaining)<br>            ) &#123;<br>                <span class="hljs-keyword">return</span> remaining;<br>            &#125;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-comment">// AQS 继承过来的方法, 方便阅读, 放在此处</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doAcquireSharedInterruptibly</span><span class="hljs-params">(<span class="hljs-type">int</span> arg)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br>        <span class="hljs-keyword">final</span> <span class="hljs-type">Node</span> <span class="hljs-variable">node</span> <span class="hljs-operator">=</span> addWaiter(Node.SHARED);<br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">failed</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-keyword">for</span> (; ; ) &#123;<br>                <span class="hljs-keyword">final</span> <span class="hljs-type">Node</span> <span class="hljs-variable">p</span> <span class="hljs-operator">=</span> node.predecessor();<br>                <span class="hljs-keyword">if</span> (p == head) &#123;<br>                    <span class="hljs-comment">// 再次尝试获取许可</span><br>                    <span class="hljs-type">int</span> <span class="hljs-variable">r</span> <span class="hljs-operator">=</span> tryAcquireShared(arg);<br>                    <span class="hljs-keyword">if</span> (r &gt;= <span class="hljs-number">0</span>) &#123;<br>                        <span class="hljs-comment">// 成功后本线程出队（AQS）, 所在 Node设置为 head</span><br>                        <span class="hljs-comment">// 如果 head.waitStatus == Node.SIGNAL ==&gt; 0 成功, 下一个节点 unpark</span><br>                        <span class="hljs-comment">// 如果 head.waitStatus == 0 ==&gt; Node.PROPAGATE</span><br><span class="hljs-comment">// r 表示可用资源数, 为 0 则不会继续传播</span><br>                        setHeadAndPropagate(node, r);<br>                        p.next = <span class="hljs-literal">null</span>; <span class="hljs-comment">// help GC</span><br>                        failed = <span class="hljs-literal">false</span>;<br>                        <span class="hljs-keyword">return</span>;<br>                    &#125;<br>                &#125;<br>                <span class="hljs-comment">// 不成功, 设置上一个节点 waitStatus = Node.SIGNAL, 下轮进入 park 阻塞</span><br>                <span class="hljs-keyword">if</span> (shouldParkAfterFailedAcquire(p, node) &amp;&amp;<br>                        parkAndCheckInterrupt())<br>                    <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InterruptedException</span>();<br>            &#125;<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            <span class="hljs-keyword">if</span> (failed)<br>                cancelAcquire(node);<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-comment">// Semaphore 方法, 方便阅读, 放在此处</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">release</span><span class="hljs-params">()</span> &#123;<br>        sync.releaseShared(<span class="hljs-number">1</span>);<br>    &#125;<br><br>    <span class="hljs-comment">// AQS 继承过来的方法, 方便阅读, 放在此处</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">releaseShared</span><span class="hljs-params">(<span class="hljs-type">int</span> arg)</span> &#123;<br>        <span class="hljs-keyword">if</span> (tryReleaseShared(arg)) &#123;<br>            doReleaseShared();<br>            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>        &#125;<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>    &#125;<br><br>    <span class="hljs-comment">// Sync 继承过来的方法, 方便阅读, 放在此处</span><br>    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">tryReleaseShared</span><span class="hljs-params">(<span class="hljs-type">int</span> releases)</span> &#123;<br>        <span class="hljs-keyword">for</span> (; ; ) &#123;<br>            <span class="hljs-type">int</span> <span class="hljs-variable">current</span> <span class="hljs-operator">=</span> getState();<br>            <span class="hljs-type">int</span> <span class="hljs-variable">next</span> <span class="hljs-operator">=</span> current + releases;<br>            <span class="hljs-keyword">if</span> (next &lt; current) <span class="hljs-comment">// overflow</span><br>                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Error</span>(<span class="hljs-string">&quot;Maximum permit count exceeded&quot;</span>);<br>            <span class="hljs-keyword">if</span> (compareAndSetState(current, next))<br>                <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h2 id="3、为什么要有PROPAGATE"><a href="#3、为什么要有PROPAGATE" class="headerlink" title="3、为什么要有PROPAGATE"></a>3、为什么要有PROPAGATE</h2><p>早期有BUG</p>
+<ul>
+<li>releaseShared方法</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">releaseShared</span><span class="hljs-params">(<span class="hljs-type">int</span> arg)</span> &#123;<br>       <span class="hljs-keyword">if</span> (tryReleaseShared(arg)) &#123;<br>           <span class="hljs-type">Node</span> <span class="hljs-variable">h</span> <span class="hljs-operator">=</span> head;<br>           <span class="hljs-keyword">if</span> (h != <span class="hljs-literal">null</span> &amp;&amp; h.waitStatus != <span class="hljs-number">0</span>)<br>               unparkSuccessor(h);<br>           <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;<br>       &#125;<br>       <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>   &#125;<br></code></pre></td></tr></table></figure>
+<ul>
+<li>doAcquireShared</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doAcquireShared</span><span class="hljs-params">(<span class="hljs-type">int</span> arg)</span> &#123;<br>        <span class="hljs-keyword">final</span> <span class="hljs-type">Node</span> <span class="hljs-variable">node</span> <span class="hljs-operator">=</span> addWaiter(Node.SHARED);<br>        <span class="hljs-type">boolean</span> <span class="hljs-variable">failed</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-type">boolean</span> <span class="hljs-variable">interrupted</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br>            <span class="hljs-keyword">for</span> (; ; ) &#123;<br>                <span class="hljs-keyword">final</span> <span class="hljs-type">Node</span> <span class="hljs-variable">p</span> <span class="hljs-operator">=</span> node.predecessor();<br>                <span class="hljs-keyword">if</span> (p == head) &#123;<br>                    <span class="hljs-type">int</span> <span class="hljs-variable">r</span> <span class="hljs-operator">=</span> tryAcquireShared(arg);<br>                    <span class="hljs-keyword">if</span> (r &gt;= <span class="hljs-number">0</span>) &#123;<br>                        <span class="hljs-comment">// 这里会有空档</span><br>                        setHeadAndPropagate(node, r);<br>                        p.next = <span class="hljs-literal">null</span>; <span class="hljs-comment">// help GC</span><br>                        <span class="hljs-keyword">if</span> (interrupted)<br>                            selfInterrupt();<br>                        failed = <span class="hljs-literal">false</span>;<br>                        <span class="hljs-keyword">return</span>;<br>                    &#125;<br>                &#125;<br>                <span class="hljs-keyword">if</span> (shouldParkAfterFailedAcquire(p, node) &amp;&amp;<br>                        parkAndCheckInterrupt())<br>                    interrupted = <span class="hljs-literal">true</span>;<br>            &#125;<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            <span class="hljs-keyword">if</span> (failed)<br>                cancelAcquire(node);<br>        &#125;<br>    &#125;<br></code></pre></td></tr></table></figure>
+<ul>
+<li>setHeadAndPropagate</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setHeadAndPropagate</span><span class="hljs-params">(Node node, <span class="hljs-type">int</span> propagate)</span> &#123;<br>        setHead(node);<br>        <span class="hljs-comment">// 有空闲资源</span><br>        <span class="hljs-keyword">if</span> (propagate &gt; <span class="hljs-number">0</span> &amp;&amp; node.waitStatus != <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-type">Node</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> node.next;<br>            <span class="hljs-comment">// 下一个</span><br>            <span class="hljs-keyword">if</span> (s == <span class="hljs-literal">null</span> || s.isShared())<br>                unparkSuccessor(node);<br>        &#125;<br>    &#125;<br></code></pre></td></tr></table></figure>
+<ol>
+<li>假设存在某次循环里队队列里排队的结点状态为head(-1)-&gt;t1(-1)-&gt;t2(-1)</li>
+<li>假设存在将要释放的T3和T4，释放顺序为先T3后T4</li>
+</ol>
+<h3 id="正常流程"><a href="#正常流程" class="headerlink" title="正常流程"></a>正常流程</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7c07c30d8a02e9038cf67711aa5264a1.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h3 id="产生BUG的情况"><a href="#产生BUG的情况" class="headerlink" title="产生BUG的情况"></a>产生BUG的情况</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7941a749ae1832f86474a197db7eab9b.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>修复前版本执行流程</p>
+<ol>
+<li>T3条用releaseShared(1)，直接调用了unparkSuccessor(head)，head的等待状态从-1变成0</li>
+<li>T1由于T3释放信号量被唤醒，调用tryAcquireShared，假设返回值为0（获取锁成功，但没有剩余资源量）</li>
+<li>T4调用releaseShared(1)，此时head.waitStatus为0（此时读到的head和1为同一个head），不满足条件因此不调用unparkSuccessor(head)</li>
+<li>T1获取信号量成功，调用setHeadAndPropagate时，因不满足propagate&gt;0（2的返回值也就是propagate（剩余资源量）&#x3D;&#x3D;0），从而不会唤醒后继结点，T2线程得不到唤醒</li>
+</ol>
+<h3 id="bug修复后"><a href="#bug修复后" class="headerlink" title="bug修复后"></a>bug修复后</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setHeadAndPropagate</span><span class="hljs-params">(Node node, <span class="hljs-type">int</span> propagate)</span> &#123;<br>        <span class="hljs-type">Node</span> <span class="hljs-variable">h</span> <span class="hljs-operator">=</span> head; <span class="hljs-comment">// Record old head for check below</span><br>        <span class="hljs-comment">// 设置自己为 head</span><br>        setHead(node);<br>        <span class="hljs-comment">// propagate 表示有共享资源（例如共享读锁或信号量）</span><br>        <span class="hljs-comment">// 原 head waitStatus == Node.SIGNAL 或 Node.PROPAGATE</span><br>        <span class="hljs-comment">// 现在 head waitStatus == Node.SIGNAL 或 Node.PROPAGATE</span><br>        <span class="hljs-keyword">if</span> (propagate &gt; <span class="hljs-number">0</span> || h == <span class="hljs-literal">null</span> || h.waitStatus &lt; <span class="hljs-number">0</span> ||<br>                (h = head) == <span class="hljs-literal">null</span> || h.waitStatus &lt; <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-type">Node</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> node.next;<br>            <span class="hljs-comment">// 如果是最后一个节点或者是等待共享读锁的节点</span><br>            <span class="hljs-keyword">if</span> (s == <span class="hljs-literal">null</span> || s.isShared()) &#123;<br>                doReleaseShared();<br>            &#125;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doReleaseShared</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-comment">// 如果 head.waitStatus == Node.SIGNAL ==&gt; 0 成功, 下一个节点 unpark</span><br>        <span class="hljs-comment">// 如果 head.waitStatus == 0 ==&gt; Node.PROPAGATE</span><br>        <span class="hljs-keyword">for</span> (; ; ) &#123;<br>            <span class="hljs-type">Node</span> <span class="hljs-variable">h</span> <span class="hljs-operator">=</span> head;<br>            <span class="hljs-keyword">if</span> (h != <span class="hljs-literal">null</span> &amp;&amp; h != tail) &#123;<br>                <span class="hljs-type">int</span> <span class="hljs-variable">ws</span> <span class="hljs-operator">=</span> h.waitStatus;<br>                <span class="hljs-keyword">if</span> (ws == Node.SIGNAL) &#123;<br>                    <span class="hljs-keyword">if</span> (!compareAndSetWaitStatus(h, Node.SIGNAL, <span class="hljs-number">0</span>))<br>                        <span class="hljs-keyword">continue</span>; <span class="hljs-comment">// loop to recheck cases</span><br>                    unparkSuccessor(h);<br>                &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (ws == <span class="hljs-number">0</span> &amp;&amp;<br>                        !compareAndSetWaitStatus(h, <span class="hljs-number">0</span>, Node.PROPAGATE))<br>                    <span class="hljs-keyword">continue</span>; <span class="hljs-comment">// loop on failed CAS</span><br>            &#125;<br>            <span class="hljs-keyword">if</span> (h == head) <span class="hljs-comment">// loop if head changed</span><br>                <span class="hljs-keyword">break</span>;<br>        &#125;<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2e88a994f77f99a5b96ce03b4df3a6ed.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<ol>
+<li>T3调用releaseShared()，直接调用了unparkSuccessor(head)，head的等待状态从-1变为0</li>
+<li>T1由于T3释放信号量被唤醒，调用tryAcquireShared，假设返回值为0（获取锁成功，单没有剩余资源量）</li>
+<li>T4调用releaseShared()，此时head.waitStatus为0（此时读到的head和1中为同一个head），调用doReleaseShared()将等待状态设置为<strong>PROPAGATE(-3)</strong></li>
+<li>T1获取信号量成功，调用setHeadAndPropagate时，读到h.waitStatus&lt;0，从而调用doReleaseShared()唤醒T2</li>
+</ol>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Java%E5%B9%B6%E5%8F%91/" class="print-no-link">#Java并发</a>
+      
+        <a href="/tags/JUC/" class="print-no-link">#JUC</a>
+      
+        <a href="/tags/Semaphore/" class="print-no-link">#Semaphore</a>
+      
+        <a href="/tags/%E4%BF%A1%E5%8F%B7%E9%87%8F/" class="print-no-link">#信号量</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>JUC-Semaphore</div>
+      <div>https://aster-xu-lab.github.io/2022/05/15/2022-05-15-JUC-Semaphore/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年5月15日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/05/16/2022-05-16-JUC-CountdownLatch/" title="JUC-CountdownLatch">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">JUC-CountdownLatch</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/05/15/2022-05-15-JUC-StampedLock/" title="JUC-StampedLock">
+                        <span class="hidden-mobile">JUC-StampedLock</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

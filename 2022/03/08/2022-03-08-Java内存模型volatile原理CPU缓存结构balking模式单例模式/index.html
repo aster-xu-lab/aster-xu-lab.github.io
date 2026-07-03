@@ -1,0 +1,1115 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="本章内容上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性 这一张进一步深入学习共享变量在多线程之间的【可见性】问题与多条指令执行时的【有序性】问题 1、Java内存模型JMM即Java Menory Model，它定义了主存，工作内存的抽象概念，底层对应着CPU寄存器、缓存、硬件内存、CPU指令优化等。 JMM 体现在以下几个方面  原子性 - 保证指令不会受到线程上下">
+<meta property="og:type" content="article">
+<meta property="og:title" content="4、Java内存模型、volatile原理、CPU缓存结构、balking模式、单例模式">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/08/2022-03-08-Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8Bvolatile%E5%8E%9F%E7%90%86CPU%E7%BC%93%E5%AD%98%E7%BB%93%E6%9E%84balking%E6%A8%A1%E5%BC%8F%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="本章内容上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性 这一张进一步深入学习共享变量在多线程之间的【可见性】问题与多条指令执行时的【有序性】问题 1、Java内存模型JMM即Java Menory Model，它定义了主存，工作内存的抽象概念，底层对应着CPU寄存器、缓存、硬件内存、CPU指令优化等。 JMM 体现在以下几个方面  原子性 - 保证指令不会受到线程上下">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7ae16d2166e14e013880cbf7cbbcb26.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/026880714100968b89d8d0f2649e3977.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7fc7d8fb8a981ce434e1ab5d435d5fd.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/100154e7c30968c355512fd7c98fed1d.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/420fc5c64dda900c64168e44b2cf648b.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1a53c271a18336df2cec5e6ad9253e16.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/52aad32f98837a5b42f59004a7bcd4e9.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ef73a96f232ab6bf1c379c03258fcf9e.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c16f9ae513dd9a5f1e571958d8c94ee6.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0a9fe42fe3c0ca0e39ca08b8b8d8c7cb.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c22c3a3625125ab2ae8485c5b8073a9f.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e16cefecbbe12fb45497497107ad235d.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/426bbd79dadfa28432afe2e2062ae80e.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6bb357ac976d101f7758f53cbf91f885.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5bc90806c0b0f4d50707cd27f268be2f.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ad80968a8985bd8c7116ef4c3a874f9d.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5f6c5efc68e5aa7b79e34dc496f7c561.png">
+<meta property="article:published_time" content="2022-03-08T13:58:03.000Z">
+<meta property="article:modified_time" content="2026-07-03T09:07:36.546Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="JMM">
+<meta property="article:tag" content="JUC">
+<meta property="article:tag" content="Java并发">
+<meta property="article:tag" content="volatile">
+<meta property="article:tag" content="内存模型">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7ae16d2166e14e013880cbf7cbbcb26.png">
+  
+  
+  
+  <title>4、Java内存模型、volatile原理、CPU缓存结构、balking模式、单例模式 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="4、Java内存模型、volatile原理、CPU缓存结构、balking模式、单例模式"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-03-08 21:58" pubdate>
+          2022年3月8日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          13k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          112 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">4、Java内存模型、volatile原理、CPU缓存结构、balking模式、单例模式</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="本章内容"><a href="#本章内容" class="headerlink" title="本章内容"></a>本章内容</h1><p>上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性</p>
+<p>这一张进一步深入学习共享变量在多线程之间的【可见性】问题与多条指令执行时的【有序性】问题</p>
+<h1 id="1、Java内存模型"><a href="#1、Java内存模型" class="headerlink" title="1、Java内存模型"></a>1、Java内存模型</h1><p>JMM即Java Menory Model，它定义了主存，工作内存的抽象概念，底层对应着CPU寄存器、缓存、硬件内存、CPU指令优化等。</p>
+<p>JMM 体现在以下几个方面</p>
+<ul>
+<li>原子性 - 保证指令不会受到线程上下文切换的影响</li>
+<li>可进行 - 保证指令不会受到CPU缓存的影响</li>
+<li>有序性 - 保证指令不会受到CPU指令优化的影响</li>
+</ul>
+<h1 id="2、可见性"><a href="#2、可见性" class="headerlink" title="2、可见性"></a>2、可见性</h1><h2 id="退不出的循环"><a href="#退不出的循环" class="headerlink" title="退不出的循环"></a>退不出的循环</h2><p>先来看一个现象，main线程对run变量的修改对于t线程不可见，导致t线程无法停止</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">run</span> <span class="hljs-operator">=</span> <span class="hljs-literal">true</span>;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br>        <span class="hljs-type">Thread</span> <span class="hljs-variable">t1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">while</span> (run) &#123;<br>            &#125;<br>        &#125;);<br>        t1.start();<br>        Thread.sleep(<span class="hljs-number">1000</span>);<br>        run = <span class="hljs-literal">false</span>;<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>t线程没有如预期的停下来</p>
+<p>分析一下：</p>
+<ol>
+<li><p>初始状态，t线程刚开始从主内存读取了run的值到工作内存<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7ae16d2166e14e013880cbf7cbbcb26.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+</li>
+<li><p>因为t线程要频繁的从主内存中读取run的值，JIT编译器会将run的值缓存至自己工作内存的高速缓存中，减少对主存run的访问，提高效率<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/026880714100968b89d8d0f2649e3977.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+</li>
+<li><p>1秒之后，main线程修改了run的值，并同步至主存，而t 是从自己工作内存的高速缓存中读取这个变量的值，结果永远是旧值<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7fc7d8fb8a981ce434e1ab5d435d5fd.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+</li>
+</ol>
+<h2 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h2><p>volatile （易变关键字）</p>
+<p>它可以用来修饰成员变量和静态成员变量，它可以避免线程从自己的工作缓存中查找变量的值，必须到主存中获取它的值，线程操作volatile变量都是直接操作主存</p>
+<h2 id="可见性-vs-原子性"><a href="#可见性-vs-原子性" class="headerlink" title="可见性 vs 原子性"></a>可见性 vs 原子性</h2><p>前面例子体现的实际就是可见性，它保证的是在多个线程之间，一个线程对volatile变量的修改对另一个线程可见，不能保证原子性，仅用在一个写线程，多个读线程的情况，上例从字节码理解是这样的：</p>
+<figure class="highlight autoit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs autoit">getstatic <span class="hljs-built_in">run</span> // 线程 t 获取 <span class="hljs-built_in">run</span> <span class="hljs-literal">true</span> <br>getstatic <span class="hljs-built_in">run</span> // 线程 t 获取 <span class="hljs-built_in">run</span> <span class="hljs-literal">true</span> <br>getstatic <span class="hljs-built_in">run</span> // 线程 t 获取 <span class="hljs-built_in">run</span> <span class="hljs-literal">true</span> <br>getstatic <span class="hljs-built_in">run</span> // 线程 t 获取 <span class="hljs-built_in">run</span> <span class="hljs-literal">true</span> <br>putstatic <span class="hljs-built_in">run</span> // 线程 main 修改 <span class="hljs-built_in">run</span> 为 <span class="hljs-literal">false</span>， 仅此一次<br>getstatic <span class="hljs-built_in">run</span> // 线程 t 获取 <span class="hljs-built_in">run</span> <span class="hljs-literal">false</span> <br></code></pre></td></tr></table></figure>
+<p>比较一下之前我们讲线程安全时举的例子，两个线程一个i++，一个i–，只能保证看到最新值，不能解决指令交错</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs less"><span class="hljs-comment">// 假设i的初始值为0 </span><br><span class="hljs-selector-tag">getstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 线程2-获取静态变量i的值 线程内i=0 </span><br><span class="hljs-selector-tag">getstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 线程1-获取静态变量i的值 线程内i=0 </span><br><span class="hljs-selector-tag">iconst_1</span> <span class="hljs-comment">// 线程1-准备常量1 </span><br><span class="hljs-selector-tag">iadd</span> <span class="hljs-comment">// 线程1-自增 线程内i=1 </span><br><span class="hljs-selector-tag">putstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 线程1-将修改后的值存入静态变量i 静态变量i=1 </span><br><span class="hljs-selector-tag">iconst_1</span> <span class="hljs-comment">// 线程2-准备常量1 </span><br><span class="hljs-selector-tag">isub</span> <span class="hljs-comment">// 线程2-自减 线程内i=-1 </span><br><span class="hljs-selector-tag">putstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 线程2-将修改后的值存入静态变量i 静态变量i=-1 </span><br></code></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>注意</strong><br>synchronized语句块既可以保证代码的原子性，也同时保证代码块内变量的可见性，但缺点是synchronized是属于重量级的，性能相对更低<br>如果在前面示例的死循环中加入System.out.println()会发现及时不加volatile修饰乳，线程t也能正确看到对run变量的修改，为什么？</p>
+</blockquote>
+<p>println内部有synchronized关键字</p>
+<h1 id="3、CPU缓存结构原理"><a href="#3、CPU缓存结构原理" class="headerlink" title="3、CPU缓存结构原理"></a>3、CPU缓存结构原理</h1><h2 id="1、CPU缓存结构"><a href="#1、CPU缓存结构" class="headerlink" title="1、CPU缓存结构"></a>1、CPU缓存结构</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/100154e7c30968c355512fd7c98fed1d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>查看cpu缓存</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-string">⚡</span> <span class="hljs-string">root@yihang01</span> <span class="hljs-string">~</span> <span class="hljs-string">lscpu</span><br><span class="hljs-attr">Architecture:</span> <span class="hljs-string">x86_64</span><br><span class="hljs-attr">CPU op-mode(s):</span> <span class="hljs-number">32</span><span class="hljs-string">-bit,</span> <span class="hljs-number">64</span><span class="hljs-string">-bit</span><br><span class="hljs-attr">Byte Order:</span> <span class="hljs-string">Little</span> <span class="hljs-string">Endian</span><br><span class="hljs-attr">CPU(s):</span> <span class="hljs-number">1</span><br><span class="hljs-attr">On-line CPU(s) list:</span> <span class="hljs-number">0</span><br><span class="hljs-attr">Thread(s) per core:</span> <span class="hljs-number">1</span><br><span class="hljs-attr">Core(s) per socket:</span> <span class="hljs-number">1</span><br><span class="hljs-attr">Socket(s):</span> <span class="hljs-number">1</span><br><span class="hljs-attr">NUMA node(s):</span> <span class="hljs-number">1</span><br><span class="hljs-attr">Vendor ID:</span> <span class="hljs-string">GenuineIntel</span><br><span class="hljs-attr">CPU family:</span> <span class="hljs-number">6</span><br><span class="hljs-attr">Model:</span> <span class="hljs-number">142</span><br><span class="hljs-attr">Model name:</span> <span class="hljs-string">Intel(R)</span> <span class="hljs-string">Core(TM)</span> <span class="hljs-string">i7-8565U</span> <span class="hljs-string">CPU</span> <span class="hljs-string">@</span> <span class="hljs-number">1.</span><span class="hljs-string">80GHz</span><br><span class="hljs-attr">Stepping:</span> <span class="hljs-number">11</span><br><span class="hljs-attr">CPU MHz:</span> <span class="hljs-number">1992.002</span><br><span class="hljs-attr">BogoMIPS:</span> <span class="hljs-number">3984.00</span><br><span class="hljs-attr">Hypervisor vendor:</span> <span class="hljs-string">VMware</span><br><span class="hljs-attr">Virtualization type:</span> <span class="hljs-string">full</span><br><span class="hljs-attr">L1d cache:</span> <span class="hljs-string">32K</span><br><span class="hljs-attr">L1i cache:</span> <span class="hljs-string">32K</span><br><span class="hljs-attr">L2 cache:</span> <span class="hljs-string">256K</span><br><span class="hljs-attr">L3 cache:</span> <span class="hljs-string">8192K</span><br><span class="hljs-attr">NUMA node0 CPU(s):</span> <span class="hljs-number">0</span><br></code></pre></td></tr></table></figure>
+<p>速度比较<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/420fc5c64dda900c64168e44b2cf648b.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>查看cpu缓存行</p>
+<figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs swift"><span class="hljs-operator">⚡</span> root<span class="hljs-meta">@yihang01</span> <span class="hljs-operator">~</span> cat <span class="hljs-regexp">/sys/</span>devices<span class="hljs-regexp">/system/</span>cpu<span class="hljs-regexp">/cpu0/</span>cache<span class="hljs-regexp">/index0/</span>coherency_line_size<br><span class="hljs-number">64</span><br></code></pre></td></tr></table></figure>
+<p>cpu拿到的内存地址格式是这样的</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-attr">[高位组标记]</span><span class="hljs-selector-attr">[低位索引]</span><span class="hljs-selector-attr">[偏移量]</span><br></code></pre></td></tr></table></figure>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1a53c271a18336df2cec5e6ad9253e16.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h2 id="2、CPU缓存读"><a href="#2、CPU缓存读" class="headerlink" title="2、CPU缓存读"></a>2、CPU缓存读</h2><p>读取数据流程如下</p>
+<ul>
+<li>根据低位，计算在缓存中的索引</li>
+<li>判断是否有效<ul>
+<li>0 去内存读取新数据更新缓存行</li>
+<li>1 再去比较高位组标记是否一致<ul>
+<li>一致，根据偏移量返回缓存数据</li>
+<li>不一致，去内存读取新数据更新缓存行</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="3、CPU缓存一致性"><a href="#3、CPU缓存一致性" class="headerlink" title="3、CPU缓存一致性"></a>3、CPU缓存一致性</h2><p>MESI协议</p>
+<ol>
+<li>E、S、M状态的缓存行都可以满足CPU的读请求</li>
+<li>E状态的缓存行，有写请求，会将状态改为M，这时并不触发主存的写</li>
+<li>E状态的缓存行，必须监听该缓存行的读操作，如果有，要变为S状态<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/52aad32f98837a5b42f59004a7bcd4e9.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
+<li>M状态的缓存行，必须监听该缓存行的读操作，如果有，先将其它缓存（S状态）中该缓存行变成 I 状态（即6的流程），写入主存，自己变为S状态</li>
+<li>S状态的缓存行，有写请求，走4.流程</li>
+<li>S状态的缓存行，必须监听该缓存行的失效操作，如果有，自己变为I状态</li>
+<li>I状态的缓存行，有读请求，必须从主存读取<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ef73a96f232ab6bf1c379c03258fcf9e.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>这边有点绕，，有时间在细看吧。</li>
+</ol>
+<h2 id="4、内存屏障"><a href="#4、内存屏障" class="headerlink" title="4、内存屏障"></a>4、内存屏障</h2><p>Memory Barrier （Memory Fence）</p>
+<ul>
+<li>可见性<ul>
+<li>写屏障 （sfence）保证在该屏障之前的，对共享变量的改动，都同步到主存当中</li>
+<li>而读屏障 （lfence）保证在改屏障之后，对共享变量的读取，加载的是主存中最新数据</li>
+</ul>
+</li>
+<li>有序性<ul>
+<li>写屏障会确保指令重排序时，不会将写屏障之前的代码排在写屏障之后</li>
+<li>读屏障会确保指令重排序时，不会将读屏障之后的代码写在读屏障之前<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c16f9ae513dd9a5f1e571958d8c94ee6.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
+</ul>
+</li>
+</ul>
+<h1 id="4、同步模式之Balking模式"><a href="#4、同步模式之Balking模式" class="headerlink" title="4、同步模式之Balking模式"></a>4、同步模式之Balking模式</h1><h2 id="1、定义"><a href="#1、定义" class="headerlink" title="1、定义"></a>1、定义</h2><p>Balking（犹豫）模式用在一个线程发现另一个线程或本线程已经做了某一件相同的是，那么本线程就无需在做了，直接返回</p>
+<h2 id="2、实现"><a href="#2、实现" class="headerlink" title="2、实现"></a>2、实现</h2><p>经常用来实现线程安全的单例</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">BalkingSingleton</span> &#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-title function_">BalkingSingleton</span><span class="hljs-params">()</span>&#123;&#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">BalkingSingleton</span> <span class="hljs-variable">INSTANCE</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">synchronized</span> BalkingSingleton <span class="hljs-title function_">getInstance</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (INSTANCE != <span class="hljs-literal">null</span>) <span class="hljs-keyword">return</span> INSTANCE;<br>        INSTANCE = <span class="hljs-keyword">new</span> <span class="hljs-title class_">BalkingSingleton</span>();<br>        <span class="hljs-keyword">return</span> INSTANCE;<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>对比一下保护性暂停模式：保护性暂停用在一个线程等待另一个线程的执行结果，当条件不满足时线程等待</p>
+<h1 id="5、有序性"><a href="#5、有序性" class="headerlink" title="5、有序性"></a>5、有序性</h1><p>JVM会在不影响正确性的前提下，可以调整语句的执行顺序，思考下面的代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> i;<br><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> j;<br><span class="hljs-comment">// 在某个线程内执行如下赋值操作</span><br>i = ...; <br>j = ...; <br></code></pre></td></tr></table></figure>
+<p>可以看到，至于是先执行i还是j，对最终的结果都不会产生影响。所以，上面的代码真正执行时，既可以是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java">i = ...; <br>j = ...; <br></code></pre></td></tr></table></figure>
+<p>也可以是</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java">j = ...; <br>i = ...; <br></code></pre></td></tr></table></figure>
+<p>这种特性称之为【指令重排】，多线程下【指令重排】会影响正确性。为什么要有指令重排这项优化，从CPU执行指令的原理来了解吧。</p>
+<h2 id="原理之指令并行"><a href="#原理之指令并行" class="headerlink" title="原理之指令并行"></a>原理之指令并行</h2><h3 id="1、名词"><a href="#1、名词" class="headerlink" title="1、名词"></a>1、名词</h3><h4 id="Clock-Cycle-Time"><a href="#Clock-Cycle-Time" class="headerlink" title="Clock Cycle Time"></a>Clock Cycle Time</h4><p>主频的概念大家接触的比较多，而CPU的Clock Cycle Time（时钟周期时间），等于主频的倒数，意思是CPU能够识别的最小时间单位，比如说4G主频的Clock Cycle Time就是0.25ns，作为对比，我们墙上挂钟的Cycle Time是1s</p>
+<p>例如，运行一条加法指令一般需要一个时钟周期</p>
+<h4 id="CPI"><a href="#CPI" class="headerlink" title="CPI"></a>CPI</h4><p>有的指令需要更多的时钟周期，所以就引出了CPI（Cycles Per Instruction）指令平均时钟周期数</p>
+<h4 id="IPC"><a href="#IPC" class="headerlink" title="IPC"></a>IPC</h4><p>IPC（Instruction Per Clock Cycle）即CPI的倒数，表示每个时钟周期能运行的指令数</p>
+<h4 id="CPU执行时间"><a href="#CPU执行时间" class="headerlink" title="CPU执行时间"></a>CPU执行时间</h4><p>程序的CPU执行时间，即我们前面提到的user + system时间，可以用下面的公式表示</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">程序 CPU执行时间 <span class="hljs-operator">=</span> 指令数 <span class="hljs-operator">*</span> CPI <span class="hljs-operator">*</span> Clock <span class="hljs-keyword">Cycle</span> <span class="hljs-type">Time</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2、鱼罐头的故事"><a href="#2、鱼罐头的故事" class="headerlink" title="2、鱼罐头的故事"></a>2、鱼罐头的故事</h3><p>加工一条鱼需要50分钟，只能一条鱼，一条鱼顺序加工…<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0a9fe42fe3c0ca0e39ca08b8b8d8c7cb.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>可以将每个鱼罐头的加工流程细分为5个步骤：</p>
+<ul>
+<li>去鳞清洗 10分钟</li>
+<li>蒸煮沥水 10分钟</li>
+<li>加注汤料 10分钟</li>
+<li>杀菌出锅 10分钟</li>
+<li>真空封罐 10分钟</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c22c3a3625125ab2ae8485c5b8073a9f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>即是只有一个工人，最理想的情况：他能够在10分钟内做好这五件事，因为对第一条鱼的真空封罐，不影响第二条鱼的杀菌出锅</p>
+<h3 id="3、指令重排序优化"><a href="#3、指令重排序优化" class="headerlink" title="3、指令重排序优化"></a>3、指令重排序优化</h3><p>事实上，现代处理器会设计为一个时钟周期完成执行一条执行时间最长的CPU指令。为什么这么做呢？可以想到指令还可以再划分为一个个更小的阶段，例如，没跳指令可以分为 <code>取指令 - 指令译码 - 执行指令 - 内存访问 - 数据写回 </code> 这个五个阶段<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e16cefecbbe12fb45497497107ad235d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<blockquote>
+<p><strong>术语参考</strong></p>
+<ul>
+<li>instruction fetch (IF)</li>
+<li>instruction decode (ID) </li>
+<li>execute (EX)</li>
+<li>memory access (MEM) </li>
+<li>register write back (WB)</li>
+</ul>
+</blockquote>
+<p>在不改变程序结果的前提下，这些指令的各个阶段可以通过<strong>重排序</strong>和<strong>组合</strong>来实现<strong>指令级并行</strong>，这一技术在80<code>s中叶到90</code>s中叶占据了计算架构的重要地位</p>
+<blockquote>
+<p><strong>提示</strong><br>分阶段，分工是提升效率的关键</p>
+</blockquote>
+<p>指令重排的前提是不能影响结果，例</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 可以重排的例子</span><br><span class="hljs-type">int</span> <span class="hljs-variable">a</span> <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br><span class="hljs-type">int</span> <span class="hljs-variable">b</span> <span class="hljs-operator">=</span> <span class="hljs-number">20</span>;<br>System.out.println(a + b);<br><br><span class="hljs-comment">// 不能重排的例子</span><br><span class="hljs-type">int</span> <span class="hljs-variable">a</span> <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br><span class="hljs-type">int</span> <span class="hljs-variable">b</span> <span class="hljs-operator">=</span> a - <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+<blockquote>
+<p><strong>参考</strong><br>Scoreboarding and the Tomasulo algorithm (which is similar to scoreboarding but makes use of<br>register renaming) are two of the most common techniques for implementing out-of-order execution<br>and instruction-level parallelism.</p>
+</blockquote>
+<h3 id="4、支持流水线的处理器"><a href="#4、支持流水线的处理器" class="headerlink" title="4、支持流水线的处理器"></a>4、支持流水线的处理器</h3><p>现代CPU支持<strong>多级指令流水线</strong>，例如支持同时 <code>取指令 - 指令译码 - 执行指令 - 内存访问 - 数据写回 </code> 的处理器，可以称之为<strong>五级指令流水线</strong>。这时CPU可以在一个时钟周期内，同时运行五条指令的不同阶段（相当于执行时间最长的复杂指令），IPC &#x3D; 1，本本质上，流水线技术并不能缩短单条指令的执行时间，但它变相的提高了指令的吞吐率。</p>
+<blockquote>
+<p><strong>提示</strong><br>奔腾四支持高达35级流水线，但由于功耗太高被废弃</p>
+</blockquote>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/426bbd79dadfa28432afe2e2062ae80e.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h3 id="5、SuperScalar-处理器"><a href="#5、SuperScalar-处理器" class="headerlink" title="5、SuperScalar 处理器"></a>5、SuperScalar 处理器</h3><p>大多数处理器包含多个执行单元，并不是所有计算功能都能集中在一起，可以再细分为整数运算单元、浮点数运算单元等，这样可以吧多条指令也做到并行获取、译码等，CPU可以在一个时钟周期内，执行多于一条指令，IPC &gt; 1<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6bb357ac976d101f7758f53cbf91f885.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5bc90806c0b0f4d50707cd27f268be2f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h2 id="诡异的结果"><a href="#诡异的结果" class="headerlink" title="诡异的结果"></a>诡异的结果</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">int</span> <span class="hljs-variable">num</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br><span class="hljs-type">boolean</span> <span class="hljs-variable">ready</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br><span class="hljs-comment">// 线程1 执行此方法</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor1</span><span class="hljs-params">(I_Result r)</span> &#123;<br> <span class="hljs-keyword">if</span>(ready) &#123;<br> r.r1 = num + num;<br> &#125; <span class="hljs-keyword">else</span> &#123;<br> r.r1 = <span class="hljs-number">1</span>;<br> &#125;<br>&#125;<br><span class="hljs-comment">// 线程2 执行此方法</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor2</span><span class="hljs-params">(I_Result r)</span> &#123; <br> num = <span class="hljs-number">2</span>;<br> ready = <span class="hljs-literal">true</span>; <br>&#125;<br><br></code></pre></td></tr></table></figure>
+<p>I_Result是一个对象，有一个属性r1用来保存结果，问，可能有几种结果？</p>
+<p>有同学这么分析</p>
+<p>情况1：线程1先执行，这是ready &#x3D; false，所以进入else分支结果为1</p>
+<p>情况2：线程2先执行，num&#x3D;2，单没来得及执行ready &#x3D; true，还是进入else分支，结果为1</p>
+<p>情况3：线程2执行到ready&#x3D;true，线程1执行，这回进入if分支，结果为4（因为num已经执行过了）</p>
+<p>但是实际情况的结果还有可能为0！</p>
+<p>这种情况下是：线程2执行ready&#x3D;true，切换到线程1，进入if分支，相加为0，再切回线程2执行num &#x3D; 2</p>
+<p>这种现象较指令重排，是JIT编译器在运行时的一些优化，这个需要通过大量测试才能复现：</p>
+<p>借助Java并发压测工具jcstress：<a target="_blank" rel="noopener" href="https://wiki.openjdk.java.net/display/CodeTools/jcstress">https://wiki.openjdk.java.net/display/CodeTools/jcstress</a></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs routeros">mvn archetype:generate <span class="hljs-attribute">-DinteractiveMode</span>=<span class="hljs-literal">false</span> <span class="hljs-attribute">-DarchetypeGroupId</span>=org.openjdk.jcstress -<br><span class="hljs-attribute">DarchetypeArtifactId</span>=jcstress-java-test-archetype <span class="hljs-attribute">-DarchetypeVersion</span>=0.5 <span class="hljs-attribute">-DgroupId</span>=cn.itcast -<br><span class="hljs-attribute">DartifactId</span>=ordering <span class="hljs-attribute">-Dversion</span>=1.0 <br></code></pre></td></tr></table></figure>
+<p>创建maven项目，提供如下测试类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@JCStressTest</span><br><span class="hljs-meta">@Outcome(id = &#123;&quot;1&quot;, &quot;4&quot;&#125;, expect = Expect.ACCEPTABLE, desc = &quot;ok&quot;)</span><br><span class="hljs-meta">@Outcome(id = &quot;0&quot;, expect = Expect.ACCEPTABLE_INTERESTING, desc = &quot;!!!!&quot;)</span><br><span class="hljs-meta">@State</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ConcurrencyTest</span> &#123;<br> 	<span class="hljs-type">int</span> <span class="hljs-variable">num</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br> 	<span class="hljs-type">boolean</span> <span class="hljs-variable">ready</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br>  	<span class="hljs-meta">@Actor</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor1</span><span class="hljs-params">(I_Result r)</span> &#123;<br> 		<span class="hljs-keyword">if</span>(ready) &#123;<br> 			r.r1 = num + num;<br> 		&#125; <span class="hljs-keyword">else</span> &#123;<br> 			r.r1 = <span class="hljs-number">1</span>;<br> 		&#125;<br> 	&#125;<br> 	<span class="hljs-meta">@Actor</span><br> 	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor2</span><span class="hljs-params">(I_Result r)</span> &#123;<br> 		num = <span class="hljs-number">2</span>;<br>		ready = <span class="hljs-literal">true</span>;<br> 	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>执行</p>
+<figure class="highlight cmake"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cmake">mvn clean <span class="hljs-keyword">install</span> <br>java -jar <span class="hljs-keyword">target</span>/jcstress.jar <br></code></pre></td></tr></table></figure>
+<p>从抛出的我们感兴趣的结果中，摘录其中一次结果：</p>
+<figure class="highlight erlang-repl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs erlang-repl">*** INTERESTING tests <br> Some interesting behaviors observed. This is for the plain curiosity. <br> <span class="hljs-number">2</span> matching test results. <br> [OK] test.ConcurrencyTest <br> (JVM args: [-XX:-TieredCompilation]) <br> Observed state Occurrences Expectation Interpretation <br> <span class="hljs-number">0</span> <span class="hljs-number">1</span>,<span class="hljs-number">729</span> ACCEPTABLE_INTERESTING !!!! <br> <span class="hljs-number">1</span> <span class="hljs-number">42</span>,<span class="hljs-number">617</span>,<span class="hljs-number">915</span> ACCEPTABLE ok <br> <span class="hljs-number">4</span> <span class="hljs-number">5</span>,<span class="hljs-number">146</span>,<span class="hljs-number">627</span> ACCEPTABLE ok <br> [OK] test.ConcurrencyTest <br> (JVM args: []) <br> Observed state Occurrences Expectation Interpretation <br> <span class="hljs-number">0</span> <span class="hljs-number">1</span>,<span class="hljs-number">652</span> ACCEPTABLE_INTERESTING !!!! <br> <span class="hljs-number">1</span> <span class="hljs-number">46</span>,<span class="hljs-number">460</span>,<span class="hljs-number">657</span> ACCEPTABLE ok <br> <span class="hljs-number">4</span> <span class="hljs-number">4</span>,<span class="hljs-number">571</span>,<span class="hljs-number">072</span> ACCEPTABLE ok <br></code></pre></td></tr></table></figure>
+<p>可以看到，出现结果为0情况有1,729次，虽然结果较少，但还是出现了。</p>
+<h2 id="解决办法-1"><a href="#解决办法-1" class="headerlink" title="解决办法"></a>解决办法</h2><p>volatile修饰的变量，可以禁用指令重排</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@JCStressTest</span><br><span class="hljs-meta">@Outcome(id = &#123;&quot;1&quot;, &quot;4&quot;&#125;, expect = Expect.ACCEPTABLE, desc = &quot;ok&quot;)</span><br><span class="hljs-meta">@Outcome(id = &quot;0&quot;, expect = Expect.ACCEPTABLE_INTERESTING, desc = &quot;!!!!&quot;)</span><br><span class="hljs-meta">@State</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ConcurrencyTest</span> &#123;<br> 	<span class="hljs-type">int</span> <span class="hljs-variable">num</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>	<span class="hljs-keyword">volatile</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">ready</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br> 	<span class="hljs-meta">@Actor</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor1</span><span class="hljs-params">(I_Result r)</span> &#123;<br> 		<span class="hljs-keyword">if</span>(ready) &#123;<br> 			r.r1 = num + num;<br> 		&#125; <span class="hljs-keyword">else</span> &#123;<br> 			r.r1 = <span class="hljs-number">1</span>;<br> 		&#125;<br> 	&#125;<br> 	<span class="hljs-meta">@Actor</span><br> 	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor2</span><span class="hljs-params">(I_Result r)</span> &#123;<br> 		num = <span class="hljs-number">2</span>;<br> 		ready = <span class="hljs-literal">true</span>;<br>	&#125;<br>&#125;<br><br></code></pre></td></tr></table></figure>
+<p>结果</p>
+<figure class="highlight sas"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sas"><span class="hljs-comment">*** INTERESTING tests </span><br><span class="hljs-comment"> Some interesting behaviors observed. This is for the plain curiosity. </span><br><span class="hljs-comment"> 0 matching test results. </span><br></code></pre></td></tr></table></figure>
+
+<h2 id="原理之volatile"><a href="#原理之volatile" class="headerlink" title="原理之volatile"></a>原理之volatile</h2><p>volatile的底层实现是内存屏障，Memory Barrier（Memory Fence）</p>
+<ul>
+<li>对volatile变量的写指令后会加入写屏障</li>
+<li>对volatile变量的读指令前会加入读屏障</li>
+</ul>
+<h3 id="1、如何保证可见性"><a href="#1、如何保证可见性" class="headerlink" title="1、如何保证可见性"></a>1、如何保证可见性</h3><ul>
+<li>写屏障（sfence）保证在该屏障之前的，对共享变量的改动，都同步到主存当中</li>
+<li><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor2</span><span class="hljs-params">(I_Result r)</span>&#123;<br>	num = 	<span class="hljs-number">2</span>;<br>	ready = <span class="hljs-literal">true</span>; <span class="hljs-comment">// ready是 volatile 赋值带写屏障</span><br>	<span class="hljs-comment">// 写屏障</span><br>&#125;<br></code></pre></td></tr></table></figure></li>
+<li>而读屏障（lfence）保证在该屏障之后，对共享变量的读取，加载的是主存中最新的数据</li>
+<li><pre><code class="language-java"> public void actor1(I_Result r){
+     // 读屏障
+     // ready 是volatile 读取值带读屏障
+     if(ready) {
+         r.r1 = num + num;
+     } else {
+         r.r1 = 1;
+     }
+ }
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs csharp">![在这里插入图片描述](https:<span class="hljs-comment">//raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6ac5d9d989b69ea29743a183a480eec1.png)</span><br><span class="hljs-meta">### 2、如何保证有序性</span><br>- 写屏障会确保指令重排序时，不会将写屏障之前的代码排在写屏障后<br>- ```<span class="hljs-function">java</span><br><span class="hljs-function">	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title">actor2</span>(<span class="hljs-params">I_Result r</span>)</span>&#123;<br>		num = 	<span class="hljs-number">2</span>;<br>		ready = <span class="hljs-literal">true</span>; <span class="hljs-comment">// ready是 volatile 赋值带写屏障</span><br>		<span class="hljs-comment">// 写屏障</span><br>	&#125;<br></code></pre></td></tr></table></figure>
+</code></pre>
+</li>
+<li>读屏障会确保指令重排序时，不会将读屏障之后的代码排在读屏障之前</li>
+<li><pre><code class="language-java"> public void actor1(I_Result r){
+     // 读屏障
+     // ready 是volatile 读取值带读屏障
+     if(ready) {
+         r.r1 = num + num;
+     } else {
+         r.r1 = 1;
+     }
+ }
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs csharp">![在这里插入图片描述](https:<span class="hljs-comment">//raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e7187b94f766e348842b3d4322300468.png)</span><br>还是那句话，不能解决指令交错：<br>- 写屏障仅仅是保证之后的度能够读到最新的结果，单不能保证读报道它的前面去<br>- 而有序性的保证也只是保证了本线程内相关代码不被重排序<br><br>![在这里插入图片描述](https:<span class="hljs-comment">//raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7807e2f1ec588a5e152cb7a837c5dad6.png)</span><br><span class="hljs-meta">### 3、double-checked locking问题</span><br>以著名的<span class="hljs-built_in">double</span>-checked locking单例模式为例<br>```java<br><span class="hljs-keyword">public</span> final <span class="hljs-keyword">class</span> <span class="hljs-title">Singleton</span> &#123;<br><br>    <span class="hljs-function"><span class="hljs-keyword">private</span> <span class="hljs-title">Singleton</span>()</span> &#123;<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> Singleton INSTANCE = <span class="hljs-literal">null</span>;<br><br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Singleton <span class="hljs-title">getInstance</span>()</span> &#123;<br>        <span class="hljs-keyword">if</span> (INSTANCE == <span class="hljs-literal">null</span>) &#123;<br>            synchronized (Singleton.<span class="hljs-keyword">class</span>) &#123;<br>                <span class="hljs-keyword">if</span> (INSTANCE == <span class="hljs-literal">null</span>)<br>                    INSTANCE = <span class="hljs-keyword">new</span> Singleton();<br>            &#125;<br>        &#125;<br>        <span class="hljs-keyword">return</span> INSTANCE;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+以上实现的特点是：
+</code></pre>
+</li>
+<li>懒惰实例化</li>
+<li>首次使用getInstance()才使用synchronized加锁，后续使用时无需加锁</li>
+<li>有隐含的但很关键的一点：第一个if使用了INSTANCE变量，是在同步代码块外</li>
+</ul>
+<p>在多线程环境下，上面的代码是有问题的，getInstance方法对应的字节码如下</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs tap"><span class="hljs-number"> 0 </span>getstatic <span class="hljs-comment">#2 &lt;termination/Singleton.INSTANCE : Ltermination/Singleton;&gt;</span><br><span class="hljs-number"> 3 </span>ifnonnull<span class="hljs-number"> 37 </span>(+34)<br><span class="hljs-number"> 6 </span>ldc <span class="hljs-comment">#3 &lt;termination/Singleton&gt;</span><br><span class="hljs-number"> 8 </span>dup<br><span class="hljs-number"> 9 </span>astore_0<br>10 monitorenter<br>11 getstatic <span class="hljs-comment">#2 &lt;termination/Singleton.INSTANCE : Ltermination/Singleton;&gt;</span><br>14 ifnonnull<span class="hljs-number"> 27 </span>(+13)<br>17 new <span class="hljs-comment">#3 &lt;termination/Singleton&gt;</span><br>20 dup<br>21 invokespecial <span class="hljs-comment">#4 &lt;termination/Singleton.&lt;init&gt; : ()V&gt;</span><br>24 putstatic <span class="hljs-comment">#2 &lt;termination/Singleton.INSTANCE : Ltermination/Singleton;&gt;</span><br>27 aload_0<br>28 monitorexit<br>29 goto<span class="hljs-number"> 37 </span>(+8)<br>32 astore_1<br>33 aload_0<br>34 monitorexit<br>35 aload_1<br>36 athrow<br>37 getstatic <span class="hljs-comment">#2 &lt;termination/Singleton.INSTANCE : Ltermination/Singleton;&gt;</span><br>40 areturn<br></code></pre></td></tr></table></figure>
+<p>其中</p>
+<ul>
+<li>17 表示创建对象，将对象引用入栈 &#x2F;&#x2F; new Singleton</li>
+<li>20 表示复制一个对象的引用 &#x2F;&#x2F;引用地址</li>
+<li>21 表示利用一个对象的引用，调用构造方法</li>
+<li>24 表示利用一个对象引用，赋值给static INSTANCE</li>
+</ul>
+<p>也许JVM会优化成：先执行24，在执行21，如果两个线程t1，t2按如下时间序执行<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ad80968a8985bd8c7116ef4c3a874f9d.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>关键在于 0 getstatic这行代码在monitor控制之外（所以多线程可能有问题），他就像之前不守规则的人，可以越过monitor读取INSTANCE的值</p>
+<p>这是t1还没有完全将构造方法执行完毕，如果在构造方法中药执行很多初始化操作，那么t2拿到的将是一个未初始化完毕的单例</p>
+<p>对INSTANCE使用volatile修饰即可，可以禁用指令重排，但要注意在JDK5以上版本的volatile才会真正生效</p>
+<h3 id="4、double-checked-locking解决"><a href="#4、double-checked-locking解决" class="headerlink" title="4、double-checked locking解决"></a>4、double-checked locking解决</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Singleton</span> &#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-title function_">Singleton</span><span class="hljs-params">()</span> &#123;<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">Singleton</span> <span class="hljs-variable">INSTANCE</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Singleton <span class="hljs-title function_">getInstance</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (INSTANCE == <span class="hljs-literal">null</span>) &#123;<br>            <span class="hljs-keyword">synchronized</span> (Singleton.class) &#123;<br>                <span class="hljs-keyword">if</span> (INSTANCE == <span class="hljs-literal">null</span>)<br>                    INSTANCE = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Singleton</span>();<br>            &#125;<br>        &#125;<br>        <span class="hljs-keyword">return</span> INSTANCE;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>字节码上看不出来volatile指令的效果</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs tap">// ------&gt;加入对INSTANCE变量的读屏障<br><span class="hljs-number"> 0 </span>getstatic <span class="hljs-comment">#2 &lt;termination/Singleton.INSTANCE : Ltermination/Singleton;&gt;</span><br><span class="hljs-number"> 3 </span>ifnonnull<span class="hljs-number"> 37 </span>(+34)<br><span class="hljs-number"> 6 </span>ldc <span class="hljs-comment">#3 &lt;termination/Singleton&gt;</span><br><span class="hljs-number"> 8 </span>dup<br><span class="hljs-number"> 9 </span>astore_0<br>10 monitorenter  ----&gt; 保证原子性、可见性<br>11 getstatic <span class="hljs-comment">#2 &lt;termination/Singleton.INSTANCE : Ltermination/Singleton;&gt;</span><br>14 ifnonnull<span class="hljs-number"> 27 </span>(+13)<br>17 new <span class="hljs-comment">#3 &lt;termination/Singleton&gt;</span><br>20 dup<br>21 invokespecial <span class="hljs-comment">#4 &lt;termination/Singleton.&lt;init&gt; : ()V&gt;</span><br>24 putstatic <span class="hljs-comment">#2 &lt;termination/Singleton.INSTANCE : Ltermination/Singleton;&gt;</span><br>// --------&gt;加入对INSTANCE变量的写屏障<br>27 aload_0<br>28 monitorexit   ---&gt; 保证原子性、可见性<br>29 goto<span class="hljs-number"> 37 </span>(+8)<br>32 astore_1<br>33 aload_0<br>34 monitorexit<br>35 aload_1<br>36 athrow<br>37 getstatic <span class="hljs-comment">#2 &lt;termination/Singleton.INSTANCE : Ltermination/Singleton;&gt;</span><br>40 areturn<br></code></pre></td></tr></table></figure>
+<p>如上面的注释内容所示，读写volatile变量时会加入内存屏障（Memory Barrier（Memory Fence）），保证下面的两点：</p>
+<ul>
+<li>可见性<ul>
+<li>写屏障（sfence）保证在该屏障之前的t1对共享变量的改动，都同步到主存中</li>
+<li>而读屏障（lfence）保证在该屏障之后t2对共享变量的读取，加载的是主存中最新的数据</li>
+</ul>
+</li>
+<li>有序性<ul>
+<li>写屏障会确保指令重排序时，不会将写屏障之前的代码排在写屏障之后</li>
+<li>读屏障会确保指令重排序时，不会讲读屏障之后的代码排在读屏障之前</li>
+</ul>
+</li>
+<li>更低层是读写变量时使用lock指令来保证多核CPU之间的可见性和有序性</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5f6c5efc68e5aa7b79e34dc496f7c561.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h2 id="happens-before"><a href="#happens-before" class="headerlink" title="happens-before"></a>happens-before</h2><p>happens-before规定了对共享变量的写操作对其他线程的读操作可见，它是可见性与有序性的一套规则总结，抛开以下happens-before规则，JVM并不能保证一个线程对共享变量的写，对于其他线程对改共享变量的读可见</p>
+<ul>
+<li>线程解锁m之前对变量的写，对于接下来对m加锁的其他线程对该变量的读可见</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> x;<br><span class="hljs-keyword">static</span> <span class="hljs-type">Object</span> <span class="hljs-variable">m</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br><span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br> 	<span class="hljs-keyword">synchronized</span>(m) &#123;<br> 		x = <span class="hljs-number">10</span>;<br> 	&#125;<br>&#125;,<span class="hljs-string">&quot;t1&quot;</span>).start();<br><span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br> 	<span class="hljs-keyword">synchronized</span>(m) &#123;<br> 		System.out.println(x);<br> 	&#125;<br>&#125;,<span class="hljs-string">&quot;t2&quot;</span>).start();<br></code></pre></td></tr></table></figure>
+<ul>
+<li>线程对volatile变量的写，对接下来其他线程对该变量的读可见</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">volatile</span> <span class="hljs-keyword">static</span> <span class="hljs-type">int</span> x;<br><span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br> 	x = <span class="hljs-number">10</span>;<br>&#125;,<span class="hljs-string">&quot;t1&quot;</span>).start();<br><span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br> 	System.out.println(x);<br>&#125;,<span class="hljs-string">&quot;t2&quot;</span>).start();<br></code></pre></td></tr></table></figure>
+<ul>
+<li>线程start前对变量的写，对线程开始后对该变量的读可见</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> x;<br>x = <span class="hljs-number">10</span>;<br><span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br> 	System.out.println(x);<br>&#125;,<span class="hljs-string">&quot;t2&quot;</span>).start();<br></code></pre></td></tr></table></figure>
+<ul>
+<li>线程结束前对变量的写，对其他线程的值它结束后的读可见（比如其他线程调用t1.isAlive()或t1.join()等待它结束）</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> x;<br><span class="hljs-type">Thread</span> <span class="hljs-variable">t1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br> 	x = <span class="hljs-number">10</span>;<br>&#125;,<span class="hljs-string">&quot;t1&quot;</span>);<br>t1.start();<br>t1.join();<br>System.out.println(x);<br></code></pre></td></tr></table></figure>
+<ul>
+<li>线程t1打断t2（interrupt）前对变量的写，对于其他线程的值t2被打断后对变量的读可见（通过t2.interrupt或t2.isInterrupted）</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> x;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br> 	<span class="hljs-type">Thread</span> <span class="hljs-variable">t2</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br> 		<span class="hljs-keyword">while</span>(<span class="hljs-literal">true</span>) &#123;<br> 			<span class="hljs-keyword">if</span>(Thread.currentThread().isInterrupted()) &#123;<br> 				System.out.println(x);<br> 				<span class="hljs-keyword">break</span>;<br> 			&#125;<br> 		&#125;<br> 	&#125;,<span class="hljs-string">&quot;t2&quot;</span>);<br> 	t2.start();<br>	<span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br> 		sleep(<span class="hljs-number">1</span>);<br> 		x = <span class="hljs-number">10</span>;<br> 		t2.interrupt();<br> 	&#125;,<span class="hljs-string">&quot;t1&quot;</span>).start();<br> 	<span class="hljs-keyword">while</span>(!t2.isInterrupted()) &#123;<br> 		Thread.<span class="hljs-keyword">yield</span>();<br> 	&#125;<br> 	System.out.println(x);<br>&#125;<br></code></pre></td></tr></table></figure>
+<ul>
+<li>对变量默认值（0，false，null）的写，对其他线程对该变量的读可见</li>
+<li>具有传递性，如果<code>x hb-&gt;y</code>并且<code>y hb-&gt; z</code>那么有<code>x hb-&gt; z</code>，配合volatile的防指令重排，有下面的例子</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">volatile</span> <span class="hljs-keyword">static</span> <span class="hljs-type">int</span> x;<br><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> y;<br><span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123; <br> 	y = <span class="hljs-number">10</span>;<br> 	x = <span class="hljs-number">20</span>;<br>&#125;,<span class="hljs-string">&quot;t1&quot;</span>).start();<br><span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br> 	<span class="hljs-comment">// x=20 对 t2 可见, 同时 y=10 也对 t2 可见</span><br> 	System.out.println(x); <br>&#125;,<span class="hljs-string">&quot;t2&quot;</span>).start();<br></code></pre></td></tr></table></figure>
+<h2 id="习题"><a href="#习题" class="headerlink" title="习题"></a>习题</h2><h3 id="balking模式练习题"><a href="#balking模式练习题" class="headerlink" title="balking模式练习题"></a>balking模式练习题</h3><p>希望doInit()方法仅被调用一次，下面的实现是否有问题？为什么？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TestVolatile</span> &#123;<br> 	<span class="hljs-keyword">volatile</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">initialized</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br> 	<span class="hljs-keyword">void</span> <span class="hljs-title function_">init</span><span class="hljs-params">()</span> &#123;<br> 		<span class="hljs-keyword">if</span> (initialized) &#123; <br> 			<span class="hljs-keyword">return</span>;<br> 		&#125; <br> 		doInit();<br> 		initialized = <span class="hljs-literal">true</span>;<br> 	&#125;<br> 	<span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doInit</span><span class="hljs-params">()</span> &#123;<br> 	&#125;<br>&#125; <br></code></pre></td></tr></table></figure>
+<p>没锁，不能保证代码执行的原子性</p>
+<h3 id="线程安全单例习题"><a href="#线程安全单例习题" class="headerlink" title="线程安全单例习题"></a>线程安全单例习题</h3><p>单例模式有很多实现方法，饿汉、懒汉、静态内部类、枚举类，试分析每种实现下获取单例对象（即调用getInstance）时的线程安全，并思考注释中的问题</p>
+<blockquote>
+<p>饿汉式：类加载就会导致该单例对象被创建<br>懒汉式：类加载不会导致该单例对象被创建，而是首次使用该对象时才会创建</p>
+</blockquote>
+<p>习题略</p>
+<h1 id="6、本章小结"><a href="#6、本章小结" class="headerlink" title="6、本章小结"></a>6、本章小结</h1><p>本章重点讲解了JMM的</p>
+<ul>
+<li>可见性-由JVM缓存优化引起</li>
+<li>有序性-由JVM指令重排序优化引起</li>
+<li>happens-before问题</li>
+<li>原理<ul>
+<li>CPU 指令并行</li>
+<li>volatile</li>
+</ul>
+</li>
+<li>模式<ul>
+<li>两阶段终止volatile改进</li>
+<li>同步模式之balking</li>
+</ul>
+</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Java%E5%B9%B6%E5%8F%91/" class="print-no-link">#Java并发</a>
+      
+        <a href="/tags/JUC/" class="print-no-link">#JUC</a>
+      
+        <a href="/tags/JMM/" class="print-no-link">#JMM</a>
+      
+        <a href="/tags/volatile/" class="print-no-link">#volatile</a>
+      
+        <a href="/tags/%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/" class="print-no-link">#内存模型</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>4、Java内存模型、volatile原理、CPU缓存结构、balking模式、单例模式</div>
+      <div>https://aster-xu-lab.github.io/2022/03/08/2022-03-08-Java内存模型volatile原理CPU缓存结构balking模式单例模式/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年3月8日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/03/10/2022-03-10-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8ACAS%E5%8E%9F%E5%AD%90%E7%B1%BB/" title="5、共享模式之无锁(上），CAS，原子类">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">5、共享模式之无锁(上），CAS，原子类</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/03/07/2022-03-07-ReentrantLock/" title="3.11、ReentrantLock">
+                        <span class="hidden-mobile">3.11、ReentrantLock</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

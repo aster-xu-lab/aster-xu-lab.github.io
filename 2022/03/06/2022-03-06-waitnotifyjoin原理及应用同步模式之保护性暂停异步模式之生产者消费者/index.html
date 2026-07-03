@@ -1,0 +1,959 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="小故事 - 为什么要wait 由于条件不满足，小南不能继续进行计算 但小南如果一直占用着锁，其他人就得一直阻塞，效率太低  于是老王单开了一键休息室（调用wait方法），让小南到休息室（WaitSet）等着去了，但这是锁释放开，其他人可以由老王随机安排进屋 知道小M将烟送来，大叫一声【你的烟到了】（调用notify方法）  小南于是可以离开休息室，重新进入竞争锁的队列   原理  Owner线程发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="3.6、wait notify join原理及应用，同步模式之保护性暂停，异步模式之生产者消费者">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/06/2022-03-06-waitnotifyjoin%E5%8E%9F%E7%90%86%E5%8F%8A%E5%BA%94%E7%94%A8%E5%90%8C%E6%AD%A5%E6%A8%A1%E5%BC%8F%E4%B9%8B%E4%BF%9D%E6%8A%A4%E6%80%A7%E6%9A%82%E5%81%9C%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%BC%8F%E4%B9%8B%E7%94%9F%E4%BA%A7%E8%80%85%E6%B6%88%E8%B4%B9%E8%80%85/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="小故事 - 为什么要wait 由于条件不满足，小南不能继续进行计算 但小南如果一直占用着锁，其他人就得一直阻塞，效率太低  于是老王单开了一键休息室（调用wait方法），让小南到休息室（WaitSet）等着去了，但这是锁释放开，其他人可以由老王随机安排进屋 知道小M将烟送来，大叫一声【你的烟到了】（调用notify方法）  小南于是可以离开休息室，重新进入竞争锁的队列   原理  Owner线程发">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3011998c377f962c3841701213181072.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ec9cda0df52d222615ac0f2bb457a6a3.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3fd9b0abf3fed4187f5090a01638b585.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f8ec16fa61a3666a2e20b655abcd9723.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0c7b9ad07be04f0286b09a3ba06e0314.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a01672b06d24330b8d390bcd2ac2e176.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7d177ca90a9f9027431185a6cbc0bf84.png">
+<meta property="article:published_time" content="2022-03-06T07:58:43.000Z">
+<meta property="article:modified_time" content="2026-07-03T09:06:13.843Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="JUC">
+<meta property="article:tag" content="Java并发">
+<meta property="article:tag" content="wait-notify">
+<meta property="article:tag" content="线程通信">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3011998c377f962c3841701213181072.png">
+  
+  
+  
+  <title>3.6、wait notify join原理及应用，同步模式之保护性暂停，异步模式之生产者消费者 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="3.6、wait notify join原理及应用，同步模式之保护性暂停，异步模式之生产者消费者"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-03-06 15:58" pubdate>
+          2022年3月6日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          19k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          163 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">3.6、wait notify join原理及应用，同步模式之保护性暂停，异步模式之生产者消费者</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="小故事-为什么要wait"><a href="#小故事-为什么要wait" class="headerlink" title="小故事 - 为什么要wait"></a>小故事 - 为什么要wait</h1><ul>
+<li>由于条件不满足，小南不能继续进行计算</li>
+<li>但小南如果一直占用着锁，其他人就得一直阻塞，效率太低</li>
+<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3011998c377f962c3841701213181072.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
+<li>于是老王单开了一键休息室（调用wait方法），让小南到休息室（WaitSet）等着去了，但这是锁释放开，其他人可以由老王随机安排进屋</li>
+<li>知道小M将烟送来，大叫一声【你的烟到了】（调用notify方法）</li>
+<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ec9cda0df52d222615ac0f2bb457a6a3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
+<li>小南于是可以离开休息室，重新进入竞争锁的队列</li>
+<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3fd9b0abf3fed4187f5090a01638b585.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
+</ul>
+<h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f8ec16fa61a3666a2e20b655abcd9723.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<ul>
+<li>Owner线程发现条件不满足，调用wait方法，即可进入WaitSet变为WAITING状态</li>
+<li>BLOCKED和WAITING的线程都处于阻塞状态，不占用CPU时间片</li>
+<li>BLOCKED线程会在Owner线程释放锁时唤醒</li>
+<li>WAITING线程会在Owner线程调用notify或notifyAll时唤醒，单唤醒后并不意味着立即获得锁，仍需要进入EntryList重新竞争</li>
+</ul>
+<h2 id="join原理"><a href="#join原理" class="headerlink" title="join原理"></a>join原理</h2><p>调用者轮询检查线程alive状态</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">t1.join()<br></code></pre></td></tr></table></figure>
+<p>等价于下面的代码</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">synchronized</span>(t1) &#123;<br>	<span class="hljs-comment">// 调用者线程进入t1的WaitSet等待，直到t1运行结束</span><br>	<span class="hljs-keyword">while</span>(t1.isAlive()) &#123;<br>		t1.wait(<span class="hljs-number">0</span>);<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h1 id="API介绍"><a href="#API介绍" class="headerlink" title="API介绍"></a>API介绍</h1><ul>
+<li><code>obj.wait()</code>让进入object监视器的线程到WaitSet等待</li>
+<li><code>obj.notify()</code>在object上正在WaitSet等待的线程中挑一个唤醒</li>
+<li><code>obj.notifyAll()</code>让object上正在WaitSet等待的线程全部唤醒</li>
+</ul>
+<p>他们都是线程之间进行协作的手段，都属于Object对象的方法，必须获得此对象的锁，才能调用这几个方法</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">final</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Object</span> <span class="hljs-variable">obj</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (obj) &#123;<br>                log.debug(<span class="hljs-string">&quot;执行...&quot;</span>);<br>                <span class="hljs-keyword">try</span> &#123;<br>                    obj.wait();<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>                log.debug(<span class="hljs-string">&quot;其他代码...&quot;</span>);<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t1&quot;</span>).start();<br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (obj) &#123;<br>                log.debug(<span class="hljs-string">&quot;执行...&quot;</span>);<br>                <span class="hljs-keyword">try</span> &#123;<br>                    obj.wait();<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>                log.debug(<span class="hljs-string">&quot;其他代码...&quot;</span>);<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t2&quot;</span>).start();<br><br>        TimeUnit.SECONDS.sleep(<span class="hljs-number">2</span>);<br>        log.debug(<span class="hljs-string">&quot;唤醒obj上的其他线程&quot;</span>);<br><span class="hljs-comment">//        obj.notify();</span><br>        <span class="hljs-keyword">synchronized</span> (obj) &#123;<br>            obj.notify();<br><span class="hljs-comment">//            obj.notifyAll();</span><br>        &#125;<br>    &#125;<br></code></pre></td></tr></table></figure>
+
+<p>如果没有获得对象锁，则会报错</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-number">2022</span>/<span class="hljs-number">03</span>/<span class="hljs-number">06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">56</span>:<span class="hljs-number">00.386</span> <span class="hljs-selector-attr">[t1]</span> c<span class="hljs-selector-class">.Test1</span> - 执行...<br><span class="hljs-number">2022</span>/<span class="hljs-number">03</span>/<span class="hljs-number">06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">56</span>:<span class="hljs-number">00.388</span> <span class="hljs-selector-attr">[t2]</span> c<span class="hljs-selector-class">.Test1</span> - 执行...<br><span class="hljs-number">2022</span>/<span class="hljs-number">03</span>/<span class="hljs-number">06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">56</span>:<span class="hljs-number">02.386</span> <span class="hljs-selector-attr">[main]</span> c<span class="hljs-selector-class">.Test1</span> - 唤醒obj上的其他线程<br>Exception <span class="hljs-keyword">in</span> thread <span class="hljs-string">&quot;main&quot;</span> java<span class="hljs-selector-class">.lang</span><span class="hljs-selector-class">.IllegalMonitorStateException</span><br>	at java<span class="hljs-selector-class">.lang</span><span class="hljs-selector-class">.Object</span><span class="hljs-selector-class">.notify</span>(Native Method)<br>	at waittest<span class="hljs-selector-class">.Test1</span><span class="hljs-selector-class">.main</span>(Test1<span class="hljs-selector-class">.java</span>:<span class="hljs-number">43</span>)<br></code></pre></td></tr></table></figure>
+<p>notify的一种结果</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">57:15.787</span> [t1] c.Test1 - 执行...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">57:15.789</span> [t2] c.Test1 - 执行...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">57:17.789</span> [main] c.Test1 - 唤醒obj上的其他线程<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">57:17.790</span> [t1] c.Test1 - 其他代码...<br></code></pre></td></tr></table></figure>
+<p>notifyAll的结果</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">57:45.530</span> [t1] c.Test1 - 执行...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">57:45.532</span> [t2] c.Test1 - 执行...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">57:47.544</span> [main] c.Test1 - 唤醒obj上的其他线程<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">57:47.544</span> [t2] c.Test1 - 其他代码...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">03</span>:<span class="hljs-number">57:47.544</span> [t1] c.Test1 - 其他代码...<br></code></pre></td></tr></table></figure>
+
+<p><code>wait()</code>方法会释放对象的锁，进入WaitSet等待区，从而让其他线程有机会获得对象的锁。无限制等待，直到notify为止<br><code>wait(long n)</code>有时限的等待，到n毫秒后结束等待，或是被notify</p>
+<h1 id="wait-notify的正确姿势"><a href="#wait-notify的正确姿势" class="headerlink" title="wait notify的正确姿势"></a>wait notify的正确姿势</h1><p>开始之前先看看</p>
+<p><strong><code>sleep(long n)</code>和<code>wait(long n)</code>区别</strong></p>
+<p>1）sleep是Thread方法，而wait是Object方法<br>2）sleep不需要强制和synchronized配合使用，但wait需要和synchronized一起用<br>3）sleep在睡眠时，不会释放对象锁的，但wait在等待的时候会释放对象锁<br>4）他们的状态都是TIMED_WAITING</p>
+<h2 id="step-1"><a href="#step-1" class="headerlink" title="step 1"></a>step 1</h2><p>思考下面的解决方案好不好，为什么？</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">final</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Object</span> <span class="hljs-variable">room</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">hasCigarette</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">hasTakeout</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                log.debug(<span class="hljs-string">&quot;有没有烟？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">if</span> (!hasCigarette) &#123;<br>                    log.debug(<span class="hljs-string">&quot;没有烟，歇会儿&quot;</span>);<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        Thread.sleep(<span class="hljs-number">2000</span>);<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125;<br>                log.debug(<span class="hljs-string">&quot;有没有烟？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">if</span> (hasCigarette) &#123;<br>                    log.debug(<span class="hljs-string">&quot;可以干活了&quot;</span>);<br>                &#125;<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t1&quot;</span>).start();<br><br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">5</span>; i++)<br>            <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>                <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                    log.debug(<span class="hljs-string">&quot;可以干活哦...&quot;</span>);<br>                &#125;<br>            &#125;, <span class="hljs-string">&quot;其他人&quot;</span>).start();<br><br>        Thread.sleep(<span class="hljs-number">1000</span>);<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            hasCigarette = <span class="hljs-literal">true</span>;<br>            log.debug(<span class="hljs-string">&quot;烟来喽&quot;</span>);<br>        &#125;, <span class="hljs-string">&quot;送烟的&quot;</span>).start();<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:54.211</span> [t1] c.Test2 - 有没有烟？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:54.213</span> [t1] c.Test2 - 没有烟，歇会儿<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:55.213</span> [送烟的] c.Test2 - 烟来喽<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:56.217</span> [t1] c.Test2 - 有没有烟？true<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:56.217</span> [t1] c.Test2 - 可以干活了<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:56.217</span> [其他人] c.Test2 - 可以干活哦...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:56.217</span> [其他人] c.Test2 - 可以干活哦...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:56.217</span> [其他人] c.Test2 - 可以干活哦...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:56.217</span> [其他人] c.Test2 - 可以干活哦...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:27:56.217</span> [其他人] c.Test2 - 可以干活哦...<br></code></pre></td></tr></table></figure>
+<ul>
+<li>其他干活的线程，要一直阻塞，效率太低</li>
+<li>t1线程必须睡足2s后才能醒来，就算烟提前送到，也无法立刻醒来</li>
+<li>加了synchronized(room)后，就好比t1在里面反锁了门睡觉，烟根本没法送进门，main没加synchronized就好像main线程是翻窗户进来的</li>
+<li>解决办法，使用wait-notify机制</li>
+</ul>
+<h2 id="step-2"><a href="#step-2" class="headerlink" title="step 2"></a>step 2</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">final</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Object</span> <span class="hljs-variable">room</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">hasCigarette</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">hasTakeout</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                log.debug(<span class="hljs-string">&quot;有没有烟？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">if</span> (!hasCigarette) &#123;<br>                    log.debug(<span class="hljs-string">&quot;没有烟，歇会儿&quot;</span>);<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        room.wait(<span class="hljs-number">2000</span>);<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125;<br>                log.debug(<span class="hljs-string">&quot;有没有烟？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">if</span> (hasCigarette) &#123;<br>                    log.debug(<span class="hljs-string">&quot;可以干活了&quot;</span>);<br>                &#125;<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t1&quot;</span>).start();<br><br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">5</span>; i++)<br>            <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>                <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                    log.debug(<span class="hljs-string">&quot;可以干活哦...&quot;</span>);<br>                &#125;<br>            &#125;, <span class="hljs-string">&quot;其他人&quot;</span>).start();<br><br>        Thread.sleep(<span class="hljs-number">1000</span>);<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                hasCigarette = <span class="hljs-literal">true</span>;<br>                log.debug(<span class="hljs-string">&quot;烟来喽&quot;</span>);<br>                room.notify();<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;送烟的&quot;</span>).start();<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:21.203</span> [t1] c.Test3 - 有没有烟？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:21.203</span> [t1] c.Test3 - 没有烟，歇会儿<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:21.203</span> [其他人] c.Test3 - 可以干活哦...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:21.203</span> [其他人] c.Test3 - 可以干活哦...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:21.203</span> [其他人] c.Test3 - 可以干活哦...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:21.203</span> [其他人] c.Test3 - 可以干活哦...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:21.203</span> [其他人] c.Test3 - 可以干活哦...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:22.202</span> [送烟的] c.Test3 - 烟来喽<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:22.202</span> [t1] c.Test3 - 有没有烟？true<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13:32:22.202</span> [t1] c.Test3 - 可以干活了<br></code></pre></td></tr></table></figure>
+<ul>
+<li>解决了其他线程干活的线程阻塞问题</li>
+<li>但如果有其他线程也在等待条件呢？</li>
+</ul>
+<h2 id="step-3"><a href="#step-3" class="headerlink" title="step 3"></a>step 3</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">final</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Object</span> <span class="hljs-variable">room</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">hasCigarette</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">hasTakeout</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                log.debug(<span class="hljs-string">&quot;有没有烟？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">if</span> (!hasCigarette) &#123;<br>                    log.debug(<span class="hljs-string">&quot;没有烟，歇会儿&quot;</span>);<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        room.wait();<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125;<br>                log.debug(<span class="hljs-string">&quot;有没有烟？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">if</span> (hasCigarette) &#123;<br>                    log.debug(<span class="hljs-string">&quot;可以干活了&quot;</span>);<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    log.debug(<span class="hljs-string">&quot;干活失败&quot;</span>);<br>                &#125;<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t1&quot;</span>).start();<br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                log.debug(<span class="hljs-string">&quot;外卖来了吗？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">if</span> (!hasTakeout) &#123;<br>                    log.debug(<span class="hljs-string">&quot;没外卖，歇会儿&quot;</span>);<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        room.wait();<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125;<br>                log.debug(<span class="hljs-string">&quot;外卖来了吗？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">if</span> (hasTakeout) &#123;<br>                    log.debug(<span class="hljs-string">&quot;可以干活了&quot;</span>);<br>                &#125; <span class="hljs-keyword">else</span> &#123;<br>                    log.debug(<span class="hljs-string">&quot;干活失败&quot;</span>);<br>                &#125;<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t2&quot;</span>).start();<br><br>        Thread.sleep(<span class="hljs-number">1000</span>);<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                hasTakeout = <span class="hljs-literal">true</span>;<br>                log.debug(<span class="hljs-string">&quot;外卖来喽&quot;</span>);<br>                room.notify();<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;送外卖的&quot;</span>).start();<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">37:13.816</span> [t1] c.Test4 - 有没有烟？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">37:13.816</span> [t1] c.Test4 - 没有烟，歇会儿<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">37:13.816</span> [t2] c.Test4 - 外卖来了吗？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">37:13.816</span> [t2] c.Test4 - 没外卖，歇会儿<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">37:14.823</span> [送外卖的] c.Test4 - 外卖来喽<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">37:14.823</span> [t1] c.Test4 - 有没有烟？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">37:14.823</span> [t1] c.Test4 - 干活失败<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>notify只能随机唤醒一个WaitSet中的线程，这时如果有其他线程也在等待，那么就可能唤醒不了正确的线程，称之为【虚假唤醒】</li>
+<li>解决方法，改为notifyAll</li>
+</ul>
+<h2 id="step-4"><a href="#step-4" class="headerlink" title="step 4"></a>step 4</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>          <span class="hljs-keyword">synchronized</span> (room) &#123;<br>              hasTakeout = <span class="hljs-literal">true</span>;<br>              log.debug(<span class="hljs-string">&quot;外卖来喽&quot;</span>);<br>              room.notifyAll();<br>          &#125;<br>      &#125;, <span class="hljs-string">&quot;送外卖的&quot;</span>).start();<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">39:27.661</span> [t1] c.Test5 - 有没有烟？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">39:27.661</span> [t1] c.Test5 - 没有烟，歇会儿<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">39:27.661</span> [t2] c.Test5 - 外卖来了吗？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">39:27.661</span> [t2] c.Test5 - 没外卖，歇会儿<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">39:28.675</span> [送外卖的] c.Test5 - 外卖来喽<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">39:28.675</span> [t2] c.Test5 - 外卖来了吗？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">39:28.675</span> [t2] c.Test5 - 可以干活了<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">39:28.675</span> [t1] c.Test5 - 有没有烟？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">39:28.675</span> [t1] c.Test5 - 干活失败<br></code></pre></td></tr></table></figure>
+<ul>
+<li>用notifyAll仅解决某个线程的唤醒问题，但使用if + wait 判断仅有一次机会，一单条件不成立，就没看有重新判断的机会了</li>
+<li>解决办法，用while + wait，当条件不成立，再次wait</li>
+</ul>
+<h2 id="step-5"><a href="#step-5" class="headerlink" title="step 5"></a>step 5</h2><p>将 if 改为 while </p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">final</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Object</span> <span class="hljs-variable">room</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">hasCigarette</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">hasTakeout</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                log.debug(<span class="hljs-string">&quot;有没有烟？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">while</span> (!hasCigarette) &#123;<br>                    log.debug(<span class="hljs-string">&quot;没有烟，歇会儿&quot;</span>);<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        room.wait();<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125;<br>                log.debug(<span class="hljs-string">&quot;可以干活了&quot;</span>);<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t1&quot;</span>).start();<br><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                log.debug(<span class="hljs-string">&quot;外卖来了吗？&#123;&#125;&quot;</span>, hasCigarette);<br>                <span class="hljs-keyword">while</span> (!hasTakeout) &#123;<br>                    log.debug(<span class="hljs-string">&quot;没外卖，歇会儿&quot;</span>);<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        room.wait();<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125;<br>                log.debug(<span class="hljs-string">&quot;可以干活了&quot;</span>);<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;t2&quot;</span>).start();<br><br>        Thread.sleep(<span class="hljs-number">1000</span>);<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (room) &#123;<br>                hasTakeout = <span class="hljs-literal">true</span>;<br>                log.debug(<span class="hljs-string">&quot;外卖来喽&quot;</span>);<br>                room.notifyAll();<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;送外卖的&quot;</span>).start();<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">43:45.737</span> [t1] c.Test6 - 有没有烟？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">43:45.737</span> [t1] c.Test6 - 没有烟，歇会儿<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">43:45.743</span> [t2] c.Test6 - 外卖来了吗？false<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">43:45.743</span> [t2] c.Test6 - 没外卖，歇会儿<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">43:46.751</span> [送外卖的] c.Test6 - 外卖来喽<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">43:46.751</span> [t2] c.Test6 - 可以干活了<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">13</span>:<span class="hljs-number">43:46.751</span> [t1] c.Test6 - 没有烟，歇会儿<br></code></pre></td></tr></table></figure>
+<h1 id="同步模式之保护性暂停"><a href="#同步模式之保护性暂停" class="headerlink" title="同步模式之保护性暂停"></a>同步模式之保护性暂停</h1><h2 id="1、定义"><a href="#1、定义" class="headerlink" title="1、定义"></a>1、定义</h2><p>即Guarded Suspension，用在一个线程等待另一个线程的执行结果</p>
+<p>要点</p>
+<ul>
+<li>有一个结果需要从一个线程传递给另一个线程，让他们关联同一个GuardedObject</li>
+<li>如果有结果不断从一个线程到另一个线程，那么可以使用消息队列（生产者&#x2F;消费者）</li>
+<li>JDK中，join的实现、Future的实现，采用的就是此模式</li>
+<li>因为要等待另一方的结果，因此归类到同步模式</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0c7b9ad07be04f0286b09a3ba06e0314.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h2 id="2、实现"><a href="#2、实现" class="headerlink" title="2、实现"></a>2、实现</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Slf4j(topic = &quot;c.GuardedSuspension&quot;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">GuardedSuspension</span> &#123;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">GuardedObject</span> <span class="hljs-variable">guardedObject</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">GuardedObject</span>();<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(()-&gt;&#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                Thread.sleep(<span class="hljs-number">2000</span>);<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                e.printStackTrace();<br>            &#125;<br>            <span class="hljs-type">Object</span> <span class="hljs-variable">response</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br>            log.debug(<span class="hljs-string">&quot;new response : &#123;&#125;&quot;</span>, response);<br>            guardedObject.complete(response);<br>        &#125;).start();<br><br>        log.debug(<span class="hljs-string">&quot;wait response&quot;</span>);<br>        <span class="hljs-type">Object</span> <span class="hljs-variable">response</span> <span class="hljs-operator">=</span> guardedObject.get();<br>        log.debug(<span class="hljs-string">&quot;get response : &#123;&#125;&quot;</span>, response);<br>    &#125;<br><br>&#125;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">GuardedObject</span> &#123;<br>    <span class="hljs-keyword">private</span> Object response;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">Object</span> <span class="hljs-variable">lock</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br><br>    <span class="hljs-keyword">public</span> Object <span class="hljs-title function_">get</span><span class="hljs-params">()</span>&#123;<br>        <span class="hljs-keyword">synchronized</span> (lock) &#123;<br>            <span class="hljs-keyword">while</span> (response == <span class="hljs-literal">null</span>) &#123;<br>                <span class="hljs-keyword">try</span> &#123;<br>                    lock.wait();<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>            &#125;<br>            <span class="hljs-keyword">return</span> response;<br><br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">complete</span><span class="hljs-params">(Object response)</span> &#123;<br>        <span class="hljs-keyword">synchronized</span> (lock) &#123;<br>            <span class="hljs-built_in">this</span>.response = response;<br>            lock.notifyAll();<br>        &#125;<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-number">2022</span>/<span class="hljs-number">03</span>/<span class="hljs-number">06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">00</span>:<span class="hljs-number">11.709</span> <span class="hljs-selector-attr">[main]</span> c<span class="hljs-selector-class">.TPTInturrept</span> - wait response<br><span class="hljs-number">2022</span>/<span class="hljs-number">03</span>/<span class="hljs-number">06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">00</span>:<span class="hljs-number">13.724</span> <span class="hljs-selector-attr">[Thread-0]</span> c<span class="hljs-selector-class">.TPTInturrept</span> - new response : java<span class="hljs-selector-class">.lang</span>.Object@<span class="hljs-number">77</span>f37d84<br><span class="hljs-number">2022</span>/<span class="hljs-number">03</span>/<span class="hljs-number">06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">00</span>:<span class="hljs-number">13.724</span> <span class="hljs-selector-attr">[main]</span> c<span class="hljs-selector-class">.TPTInturrept</span> - get response : java<span class="hljs-selector-class">.lang</span>.Object@<span class="hljs-number">77</span>f37d84<br></code></pre></td></tr></table></figure>
+<h2 id="3、带超时版的GuardedObject"><a href="#3、带超时版的GuardedObject" class="headerlink" title="3、带超时版的GuardedObject"></a>3、带超时版的GuardedObject</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Slf4j(topic = &quot;c.GuardedObjectV2&quot;)</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">GuardedObjectV2</span> &#123;<br>    <span class="hljs-keyword">private</span> Object response;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">Object</span> <span class="hljs-variable">lock</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br><br>    <span class="hljs-keyword">public</span> Object <span class="hljs-title function_">get</span><span class="hljs-params">(<span class="hljs-type">long</span> millis)</span> &#123;<br>        <span class="hljs-keyword">synchronized</span> (lock) &#123;<br>            <span class="hljs-comment">// 开始时间</span><br>            <span class="hljs-type">long</span> <span class="hljs-variable">begin</span> <span class="hljs-operator">=</span> System.currentTimeMillis();<br>            <span class="hljs-comment">// 已经过时间</span><br>            <span class="hljs-type">long</span> <span class="hljs-variable">timePassed</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>            <span class="hljs-keyword">while</span> (response == <span class="hljs-literal">null</span>) &#123;<br>                <span class="hljs-comment">// 还需要等待时间</span><br>                <span class="hljs-type">long</span> <span class="hljs-variable">waitTime</span> <span class="hljs-operator">=</span> millis - timePassed;<br>                <span class="hljs-keyword">if</span> (waitTime &lt;= <span class="hljs-number">0</span>) &#123;<br>                    log.debug(<span class="hljs-string">&quot;超时了...&quot;</span>);<br>                    <span class="hljs-keyword">break</span>;<br>                &#125;<br>                <span class="hljs-keyword">try</span> &#123;<br>                    lock.wait(waitTime);<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>                timePassed = System.currentTimeMillis() - begin;<br>                log.debug(<span class="hljs-string">&quot;timePassed:&#123;&#125;, object is null? &#123;&#125; &quot;</span> , timePassed, response == <span class="hljs-literal">null</span>);<br>            &#125;<br>            <span class="hljs-keyword">return</span> response;<br><br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">complete</span><span class="hljs-params">(Object response)</span> &#123;<br>        <span class="hljs-keyword">synchronized</span> (lock) &#123;<br>            <span class="hljs-built_in">this</span>.response = response;<br>            log.debug(<span class="hljs-string">&quot;notify...&quot;</span>);<br>            lock.notifyAll();<br>        &#125;<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>测试，没有超时</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>    <span class="hljs-type">GuardedObjectV2</span> <span class="hljs-variable">guardedObjectV2</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">GuardedObjectV2</span>();<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            Thread.sleep(<span class="hljs-number">1000</span>);<br>        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>            e.printStackTrace();<br>        &#125;<br>        guardedObjectV2.complete(<span class="hljs-literal">null</span>);<br>        <span class="hljs-keyword">try</span> &#123;<br>            Thread.sleep(<span class="hljs-number">1000</span>);<br>        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>            e.printStackTrace();<br>        &#125;<br>        guardedObjectV2.complete(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>());<br>    &#125;).start();<br><br>    log.debug(<span class="hljs-string">&quot;wait response&quot;</span>);<br>    <span class="hljs-type">Object</span> <span class="hljs-variable">response</span> <span class="hljs-operator">=</span> guardedObjectV2.get(<span class="hljs-number">2500</span>);<br>    log.debug(<span class="hljs-string">&quot;get response : &#123;&#125;&quot;</span>, response);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">32:05.620</span> [main] c.GuardedSuspension - wait response<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">32:06.630</span> [Thread-<span class="hljs-number">0</span>] c.GuardedObjectV2 - notify...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">32:06.630</span> [main] c.GuardedObjectV2 - timePassed:<span class="hljs-number">1010</span>, object is null? true <br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">32:07.634</span> [Thread-<span class="hljs-number">0</span>] c.GuardedObjectV2 - notify...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">32:07.634</span> [main] c.GuardedObjectV2 - timePassed:<span class="hljs-number">2014</span>, object is null? false <br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">32:07.634</span> [main] c.GuardedSuspension - get response : java.lang.Object@<span class="hljs-number">3</span>f0ee7cb<br></code></pre></td></tr></table></figure>
+<p>测试，超时</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Object</span> <span class="hljs-variable">response</span> <span class="hljs-operator">=</span> guardedObjectV2.get(<span class="hljs-number">1500</span>);<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:23.324</span> [main] c.GuardedSuspension - wait response<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:24.330</span> [Thread-<span class="hljs-number">0</span>] c.GuardedObjectV2 - notify...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:24.330</span> [main] c.GuardedObjectV2 - timePassed:<span class="hljs-number">995</span>, object is null? true <br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:24.839</span> [main] c.GuardedObjectV2 - timePassed:<span class="hljs-number">1504</span>, object is null? true <br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:24.839</span> [main] c.GuardedObjectV2 - 超时了...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:24.839</span> [main] c.GuardedSuspension - get response : null<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:25.333</span> [Thread-<span class="hljs-number">0</span>] c.GuardedObjectV2 - notify...<br></code></pre></td></tr></table></figure>
+<h2 id="4、多任务版GuardedObject"><a href="#4、多任务版GuardedObject" class="headerlink" title="4、多任务版GuardedObject"></a>4、多任务版GuardedObject</h2><p>途中Futures就好比居民楼一层的信箱（每个信箱有房间编号），左侧的t0，t2，t4就好比等待邮件的居民，右侧的t1，t3，t4就好比邮递员</p>
+<p>如果需要在多个类之间使用GuardedObject对象，作为参数传递不是很方便，因此设计一个用来解耦的中间类，这样不仅能够解耦【结果等待者】和【结果消费者】，还能同时支持多个任务管理</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a01672b06d24330b8d390bcd2ac2e176.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>新增id来表示GuardedObject</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><code class="hljs java"><br><span class="hljs-meta">@Slf4j(topic = &quot;c.GuardedObjectV3&quot;)</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">GuardedObjectV3</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> id;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">GuardedObjectV3</span><span class="hljs-params">(<span class="hljs-type">int</span> id)</span> &#123;<br>        <span class="hljs-built_in">this</span>.id = id;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">getId</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> id;<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> Object response;<br><br>    <span class="hljs-keyword">public</span> Object <span class="hljs-title function_">get</span><span class="hljs-params">(<span class="hljs-type">long</span> millis)</span> &#123;<br>        <span class="hljs-keyword">synchronized</span> (<span class="hljs-built_in">this</span>) &#123;<br>            <span class="hljs-comment">// 开始时间</span><br>            <span class="hljs-type">long</span> <span class="hljs-variable">begin</span> <span class="hljs-operator">=</span> System.currentTimeMillis();<br>            <span class="hljs-comment">// 已经过时间</span><br>            <span class="hljs-type">long</span> <span class="hljs-variable">timePassed</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>            <span class="hljs-keyword">while</span> (response == <span class="hljs-literal">null</span>) &#123;<br>                <span class="hljs-comment">// 还需要等待时间</span><br>                <span class="hljs-type">long</span> <span class="hljs-variable">waitTime</span> <span class="hljs-operator">=</span> millis - timePassed;<br>                <span class="hljs-keyword">if</span> (waitTime &lt;= <span class="hljs-number">0</span>) &#123;<br>                    log.debug(<span class="hljs-string">&quot;超时了...&quot;</span>);<br>                    <span class="hljs-keyword">break</span>;<br>                &#125;<br>                <span class="hljs-keyword">try</span> &#123;<br>                    <span class="hljs-built_in">this</span>.wait(waitTime);<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>                timePassed = System.currentTimeMillis() - begin;<br>                log.debug(<span class="hljs-string">&quot;timePassed:&#123;&#125;, object is null? &#123;&#125; &quot;</span>, timePassed, response == <span class="hljs-literal">null</span>);<br>            &#125;<br>            <span class="hljs-keyword">return</span> response;<br><br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">complete</span><span class="hljs-params">(Object response)</span> &#123;<br>        <span class="hljs-keyword">synchronized</span> (<span class="hljs-built_in">this</span>) &#123;<br>            <span class="hljs-built_in">this</span>.response = response;<br>            log.debug(<span class="hljs-string">&quot;notify...&quot;</span>);<br>            <span class="hljs-built_in">this</span>.notifyAll();<br>        &#125;<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>中间解耦类</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs java"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Mailboxs</span> &#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Map&lt;Integer, GuardedObjectV3&gt; boxes = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Hashtable</span>&lt;&gt;();<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-variable">id</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-type">int</span> <span class="hljs-title function_">generateId</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> ++id;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> GuardedObjectV3 <span class="hljs-title function_">getGuardedObject</span><span class="hljs-params">(<span class="hljs-type">int</span> id)</span> &#123;<br>        <span class="hljs-keyword">return</span> boxes.remove(id);<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> GuardedObjectV3 <span class="hljs-title function_">createGuardedObject</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-type">GuardedObjectV3</span> <span class="hljs-variable">guardedObjectV3</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">GuardedObjectV3</span>(generateId());<br>        boxes.put(guardedObjectV3.getId(), guardedObjectV3);<br>        <span class="hljs-keyword">return</span> guardedObjectV3;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Set&lt;Integer&gt; <span class="hljs-title function_">getIds</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> boxes.keySet();<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
+<p>业务相关类及接口</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><br><span class="hljs-meta">@Slf4j(topic = &quot;c.PeopleAction&quot;)</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">PeopleAction</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Runnable</span> &#123;<br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-comment">// 收信</span><br>        <span class="hljs-type">GuardedObjectV3</span> <span class="hljs-variable">guardedObjectV3</span> <span class="hljs-operator">=</span> Mailboxs.createGuardedObject();<br>        log.debug(<span class="hljs-string">&quot;开售收信，id:&#123;&#125;&quot;</span>, guardedObjectV3.getId());<br>        <span class="hljs-type">Object</span> <span class="hljs-variable">mail</span> <span class="hljs-operator">=</span> guardedObjectV3.get(<span class="hljs-number">5000</span>);<br>        log.debug(<span class="hljs-string">&quot;收到信了，id:&#123;&#125;，内容:&#123;&#125;&quot;</span>, guardedObjectV3.getId(), mail);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs java"><br><span class="hljs-meta">@Slf4j(topic = &quot;c.Postman&quot;)</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Postman</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Thread</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> id;<br>    <span class="hljs-keyword">private</span> String mail;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">Postman</span><span class="hljs-params">(<span class="hljs-type">int</span> id, String mail)</span> &#123;<br>        <span class="hljs-built_in">this</span>.id = id;<br>        <span class="hljs-built_in">this</span>.mail = mail;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-comment">// 收信</span><br>        <span class="hljs-type">GuardedObjectV3</span> <span class="hljs-variable">guardedObjectV3</span> <span class="hljs-operator">=</span> Mailboxs.getGuardedObject(id);<br>        log.debug(<span class="hljs-string">&quot;开售送信，id:&#123;&#125;，内容:&#123;&#125;&quot;</span>, guardedObjectV3.getId(), mail);<br>        guardedObjectV3.complete(mail);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">3</span>; i++) &#123;<br>            <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">PeopleAction</span>()).start();<br>        &#125;<br>        Thread.sleep(<span class="hljs-number">1000</span>);<br>        <span class="hljs-keyword">for</span> (Integer id : Mailboxs.getIds()) &#123;<br>            <span class="hljs-keyword">new</span> <span class="hljs-title class_">Postman</span>(id, <span class="hljs-string">&quot;内容&quot;</span> + id).start();<br>        &#125;<br>    &#125;<br></code></pre></td></tr></table></figure>
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:11.244</span> [Thread-<span class="hljs-number">0</span>] c.PeopleAction - 开售收信，id:<span class="hljs-number">1</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:11.244</span> [Thread-<span class="hljs-number">1</span>] c.PeopleAction - 开售收信，id:<span class="hljs-number">2</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:11.244</span> [Thread-<span class="hljs-number">2</span>] c.PeopleAction - 开售收信，id:<span class="hljs-number">3</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">4</span>] c.Postman - 开售送信，id:<span class="hljs-number">2</span>，内容:内容<span class="hljs-number">2</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">3</span>] c.Postman - 开售送信，id:<span class="hljs-number">3</span>，内容:内容<span class="hljs-number">3</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">4</span>] c.GuardedObjectV3 - notify...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">3</span>] c.GuardedObjectV3 - notify...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">5</span>] c.Postman - 开售送信，id:<span class="hljs-number">1</span>，内容:内容<span class="hljs-number">1</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">5</span>] c.GuardedObjectV3 - notify...<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">2</span>] c.GuardedObjectV3 - timePassed:<span class="hljs-number">997</span>, object is null? false <br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">1</span>] c.GuardedObjectV3 - timePassed:<span class="hljs-number">997</span>, object is null? false <br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">0</span>] c.GuardedObjectV3 - timePassed:<span class="hljs-number">997</span>, object is null? false <br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">1</span>] c.PeopleAction - 收到信了，id:<span class="hljs-number">2</span>，内容:内容<span class="hljs-number">2</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">0</span>] c.PeopleAction - 收到信了，id:<span class="hljs-number">1</span>，内容:内容<span class="hljs-number">1</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15:02:12.241</span> [Thread-<span class="hljs-number">2</span>] c.PeopleAction - 收到信了，id:<span class="hljs-number">3</span>，内容:内容<span class="hljs-number">3</span><br></code></pre></td></tr></table></figure>
+<h1 id="异步模式之生产者-消费者"><a href="#异步模式之生产者-消费者" class="headerlink" title="异步模式之生产者&#x2F;消费者"></a>异步模式之生产者&#x2F;消费者</h1><h2 id="1、定义-1"><a href="#1、定义-1" class="headerlink" title="1、定义"></a>1、定义</h2><p>要点</p>
+<ul>
+<li>与前面的保护性暂停中的GuardedObject不同，不需要产生结果和消费结果的线程一一对应</li>
+<li>消费队列可以用来平衡生产和消费的线程资源</li>
+<li>生产者仅负责产生结果数据，不关心数据如何处理，而消费者专心处理数据结果</li>
+<li>消息队列是有容量限制的，满时不再加入数据，空时不再消耗数据</li>
+<li>JDK中各种阻塞队列，采用的就是这种模式</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7d177ca90a9f9027431185a6cbc0bf84.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h2 id="2、实现-1"><a href="#2、实现-1" class="headerlink" title="2、实现"></a>2、实现</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><code class="hljs java"><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">Message</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> id;<br>    <span class="hljs-keyword">private</span> Object Object;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">Message</span><span class="hljs-params">(<span class="hljs-type">int</span> id, java.lang.Object object)</span> &#123;<br>        <span class="hljs-built_in">this</span>.id = id;<br>        Object = object;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">getId</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> id;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> java.lang.Object <span class="hljs-title function_">getObject</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> Object;<br>    &#125;<br>&#125;<br><br><span class="hljs-meta">@Slf4j(topic = &quot;c.MessageQueue&quot;)</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">MessageQueue</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> capacity;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Deque&lt;Message&gt; queue;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">MessageQueue</span><span class="hljs-params">(<span class="hljs-type">int</span> capacity)</span> &#123;<br>        <span class="hljs-built_in">this</span>.capacity = capacity;<br>        queue = <span class="hljs-keyword">new</span> <span class="hljs-title class_">LinkedList</span>&lt;&gt;();<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">put</span><span class="hljs-params">(Message message)</span> &#123;<br>        <span class="hljs-keyword">synchronized</span> (queue) &#123;<br>            <span class="hljs-keyword">while</span> (queue.size() == capacity) &#123;<br>                log.debug(<span class="hljs-string">&quot;队列已满,wait&quot;</span>);<br>                <span class="hljs-keyword">try</span> &#123;<br>                    queue.wait();<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>            &#125;<br>            log.debug(<span class="hljs-string">&quot;生产消息,id:&#123;&#125;,内容:&#123;&#125;&quot;</span>, message.getId(), message.getObject());<br>            queue.addLast(message);<br>            queue.notifyAll();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> Message <span class="hljs-title function_">take</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">synchronized</span> (queue) &#123;<br>            <span class="hljs-keyword">while</span> (queue.isEmpty()) &#123;<br>                log.debug(<span class="hljs-string">&quot;没有可用的消息,wait&quot;</span>);<br>                <span class="hljs-keyword">try</span> &#123;<br>                    queue.wait();<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>            &#125;<br>            <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> queue.removeFirst();<br>            log.debug(<span class="hljs-string">&quot;消费消息,id:&#123;&#125;,内容:&#123;&#125;&quot;</span>, message.getId(), message.getObject());<br>            queue.notifyAll();<br>            <span class="hljs-keyword">return</span> message;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>测试</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">MessageQueue</span> <span class="hljs-variable">messageQueue</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">MessageQueue</span>(<span class="hljs-number">2</span>);<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">4</span>; i++) &#123;<br>            <span class="hljs-type">int</span> <span class="hljs-variable">finalI</span> <span class="hljs-operator">=</span> i;<br>            <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>                messageQueue.put(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Message</span>(finalI, <span class="hljs-string">&quot;内容&quot;</span> + finalI));<br>            &#125;, <span class="hljs-string">&quot;生产者&quot;</span> + i).start();<br>        &#125;<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>                <span class="hljs-type">Message</span> <span class="hljs-variable">message</span> <span class="hljs-operator">=</span> messageQueue.take();<br>            &#125;<br>        &#125;, <span class="hljs-string">&quot;消费者&quot;</span>).start();<br>    &#125;<br></code></pre></td></tr></table></figure>
+
+<p>输出</p>
+<figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.921</span> [消费者] c.MessageQueue - 没有可用的消息,wait<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.921</span> [生产者<span class="hljs-number">3</span>] c.MessageQueue - 生产消息,id:<span class="hljs-number">3</span>,内容:内容<span class="hljs-number">3</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [消费者] c.MessageQueue - 消费消息,id:<span class="hljs-number">3</span>,内容:内容<span class="hljs-number">3</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [消费者] c.MessageQueue - 没有可用的消息,wait<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [生产者<span class="hljs-number">1</span>] c.MessageQueue - 生产消息,id:<span class="hljs-number">1</span>,内容:内容<span class="hljs-number">1</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [生产者<span class="hljs-number">0</span>] c.MessageQueue - 生产消息,id:<span class="hljs-number">0</span>,内容:内容<span class="hljs-number">0</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [生产者<span class="hljs-number">2</span>] c.MessageQueue - 队列已满,wait<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [消费者] c.MessageQueue - 消费消息,id:<span class="hljs-number">1</span>,内容:内容<span class="hljs-number">1</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [消费者] c.MessageQueue - 消费消息,id:<span class="hljs-number">0</span>,内容:内容<span class="hljs-number">0</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [消费者] c.MessageQueue - 没有可用的消息,wait<br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [生产者<span class="hljs-number">2</span>] c.MessageQueue - 生产消息,id:<span class="hljs-number">2</span>,内容:内容<span class="hljs-number">2</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [消费者] c.MessageQueue - 消费消息,id:<span class="hljs-number">2</span>,内容:内容<span class="hljs-number">2</span><br><span class="hljs-number">2022/03/06</span>-<span class="hljs-number">15</span>:<span class="hljs-number">56:31.930</span> [消费者] c.MessageQueue - 没有可用的消息,wait<br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Java%E5%B9%B6%E5%8F%91/" class="print-no-link">#Java并发</a>
+      
+        <a href="/tags/JUC/" class="print-no-link">#JUC</a>
+      
+        <a href="/tags/wait-notify/" class="print-no-link">#wait-notify</a>
+      
+        <a href="/tags/%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1/" class="print-no-link">#线程通信</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>3.6、wait notify join原理及应用，同步模式之保护性暂停，异步模式之生产者消费者</div>
+      <div>https://aster-xu-lab.github.io/2022/03/06/2022-03-06-waitnotifyjoin原理及应用同步模式之保护性暂停异步模式之生产者消费者/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年3月6日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/03/06/2022-03-06-ParkUnpark/" title="3.7、Park Unpark">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">3.7、Park Unpark</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/03/06/2022-03-06-Monitor%E6%A6%82%E5%BF%B5synchronized%E5%8E%9F%E7%90%86synchronized%E9%94%81%E5%8D%87%E7%BA%A7%E5%8F%8A%E5%AE%9E%E4%BE%8B%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/" title="3.5、Monitor概念、synchronized原理、synchronized锁升级及实例（轻量级锁、重量级锁、自旋锁、偏向锁）">
+                        <span class="hidden-mobile">3.5、Monitor概念、synchronized原理、synchronized锁升级及实例（轻量级锁、重量级锁、自旋锁、偏向锁）</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
