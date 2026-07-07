@@ -1,0 +1,987 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎一个有争议的架构决策同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的链式依赖。 遇到链式依赖，99% 的工程师第一反应是：”用 DAG 编排引擎啊！” 我最初也是这样想的。我调研了 Temporal、Conductor、nFlow、Flowable、Airflow、Az">
+<meta property="og:type" content="article">
+<meta property="og:title" content="放弃DAG：为什么我用afterExecute埋点替代了编排引擎">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/20/2024-04-20-%E6%94%BE%E5%BC%83DAG%E9%80%89%E6%8B%A9Choreography/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎一个有争议的架构决策同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的链式依赖。 遇到链式依赖，99% 的工程师第一反应是：”用 DAG 编排引擎啊！” 我最初也是这样想的。我调研了 Temporal、Conductor、nFlow、Flowable、Airflow、Az">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-04-20T08:30:00.000Z">
+<meta property="article:modified_time" content="2026-07-07T11:30:55.757Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="ADR">
+<meta property="article:tag" content="Choreography">
+<meta property="article:tag" content="DAG">
+<meta property="article:tag" content="Orchestration">
+<meta property="article:tag" content="SyncTask">
+<meta property="article:tag" content="架构决策">
+<meta property="article:tag" content="编排引擎">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>放弃DAG：为什么我用afterExecute埋点替代了编排引擎 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="放弃DAG：为什么我用afterExecute埋点替代了编排引擎"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-04-20 16:30" pubdate>
+          2024年4月20日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          29 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">放弃DAG：为什么我用afterExecute埋点替代了编排引擎</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="放弃-DAG：为什么我用-afterExecute-埋点替代了编排引擎"><a href="#放弃-DAG：为什么我用-afterExecute-埋点替代了编排引擎" class="headerlink" title="放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎"></a>放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎</h1><h2 id="一个有争议的架构决策"><a href="#一个有争议的架构决策" class="headerlink" title="一个有争议的架构决策"></a>一个有争议的架构决策</h2><p>同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的<strong>链式依赖</strong>。</p>
+<p>遇到链式依赖，99% 的工程师第一反应是：”用 DAG 编排引擎啊！”</p>
+<p>我最初也是这样想的。我调研了 Temporal、Conductor、nFlow、Flowable、Airflow、Azkaban 六个方案，然后做了一个让很多人意外的决定：<strong>全部放弃，用最简单的 afterExecute 埋点实现</strong>。</p>
+<p>这个决策在当时是有争议的。今天这篇文章记录完整的思考过程。</p>
+<h2 id="一、问题定义：我们到底要编排什么？"><a href="#一、问题定义：我们到底要编排什么？" class="headerlink" title="一、问题定义：我们到底要编排什么？"></a>一、问题定义：我们到底要编排什么？</h2><p>先看同步场景：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs">订单同步 → 库存同步 → 物流单同步 → 财务同步<br>   │            │            │<br>   └────────────┴────────────┘<br>         这三步有严格的先后依赖<br></code></pre></td></tr></table></figure>
+
+<p>这种依赖有两个特点：</p>
+<ol>
+<li><strong>链是静态的</strong>——不需要运行时动态决定下一步走哪个分支</li>
+<li><strong>中间态需要持久化</strong>——每一步完成后，下一条可能 30 秒后才开始执行</li>
+</ol>
+<h2 id="二、六个方案的调研"><a href="#二、六个方案的调研" class="headerlink" title="二、六个方案的调研"></a>二、六个方案的调研</h2><table>
+<thead>
+<tr>
+<th>方案</th>
+<th>类型</th>
+<th>强项</th>
+<th>致命问题</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Temporal</strong></td>
+<td>Workflow-as-Code</td>
+<td>最强大，支持 Saga、重试、超时</td>
+<td>太重，需要独立 Server</td>
+</tr>
+<tr>
+<td><strong>Netflix Conductor</strong></td>
+<td>JSON DSL 编排</td>
+<td>可视化，社区好</td>
+<td>需要独立部署 + 学习 JSON DSL</td>
+</tr>
+<tr>
+<td><strong>nFlow</strong></td>
+<td>阿里开源</td>
+<td>轻量</td>
+<td>社区活跃度低，文档少</td>
+</tr>
+<tr>
+<td><strong>Flowable</strong></td>
+<td>BPMN 引擎</td>
+<td>标准 BPMN 2.0</td>
+<td>太重，面向审批流不是数据同步</td>
+</tr>
+<tr>
+<td><strong>Airflow</strong></td>
+<td>Python DAG</td>
+<td>调度强</td>
+<td>Python 生态，Java 集成成本高</td>
+</tr>
+<tr>
+<td><strong>Azkaban</strong></td>
+<td>Hadoop 生态</td>
+<td>批处理调度</td>
+<td>跟 Java 微服务不搭</td>
+</tr>
+</tbody></table>
+<p>六个方案共同的负担：</p>
+<ul>
+<li>都需要独立部署和维护</li>
+<li>都需要团队学习新的 DSL 或 API</li>
+<li>都要管理额外的运行时状态</li>
+</ul>
+<h2 id="三、转折点：一个简单的问题"><a href="#三、转折点：一个简单的问题" class="headerlink" title="三、转折点：一个简单的问题"></a>三、转折点：一个简单的问题</h2><p>我问了自己一个问题：</p>
+<blockquote>
+<p>我们的同步链只有 11 个 Handler，链的结构半年才变一次。引入一个新基础设施，真的值得吗？</p>
+</blockquote>
+<p>算一笔维护账：</p>
+<ul>
+<li>引入 Temporal：部署 Temporal Server + 学习 Workflow SDK + 排查分布式问题 + 版本升级</li>
+<li>自己实现 Choreography：在现有 sync_task 表上加一个 <code>context.properties</code> 字段就够了</li>
+</ul>
+<p>投入产出比完全不成比例。</p>
+<h2 id="四、afterExecute-埋点：Choreography-模式"><a href="#四、afterExecute-埋点：Choreography-模式" class="headerlink" title="四、afterExecute 埋点：Choreography 模式"></a>四、afterExecute 埋点：Choreography 模式</h2><p>Choreography 的核心思想：<strong>没有中央指挥，每个参与者做完自己的事，留一个信号，下一个参与者自动响应</strong>。</p>
+<h3 id="实现方案"><a href="#实现方案" class="headerlink" title="实现方案"></a>实现方案</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderSyncHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">SyncHandler</span> &#123;<br>    <br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">execute</span><span class="hljs-params">(SyncTask task)</span> &#123;<br>        <span class="hljs-comment">// 1. 执行业务逻辑</span><br>        syncOrderToDownstream(task);<br>        <br>        <span class="hljs-comment">// 2. 标记当前任务完成</span><br>        task.setStatus(TaskStatus.SUCCESS);<br>    &#125;<br>    <br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">afterExecute</span><span class="hljs-params">(SyncTask task, TaskContext context)</span> &#123;<br>        <span class="hljs-comment">// 3. 埋点：写入下一个任务的触发条件</span><br>        <span class="hljs-comment">// 这是 Choreography 的关键——由当前 Handler 决定下一跳</span><br>        <span class="hljs-keyword">if</span> (task.getStatus() == TaskStatus.SUCCESS) &#123;<br>            <span class="hljs-comment">// 在 context 里标记&quot;订单已同步&quot;，库存 Handler 会响应</span><br>            context.setProperty(<span class="hljs-string">&quot;order_synced&quot;</span>, <span class="hljs-string">&quot;true&quot;</span>);<br>            context.setProperty(<span class="hljs-string">&quot;last_order_no&quot;</span>, task.getBizId());<br>            <br>            <span class="hljs-comment">// 放一个库存同步任务到队列</span><br>            createNextTask(<span class="hljs-string">&quot;INVENTORY_SYNC&quot;</span>, task.getBizId(), context);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="sync-task-表就是编排事件载体"><a href="#sync-task-表就是编排事件载体" class="headerlink" title="sync_task 表就是编排事件载体"></a>sync_task 表就是编排事件载体</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> sync_task (<br>    id <span class="hljs-type">BIGINT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    handler_key <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">64</span>),      <span class="hljs-comment">-- 路由到哪个 Handler</span><br>    biz_id <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">128</span>),          <span class="hljs-comment">-- 业务ID</span><br>    status <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">32</span>),           <span class="hljs-comment">-- INIT/WAIT/SUCCESS/FAIL/TIMEOUT</span><br>    retry_count <span class="hljs-type">INT</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">0</span>,<br>    context JSON,                 <span class="hljs-comment">-- ★ 编排上下文，透传给下一个 Handler</span><br>    next_handler <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">64</span>),     <span class="hljs-comment">-- ★ 下一个 Handler 的 key</span><br>    created_at DATETIME,<br>    updated_at DATETIME<br>);<br></code></pre></td></tr></table></figure>
+
+<p><code>context</code> 字段就是”信号”的载体——Handler A 做完后在 context 里写入 <code>{order_synced: true}</code>，Handler B 启动时从 context 里读这个值。</p>
+<h3 id="11-个-Handler-的链式编排"><a href="#11-个-Handler-的链式编排" class="headerlink" title="11 个 Handler 的链式编排"></a>11 个 Handler 的链式编排</h3><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs">订单拉取 → 订单校验 → 库存同步 → 物流同步 → 财务同步<br>    │                      │<br>    └── 售后检测 ←─────────┘<br></code></pre></td></tr></table></figure>
+
+<p>在代码层面，每个 Handler 只需要关心”我做完之后应该触发谁”：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 库存同步 Handler 的 afterExecute</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">afterExecute</span><span class="hljs-params">(SyncTask task, TaskContext context)</span> &#123;<br>    <span class="hljs-keyword">if</span> (task.getStatus() == SUCCESS) &#123;<br>        createNextTask(<span class="hljs-string">&quot;LOGISTICS_SYNC&quot;</span>, task.getBizId(), context);<br>        createNextTask(<span class="hljs-string">&quot;AFTERSALE_CHECK&quot;</span>, task.getBizId(), context);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="五、Orchestration-vs-Choreography"><a href="#五、Orchestration-vs-Choreography" class="headerlink" title="五、Orchestration vs Choreography"></a>五、Orchestration vs Choreography</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Orchestration (DAG)</th>
+<th>Choreography (afterExecute)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>控制流</td>
+<td>中央编排器指挥</td>
+<td>参与者自发响应</td>
+</tr>
+<tr>
+<td>可追踪性</td>
+<td>一目了然（DAG图）</td>
+<td>需要日志拼接</td>
+</tr>
+<tr>
+<td>耦合度</td>
+<td>编排器知道所有步骤</td>
+<td>每个步骤只知道下一跳</td>
+</tr>
+<tr>
+<td>灵活性</td>
+<td>改流程改DAG配置</td>
+<td>改 afterExecute 代码</td>
+</tr>
+<tr>
+<td>维护成本</td>
+<td>运行+维护编排引擎</td>
+<td>零额外基础设施</td>
+</tr>
+<tr>
+<td>适用规模</td>
+<td>复杂分支流程</td>
+<td>简单链式流程</td>
+</tr>
+<tr>
+<td>新人理解</td>
+<td>需要学 DSL</td>
+<td>直接看 afterExecute</td>
+</tr>
+</tbody></table>
+<h2 id="六、什么时候不该用-Choreography？"><a href="#六、什么时候不该用-Choreography？" class="headerlink" title="六、什么时候不该用 Choreography？"></a>六、什么时候不该用 Choreography？</h2><p>这个决策不是普适的。如果你的场景满足以下任一条件，应该用 DAG：</p>
+<ol>
+<li><strong>流程有复杂的分支和合并</strong>（菱形依赖、并行汇聚）</li>
+<li><strong>流程频繁变化</strong>（运营人员需要可视化编排）</li>
+<li><strong>步骤数 &gt; 30</strong>（afterExecute 散落在各 Handler 中难以追踪）</li>
+<li><strong>需要流程级别的超时和补偿</strong>（不是单个步骤的超时）</li>
+</ol>
+<p>我们的场景（11 个 Handler、静态链式、半年一改）恰好是 Choreography 的甜点区。</p>
+<h2 id="七、面试话术：如何讲好这个决策"><a href="#七、面试话术：如何讲好这个决策" class="headerlink" title="七、面试话术：如何讲好这个决策"></a>七、面试话术：如何讲好这个决策</h2><p>如果面试官问”你们怎么不做 DAG”，可以这样回答：</p>
+<blockquote>
+<p>我评估了 Temporal、Conductor、nFlow 等 6 个方案，核心判断是：场景不匹配。我们的同步链只有 11 个 Handler，链的结构半年不变。引入 DAG 编排引擎相当于为 11 个步骤维护一个额外的分布式系统，投入产出比不成比例。</p>
+<p>我选择了 Choreography 模式——afterExecute 埋点 + sync_task 表的 context 字段作为事件载体。每个 Handler 完成后在 context 里标记信号，下一个 Handler 自发响应。</p>
+<p>零引擎、零 DSL、零维护成本。这不是说 DAG 不好——如果步骤数到 30+ 或者需要可视化编排，我会选 Temporal。做架构就是选最适合当前场景的方案，而不是选最酷的方案。</p>
+</blockquote>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>放弃 DAG 不是放弃编排，而是选择了更轻量的编排模式。架构决策的核心不是”哪个方案更强”，而是”哪个方案最匹配当前场景”。</p>
+<p>如果你也在做类似的技术选型，建议先问自己三个问题：</p>
+<ol>
+<li>流程复杂度：有多少个步骤？分支多吗？</li>
+<li>变化频率：流程多久改一次？谁改？</li>
+<li>维护成本：团队有精力维护编排引擎吗？</li>
+</ol>
+<p>回答完这三个问题，你的选择应该就清楚了。</p>
+<hr>
+<p><em>发表于 2024 年 4 月 · 标签: Choreography, Orchestration, DAG, 编排引擎, 架构决策, ADR, SyncTask</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E5%86%B3%E7%AD%96/" class="category-chain-item">架构决策</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Choreography/" class="print-no-link">#Choreography</a>
+      
+        <a href="/tags/Orchestration/" class="print-no-link">#Orchestration</a>
+      
+        <a href="/tags/DAG/" class="print-no-link">#DAG</a>
+      
+        <a href="/tags/%E7%BC%96%E6%8E%92%E5%BC%95%E6%93%8E/" class="print-no-link">#编排引擎</a>
+      
+        <a href="/tags/%E6%9E%B6%E6%9E%84%E5%86%B3%E7%AD%96/" class="print-no-link">#架构决策</a>
+      
+        <a href="/tags/ADR/" class="print-no-link">#ADR</a>
+      
+        <a href="/tags/SyncTask/" class="print-no-link">#SyncTask</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>放弃DAG：为什么我用afterExecute埋点替代了编排引擎</div>
+      <div>https://aster-xu-lab.github.io/2024/04/20/2024-04-20-放弃DAG选择Choreography/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年4月20日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/07/12/2024-07-12-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" title="双层权重调度：分层时间轮在业务调度中的应用">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">双层权重调度：分层时间轮在业务调度中的应用</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/03/29/2024-03-29-%E6%8E%92%E5%BA%8F%E7%AE%97%E6%B3%95%EF%BC%9A%E5%86%92%E6%B3%A1%E6%8E%92%E5%BA%8F/" title="排序算法：冒泡排序">
+                        <span class="hidden-mobile">排序算法：冒泡排序</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

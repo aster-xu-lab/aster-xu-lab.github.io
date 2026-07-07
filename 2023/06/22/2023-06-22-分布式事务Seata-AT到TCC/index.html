@@ -1,0 +1,956 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="分布式事务实战：从 Seata AT 到 TCC 的性能提升之路背景OFS订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现核心接口 RT 偏高达 400ms+，分布式事务成为性能瓶颈。 本文将复盘我们从 AT 迁移到 TCC 的完整过程，包括方案对比、改造细节和踩坑经验。 一、Seata AT 模式的原理">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分布式事务实战：从Seata AT到TCC的性能提升之路">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2023/06/22/2023-06-22-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1Seata-AT%E5%88%B0TCC/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="分布式事务实战：从 Seata AT 到 TCC 的性能提升之路背景OFS订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现核心接口 RT 偏高达 400ms+，分布式事务成为性能瓶颈。 本文将复盘我们从 AT 迁移到 TCC 的完整过程，包括方案对比、改造细节和踩坑经验。 一、Seata AT 模式的原理">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-06-22T13:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-07T11:29:06.498Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="2PC">
+<meta property="article:tag" content="AT模式">
+<meta property="article:tag" content="Seata">
+<meta property="article:tag" content="TCC">
+<meta property="article:tag" content="分布式事务">
+<meta property="article:tag" content="性能优化">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>分布式事务实战：从Seata AT到TCC的性能提升之路 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="分布式事务实战：从Seata AT到TCC的性能提升之路"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-06-22 21:00" pubdate>
+          2023年6月22日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          27 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">分布式事务实战：从Seata AT到TCC的性能提升之路</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="分布式事务实战：从-Seata-AT-到-TCC-的性能提升之路"><a href="#分布式事务实战：从-Seata-AT-到-TCC-的性能提升之路" class="headerlink" title="分布式事务实战：从 Seata AT 到 TCC 的性能提升之路"></a>分布式事务实战：从 Seata AT 到 TCC 的性能提升之路</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>OFS订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现<strong>核心接口 RT 偏高达 400ms+</strong>，分布式事务成为性能瓶颈。</p>
+<p>本文将复盘我们从 AT 迁移到 TCC 的完整过程，包括方案对比、改造细节和踩坑经验。</p>
+<h2 id="一、Seata-AT-模式的原理与瓶颈"><a href="#一、Seata-AT-模式的原理与瓶颈" class="headerlink" title="一、Seata AT 模式的原理与瓶颈"></a>一、Seata AT 模式的原理与瓶颈</h2><h3 id="AT-模式做了什么？"><a href="#AT-模式做了什么？" class="headerlink" title="AT 模式做了什么？"></a>AT 模式做了什么？</h3><p>AT（Auto Transaction）模式基于<strong>两阶段提交</strong>：</p>
+<figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs stata">Phase 1:<br>┌─────────┐    ┌─────────┐    ┌──────────┐<br>│ <span class="hljs-keyword">RM</span>-订单  │    │ <span class="hljs-keyword">RM</span>-库存  │    │ <span class="hljs-keyword">RM</span>-物流   │<br>│ INSERT  │    │ <span class="hljs-keyword">UPDATE</span>  │    │ INSERT    │<br>│ (undo)  │    │ (undo)  │    │ (undo)    │<br>└─────────┘    └─────────┘    └──────────┘<br>         \         |         /<br>          ┌────────┴────────┐<br>          │       TC        │<br>          └─────────────────┘<br><br>Phase 2:<br>  TC 收齐所有 <span class="hljs-keyword">RM</span> 的 Phase 1 结果<br>  → 全成功: 异步删 undo_log<br>  → 任一失败: 用 undo_log 回滚<br></code></pre></td></tr></table></figure>
+
+<h3 id="AT-模式的性能代价"><a href="#AT-模式的性能代价" class="headerlink" title="AT 模式的性能代价"></a>AT 模式的性能代价</h3><ol>
+<li><strong>undo_log 写入</strong>：每条业务 SQL 都伴随一条 undo_log 写入，翻倍了 DB 写入量</li>
+<li><strong>全局锁</strong>：Phase 1 → Phase 2 之间持有全局锁，阻塞并发</li>
+<li><strong>两次 RPC</strong>：每个 RM 需要跟 TC 通信两次（branch register + branch report）</li>
+</ol>
+<p>在压测中，我们观察到 AT 模式下的 RT 分布：</p>
+<ul>
+<li>业务 SQL：~50ms</li>
+<li>undo_log 写入：~30ms</li>
+<li>TC 通信：~20ms × 2 &#x3D; ~40ms</li>
+<li>全局锁等待：~80ms（并发越高越严重）</li>
+<li><strong>总 RT：~200ms（无竞争）到 400ms+（有竞争）</strong></li>
+</ul>
+<h2 id="二、为什么选择-TCC？"><a href="#二、为什么选择-TCC？" class="headerlink" title="二、为什么选择 TCC？"></a>二、为什么选择 TCC？</h2><h3 id="TCC-的核心思想"><a href="#TCC-的核心思想" class="headerlink" title="TCC 的核心思想"></a>TCC 的核心思想</h3><p>TCC（Try-Confirm-Cancel）取消了 undo_log，改为业务方自行实现资源预留和补偿：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">Try 阶段（资源预留）</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-attribute">订单服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">INSERT 订单(status=PENDING)</span><br>  <span class="hljs-attribute">库存服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE 冻结库存+1, 可用库存-1</span><br>  <span class="hljs-attribute">物流服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">INSERT 物流单(status=DRAFT)</span><br><br><span class="hljs-attribute">Confirm 阶段（提交）</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-attribute">订单服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE status=CONFIRMED</span><br>  <span class="hljs-attribute">库存服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE 冻结库存-1</span><br>  <span class="hljs-attribute">物流服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE status=ACTIVE</span><br><br><span class="hljs-attribute">Cancel 阶段（回滚）</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-attribute">订单服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE status=CANCELED</span><br>  <span class="hljs-attribute">库存服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE 冻结库存-1, 可用库存+1</span><br>  <span class="hljs-attribute">物流服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE status=CANCELED</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="与-AT-的关键差异"><a href="#与-AT-的关键差异" class="headerlink" title="与 AT 的关键差异"></a>与 AT 的关键差异</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>AT 模式</th>
+<th>TCC 模式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>实现方式</td>
+<td>框架自动（undo_log）</td>
+<td>业务方自行实现 Try&#x2F;Confirm&#x2F;Cancel</td>
+</tr>
+<tr>
+<td>数据快照</td>
+<td>undo_log 表</td>
+<td>业务字段（冻结库存、状态）</td>
+</tr>
+<tr>
+<td>锁持有</td>
+<td>Phase 1 → Phase 2 全程</td>
+<td>仅 Try 阶段，Confirm&#x2F;Cancel 无锁</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>受 undo_log 和全局锁影响</td>
+<td>锁窗口更短，无额外写入</td>
+</tr>
+<tr>
+<td>侵入性</td>
+<td>低（对业务透明）</td>
+<td>高（需要改造业务逻辑）</td>
+</tr>
+<tr>
+<td>空回滚&#x2F;悬挂</td>
+<td>框架处理</td>
+<td><strong>需要业务方自行处理</strong></td>
+</tr>
+</tbody></table>
+<h2 id="三、TCC-改造的实战要点"><a href="#三、TCC-改造的实战要点" class="headerlink" title="三、TCC 改造的实战要点"></a>三、TCC 改造的实战要点</h2><h3 id="3-1-改造冻结库存"><a href="#3-1-改造冻结库存" class="headerlink" title="3.1 改造冻结库存"></a>3.1 改造冻结库存</h3><p>原来 AT 模式直接 <code>UPDATE stock = stock - 1</code>。TCC 需要引入<strong>冻结字段</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">ALTER TABLE</span> inventory <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">COLUMN</span> frozen_stock <span class="hljs-type">INT</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">0</span>;<br><br><span class="hljs-comment">-- Try: 冻结库存</span><br><span class="hljs-keyword">UPDATE</span> inventory <span class="hljs-keyword">SET</span> frozen_stock <span class="hljs-operator">=</span> frozen_stock <span class="hljs-operator">+</span> <span class="hljs-number">1</span>, <br>                     available_stock <span class="hljs-operator">=</span> available_stock <span class="hljs-operator">-</span> <span class="hljs-number">1</span><br><span class="hljs-keyword">WHERE</span> sku_code <span class="hljs-operator">=</span> ? <span class="hljs-keyword">AND</span> available_stock <span class="hljs-operator">&gt;</span> <span class="hljs-number">0</span>;<br><br><span class="hljs-comment">-- Confirm: 扣减冻结</span><br><span class="hljs-keyword">UPDATE</span> inventory <span class="hljs-keyword">SET</span> frozen_stock <span class="hljs-operator">=</span> frozen_stock <span class="hljs-operator">-</span> <span class="hljs-number">1</span> <span class="hljs-keyword">WHERE</span> sku_code <span class="hljs-operator">=</span> ?;<br><br><span class="hljs-comment">-- Cancel: 解冻退回</span><br><span class="hljs-keyword">UPDATE</span> inventory <span class="hljs-keyword">SET</span> frozen_stock <span class="hljs-operator">=</span> frozen_stock <span class="hljs-operator">-</span> <span class="hljs-number">1</span>, <br>                     available_stock <span class="hljs-operator">=</span> available_stock <span class="hljs-operator">+</span> <span class="hljs-number">1</span><br><span class="hljs-keyword">WHERE</span> sku_code <span class="hljs-operator">=</span> ?;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-处理空回滚和悬挂"><a href="#3-2-处理空回滚和悬挂" class="headerlink" title="3.2 处理空回滚和悬挂"></a>3.2 处理空回滚和悬挂</h3><p>TCC 模式最头疼的就是异常场景：</p>
+<ul>
+<li><strong>空回滚</strong>：Cancel 被调用时，Try 还没执行（TC 超时直接发了 Cancel）</li>
+<li><strong>悬挂</strong>：Cancel 先到执行了，然后 Try 才到（Try 应该被拒绝）</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 通过在事务记录表中维护状态来解决</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">cancel</span><span class="hljs-params">(String xid)</span> &#123;<br>    <span class="hljs-type">TccRecord</span> <span class="hljs-variable">record</span> <span class="hljs-operator">=</span> tccRecordMapper.selectByXid(xid);<br>    <span class="hljs-keyword">if</span> (record == <span class="hljs-literal">null</span>) &#123;<br>        <span class="hljs-comment">// 空回滚：记录一条 canceled 记录，防止后续 Try</span><br>        tccRecordMapper.insert(xid, <span class="hljs-string">&quot;CANCELED&quot;</span>);<br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br>    <span class="hljs-keyword">if</span> (<span class="hljs-string">&quot;TRY_DONE&quot;</span>.equals(record.getStatus())) &#123;<br>        <span class="hljs-comment">// 正常回滚</span><br>        doCancel(xid);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">tryPhase</span><span class="hljs-params">(String xid)</span> &#123;<br>    <span class="hljs-type">TccRecord</span> <span class="hljs-variable">record</span> <span class="hljs-operator">=</span> tccRecordMapper.selectByXid(xid);<br>    <span class="hljs-keyword">if</span> (record != <span class="hljs-literal">null</span> &amp;&amp; <span class="hljs-string">&quot;CANCELED&quot;</span>.equals(record.getStatus())) &#123;<br>        <span class="hljs-comment">// 悬挂：Cancel 先执行了，拒绝 Try</span><br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br>    doTry(xid);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-3-幂等性"><a href="#3-3-幂等性" class="headerlink" title="3.3 幂等性"></a>3.3 幂等性</h3><p>Confirm 和 Cancel 都可能被重复调用，必须保证幂等：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">confirm</span><span class="hljs-params">(String xid)</span> &#123;<br>    <span class="hljs-type">TccRecord</span> <span class="hljs-variable">record</span> <span class="hljs-operator">=</span> tccRecordMapper.selectByXid(xid);<br>    <span class="hljs-keyword">if</span> (<span class="hljs-string">&quot;CONFIRMED&quot;</span>.equals(record.getStatus())) &#123;<br>        <span class="hljs-keyword">return</span>;  <span class="hljs-comment">// 已确认，幂等返回</span><br>    &#125;<br>    doConfirm(xid);<br>    tccRecordMapper.updateStatus(xid, <span class="hljs-string">&quot;CONFIRMED&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、性能对比"><a href="#四、性能对比" class="headerlink" title="四、性能对比"></a>四、性能对比</h2><p>迁移完成后，我们在压测环境做了对比（相同业务场景、相同并发）：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>AT 模式</th>
+<th>TCC 模式</th>
+<th align="center">提升</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>平均 RT</td>
+<td>350ms</td>
+<td>190ms</td>
+<td align="center">↓45%</td>
+</tr>
+<tr>
+<td>P99 RT</td>
+<td>800ms</td>
+<td>350ms</td>
+<td align="center">↓56%</td>
+</tr>
+<tr>
+<td>吞吐量</td>
+<td>1200 TPS</td>
+<td>2000+ TPS</td>
+<td align="center">↑66%</td>
+</tr>
+<tr>
+<td>DB 写入量</td>
+<td>6次（3业务+3undo）</td>
+<td>3次（3业务）</td>
+<td align="center">↓50%</td>
+</tr>
+</tbody></table>
+<p>实际提升约 <strong>40%+</strong>，P99 提升更明显——去掉了全局锁等待这个最大变量。</p>
+<h2 id="五、什么时候该用-TCC？"><a href="#五、什么时候该用-TCC？" class="headerlink" title="五、什么时候该用 TCC？"></a>五、什么时候该用 TCC？</h2><p>TCC 不是银弹。总结一下选型标准：</p>
+<p><strong>选 AT</strong>：</p>
+<ul>
+<li>业务逻辑简单，不希望侵入太多</li>
+<li>并发冲突不高，undo_log 带来的性能开销可接受</li>
+<li>快速上线优先于极致性能</li>
+</ul>
+<p><strong>选 TCC</strong>：</p>
+<ul>
+<li>对性能有明确要求（P99 &lt; 200ms）</li>
+<li>业务方有能力设计和维护 Try&#x2F;Confirm&#x2F;Cancel 三个接口</li>
+<li>并发冲突高，全局锁等待成了瓶颈</li>
+</ul>
+<p>我们的经验是：<strong>先 AT 快速上线，再 TCC 按需优化</strong>。AT 让分布式事务不再是”做不做”的问题，TCC 让分布式事务做到了”做得好”。</p>
+<hr>
+<p><em>发表于 2023 年 6 月 · 标签: 分布式事务, Seata, TCC, AT模式, 2PC, 性能优化</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="print-no-link">#性能优化</a>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="print-no-link">#分布式事务</a>
+      
+        <a href="/tags/Seata/" class="print-no-link">#Seata</a>
+      
+        <a href="/tags/TCC/" class="print-no-link">#TCC</a>
+      
+        <a href="/tags/AT%E6%A8%A1%E5%BC%8F/" class="print-no-link">#AT模式</a>
+      
+        <a href="/tags/2PC/" class="print-no-link">#2PC</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>分布式事务实战：从Seata AT到TCC的性能提升之路</div>
+      <div>https://aster-xu-lab.github.io/2023/06/22/2023-06-22-分布式事务Seata-AT到TCC/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年6月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/09/15/2023-09-15-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/" title="百万订单系统的缓存与降级策略">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">百万订单系统的缓存与降级策略</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/03/18/2023-03-18-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/" title="订单中心慢SQL治理：从日均1124条到6条的实战总结">
+                        <span class="hidden-mobile">订单中心慢SQL治理：从日均1124条到6条的实战总结</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,917 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="双层权重调度：分层时间轮在业务调度中的应用问题背景SyncTaskJob 引擎管理着 93 个 Handler，每个 Handler 背后是数以万计的同步任务。不同任务对响应时间的要求完全不同：  新任务——刚产生的订单，期望 5 秒内开始同步 重试任务——失败一次的，可以等 30 秒 扫尾任务——失败 3 次以上的，5 分钟扫一次就够了 低优先级任务——历史数据补录，优先级最低  如果所有任务都">
+<meta property="og:type" content="article">
+<meta property="og:title" content="双层权重调度：分层时间轮在业务调度中的应用">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/07/12/2024-07-12-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="双层权重调度：分层时间轮在业务调度中的应用问题背景SyncTaskJob 引擎管理着 93 个 Handler，每个 Handler 背后是数以万计的同步任务。不同任务对响应时间的要求完全不同：  新任务——刚产生的订单，期望 5 秒内开始同步 重试任务——失败一次的，可以等 30 秒 扫尾任务——失败 3 次以上的，5 分钟扫一次就够了 低优先级任务——历史数据补录，优先级最低  如果所有任务都">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-07-12T12:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-07T11:31:37.338Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="SyncTask">
+<meta property="article:tag" content="XXL-JOB">
+<meta property="article:tag" content="任务引擎">
+<meta property="article:tag" content="分层时间轮">
+<meta property="article:tag" content="权重调度">
+<meta property="article:tag" content="调度算法">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>双层权重调度：分层时间轮在业务调度中的应用 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="双层权重调度：分层时间轮在业务调度中的应用"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-12 20:00" pubdate>
+          2024年7月12日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          30 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">双层权重调度：分层时间轮在业务调度中的应用</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="双层权重调度：分层时间轮在业务调度中的应用"><a href="#双层权重调度：分层时间轮在业务调度中的应用" class="headerlink" title="双层权重调度：分层时间轮在业务调度中的应用"></a>双层权重调度：分层时间轮在业务调度中的应用</h1><h2 id="问题背景"><a href="#问题背景" class="headerlink" title="问题背景"></a>问题背景</h2><p>SyncTaskJob 引擎管理着 93 个 Handler，每个 Handler 背后是数以万计的同步任务。不同任务对响应时间的要求完全不同：</p>
+<ul>
+<li><strong>新任务</strong>——刚产生的订单，期望 5 秒内开始同步</li>
+<li><strong>重试任务</strong>——失败一次的，可以等 30 秒</li>
+<li><strong>扫尾任务</strong>——失败 3 次以上的，5 分钟扫一次就够了</li>
+<li><strong>低优先级任务</strong>——历史数据补录，优先级最低</li>
+</ul>
+<p>如果所有任务都塞在一个队列里平等对待，结果就是：新任务被重试任务拖慢，重试任务被扫尾任务淹没，最终整体响应时间失控。</p>
+<p>这就是<strong>差异化调度</strong>要解决的问题。</p>
+<h2 id="一、第一层：Job-内状态配额（4-1-1）"><a href="#一、第一层：Job-内状态配额（4-1-1）" class="headerlink" title="一、第一层：Job 内状态配额（4:1:1）"></a>一、第一层：Job 内状态配额（4:1:1）</h2><p>每个 XXL-JOB 实例从 <code>sync_task</code> 表拉取待处理任务时，不是无差别拉取，而是按状态分配配额：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">QuotaTaskSelector</span> &#123;<br>    <br>    <span class="hljs-comment">// 配额: INIT 40条 : WAIT 10条 : FAIL 10条（4:1:1）</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">INIT_QUOTA</span> <span class="hljs-operator">=</span> <span class="hljs-number">40</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">WAIT_QUOTA</span> <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">FAIL_QUOTA</span> <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br>    <br>    <span class="hljs-keyword">public</span> List&lt;SyncTask&gt; <span class="hljs-title function_">selectTasks</span><span class="hljs-params">(<span class="hljs-type">int</span> totalQuota)</span> &#123;<br>        List&lt;SyncTask&gt; result = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;&gt;();<br>        <br>        <span class="hljs-comment">// 1. 优先拉 INIT（新任务）</span><br>        result.addAll(selectByStatus(<span class="hljs-string">&quot;INIT&quot;</span>, INIT_QUOTA));<br>        <br>        <span class="hljs-comment">// 2. 再拉 WAIT（待重试）</span><br>        result.addAll(selectByStatus(<span class="hljs-string">&quot;WAIT&quot;</span>, WAIT_QUOTA));<br>        <br>        <span class="hljs-comment">// 3. 最后拉 FAIL（多次失败）</span><br>        result.addAll(selectByStatus(<span class="hljs-string">&quot;FAIL&quot;</span>, FAIL_QUOTA));<br>        <br>        <span class="hljs-keyword">return</span> result;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>每次调度拉取 60 条任务：40 条新任务 + 10 条重试 + 10 条扫尾。这个 4:1:1 的比例保证了新任务总能优先被处理，而失败任务不会饿死。</p>
+<p>SQL 实现：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 每种状态独立查询，UNION ALL 合并</span><br>(<span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> sync_task <br> <span class="hljs-keyword">WHERE</span> handler_key <span class="hljs-operator">=</span> ? <span class="hljs-keyword">AND</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;INIT&#x27;</span> <span class="hljs-keyword">AND</span> next_retry_time <span class="hljs-operator">&lt;=</span> NOW()<br> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> priority <span class="hljs-keyword">DESC</span>, created_at <span class="hljs-keyword">ASC</span><br> LIMIT <span class="hljs-number">40</span>)<br><br><span class="hljs-keyword">UNION</span> <span class="hljs-keyword">ALL</span><br><br>(<span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> sync_task <br> <span class="hljs-keyword">WHERE</span> handler_key <span class="hljs-operator">=</span> ? <span class="hljs-keyword">AND</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;WAIT&#x27;</span> <span class="hljs-keyword">AND</span> next_retry_time <span class="hljs-operator">&lt;=</span> NOW()<br> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> retry_count <span class="hljs-keyword">ASC</span>, created_at <span class="hljs-keyword">ASC</span><br> LIMIT <span class="hljs-number">10</span>)<br><br><span class="hljs-keyword">UNION</span> <span class="hljs-keyword">ALL</span><br><br>(<span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> sync_task <br> <span class="hljs-keyword">WHERE</span> handler_key <span class="hljs-operator">=</span> ? <span class="hljs-keyword">AND</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;FAIL&#x27;</span> <span class="hljs-keyword">AND</span> next_retry_time <span class="hljs-operator">&lt;=</span> NOW()<br> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> retry_count <span class="hljs-keyword">ASC</span>, created_at <span class="hljs-keyword">ASC</span><br> LIMIT <span class="hljs-number">10</span>)<br></code></pre></td></tr></table></figure>
+
+<h2 id="二、第二层：多-Job-实例分级调度"><a href="#二、第二层：多-Job-实例分级调度" class="headerlink" title="二、第二层：多 Job 实例分级调度"></a>二、第二层：多 Job 实例分级调度</h2><p>第一层解决了”单次拉取中不同类型任务的配比”。但不同状态的任务对<strong>响应频率</strong>的要求也不一样：</p>
+<ul>
+<li>新任务：用户等着，越快越好 → 高频轮询</li>
+<li>重试任务：失败一次而已，不急 → 中频轮询</li>
+<li>扫尾任务：已经失败很多次了 → 低频轮询</li>
+</ul>
+<p>所以我们在 XXL-JOB 上配置了三个独立的调度实例：</p>
+<table>
+<thead>
+<tr>
+<th>Job 实例</th>
+<th>调度间隔</th>
+<th>目标状态</th>
+<th>单次拉取量</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>高频 Job</td>
+<td>每 <strong>5 秒</strong></td>
+<td>INIT（新任务）</td>
+<td>40 条</td>
+</tr>
+<tr>
+<td>中频 Job</td>
+<td>每 <strong>30 秒</strong></td>
+<td>WAIT（重试）</td>
+<td>10 条</td>
+</tr>
+<tr>
+<td>低频 Job</td>
+<td>每 <strong>5 分钟</strong></td>
+<td>FAIL（扫尾）</td>
+<td>10 条</td>
+</tr>
+</tbody></table>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">SyncTaskScheduler</span> &#123;<br>    <br>    <span class="hljs-meta">@XxlJob(&quot;syncTaskHighFreq&quot;)</span>     <span class="hljs-comment">// 5秒一次</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">highFreqJob</span><span class="hljs-params">()</span> &#123;<br>        executeByQuota(INIT_QUOTA, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);  <span class="hljs-comment">// 只处理 INIT</span><br>    &#125;<br>    <br>    <span class="hljs-meta">@XxlJob(&quot;syncTaskMidFreq&quot;)</span>      <span class="hljs-comment">// 30秒一次</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">midFreqJob</span><span class="hljs-params">()</span> &#123;<br>        executeByQuota(WAIT_QUOTA, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);  <span class="hljs-comment">// 只处理 WAIT</span><br>    &#125;<br>    <br>    <span class="hljs-meta">@XxlJob(&quot;syncTaskLowFreq&quot;)</span>      <span class="hljs-comment">// 5分钟一次</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">lowFreqJob</span><span class="hljs-params">()</span> &#123;<br>        executeByQuota(FAIL_QUOTA, <span class="hljs-number">0</span>, <span class="hljs-number">0</span>);  <span class="hljs-comment">// 只处理 FAIL</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h3><figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs scss">时间线：<br><span class="hljs-number">0s</span>   - <span class="hljs-selector-attr">[高频]</span> 处理<span class="hljs-number">40</span>条INIT<br><span class="hljs-number">5s</span>   - <span class="hljs-selector-attr">[高频]</span> 处理<span class="hljs-number">40</span>条INIT<br><span class="hljs-number">10s</span>  - <span class="hljs-selector-attr">[高频]</span> 处理<span class="hljs-number">40</span>条INIT<br>...<br><span class="hljs-number">30s</span>  - <span class="hljs-selector-attr">[中频]</span> 处理<span class="hljs-number">10</span>条WAIT (可能包含<span class="hljs-number">5s</span>前失败的任务)<br><span class="hljs-number">60s</span>  - <span class="hljs-selector-attr">[中频]</span> 处理<span class="hljs-number">10</span>条WAIT<br>...<br><span class="hljs-number">300s</span> - <span class="hljs-selector-attr">[低频]</span> 处理<span class="hljs-number">10</span>条FAIL (扫尾)<br></code></pre></td></tr></table></figure>
+
+<p>新任务响应时间从 30 秒降到 <strong>5 秒以内</strong>，重试任务保持在 30 秒级别，死信任务不浪费高频轮询。</p>
+<h2 id="三、本质：分层时间轮思想"><a href="#三、本质：分层时间轮思想" class="headerlink" title="三、本质：分层时间轮思想"></a>三、本质：分层时间轮思想</h2><p>这个设计在概念上借鉴了**分层时间轮（Hierarchical Timing Wheel）**的思想：</p>
+<figure class="highlight cos"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs cos">分层时间轮（Kafka/Dubbo 中的经典设计）：<br>┌──────────────────────────┐<br>│ 第<span class="hljs-number">3</span>层: 小时轮 (<span class="hljs-number">3600</span>格)   │  ← 低频<span class="hljs-keyword">Job</span> (<span class="hljs-number">5</span>分钟)<br>│ 第<span class="hljs-number">2</span>层: 分钟轮 (<span class="hljs-number">60</span>格)     │  ← 中频<span class="hljs-keyword">Job</span> (<span class="hljs-number">30</span>秒)<br>│ 第<span class="hljs-number">1</span>层: 秒轮 (<span class="hljs-number">60</span>格)       │  ← 高频<span class="hljs-keyword">Job</span> (<span class="hljs-number">5</span>秒)<br>└──────────────────────────┘<br><br>双层权重调度（我们）：<br>┌──────────────────────────┐<br>│ 低频<span class="hljs-keyword">Job</span>: 每<span class="hljs-number">5</span>分钟扫FAIL    │  ← 秒轮<br>│ 中频<span class="hljs-keyword">Job</span>: 每<span class="hljs-number">30</span>秒扫WAIT     │  ← 分钟轮的一格<br>│ 高频<span class="hljs-keyword">Job</span>: 每<span class="hljs-number">5</span>秒扫INIT      │  ← 几乎是秒级<br>└──────────────────────────┘<br></code></pre></td></tr></table></figure>
+
+<p>不同粒度的任务落入不同频率的调度槽，每层的处理量也做了差异化（40:10:10）。</p>
+<h2 id="四、为什么不是优先级队列？"><a href="#四、为什么不是优先级队列？" class="headerlink" title="四、为什么不是优先级队列？"></a>四、为什么不是优先级队列？</h2><p>你可能会问：为什么不用一个优先级队列，所有任务丢进去按优先级排序？</p>
+<p>可以，但有两个问题：</p>
+<ol>
+<li><strong>优先级反转</strong>：队列里有 10000 个低优先任务排在最前面，高优任务会被阻塞</li>
+<li><strong>单点轮询</strong>：一个线程轮询大队列，处理不过来</li>
+</ol>
+<p>我们的做法是把”优先级”变现成了”独立的调度通道”——高优通道跑得快（5秒），低优通道慢慢走（5分钟），互不干扰。</p>
+<h2 id="五、容错设计：指数退避重试"><a href="#五、容错设计：指数退避重试" class="headerlink" title="五、容错设计：指数退避重试"></a>五、容错设计：指数退避重试</h2><p>重试不是无限重试，而是指数退避：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RetryStrategy</span> &#123;<br>    <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">BASE_DELAY</span> <span class="hljs-operator">=</span> <span class="hljs-number">5_000</span>;  <span class="hljs-comment">// 5秒</span><br>    <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">long</span> <span class="hljs-title function_">nextRetryDelay</span><span class="hljs-params">(<span class="hljs-type">int</span> retryCount)</span> &#123;<br>        <span class="hljs-comment">// 5s → 10s → 20s → 40s → 80s → ...</span><br>        <span class="hljs-type">long</span> <span class="hljs-variable">delay</span> <span class="hljs-operator">=</span> BASE_DELAY * (<span class="hljs-number">1L</span> &lt;&lt; Math.min(retryCount, <span class="hljs-number">10</span>));<br>        <span class="hljs-comment">// 上限 24 小时</span><br>        <span class="hljs-keyword">return</span> Math.min(delay, <span class="hljs-number">86_400_000</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>重试 6 次（5s+10s+20s+40s+80s+160s&#x3D;315s ≈ 5分钟），7 次的总退避时间是约 10 分钟，10 次后命中 24 小时上限。配合四级告警（SKIP&#x2F;ONE&#x2F;BATCH&#x2F;MIN），超过阈值自动触发钉钉通知。</p>
+<h2 id="六、三个核心考量"><a href="#六、三个核心考量" class="headerlink" title="六、三个核心考量"></a>六、三个核心考量</h2><p>面试官可能会问”为什么设计两层”，答案隐含四个考量：</p>
+<ol>
+<li><strong>响应时间差异</strong>——不同任务有不同的 SLA，不能一视同仁</li>
+<li><strong>故障隔离</strong>——如果重试任务堵了，不影响新任务的高频调度</li>
+<li><strong>运维灵活</strong>——大促期间可以只保留高频 Job，关掉低频</li>
+<li><strong>资源效率</strong>——高频消耗更多 DB&#x2F;线程资源，低频反之，总资源可控</li>
+</ol>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>双层权重调度的本质很简单：<strong>不要用一把尺子量所有任务</strong>。</p>
+<ul>
+<li>第一层配额（4:1:1）：控制单次拉取的任务构成</li>
+<li>第二层频率（5s&#x2F;30s&#x2F;5min）：控制不同优先级的调度节奏</li>
+</ul>
+<p>这两层叠加，本质是把分层时间轮的思想落地到了业务调度中。</p>
+<hr>
+<p><em>发表于 2024 年 7 月 · 标签: 调度算法, 分层时间轮, SyncTask, 权重调度, XXL-JOB, 任务引擎</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/" class="category-chain-item">框架设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/SyncTask/" class="print-no-link">#SyncTask</a>
+      
+        <a href="/tags/%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E/" class="print-no-link">#任务引擎</a>
+      
+        <a href="/tags/%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/" class="print-no-link">#调度算法</a>
+      
+        <a href="/tags/%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" class="print-no-link">#分层时间轮</a>
+      
+        <a href="/tags/%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6/" class="print-no-link">#权重调度</a>
+      
+        <a href="/tags/XXL-JOB/" class="print-no-link">#XXL-JOB</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>双层权重调度：分层时间轮在业务调度中的应用</div>
+      <div>https://aster-xu-lab.github.io/2024/07/12/2024-07-12-双层权重调度分层时间轮/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月12日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/10/08/2024-10-08-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/" title="分布式任务引擎的可靠性设计：防重、断点续传与四级告警">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">分布式任务引擎的可靠性设计：防重、断点续传与四级告警</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/04/20/2024-04-20-%E6%94%BE%E5%BC%83DAG%E9%80%89%E6%8B%A9Choreography/" title="放弃DAG：为什么我用afterExecute埋点替代了编排引擎">
+                        <span class="hidden-mobile">放弃DAG：为什么我用afterExecute埋点替代了编排引擎</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

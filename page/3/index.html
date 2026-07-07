@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-%E6%B4%BB%E8%B7%83%E6%80%A7%E6%AD%BB%E9%94%81%E5%93%B2%E5%AD%A6%E5%AE%B6%E5%B0%B1%E9%A4%90%E6%B4%BB%E9%94%81%E9%A5%A5%E9%A5%BF/" target="_self">
-          3.10、活跃性、死锁、哲学家就餐、活锁、饥饿
+        <a href="/2022/05/15/2022-05-15-JUC-StampedLock/" target="_self">
+          JUC-StampedLock
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-%E6%B4%BB%E8%B7%83%E6%80%A7%E6%AD%BB%E9%94%81%E5%93%B2%E5%AD%A6%E5%AE%B6%E5%B0%B1%E9%A4%90%E6%B4%BB%E9%94%81%E9%A5%A5%E9%A5%BF/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/15/2022-05-15-JUC-StampedLock/" target="_self">
         <div>
-          死锁有这样的情况：一个线程需要同时获得多把锁，这时就容易发生死锁t1线程获得A对象锁，接下来想获取B对象的锁，t2线程获得B对象锁，接下来想要获取A对象锁 例： 12345678910111213141516171819202122232425262728293031Object A = new Object();      Object B = new Object();      new Th
+          该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用 加解读锁 12long stamp = lock.readLock();lock.unlockRead(stamp);  加解写锁 12long stamp = lock.writeLock();lock.unlockWrite(stamp);  乐观读，StampedLock支持typeOptimist
         </div>
       </a>
 
@@ -352,8 +352,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 22:06" pubdate>
-              2022-03-06
+            <time datetime="2022-05-15 14:21" pubdate>
+              2022-05-15
             </time>
           </div>
         
@@ -387,9 +387,7 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E6%AD%BB%E9%94%81/">#死锁</a>
-            
-              <a href="/tags/%E6%B4%BB%E8%B7%83%E6%80%A7%E9%97%AE%E9%A2%98/">#活跃性问题</a>
+              <a href="/tags/StampedLock/">#StampedLock</a>
             
           </div>
         
@@ -403,15 +401,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-%E5%A4%9A%E6%8A%8A%E9%94%81/" target="_self">
-          3.9、多把锁
+        <a href="/2022/05/04/2022-05-04-JUC-%E8%AF%BB%E5%86%99%E9%94%81ReentrantReadWriteLock/" target="_self">
+          JUC-读写锁ReentrantReadWriteLock
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-%E5%A4%9A%E6%8A%8A%E9%94%81/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/04/2022-05-04-JUC-%E8%AF%BB%E5%86%99%E9%94%81ReentrantReadWriteLock/" target="_self">
         <div>
-          多把不相干的锁一间屋子有两个功能：睡觉、学习，互不相干 现在小南要学习，小女要睡觉，但如果只用一间屋子（一把锁）的话，那么并发度很低 解决方法是准备多个房间（多个对象锁） 例如 12345678910111213141516171819202122232425@Slf4j(topic = &quot;c.BigRoom&quot;)class BigRoom &#123;    public vo
+          1、ReentrantReadWriteLock当读操作远远高于写操作时，这时候使用读写锁让读-读可以并发，提高性能。类似于数据库中的select ... from ... lock in share mode 提供一个数据容器类分别使用读锁保护数据的read()方法，写锁保护数据的write()方法 123456789101112131415161718192021222324252627282
         </div>
       </a>
 
@@ -419,8 +417,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 18:14" pubdate>
-              2022-03-06
+            <time datetime="2022-05-04 15:05" pubdate>
+              2022-05-04
             </time>
           </div>
         
@@ -454,7 +452,9 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E9%94%81%E7%B2%92%E5%BA%A6/">#锁粒度</a>
+              <a href="/tags/%E8%AF%BB%E5%86%99%E9%94%81/">#读写锁</a>
+            
+              <a href="/tags/ReadWriteLock/">#ReadWriteLock</a>
             
           </div>
         
@@ -468,15 +468,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-%E9%87%8D%E6%96%B0%E7%90%86%E8%A7%A3%E7%BA%BF%E7%A8%8B%E8%BD%AC%E6%8D%A2%E7%8A%B6%E6%80%81/" target="_self">
-          3.8、重新理解线程转换状态
+        <a href="/2022/05/04/2022-05-04-JUC-ReentrantLock%E5%8E%9F%E7%90%86/" target="_self">
+          JUC-ReentrantLock原理
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-%E9%87%8D%E6%96%B0%E7%90%86%E8%A7%A3%E7%BA%BF%E7%A8%8B%E8%BD%AC%E6%8D%A2%E7%8A%B6%E6%80%81/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/04/2022-05-04-JUC-ReentrantLock%E5%8E%9F%E7%90%86/" target="_self">
         <div>
-          假设有线程 Thread t 情况1 NEW–&gt;RUNNABLE 当调用t.start()方法时，由 NEW --&gt; RUNNABLE  情况2 RUNNABLE &lt;–&gt; WAITINGt线程用synchronized(obj)获取了对象锁后  调用obj.wait() 方法时，t线程从RUNNABLE --&gt; WAITING 调用obj.notify()，obj.n
+          1、非公平锁实现原理加锁解锁流程先从构造器开始看，默认为非公平锁的实现 123public ReentrantLock() &#123; 	sync = new NonfairSync();&#125; NofairSync 继承自 AQS没有竞争时第一个竞争出现时Thread-1执行了  CAS尝试将state由0改为1，结果失败 进入tryAcquire逻辑，这时state已经是1，结果仍然
         </div>
       </a>
 
@@ -484,8 +484,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 18:06" pubdate>
-              2022-03-06
+            <time datetime="2022-05-04 01:03" pubdate>
+              2022-05-04
             </time>
           </div>
         
@@ -519,7 +519,9 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E7%BA%BF%E7%A8%8B%E7%8A%B6%E6%80%81/">#线程状态</a>
+              <a href="/tags/ReentrantLock/">#ReentrantLock</a>
+            
+              <a href="/tags/AQS/">#AQS</a>
             
           </div>
         
@@ -533,15 +535,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-ParkUnpark/" target="_self">
-          3.7、Park Unpark
+        <a href="/2022/03/27/2022-03-27-JUC-AQS(AbstractQueuedSynchronizer)%E5%8E%9F%E7%90%86/" target="_self">
+          JUC-AQS(AbstractQueuedSynchronizer)原理
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-ParkUnpark/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/27/2022-03-27-JUC-AQS(AbstractQueuedSynchronizer)%E5%8E%9F%E7%90%86/" target="_self">
         <div>
-          基本使用它们是LockSupport类中的方法 1234// 暂停当前线程LockSupport.park();// 回复某个线程的运行LockSupport.unpark(暂停线程对象) 先park再unpark 1234567891011121314151617public static void main(String[] args) throws InterruptedException
+          1、概述全称是AbstractQueuedSynchronizer，是阻塞式锁和相关同步器工具的框架 特点：  用state属性来表示资源的状态（分独占模式和共享模式），子类需要定义如何维护这个状态，控制如何获取锁和释放锁 getState - 获取state状态 setState - 设置state状态 compareAndSetState - cas机制设置state状态   提供基于FIFO
         </div>
       </a>
 
@@ -549,8 +551,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 16:23" pubdate>
-              2022-03-06
+            <time datetime="2022-03-27 23:43" pubdate>
+              2022-03-27
             </time>
           </div>
         
@@ -584,9 +586,9 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/LockSupport/">#LockSupport</a>
+              <a href="/tags/AQS/">#AQS</a>
             
-              <a href="/tags/Park-Unpark/">#Park-Unpark</a>
+              <a href="/tags/%E5%90%8C%E6%AD%A5%E5%99%A8/">#同步器</a>
             
           </div>
         
@@ -600,15 +602,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-waitnotifyjoin%E5%8E%9F%E7%90%86%E5%8F%8A%E5%BA%94%E7%94%A8%E5%90%8C%E6%AD%A5%E6%A8%A1%E5%BC%8F%E4%B9%8B%E4%BF%9D%E6%8A%A4%E6%80%A7%E6%9A%82%E5%81%9C%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%BC%8F%E4%B9%8B%E7%94%9F%E4%BA%A7%E8%80%85%E6%B6%88%E8%B4%B9%E8%80%85/" target="_self">
-          3.6、wait notify join原理及应用，同步模式之保护性暂停，异步模式之生产者消费者
+        <a href="/2022/03/26/2022-03-26-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%B7%A5%E5%85%B7-3ForkJoin/" target="_self">
+          7、共享模型之工具 - 3、Fork/Join
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-waitnotifyjoin%E5%8E%9F%E7%90%86%E5%8F%8A%E5%BA%94%E7%94%A8%E5%90%8C%E6%AD%A5%E6%A8%A1%E5%BC%8F%E4%B9%8B%E4%BF%9D%E6%8A%A4%E6%80%A7%E6%9A%82%E5%81%9C%E5%BC%82%E6%AD%A5%E6%A8%A1%E5%BC%8F%E4%B9%8B%E7%94%9F%E4%BA%A7%E8%80%85%E6%B6%88%E8%B4%B9%E8%80%85/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/26/2022-03-26-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%B7%A5%E5%85%B7-3ForkJoin/" target="_self">
         <div>
-          小故事 - 为什么要wait 由于条件不满足，小南不能继续进行计算 但小南如果一直占用着锁，其他人就得一直阻塞，效率太低  于是老王单开了一键休息室（调用wait方法），让小南到休息室（WaitSet）等着去了，但这是锁释放开，其他人可以由老王随机安排进屋 知道小M将烟送来，大叫一声【你的烟到了】（调用notify方法）  小南于是可以离开休息室，重新进入竞争锁的队列   原理  Owner线程发
+          3、Fork&#x2F;Join1）概念Fork&#x2F;Join是JDK1.7加入的新的线程池实现，它体现的是一种分治思想，适用于能够进行任务拆分的CPU密集型运算 所谓的任务拆分，是将一个大任务拆分为算法上相同的小任务，直至不能呢个拆分可以直接求解。跟递归相关的一些计算，如归并排序、斐波那契数列，都可以用分支思想进行求解 Fork&#x2F;Join在分支的思想上加入了多线程，可以把每个任务
         </div>
       </a>
 
@@ -616,8 +618,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 15:58" pubdate>
-              2022-03-06
+            <time datetime="2022-03-26 23:16" pubdate>
+              2022-03-26
             </time>
           </div>
         
@@ -667,15 +669,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-Monitor%E6%A6%82%E5%BF%B5synchronized%E5%8E%9F%E7%90%86synchronized%E9%94%81%E5%8D%87%E7%BA%A7%E5%8F%8A%E5%AE%9E%E4%BE%8B%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/" target="_self">
-          3.5、Monitor概念、synchronized原理、synchronized锁升级及实例（轻量级锁、重量级锁、自旋锁、偏向锁）
+        <a href="/2022/03/26/2022-03-26-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%B7%A5%E5%85%B7-2ThreadPoolExecutor/" target="_self">
+          7、共享模型之工具 - 2、ThreadPoolExecutor
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-Monitor%E6%A6%82%E5%BF%B5synchronized%E5%8E%9F%E7%90%86synchronized%E9%94%81%E5%8D%87%E7%BA%A7%E5%8F%8A%E5%AE%9E%E4%BE%8B%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/26/2022-03-26-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%B7%A5%E5%85%B7-2ThreadPoolExecutor/" target="_self">
         <div>
-          Monitor概念Java对象头以32位虚拟机为例普通对象数组对象其中Mark Word结构为64位虚拟机Mark Word  参考资料https://stackoverflow.com/questions/26357186/what-is-in-java-object-header  原理之Monitor（锁）Monitor被翻译为监视器或管程每个Java对象都可以关联一个Monitor对象，如
+          2、ThreadPoolExecutor 1）线程池状态ThreadPoolExecutor使用int的高3位表示线程池状态，低29位表示线程数量    状态名 高3位 接收新任务 处理阻塞队列任务 说明    RUNNING 111 Y Y    SHUTDOWN 000 N Y 不会接收新任务，但会处理阻塞队列剩余任务   STOP 001 N N 会中断正在执行的任务，并抛弃阻塞队列任务
         </div>
       </a>
 
@@ -683,8 +685,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 03:13" pubdate>
-              2022-03-06
+            <time datetime="2022-03-26 22:37" pubdate>
+              2022-03-26
             </time>
           </div>
         
@@ -718,11 +720,9 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/synchronized/">#synchronized</a>
+              <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/">#线程池</a>
             
-              <a href="/tags/%E9%94%81%E5%8D%87%E7%BA%A7/">#锁升级</a>
-            
-              <a href="/tags/Monitor/">#Monitor</a>
+              <a href="/tags/ThreadPool/">#ThreadPool</a>
             
           </div>
         
@@ -736,15 +736,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E4%B9%A0%E9%A2%98/" target="_self">
-          3.4、线程安全习题
+        <a href="/2022/03/23/2022-03-23-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%B7%A5%E5%85%B7-1%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BA%BF%E7%A8%8B%E6%B1%A0/" target="_self">
+          7、共享模型之工具 - 1、自定义线程池
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E4%B9%A0%E9%A2%98/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/23/2022-03-23-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%B7%A5%E5%85%B7-1%E8%87%AA%E5%AE%9A%E4%B9%89%E7%BA%BF%E7%A8%8B%E6%B1%A0/" target="_self">
         <div>
-          习题卖票练习测试下面代码是否存在线程安全问题，并尝试改正 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172package sync.test;import lombok.exte
+          1、线程池1、自定义线程池步骤1：自定义拒绝策略 1234@FunctionalInterfacepublic interface RejectPolicy&lt;T&gt; &#123;    void reject(BlockingQueue&lt;T&gt; queue, T task);&#125;  步骤2：自定义任务队列 12345678910111213141516171819202
         </div>
       </a>
 
@@ -752,8 +752,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 03:07" pubdate>
-              2022-03-06
+            <time datetime="2022-03-23 01:44" pubdate>
+              2022-03-23
             </time>
           </div>
         
@@ -787,7 +787,9 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">#线程安全</a>
+              <a href="/tags/%E7%BA%BF%E7%A8%8B%E6%B1%A0/">#线程池</a>
+            
+              <a href="/tags/ThreadPool/">#ThreadPool</a>
             
           </div>
         
@@ -801,15 +803,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-%E5%8F%98%E9%87%8F%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%88%86%E6%9E%90/" target="_self">
-          3.3、变量的线程安全分析
+        <a href="/2022/03/13/2022-03-13-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E4%B8%8D%E5%8F%AF%E5%8F%98/" target="_self">
+          6、共享模型之不可变
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-%E5%8F%98%E9%87%8F%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%88%86%E6%9E%90/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/13/2022-03-13-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E4%B8%8D%E5%8F%AF%E5%8F%98/" target="_self">
         <div>
-          变量的线程安全分析成员变量和静态变量是否线程安全？ 如果它们没有共享，则线程安全 如果它们被共享了，根据它们的状态是否能够改变，又分两种情况 如果只有读操作，则线程安全 如果有读写操作，则这段代码是临界区，需要考虑线程安全    局部变量是否线程安全 局部变量是线程安全的 单局部变量引用的对象则未必 如果该对象没有逃离方法的作用访问，它是线程安全的 如果该对象逃离方法的作用范围，需要考虑线程安全
+          本章内容 不可变类的使用 不可变类设计 无状态类设计  1、日期转换问题问题提出下面代码在运行时，由于SimpleDateFormat 不是线程安全的 12345678910SimpleDateFormat sdf = new SimpleDateFormat(&quot;yyyy-MM-dd&quot;);        for (int i = 0; i &lt; 10; i++) &#123
         </div>
       </a>
 
@@ -817,8 +819,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 03:06" pubdate>
-              2022-03-06
+            <time datetime="2022-03-13 02:00" pubdate>
+              2022-03-13
             </time>
           </div>
         
@@ -852,7 +854,9 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">#线程安全</a>
+              <a href="/tags/%E4%B8%8D%E5%8F%AF%E5%8F%98/">#不可变</a>
+            
+              <a href="/tags/final/">#final</a>
             
           </div>
         
@@ -866,15 +870,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E8%A7%A3%E5%86%B3%E7%AB%9E%E4%BA%89%E7%9A%84%E6%96%B9%E6%A1%88/" target="_self">
-          3.2、synchronized关键字 解决竞争的方案
+        <a href="/2022/03/12/2022-03-12-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8B/" target="_self">
+          5、共享模式之无锁(下）
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-synchronized%E5%85%B3%E9%94%AE%E5%AD%97%E8%A7%A3%E5%86%B3%E7%AB%9E%E4%BA%89%E7%9A%84%E6%96%B9%E6%A1%88/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/12/2022-03-12-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8B/" target="_self">
         <div>
-          1、synchronized 解决方案为了避免领截取的竞态条件发生，有多种手段可以达到目的。  阻塞时的解决方案：synchronized，Lock 非阻塞式的解决方案：原子变量本次使用阻塞式的解决方案：synchronized，来解决上述问题，及俗称的【对象锁】，它采用互斥的方式让同一时刻至多只有一个线程能持有【对象锁】，其他线程想要获取这个【对象锁】时就会阻塞住。这样就能保证拥有锁的线程可以安
+          7、原子累加器累加器性能比较12345678910111213141516171819202122private static &lt;T&gt; void demo(Supplier&lt;T&gt; adderSupplier, Consumer&lt;T&gt; action) &#123;        T adder = adderSupplier.get();        List&
         </div>
       </a>
 
@@ -882,8 +886,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 03:04" pubdate>
-              2022-03-06
+            <time datetime="2022-03-12 16:21" pubdate>
+              2022-03-12
             </time>
           </div>
         
@@ -917,11 +921,11 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/synchronized/">#synchronized</a>
+              <a href="/tags/CAS/">#CAS</a>
             
-              <a href="/tags/%E9%94%81%E5%8D%87%E7%BA%A7/">#锁升级</a>
+              <a href="/tags/%E5%8E%9F%E5%AD%90%E7%B1%BB/">#原子类</a>
             
-              <a href="/tags/Monitor/">#Monitor</a>
+              <a href="/tags/%E6%97%A0%E9%94%81%E5%B9%B6%E5%8F%91/">#无锁并发</a>
             
           </div>
         
@@ -935,15 +939,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/03/06/2022-03-06-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E7%AE%A1%E7%A8%8B--3.1%E5%85%B1%E4%BA%AB%E5%B8%A6%E6%9D%A5%E7%9A%84%E9%97%AE%E9%A2%98/" target="_self">
-          3、共享模型之管程 -- 3.1、共享带来的问题
+        <a href="/2022/03/10/2022-03-10-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8ACAS%E5%8E%9F%E5%AD%90%E7%B1%BB/" target="_self">
+          5、共享模式之无锁(上），CAS，原子类
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E7%AE%A1%E7%A8%8B--3.1%E5%85%B1%E4%BA%AB%E5%B8%A6%E6%9D%A5%E7%9A%84%E9%97%AE%E9%A2%98/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/10/2022-03-10-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8ACAS%E5%8E%9F%E5%AD%90%E7%B1%BB/" target="_self">
         <div>
-          1、共享带来的问题小故事 老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快  小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用 但小南不能一天24小事使用算盘，他经常要小憩一会儿（sleep），又或者是去吃饭上厕所（阻塞io操作），有时还需要一根烟，没烟的时候思绪全无（wait），这些情况称为阻塞  在这些时候，算盘没有利用起来（不能收钱了），老王
+          本章内容 CAS 与 volatile 原子整数 原子引用 原子累加器 Unsafe  1、问题的提出有如下需求，保证accont.withdraw取款方法的线程安全 1234567891011121314151617181920212223242526272829303132333435public interface Account &#123;    // 获取余额    Integer g
         </div>
       </a>
 
@@ -951,8 +955,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 03:01" pubdate>
-              2022-03-06
+            <time datetime="2022-03-10 01:28" pubdate>
+              2022-03-10
             </time>
           </div>
         
@@ -986,9 +990,11 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8/">#并发安全</a>
+              <a href="/tags/CAS/">#CAS</a>
             
-              <a href="/tags/%E4%B8%B4%E7%95%8C%E5%8C%BA/">#临界区</a>
+              <a href="/tags/%E5%8E%9F%E5%AD%90%E7%B1%BB/">#原子类</a>
+            
+              <a href="/tags/%E6%97%A0%E9%94%81%E5%B9%B6%E5%8F%91/">#无锁并发</a>
             
           </div>
         
@@ -1000,7 +1006,7 @@
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <a class="extend prev" rel="prev" href="/page/2/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/#board">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/#board">4</a><a class="page-number" href="/page/5/#board">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/8/#board">8</a><a class="extend next" rel="next" href="/page/4/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/2/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/#board">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/#board">4</a><a class="page-number" href="/page/5/#board">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/#board">10</a><a class="extend next" rel="next" href="/page/4/#board"><i class="iconfont icon-arrowright"></i></a>
     </span>
   </nav>
 
