@@ -27,7 +27,7 @@
 <meta property="og:description" content="从代码细节到设计思想，对比订单中心自研的 SyncTaskJob 和北欧开源引擎 nFlow 的异同与差距。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-07-09T16:00:00.000Z">
-<meta property="article:modified_time" content="2026-07-10T06:13:46.631Z">
+<meta property="article:modified_time" content="2026-07-10T10:09:50.480Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="任务编排">
@@ -329,7 +329,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          4.3k 字
+          5k 字
         
       </span>
     
@@ -340,7 +340,7 @@
         
         
         
-          36 分钟
+          43 分钟
         
       </span>
     
@@ -436,6 +436,15 @@
 <h3 id="4-多节点自动恢复"><a href="#4-多节点自动恢复" class="headerlink" title="4. 多节点自动恢复"></a>4. 多节点自动恢复</h3><p><strong>nFlow</strong>：一个节点崩溃，另一个节点的 Executor 在锁超时后立即接管”处理中”的状态实例，自动重试。</p>
 <p><strong>SyncTaskJob</strong>：一个节点崩溃，<code>PROCESSING</code> 状态的任务只能等下次 cron 触发，<code>refreshSyncTask</code> 重新查库找回。</p>
 <p><strong>区别</strong>：nFlow 恢复是<strong>秒级</strong>的，SyncTaskJob 恢复是<strong>分钟级</strong>的。这是 Dispatcher-Executor 分离架构和单阶段执行架构的本质差异。</p>
+<h3 id="5-Handler-的”双通道”能力（SyncTaskJob-独有的优势）"><a href="#5-Handler-的”双通道”能力（SyncTaskJob-独有的优势）" class="headerlink" title="5. Handler 的”双通道”能力（SyncTaskJob 独有的优势）"></a>5. Handler 的”双通道”能力（SyncTaskJob 独有的优势）</h3><p>SyncTaskJob 的 Handler 是普通的 Spring Bean，这意味着它可以被两种方式调用：</p>
+<ul>
+<li><strong>调度通道</strong>：xxl-job cron → SyncTaskJob → HandlerManager → Handler.batchExecute，走完整的批量编排链路</li>
+<li><strong>实时通道</strong>：在任意 Service 中 <code>@Resource</code> 注入 Handler，直接调用 <code>updateContext()</code> + <code>executeCore()</code>，适合下单后立即同步</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 实时通道：不依赖 cron，用户操作触发</span><br><span class="hljs-meta">@Resource</span><br><span class="hljs-keyword">private</span> JstSalesCreateHandler jstSalesCreateHandler;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">afterOrderCreated</span><span class="hljs-params">(Order order)</span> &#123;<br>    <span class="hljs-type">SyncTaskContext</span> <span class="hljs-variable">ctx</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SyncTaskContext</span>();<br>    ctx.setSyncTaskBO(buildSyncTask(order));<br>    jstSalesCreateHandler.updateContext(ctx);<br>    jstSalesCreateHandler.executeCore(ctx);<br>    jstSalesCreateHandler.afterExecute(ctx);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>nFlow 做不到这一点</strong>——nFlow 的 <code>WorkflowState</code> 执行方法必须通过 Executor 调度，不能脱离引擎直接调用。Temporal 的 Activity 同理，必须通过 Workflow 调用。Conductor 的 Worker 必须在 Task Queue 中轮询。</p>
+<p>SyncTaskJob 的 Handler 因为只是普通 Spring Bean，可以脱离调度上下文独立运行。同一个业务逻辑，既能走批量调度保障可靠性，又能走实时调用保障时效性。</p>
 <hr>
 <h2 id="SyncTaskJob-vs-nFlow：不同点"><a href="#SyncTaskJob-vs-nFlow：不同点" class="headerlink" title="SyncTaskJob vs nFlow：不同点"></a>SyncTaskJob vs nFlow：不同点</h2><table>
 <thead>
