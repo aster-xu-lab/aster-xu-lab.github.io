@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/03/18/2023-03-18-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/" target="_self">
-          订单中心慢SQL治理：从日均1124条到6条的实战总结
+        <a href="/2026/08/25/2026-08-25-DDIA-09-%E8%84%91%E8%A3%82%E4%B8%8E%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA/" target="_self">
+          DDIA-09-脑裂与网络分区：CAP定理中P的残酷真相
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/18/2023-03-18-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/25/2026-08-25-DDIA-09-%E8%84%91%E8%A3%82%E4%B8%8E%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA/" target="_self">
         <div>
-          订单中心慢SQL治理：从日均1124条到6条背景我们订单中心日均处理100万+订单，高峰期慢SQL日志日均达到 1124条，Doris慢查询日均 8735条。系统可用性在 99.9% 附近徘徊，每次大促都是一次心跳加速的考验。 这篇文章记录了我们如何通过系统性治理，将慢SQL从 1124 降到 6 条（↓99.4%），系统可用性提升到 99.99%。 一、先看问题：慢SQL从哪里来？1.1 缺失索
+          网络分区是分布式系统中最容易被忽视的故障模式。本文从脑裂的底层逻辑出发，结合订单中心的真实事故，讲清楚Fencing Token、共识算法多数派的原理，以及在xxl-job等调度系统里"不靠谱的网络"该如何兜底。
         </div>
       </a>
 
@@ -352,8 +352,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-03-18 14:30" pubdate>
-              2023-03-18
+            <time datetime="2026-08-25 08:00" pubdate>
+              2026-08-25
             </time>
           </div>
         
@@ -368,7 +368,575 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="category-chain-item">性能优化</a>
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
+            
+              <a href="/tags/CAP/">#CAP</a>
+            
+              <a href="/tags/%E8%84%91%E8%A3%82/">#脑裂</a>
+            
+              <a href="/tags/Split-Brain/">#Split-Brain</a>
+            
+              <a href="/tags/Fencing/">#Fencing</a>
+            
+              <a href="/tags/Raft/">#Raft</a>
+            
+              <a href="/tags/%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA/">#网络分区</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/08/25/2026-08-25-DDIA-09-SyncTask%E8%B6%85%E6%97%B6%E5%B9%82%E7%AD%89/" target="_self">
+          DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/25/2026-08-25-DDIA-09-SyncTask%E8%B6%85%E6%97%B6%E5%B9%82%E7%AD%89/" target="_self">
+        <div>
+          开篇：一个线程池耗尽引发的血案2023年秋天，凌晨三点，手机警报响了。 告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。 登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handle
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-08-25 00:00" pubdate>
+              2026-08-25
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/SyncTask/">#SyncTask</a>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
+            
+              <a href="/tags/%E8%B6%85%E6%97%B6/">#超时</a>
+            
+              <a href="/tags/%E5%B9%82%E7%AD%89/">#幂等</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/08/25/2026-08-25-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" target="_self">
+          DDIA-09-分布式系统故障排查：你没见过不代表没发生过
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/25/2026-08-25-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" target="_self">
+        <div>
+          引言：故障是必然的，不是偶然的 “在分布式系统中，部分失效是常态，而不是例外。”  DDIA第9章用整整一章来讲述这个问题。Martin Kleppmann反复强调一个观点：单机系统要么全好，要么全坏——你写一个函数，要么返回正确结果，要么抛出异常。但分布式系统不是这样，它可能部分正常、部分故障，就像一艘漏水的船，你永远在舀水。 我职业生涯中处理过的生产事故不下几十次。每一次复盘，都会发现一个共同
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-08-25 00:00" pubdate>
+              2026-08-25
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA读书笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
+            
+              <a href="/tags/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">#故障排查</a>
+            
+              <a href="/tags/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/">#可观测性</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/08/25/2026-08-25-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/" target="_self">
+          DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/25/2026-08-25-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/" target="_self">
+        <div>
+          DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效 《Designing Data-Intensive Applications》第 9 章「一致性与共识」是全书最硬核的章节之一。但在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：分布式系统为什么会出错？ 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时钟、部分失效。理解这三者，是理解一
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-08-25 00:00" pubdate>
+              2026-08-25
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
+            
+              <a href="/tags/%E8%B6%85%E6%97%B6/">#超时</a>
+            
+              <a href="/tags/%E5%B9%82%E7%AD%89/">#幂等</a>
+            
+              <a href="/tags/%E6%95%85%E9%9A%9C%E5%A4%84%E7%90%86/">#故障处理</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/08/25/2026-08-25-DDIA-09-%E8%B6%85%E6%97%B6%E4%B8%8E%E9%87%8D%E8%AF%95/" target="_self">
+          「DDIA-09-超时与重试：如何设计一个不会雪崩的重试策略」
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/25/2026-08-25-DDIA-09-%E8%B6%85%E6%97%B6%E4%B8%8E%E9%87%8D%E8%AF%95/" target="_self">
+        <div>
+          引言2024年双十一大促，凌晨刚过零点，我们团队接到告警：订单创建接口RT从80ms飙升至12秒，大量超时。令人意外的是，下游核心服务CPU其实只有40%，数据库连接池也远未打满——真正的原因是某个不设防的重试逻辑快速放大了流量，把系统推下了悬崖。 这个问题把我拉回了DDIA第9章的开篇句，Martin Kleppmann用一句话点破了真相：  “分布式系统的很多问题，根本原因都是不可靠的网络”
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-08-25 00:00" pubdate>
+              2026-08-25
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/SyncTask/">#SyncTask</a>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E8%B6%85%E6%97%B6/">#超时</a>
+            
+              <a href="/tags/%E5%B9%82%E7%AD%89/">#幂等</a>
+            
+              <a href="/tags/%E9%87%8D%E8%AF%95/">#重试</a>
+            
+              <a href="/tags/%E6%96%AD%E8%B7%AF%E5%99%A8/">#断路器</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/08/23/2026-08-23-DDIA-08-ACID%E7%9C%9F%E6%AD%A3%E5%90%AB%E4%B9%89/" target="_self">
+          DDIA-08-ACID到底是什么意思：比面试官问的深一点
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/23/2026-08-23-DDIA-08-ACID%E7%9C%9F%E6%AD%A3%E5%90%AB%E4%B9%89/" target="_self">
+        <div>
+          引言：ACID 是面试的起点，不是终点面试官问：”说一下事务的 ACID 特性”，大部分候选人的回答是标准八股文版本：  A（Atomicity）：要么全成功，要么全失败 C（Consistency）：事务前后数据满足约束 I（Isolation）：多个事务之间互不干扰 D（Durability）：提交后永久保存  这样的回答可以拿及格分，但也暴露了一个问题：候选人的理解停留在教科书层面，没有经历
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-08-23 10:00" pubdate>
+              2026-08-23
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/ACID/">#ACID</a>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/">#事务</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/08/23/2026-08-23-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/" target="_self">
+          DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/23/2026-08-23-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/" target="_self">
+        <div>
+          长事务是怎么一步步把系统拖垮的？死锁到底怎么排查？乐观锁和悲观锁分别在什么场景下用？本文结合130万日订单实战，从订单批量处理锁表事故，到扣库存用版本号+CAS，再到SyncTask引擎事务边界设计的V1→V2修复，完整还原事务踩坑与自救的全过程。
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-08-23 08:00" pubdate>
+              2026-08-23
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%AD%BB%E9%94%81/">#死锁</a>
+            
+              <a href="/tags/MySQL/">#MySQL</a>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/">#事务</a>
+            
+              <a href="/tags/%E4%B9%90%E8%A7%82%E9%94%81/">#乐观锁</a>
+            
+              <a href="/tags/%E9%94%81/">#锁</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/08/23/2026-08-23-DDIA-08-2PC%E5%88%B0TCC/" target="_self">
+          DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/23/2026-08-23-DDIA-08-2PC%E5%88%B0TCC/" target="_self">
+        <div>
+          从Seata AT模式（2PC）到自研TCC方案的完整演进路线，含核心代码设计、空回滚/悬挂问题解决，以及40%+性能提升的实测数据。
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-08-23 00:00" pubdate>
+              2026-08-23
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
+            
+              <a href="/tags/Seata/">#Seata</a>
+            
+              <a href="/tags/TCC/">#TCC</a>
+            
+              <a href="/tags/2PC/">#2PC</a>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/08/23/2026-08-23-DDIA-08-MVCC%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" target="_self">
+          DDIA-08-MVCC多版本并发控制：PostgreSQL和MySQL都在用的魔法
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/23/2026-08-23-DDIA-08-MVCC%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" target="_self">
+        <div>
+          引言假设你正在双11零点抢购，同一时刻有100万用户也在做同样的事。你的订单提交请求，和库存扣减、支付回调、优惠券核销，所有这些操作都在数据库里并行执行。如果数据库只能串行处理请求——一个事务等另一个——那双11还没开始就已经结束了。 这就是MVCC（Multi-Version Concurrency Control，多版本并发控制）存在的意义。它是现代关系型数据库实现高并发事务处理的基石，Pos
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-08-23 00:00" pubdate>
+              2026-08-23
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/InnoDB/">#InnoDB</a>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/">#事务</a>
+            
+              <a href="/tags/MVCC/">#MVCC</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/08/23/2026-08-23-DDIA-08-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%BA%8B%E5%8A%A1%E4%B8%96%E7%95%8C/" target="_self">
+          DDIA-08-隔离级别的事务世界：从读未提交到可序列化
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/08/23/2026-08-23-DDIA-08-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%BA%8B%E5%8A%A1%E4%B8%96%E7%95%8C/" target="_self">
+        <div>
+          引言当两个用户同时抢最后一瓶茅台，你的数据库在做减法的时候，看到的到底是哪个数字？这是一个看似简单，实则暗藏杀机的问题。 DDIA第8章用了整整一章讨论一致性和共识，而事务隔离级别正是”单机一致性”的基石。理解它，是你理解分布式一致性的必要前提。 一、四种隔离级别全景Read Uncommitted（读未提交）可以读到其他事务尚未提交的修改。 并发问题：脏读——T2读到了T1还没提交的数据，T1后
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-08-23 00:00" pubdate>
+              2026-08-23
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
   
   
 
@@ -385,610 +953,13 @@
             
               <a href="/tags/MySQL/">#MySQL</a>
             
-              <a href="/tags/%E6%85%A2SQL/">#慢SQL</a>
+              <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96/">#索引优化</a>
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/">#事务</a>
             
-              <a href="/tags/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/">#性能调优</a>
+              <a href="/tags/%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/">#隔离级别</a>
             
-              <a href="/tags/%E8%BF%9E%E6%8E%A5%E6%B1%A0/">#连接池</a>
-            
-              <a href="/tags/Doris/">#Doris</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/05/16/2022-05-16-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%9B%86%E5%90%88%E7%B1%BB%E6%A6%82%E8%BF%B0/" target="_self">
-          线程安全集合类概述
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/16/2022-05-16-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%9B%86%E5%90%88%E7%B1%BB%E6%A6%82%E8%BF%B0/" target="_self">
-        <div>
-          线程安全集合类可以分为三大类：  遗留的线程安全集合如Hashtable，vector 使用Collections装饰的线程安全集合 Collections.synchronizedCollection Collections.synchronizedList Collections.synchronizedMap Collections.synchronizedSet Collections.s
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-05-16 01:03" pubdate>
-              2022-05-16
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">#线程安全</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/05/16/2022-05-16-JUC-CyclicBarrier/" target="_self">
-          JUC-CyclicBarrier
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/16/2022-05-16-JUC-CyclicBarrier/" target="_self">
-        <div>
-          循环栅栏，用来进行线程协作，等待线程满足某个计数，构造时设置【计数个数】，每个线程执行到某个需要“同步”的时刻调用await()方法等待，当等待的线程数满足【计数个数】时，继续执行 1234567891011121314151617181920CyclicBarrier barrier = new CyclicBarrier(2);        new Thread(() -&gt; &#123
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-05-16 00:54" pubdate>
-              2022-05-16
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/CyclicBarrier/">#CyclicBarrier</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/05/16/2022-05-16-JUC-CountdownLatch/" target="_self">
-          JUC-CountdownLatch
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/16/2022-05-16-JUC-CountdownLatch/" target="_self">
-        <div>
-          简介用来进行线程同步协作，等待所有线程完成倒计时。 其中构造参数用来初始化等待计数值，await()用来等待计数归零，countDown()用来让计数减一 12345678910111213141516171819202122232425262728293031323334353637public static void main(String[] args) throws Interrupted
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-05-16 00:33" pubdate>
-              2022-05-16
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/CountDownLatch/">#CountDownLatch</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/05/15/2022-05-15-JUC-Semaphore/" target="_self">
-          JUC-Semaphore
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/15/2022-05-15-JUC-Semaphore/" target="_self">
-        <div>
-          基本使用信号量，用来限制能通知访问共享资源的线程上限 123456789101112131415161718192021public static void main(String[] args) &#123;        Semaphore semaphore = new Semaphore(3);        for (int i = 0; i &lt; 10; i++) &#123;
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-05-15 15:06" pubdate>
-              2022-05-15
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/Semaphore/">#Semaphore</a>
-            
-              <a href="/tags/%E4%BF%A1%E5%8F%B7%E9%87%8F/">#信号量</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/05/15/2022-05-15-JUC-StampedLock/" target="_self">
-          JUC-StampedLock
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/15/2022-05-15-JUC-StampedLock/" target="_self">
-        <div>
-          该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用 加解读锁 12long stamp = lock.readLock();lock.unlockRead(stamp);  加解写锁 12long stamp = lock.writeLock();lock.unlockWrite(stamp);  乐观读，StampedLock支持typeOptimist
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-05-15 14:21" pubdate>
-              2022-05-15
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/StampedLock/">#StampedLock</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/05/04/2022-05-04-JUC-%E8%AF%BB%E5%86%99%E9%94%81ReentrantReadWriteLock/" target="_self">
-          JUC-读写锁ReentrantReadWriteLock
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/04/2022-05-04-JUC-%E8%AF%BB%E5%86%99%E9%94%81ReentrantReadWriteLock/" target="_self">
-        <div>
-          1、ReentrantReadWriteLock当读操作远远高于写操作时，这时候使用读写锁让读-读可以并发，提高性能。类似于数据库中的select ... from ... lock in share mode 提供一个数据容器类分别使用读锁保护数据的read()方法，写锁保护数据的write()方法 123456789101112131415161718192021222324252627282
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-05-04 15:05" pubdate>
-              2022-05-04
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/%E8%AF%BB%E5%86%99%E9%94%81/">#读写锁</a>
-            
-              <a href="/tags/ReadWriteLock/">#ReadWriteLock</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/05/04/2022-05-04-JUC-ReentrantLock%E5%8E%9F%E7%90%86/" target="_self">
-          JUC-ReentrantLock原理
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/04/2022-05-04-JUC-ReentrantLock%E5%8E%9F%E7%90%86/" target="_self">
-        <div>
-          1、非公平锁实现原理加锁解锁流程先从构造器开始看，默认为非公平锁的实现 123public ReentrantLock() &#123; 	sync = new NonfairSync();&#125; NofairSync 继承自 AQS没有竞争时第一个竞争出现时Thread-1执行了  CAS尝试将state由0改为1，结果失败 进入tryAcquire逻辑，这时state已经是1，结果仍然
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-05-04 01:03" pubdate>
-              2022-05-04
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/ReentrantLock/">#ReentrantLock</a>
-            
-              <a href="/tags/AQS/">#AQS</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/03/27/2022-03-27-JUC-AQS(AbstractQueuedSynchronizer)%E5%8E%9F%E7%90%86/" target="_self">
-          JUC-AQS(AbstractQueuedSynchronizer)原理
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/27/2022-03-27-JUC-AQS(AbstractQueuedSynchronizer)%E5%8E%9F%E7%90%86/" target="_self">
-        <div>
-          1、概述全称是AbstractQueuedSynchronizer，是阻塞式锁和相关同步器工具的框架 特点：  用state属性来表示资源的状态（分独占模式和共享模式），子类需要定义如何维护这个状态，控制如何获取锁和释放锁 getState - 获取state状态 setState - 设置state状态 compareAndSetState - cas机制设置state状态   提供基于FIFO
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-27 23:43" pubdate>
-              2022-03-27
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/AQS/">#AQS</a>
-            
-              <a href="/tags/%E5%90%8C%E6%AD%A5%E5%99%A8/">#同步器</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/03/26/2022-03-26-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%B7%A5%E5%85%B7-3ForkJoin/" target="_self">
-          7、共享模型之工具 - 3、Fork/Join
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/26/2022-03-26-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%B7%A5%E5%85%B7-3ForkJoin/" target="_self">
-        <div>
-          3、Fork&#x2F;Join1）概念Fork&#x2F;Join是JDK1.7加入的新的线程池实现，它体现的是一种分治思想，适用于能够进行任务拆分的CPU密集型运算 所谓的任务拆分，是将一个大任务拆分为算法上相同的小任务，直至不能呢个拆分可以直接求解。跟递归相关的一些计算，如归并排序、斐波那契数列，都可以用分支思想进行求解 Fork&#x2F;Join在分支的思想上加入了多线程，可以把每个任务
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-26 23:16" pubdate>
-              2022-03-26
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/wait-notify/">#wait-notify</a>
-            
-              <a href="/tags/%E7%BA%BF%E7%A8%8B%E9%80%9A%E4%BF%A1/">#线程通信</a>
+              <a href="/tags/PostgreSQL/">#PostgreSQL</a>
             
           </div>
         
@@ -1000,7 +971,7 @@
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <a class="extend prev" rel="prev" href="/page/2/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/#board">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/#board">4</a><a class="page-number" href="/page/5/#board">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/10/#board">10</a><a class="extend next" rel="next" href="/page/4/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/2/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/#board">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/#board">4</a><a class="page-number" href="/page/5/#board">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/16/#board">16</a><a class="extend next" rel="next" href="/page/4/#board"><i class="iconfont icon-arrowright"></i></a>
     </span>
   </nav>
 

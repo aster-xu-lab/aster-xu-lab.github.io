@@ -1,0 +1,987 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一、一个真实的痛点2019年，我负责公司订单中台的订单履约模块。整个订单生命周期——从用户下单、支付、发货到签收——涉及十几个下游系统：发货系统、WMS、财务结算、积分中心、售后客服、数据平台等等。 我们当时的做法简单粗暴：写一个定时任务，每5分钟跑一次，SELECT * FROM orders WHERE gmt_modified &gt;&#x3D; NOW() - INTERVAL 5 MINUTE，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="「DDIA-12-实战：订单状态变更的实时流——从定时扫表到CDC事件驱动」">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/02/2026-09-02-DDIA-12-CDC%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8%E5%AE%9E%E6%88%98/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一、一个真实的痛点2019年，我负责公司订单中台的订单履约模块。整个订单生命周期——从用户下单、支付、发货到签收——涉及十几个下游系统：发货系统、WMS、财务结算、积分中心、售后客服、数据平台等等。 我们当时的做法简单粗暴：写一个定时任务，每5分钟跑一次，SELECT * FROM orders WHERE gmt_modified &gt;&#x3D; NOW() - INTERVAL 5 MINUTE，">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-01T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-31T01:51:54.664Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="CDC">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="Kafka">
+<meta property="article:tag" content="实战">
+<meta property="article:tag" content="实时">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>「DDIA-12-实战：订单状态变更的实时流——从定时扫表到CDC事件驱动」 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="「DDIA-12-实战：订单状态变更的实时流——从定时扫表到CDC事件驱动」"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-09-02 00:00" pubdate>
+          2026年9月2日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          44 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">「DDIA-12-实战：订单状态变更的实时流——从定时扫表到CDC事件驱动」</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、一个真实的痛点"><a href="#一、一个真实的痛点" class="headerlink" title="一、一个真实的痛点"></a>一、一个真实的痛点</h2><p>2019年，我负责公司订单中台的订单履约模块。整个订单生命周期——从用户下单、支付、发货到签收——涉及十几个下游系统：发货系统、WMS、财务结算、积分中心、售后客服、数据平台等等。</p>
+<p>我们当时的做法简单粗暴：写一个定时任务，每5分钟跑一次，<code>SELECT * FROM orders WHERE gmt_modified &gt;= NOW() - INTERVAL 5 MINUTE</code>，扫出来一批”可能变更过”的订单，逐条判断状态是否变化，变了就推给下游。</p>
+<p>这个方案运行了两年，问题也伴随了两年。</p>
+<h2 id="二、定时扫表的三个致命缺陷"><a href="#二、定时扫表的三个致命缺陷" class="headerlink" title="二、定时扫表的三个致命缺陷"></a>二、定时扫表的三个致命缺陷</h2><h3 id="2-1-延迟——下游最长等5分钟"><a href="#2-1-延迟——下游最长等5分钟" class="headerlink" title="2.1 延迟——下游最长等5分钟"></a>2.1 延迟——下游最长等5分钟</h3><p>用户支付完成后，订单状态从 <code>UNPAID</code> 变成 <code>PAID</code>。发货系统的理想行为是”支付成功，立刻生成发货单”。但我们的定时任务间隔5分钟，意味着：</p>
+<ul>
+<li>用户 10:00:01 支付成功</li>
+<li>定时任务 10:00:00 刚刚跑完</li>
+<li>下一次执行 10:05:00</li>
+<li>发货系统 10:05:00 才收到通知</li>
+</ul>
+<p>用户等了将近5分钟才看到”已发货”的状态更新。而在京东、拼多多等平台，用户支付成功后几乎瞬间就能看到物流信息。</p>
+<h3 id="2-2-资源浪费——全表扫描的代价"><a href="#2-2-资源浪费——全表扫描的代价" class="headerlink" title="2.2 资源浪费——全表扫描的代价"></a>2.2 资源浪费——全表扫描的代价</h3><p>订单表几千万行，<code>gmt_modified</code> 虽然建了索引，但每次扫描最近5分钟的数据，扫描量依然不小。而且扫描到的订单中，只有一小部分状态真正发生了变化——大部分订单可能只是 <code>gmt_modified</code> 字段被其他原因更新，状态根本没变。</p>
+<p>CPU被浪费在大量无意义的行扫描上，数据库的读压力持续存在。</p>
+<h3 id="2-3-遗漏变更——状态跳跃"><a href="#2-3-遗漏变更——状态跳跃" class="headerlink" title="2.3 遗漏变更——状态跳跃"></a>2.3 遗漏变更——状态跳跃</h3><p>这是最隐蔽也是最危险的问题。</p>
+<p>假设订单在两次定时任务之间经历了这样的状态流转：</p>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs clean">WAIT_PAY -&gt; UNPAID -&gt; PAID -&gt; READY_TO_SHIP<br></code></pre></td></tr></table></figure>
+
+<p>定时任务扫描到这条订单时，它已经走到了 <code>READY_TO_SHIP</code>。我们完全不知道它曾经经历过 <code>UNPAID</code> 和 <code>PAID</code>。如果财务系统需要捕获”从 <code>UNPAID</code> 变成 <code>PAID</code>“这个事件来做收入确认，它永远等不到这个通知。</p>
+<p><strong>定时扫表看到的是起点和终点的快照，中间发生了什么，一无所知。</strong></p>
+<h2 id="三、CDC的破局思路"><a href="#三、CDC的破局思路" class="headerlink" title="三、CDC的破局思路"></a>三、CDC的破局思路</h2><p>DDIA第12章讨论了一个核心概念：<strong>变更数据捕获（Change Data Capture, CDC）</strong>。</p>
+<p>它的思想很朴素：数据库所做的每一件事——插入、更新、删除——都会记录在WAL（Write-Ahead Log，或MySQL的Binlog）中。我们不去扫表，而是去监听这个日志——日志记录了每一次状态变更本身。</p>
+<p>Martin Kleppmann在书中把CDC和消息队列做了类比：</p>
+<ul>
+<li>数据库的WAL&#x2F;Binlog本质上是一个<strong>日志结构</strong>（DDIA第4章的核心概念）</li>
+<li>CDC组件就是这个日志的<strong>消费者</strong></li>
+<li>它把数据库的所有变更变成一条条<strong>事件</strong>，投递给下游</li>
+</ul>
+<p>这样一来，数据库从”被动查询的数据仓库”变成了”主动推送的事件源”。</p>
+<h2 id="四、技术方案推演"><a href="#四、技术方案推演" class="headerlink" title="四、技术方案推演"></a>四、技术方案推演</h2><h3 id="4-1-整体架构"><a href="#4-1-整体架构" class="headerlink" title="4.1 整体架构"></a>4.1 整体架构</h3><figure class="highlight xl"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs xl">M<span class="hljs-function"><span class="hljs-title">ySQL</span> Binlog -&gt;</span> C<span class="hljs-function"><span class="hljs-title">anal</span>（监听解析） -&gt;</span> K<span class="hljs-function"><span class="hljs-title">afka</span>/RocketMQ -&gt;</span> 下游消费者<br></code></pre></td></tr></table></figure>
+
+<p>三层结构：</p>
+<ol>
+<li><strong>数据层</strong>：MySQL开启Binlog（ROW模式），每一行变更都被记录下来</li>
+<li><strong>CDC层</strong>：Canal伪装成MySQL Slave，订阅Binlog流，解析出INSERT&#x2F;UPDATE&#x2F;DELETE事件</li>
+<li><strong>消息层</strong>：Canal将解析后的事件投递到Kafka&#x2F;RocketMQ，下游服务从各自感兴趣的主题消费</li>
+</ol>
+<h3 id="4-2-核心组件：Canal"><a href="#4-2-核心组件：Canal" class="headerlink" title="4.2 核心组件：Canal"></a>4.2 核心组件：Canal</h3><p>Canal是阿里巴巴开源的MySQL Binlog增量订阅和消费组件。它的工作原理很巧妙：</p>
+<ul>
+<li>MySQL主从复制的本质是：Master把Binlog发给Slave，Slave重放</li>
+<li>Canal把自己伪装成一个Slave节点，MySQL Master把Binlog推给它</li>
+<li>Canal解析Binlog中的row event，还原出每一行数据的变更前后值</li>
+</ul>
+<p>它支持多种投递方式：直接推送、落入Kafka&#x2F;RocketMQ、落入Elasticsearch等。</p>
+<h3 id="4-3-消息主题设计"><a href="#4-3-消息主题设计" class="headerlink" title="4.3 消息主题设计"></a>4.3 消息主题设计</h3><p>订单状态变更事件，一个推荐的主题（Topic）设计：</p>
+<table>
+<thead>
+<tr>
+<th>Topic</th>
+<th>含义</th>
+<th>示例消费者</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>order_status_changed</code></td>
+<td>订单状态变更</td>
+<td>发货系统、WMS、售后</td>
+</tr>
+<tr>
+<td><code>order_payment_success</code></td>
+<td>支付成功</td>
+<td>财务结算、积分中心、营销</td>
+</tr>
+<tr>
+<td><code>order_ready_to_ship</code></td>
+<td>待发货</td>
+<td>WMS、发货系统</td>
+</tr>
+<tr>
+<td><code>order_shipped</code></td>
+<td>已发货</td>
+<td>物流追踪、用户通知</td>
+</tr>
+</tbody></table>
+<p>细粒度的主题设计有两个好处：</p>
+<ol>
+<li>消费者只订阅自己关心的事件，减少不必要的消费</li>
+<li>不同主题可以独立扩容，承载不同的流量</li>
+</ol>
+<h3 id="4-4-事件数据结构"><a href="#4-4-事件数据结构" class="headerlink" title="4.4 事件数据结构"></a>4.4 事件数据结构</h3><p>以支付成功事件为例：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;eventId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;evt_20260902104530_a1b2c3&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;eventType&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ORDER_PAYMENT_SUCCESS&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;orderId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ORD20260901000001&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;userId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">10086</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;fromStatus&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;UNPAID&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;toStatus&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;PAID&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;paymentAmount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">12800</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;paymentMethod&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;WECHAT_PAY&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;occurredAt&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-09-02T10:45:30.123Z&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;traceId&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;trace_abc123&quot;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>事件中携带了完整的上下文：变更前状态、变更后状态、金额、支付方式、traceId。下游消费这个事件时，不需要再回查订单表，做到了<strong>自包含</strong>。</p>
+<h2 id="五、实战推演：一笔订单的旅程"><a href="#五、实战推演：一笔订单的旅程" class="headerlink" title="五、实战推演：一笔订单的旅程"></a>五、实战推演：一笔订单的旅程</h2><p>我们来推演一笔真实订单从支付到发货的完整链路。</p>
+<p><strong>场景</strong>：用户在20:00:15提交了一个订单，20:00:18支付成功。</p>
+<h3 id="第一步：业务代码更新订单"><a href="#第一步：业务代码更新订单" class="headerlink" title="第一步：业务代码更新订单"></a>第一步：业务代码更新订单</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// OrderService.java</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">confirmPay</span><span class="hljs-params">(String orderId, PaymentInfo paymentInfo)</span> &#123;<br>    <span class="hljs-type">Order</span> <span class="hljs-variable">order</span> <span class="hljs-operator">=</span> orderMapper.selectById(orderId);<br>    <span class="hljs-keyword">if</span> (order.getStatus() != OrderStatus.UNPAID) &#123;<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">BizException</span>(<span class="hljs-string">&quot;订单状态异常&quot;</span>);<br>    &#125;<br>    order.setStatus(OrderStatus.PAID);<br>    order.setPaymentTime(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Date</span>());<br>    order.setPaymentAmount(paymentInfo.getAmount());<br>    orderMapper.updateById(order);<br>    <span class="hljs-comment">// 注意：这里没有调用任何下游通知</span><br>    <span class="hljs-comment">// 所有通知由CDC层完成</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>业务代码不再关心”通知下游”，它只做一件事：更新数据库。</p>
+<h3 id="第二步：MySQL生成Binlog"><a href="#第二步：MySQL生成Binlog" class="headerlink" title="第二步：MySQL生成Binlog"></a>第二步：MySQL生成Binlog</h3><p>MySQL在事务提交时，会生成一条Binlog记录：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nix"><span class="hljs-comment"># 伪数据展示</span><br>表: orders<br>操作: UPDATE<br><span class="hljs-params">before:</span> &#123; <span class="hljs-params">id:</span> ORD001, <span class="hljs-params">status:</span> <span class="hljs-string">&quot;UNPAID&quot;</span>, <span class="hljs-params">payment_time:</span> <span class="hljs-literal">null</span>, <span class="hljs-params">payment_amount:</span> <span class="hljs-literal">null</span> &#125;<br><span class="hljs-params">after:</span>  &#123; <span class="hljs-params">id:</span> ORD001, <span class="hljs-params">status:</span> <span class="hljs-string">&quot;PAID&quot;</span>, <span class="hljs-params">payment_time:</span> <span class="hljs-string">&quot;20:00:18&quot;</span>, <span class="hljs-params">payment_amount:</span> <span class="hljs-number">12800</span> &#125;<br></code></pre></td></tr></table></figure>
+
+<p>因为开启了ROW模式，Binlog中记录了变更前的值和变更后的值。这对CDC至关重要——只有知道”从什么变成了什么”，才能构成一个有意义的事件。</p>
+<h3 id="第三步：Canal捕获并解析"><a href="#第三步：Canal捕获并解析" class="headerlink" title="第三步：Canal捕获并解析"></a>第三步：Canal捕获并解析</h3><p>Canal实时消费到这条Binlog，解析出：</p>
+<ul>
+<li>数据库：ecommerce</li>
+<li>表：orders</li>
+<li>操作类型：UPDATE</li>
+<li>变更前后数据</li>
+</ul>
+<p>Canal做一次过滤：只关注 <code>orders</code> 表的变更，且只关注 <code>status</code> 字段的变化。</p>
+<h3 id="第四步：事件投递"><a href="#第四步：事件投递" class="headerlink" title="第四步：事件投递"></a>第四步：事件投递</h3><p>Canal将解析结果构造成事件，投递到Kafka：</p>
+<ul>
+<li>Topic: <code>order_status_changed</code></li>
+<li>Key: <code>ORD001</code>（订单ID，保证同一订单事件有序）</li>
+<li>Value: 上述JSON结构</li>
+</ul>
+<h3 id="第五步：下游消费"><a href="#第五步：下游消费" class="headerlink" title="第五步：下游消费"></a>第五步：下游消费</h3><p>发货系统订阅了 <code>order_status_changed</code>，收到这条事件后：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@KafkaListener(topics = &quot;order_status_changed&quot;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">onOrderStatusChanged</span><span class="hljs-params">(OrderStatusEvent event)</span> &#123;<br>    <span class="hljs-keyword">if</span> (event.getToStatus() != OrderStatus.PAID) &#123;<br>        <span class="hljs-keyword">return</span>; <span class="hljs-comment">// 只关心PAID状态</span><br>    &#125;<br>    <span class="hljs-comment">// 生成发货单</span><br>    <span class="hljs-type">ShipOrder</span> <span class="hljs-variable">shipOrder</span> <span class="hljs-operator">=</span> shipOrderService.create(event.getOrderId());<br>    <span class="hljs-comment">// 推送到WMS</span><br>    wmsClient.createShipOrder(shipOrder);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>整条链路耗时通常在<strong>100ms以内</strong>，从用户支付到发货系统开始处理，几乎是实时的。</p>
+<h2 id="六、定时扫表-vs-CDC"><a href="#六、定时扫表-vs-CDC" class="headerlink" title="六、定时扫表 vs CDC"></a>六、定时扫表 vs CDC</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>定时扫表</th>
+<th>CDC事件驱动</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>延迟</td>
+<td>分钟级（取决于轮询间隔）</td>
+<td>毫秒级</td>
+</tr>
+<tr>
+<td>数据库压力</td>
+<td>频繁扫表，随数据量增长</td>
+<td>零额外查询，Binlog开销极低</td>
+</tr>
+<tr>
+<td>状态遗漏</td>
+<td>可能丢失中间状态</td>
+<td>捕获每一次变更</td>
+</tr>
+<tr>
+<td>实现复杂度</td>
+<td>极低，几行SQL + 定时框架</td>
+<td>Canal部署、Kafka运维、消息一致性</td>
+</tr>
+<tr>
+<td>运维成本</td>
+<td>几乎为零</td>
+<td>需要额外运维Canal集群 + Kafka集群</td>
+</tr>
+<tr>
+<td>扩展性</td>
+<td>差，下游增加需要改扫表逻辑</td>
+<td>好，新消费者直接订阅Topic</td>
+</tr>
+<tr>
+<td>回放能力</td>
+<td>无，数据变化即丢失</td>
+<td>Binlog可保存，事件可重放</td>
+</tr>
+</tbody></table>
+<p><strong>结论</strong>：如果你的系统日订单量在几十万以上、下游依赖超过5个、对实时性有要求，CDC是应该认真考虑的选项。</p>
+<h2 id="七、为什么我们还在用定时扫表"><a href="#七、为什么我们还在用定时扫表" class="headerlink" title="七、为什么我们还在用定时扫表"></a>七、为什么我们还在用定时扫表</h2><p>读完上面的分析，你可能会问：那你公司现在切到CDC了吗？</p>
+<p><strong>答案：没有，我们还在用定时扫表。</strong></p>
+<p>原因很现实：</p>
+<ol>
+<li><strong>没有消息队列基础设施</strong> —— 公司没有Kafka&#x2F;RocketMQ集群，引入CDC意味着要同时引入MQ，运维成本翻倍</li>
+<li><strong>当前量级还能扛</strong> —— 130万日订单，定时扫表方案在当前的数据库规格下还能hold住</li>
+<li><strong>组织博弈</strong> —— 引入MQ、Canal涉及DBA、运维、架构组多方审批，推了一年还没动静</li>
+</ol>
+<p>但我把技术方案已经梳理得非常清楚。<strong>技术团队不应该等到系统崩了才做架构升级</strong>——那时候你就是那个修锅的人，而不是造锅的人。</p>
+<p>当量级增长到500万、1000万日订单时，定时扫表方案必然崩溃。到那时，你会庆幸自己有现成的技术方案可以直接拿过来用。</p>
+<h2 id="八、与DDIA的理论呼应"><a href="#八、与DDIA的理论呼应" class="headerlink" title="八、与DDIA的理论呼应"></a>八、与DDIA的理论呼应</h2><p>这篇文章的标题带有”DDIA-12”，是因为这个实战场景和DDIA第12章、第4章高度关联。</p>
+<p><strong>DDIA第12章的观点</strong>：</p>
+<p>CDC本质上是在数据库之外重建了一个变更日志。Martin将其定义为”把数据库看作一个不断增长的事件的序列”。数据库的当前状态是这个序列的”物化视图”，而CDC让我们能够消费原始的事件流。</p>
+<p><strong>DDIA第4章的观点</strong>：</p>
+<p>日志结构存储是DDIA第4章的核心话题。LSM-Tree、SSTables，这些存储引擎都把随机写变成顺序追加——而这正是MySQL Binlog的工作方式：事务提交时，Binlog总是<strong>追加写入</strong>，永远不会覆盖。</p>
+<p>从架构师的视角，通过CDC读取Binlog和通过消费者读取Kafka的日志，在本质上是同一件事：<strong>它们都在消费一个只追加、不可变的日志流</strong>。</p>
+<p>这种思想的统一性，是DDIA最让我着迷的地方。</p>
+<h2 id="九、总结"><a href="#九、总结" class="headerlink" title="九、总结"></a>九、总结</h2><p>从定时扫表到CDC，不是简单的技术替换，而是思维方式的变化：</p>
+<ul>
+<li><strong>定时扫表</strong>的思维是：我要定期去看看数据库，有没有什么新东西</li>
+<li><strong>CDC的思维</strong>是：数据库的一切变更都是事件，我需要一个基础设施来捕获和分发这些事件</li>
+</ul>
+<p>前者是<strong>拉</strong>（pull），后者是<strong>推</strong>（push）。前者是<strong>状态</strong>（state），后者是<strong>事件</strong>（event）。</p>
+<p>当你的系统状态越来越多、事件越来越多、下游越来越多时，”推”和”事件”的架构价值就会凸显。</p>
+<p>并不是所有公司都需要CDC。但对于正在快速增长的电商&#x2F;供应链系统，当定时扫表的延迟和资源消耗开始成为一个问题时，CDC是一个经过业界验证的成熟方案。</p>
+<p><strong>在你真正需要它之前，先把它想清楚。</strong> 这就是这篇文章想做的事。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
+      
+        <a href="/tags/CDC/" class="print-no-link">#CDC</a>
+      
+        <a href="/tags/Kafka/" class="print-no-link">#Kafka</a>
+      
+        <a href="/tags/%E5%AE%9E%E6%97%B6/" class="print-no-link">#实时</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>「DDIA-12-实战：订单状态变更的实时流——从定时扫表到CDC事件驱动」</div>
+      <div>https://aster-xu-lab.github.io/2026/09/02/2026-09-02-DDIA-12-CDC事件驱动实战/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年9月2日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/09/02/2026-09-02-DDIA-12-%E6%B5%81%E5%A4%84%E7%90%86%E5%93%B2%E5%AD%A6-%E4%BA%8B%E4%BB%B6%E6%97%B6%E9%97%B4/" title="DDIA-12-流处理的哲学：事件时间vs处理时间，为什么这件事很重要">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-12-流处理的哲学：事件时间vs处理时间，为什么这件事很重要</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/09/02/2026-09-02-DDIA-12-%E6%B5%81%E6%89%B9%E4%B8%80%E4%BD%93/" title="DDIA-12-流批一体：为什么Flink在同时讨好两拨人">
+                        <span class="hidden-mobile">DDIA-12-流批一体：为什么Flink在同时讨好两拨人</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

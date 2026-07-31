@@ -1,0 +1,972 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="引言：从一场故障说起2024年双十一前夕，凌晨3点，我们的商品同步链路突然卡住了。 排查日志发现：任务A（供应商商品数据拉取）执行成功，写入了临时表；任务B（数据清洗与标准化）依赖任务A的输出，但由于临时表中某个JSON字段格式异常，B的解析逻辑抛了NPE，整条链路中断。问题修复后重跑数据，却发现部分重复记录已经入库——因为任务A没有”下游失败就不提交”的感知能力。 这不只是我一个人的痛。当你用C">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/28/2026-08-28-DDIA-10-Choreography%E4%B8%80%E8%87%B4%E6%80%A7/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="引言：从一场故障说起2024年双十一前夕，凌晨3点，我们的商品同步链路突然卡住了。 排查日志发现：任务A（供应商商品数据拉取）执行成功，写入了临时表；任务B（数据清洗与标准化）依赖任务A的输出，但由于临时表中某个JSON字段格式异常，B的解析逻辑抛了NPE，整条链路中断。问题修复后重跑数据，却发现部分重复记录已经入库——因为任务A没有”下游失败就不提交”的感知能力。 这不只是我一个人的痛。当你用C">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-27T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-31T01:51:54.654Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Choreography">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="SyncTask">
+<meta property="article:tag" content="一致性">
+<meta property="article:tag" content="实战">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-08-28 00:00" pubdate>
+          2026年8月28日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          8.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          68 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="引言：从一场故障说起"><a href="#引言：从一场故障说起" class="headerlink" title="引言：从一场故障说起"></a>引言：从一场故障说起</h2><p>2024年双十一前夕，凌晨3点，我们的商品同步链路突然卡住了。</p>
+<p>排查日志发现：任务A（供应商商品数据拉取）执行成功，写入了临时表；任务B（数据清洗与标准化）依赖任务A的输出，但由于临时表中某个JSON字段格式异常，B的解析逻辑抛了NPE，整条链路中断。问题修复后重跑数据，却发现部分重复记录已经入库——因为任务A没有”下游失败就不提交”的感知能力。</p>
+<p>这不只是我一个人的痛。当你用Choreography模式（而非DAG集中式编排）做任务接力时，一致性挑战就是你必须跨越的坎。而这段经历，正是我们重构SyncTask引擎、引入afterExecute编排体系的核心驱动力。</p>
+<p>本文将结合《Designing Data-Intensive Applications》第10章”共识与协调”的理论框架，聊聊Choreography模式在实战中的取舍——我们失去了什么，又得到了什么。</p>
+<h2 id="背景：从”写了就跑”到afterExecute编排"><a href="#背景：从”写了就跑”到afterExecute编排" class="headerlink" title="背景：从”写了就跑”到afterExecute编排"></a>背景：从”写了就跑”到afterExecute编排</h2><h3 id="SyncTask引擎的定位"><a href="#SyncTask引擎的定位" class="headerlink" title="SyncTask引擎的定位"></a>SyncTask引擎的定位</h3><p>SyncTask是一个轻量级异步任务引擎，设计目标是替代我们在电商&#x2F;供应链中台中泛滥的”定时任务+手工状态机”。它的核心约束是：<strong>不引入工作流引擎（如Flowable&#x2F;Temporal），不维护DAG图，不设中心调度器</strong>。</p>
+<p>为什么？因为在业务中台的语境里，工作流引擎往往是一个”局部最优、全局最重”的选择。引入一个中心化编排引擎，意味着你需要维护DAG定义、处理版本迁移、解决中心节点的高可用问题——对于一个由5人团队维护的中间件，这不可接受。</p>
+<p>所以我们选择了Choreography模式，并在实现上做了关键创新：<strong>afterExecute回调</strong>。</p>
+<h3 id="afterExecute的工作原理"><a href="#afterExecute的工作原理" class="headerlink" title="afterExecute的工作原理"></a>afterExecute的工作原理</h3><p>每个任务实现<code>TaskHandler</code>接口，并在<code>afterExecute</code>方法中声明自己的”下一棒”：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ProductPullHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">TaskHandler</span> &#123;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">execute</span><span class="hljs-params">(TaskContext ctx)</span> &#123;<br>        <span class="hljs-comment">// 拉取供应商商品数据</span><br>        List&lt;Product&gt; products = supplierClient.pullProducts(ctx.getBatchNo());<br>        ctx.setAttribute(<span class="hljs-string">&quot;products&quot;</span>, products);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">afterExecute</span><span class="hljs-params">(TaskContext ctx)</span> &#123;<br>        <span class="hljs-comment">// 声明：我跑完之后，下一个该谁跑</span><br>        ctx.chain(ProductCleanHandler.class);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>引擎会维护<code>TaskContext</code>，在执行完当前Handler后读取其<code>afterExecute</code>中声明的后继，自动调度。更重要的是，<code>TaskContext</code>是持久化的——每次状态变更都落库。这意味着即便节点宕机，恢复后也能从上次中断的地方继续。</p>
+<p>这本质是Choreography（舞蹈编排）：每个参与者自己知道下一步该找谁，没有”指挥家”。</p>
+<p>与之对应的是Orchestration（管弦乐队）：DAG调度器持有全局视角，统一指挥每一步的执行、回滚、重试。</p>
+<h2 id="一致性挑战：当”接力棒”掉落时"><a href="#一致性挑战：当”接力棒”掉落时" class="headerlink" title="一致性挑战：当”接力棒”掉落时"></a>一致性挑战：当”接力棒”掉落时</h2><p>在Choreography模式下，一致性问题的本质是：<strong>没有中心协调者来感知全局状态和做补偿决策</strong>。</p>
+<p>举个例子：价格同步链路包含三个Handler——<code>PricePullHandler</code>（拉取新价格）→<code>PriceValidateHandler</code>（校验价格波动）→<code>PriceApplyHandler</code>（写入生效）。如果前两个成功，第三个失败，谁来通知第一个”你的数据已经部分生效，需要回滚”？</p>
+<h3 id="失败场景矩阵"><a href="#失败场景矩阵" class="headerlink" title="失败场景矩阵"></a>失败场景矩阵</h3><p>我们梳理了所有可能的失败场景：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>Handler A</th>
+<th>Handler B</th>
+<th>数据库状态</th>
+<th>一致性风险</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>正常完成</td>
+<td>SUCCESS</td>
+<td>SUCCESS</td>
+<td>全部提交</td>
+<td>无</td>
+</tr>
+<tr>
+<td>B失败，A已提交</td>
+<td>SUCCESS</td>
+<td>FAILED</td>
+<td>A的数据已写入</td>
+<td>A的脏数据残留</td>
+</tr>
+<tr>
+<td>B失败，A未提交</td>
+<td>UNCOMMITTED</td>
+<td>FAILED</td>
+<td>无</td>
+<td>无（可整体回滚）</td>
+</tr>
+<tr>
+<td>节点宕机</td>
+<td>SUCCESS</td>
+<td>中断</td>
+<td>未知</td>
+<td>B状态不确定</td>
+</tr>
+</tbody></table>
+<p>最棘手的是场景1：A已经提交了数据库事务，B失败后，A的数据成为”孤儿数据”——没有后续Handler会处理它，也没有机制清理它。</p>
+<h3 id="核心矛盾"><a href="#核心矛盾" class="headerlink" title="核心矛盾"></a>核心矛盾</h3><p>Choreography模式天然缺少一个”全局事务协调器”。在Orchestration模式下，DAG引擎可以维护一个全局事务上下文，一旦B失败，引擎可以回调A的补偿方法。但Choreography模式下，A根本不知道B是否成功——两个人背对背跳舞。</p>
+<h2 id="SyncTask的解决方案：五层防御"><a href="#SyncTask的解决方案：五层防御" class="headerlink" title="SyncTask的解决方案：五层防御"></a>SyncTask的解决方案：五层防御</h2><p>面对一致性挑战，我们没有选择”加一个DAG引擎”的简单方案，而是在Choreography模式的约束下，构建了五层防御体系。</p>
+<h3 id="第一层：状态机管理"><a href="#第一层：状态机管理" class="headerlink" title="第一层：状态机管理"></a>第一层：状态机管理</h3><p>每个TaskHandler执行前后，引擎会严格维护其状态机：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-attribute">PENDING</span> → RUNNING → SUCCESS<br>                  → FAILED<br>                  → SKIPPED<br></code></pre></td></tr></table></figure>
+
+<p>关键设计是：<strong>状态变更先于业务逻辑写入</strong>。也就是说，在执行Handler之前，引擎先将状态置为<code>RUNNING</code>并落库；执行完成后，再将状态更新为<code>SUCCESS</code>或<code>FAILED</code>。这样重启恢复时，所有<code>RUNNING</code>状态的任务会被重新调度，不会被遗漏。</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs css">执行时序：<br><span class="hljs-number">1</span>. 事务<span class="hljs-selector-tag">A</span>开始 → 状态置RUNNING → 执行业务逻辑 → 状态置SUCCESS → 事务<span class="hljs-selector-tag">A</span>提交<br><span class="hljs-number">2</span>. 持久化TaskContext，触发afterExecute，调度下一个Handler<br><span class="hljs-number">3</span>. 事务<span class="hljs-selector-tag">B</span>开始 → 状态置RUNNING → 执行业务逻辑 → ...<br></code></pre></td></tr></table></figure>
+
+<h3 id="第二层：重试策略"><a href="#第二层：重试策略" class="headerlink" title="第二层：重试策略"></a>第二层：重试策略</h3><p>失败不等于终局。引擎内置了指数退避重试：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RetryPolicy</span> &#123;<br>    <span class="hljs-comment">// 指数退避：1s, 2s, 4s, 8s, 16s...</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">BASE_DELAY_MS</span> <span class="hljs-operator">=</span> <span class="hljs-number">1000</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">MAX_RETRY_COUNT</span> <span class="hljs-operator">=</span> <span class="hljs-number">3</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">long</span> <span class="hljs-title function_">nextDelay</span><span class="hljs-params">(<span class="hljs-type">int</span> retryCount)</span> &#123;<br>        <span class="hljs-keyword">return</span> BASE_DELAY_MS * (<span class="hljs-number">1L</span> &lt;&lt; Math.min(retryCount, MAX_RETRY_COUNT));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>重试的触发条件经过精心设计：只重试可恢复的异常（网络超时、死锁、临时不可用），不重试业务异常（数据校验失败、参数非法）——后者重试多少次都一样，不如快速失败，让人工介入。</p>
+<p>超过最大重试次数后，任务标记为<code>FAILED</code>，并通过<code>TaskLifecycleListener</code>的<code>onException</code>回调触发告警。</p>
+<h3 id="第三层：补偿机制"><a href="#第三层：补偿机制" class="headerlink" title="第三层：补偿机制"></a>第三层：补偿机制</h3><p>这是最核心的一层。我们在<code>afterExecute</code>中实现了补偿逻辑：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">afterExecute</span><span class="hljs-params">(TaskContext ctx)</span> &#123;<br>    <span class="hljs-keyword">try</span> &#123;<br>        ctx.chain(ProductCleanHandler.class);<br>    &#125; <span class="hljs-keyword">catch</span> (ChainFailedException e) &#123;<br>        <span class="hljs-comment">// 下游Handler失败 → 执行补偿</span><br>        compensation(ctx);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>补偿的范围取决于业务语义：</p>
+<ul>
+<li><strong>可逆操作</strong>：如写入了临时表，补偿就是DELETE该批次数据</li>
+<li><strong>不可逆操作</strong>：如发送了通知消息，补偿就是发送一条”作废”通知</li>
+<li><strong>无副作用操作</strong>：如只读查询，无需补偿</li>
+</ul>
+<p>实践中我们发现，补偿逻辑不应在每个Handler中硬编码，而应通过<code>CompensationHandler</code>接口统一管理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">CompensationHandler</span> &#123;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">compensate</span><span class="hljs-params">(TaskContext ctx)</span>;<br>&#125;<br><br><span class="hljs-comment">// PricePullHandler实现</span><br><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> CompensationHandler <span class="hljs-title function_">getCompensation</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-keyword">return</span> ctx -&gt; &#123;<br>        priceTempMapper.deleteByBatchNo(ctx.getBatchNo());<br>        log.warn(<span class="hljs-string">&quot;批次&#123;&#125;价格拉取已补偿，下游处理失败&quot;</span>, ctx.getBatchNo());<br>    &#125;;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="第四层：幂等保证"><a href="#第四层：幂等保证" class="headerlink" title="第四层：幂等保证"></a>第四层：幂等保证</h3><p>重试意味着同一个Handler可能被执行多次。幂等的核心是<strong>任务ID+业务主键防重</strong>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 引擎层：同一个task-instance-id不会被重复调度</span><br><span class="hljs-keyword">if</span> (taskInstanceRepo.exists(taskId, Status.RUNNING)) &#123;<br>    log.info(<span class="hljs-string">&quot;任务&#123;&#125;正在执行中，跳过重复调度&quot;</span>, taskId);<br>    <span class="hljs-keyword">return</span>;<br>&#125;<br><br><span class="hljs-comment">// 业务层：通过业务唯一键保证幂等</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">savePrice</span><span class="hljs-params">(Price price)</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> price.getSkuId() + <span class="hljs-string">&quot;_&quot;</span> + price.getBatchNo();<br>    priceRepo.upsert(key, price); <span class="hljs-comment">// INSERT ... ON DUPLICATE KEY UPDATE</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>引擎层的防重确保不会并发重复执行；业务层的幂等确保即使重试，数据也是正确的最终状态。</p>
+<h3 id="第五层：监控告警"><a href="#第五层：监控告警" class="headerlink" title="第五层：监控告警"></a>第五层：监控告警</h3><p>任务失败不能悄悄发生。引擎提供了<code>TaskLifecycleListener</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">TaskLifecycleListener</span> &#123;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">onSuccess</span><span class="hljs-params">(TaskContext ctx)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">onFailure</span><span class="hljs-params">(TaskContext ctx, Exception e)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">onRetry</span><span class="hljs-params">(TaskContext ctx, <span class="hljs-type">int</span> retryCount, Exception e)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">onException</span><span class="hljs-params">(TaskContext ctx, Exception e)</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>onException</code>回调会通过钉钉机器人推送告警到运维群，包括：批次号、失败Handler、异常堆栈、上下文参数。这套监控让我们能够在用户感知到数据延迟之前就介入处理。</p>
+<h2 id="对比：Orchestration模式下的一致性处理"><a href="#对比：Orchestration模式下的一致性处理" class="headerlink" title="对比：Orchestration模式下的一致性处理"></a>对比：Orchestration模式下的一致性处理</h2><p>为了更清晰地看到取舍，我们对照一下如果改用DAG集中式编排，一致性处理会怎样。</p>
+<h3 id="DAG编排的优势"><a href="#DAG编排的优势" class="headerlink" title="DAG编排的优势"></a>DAG编排的优势</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 伪代码：中心化编排</span><br>dagBuilder<br>    .node(<span class="hljs-string">&quot;pull&quot;</span>, <span class="hljs-built_in">this</span>::pullPrices)<br>    .node(<span class="hljs-string">&quot;validate&quot;</span>, <span class="hljs-built_in">this</span>::validatePrices, dependsOn(<span class="hljs-string">&quot;pull&quot;</span>))<br>    .node(<span class="hljs-string">&quot;apply&quot;</span>, <span class="hljs-built_in">this</span>::applyPrices, dependsOn(<span class="hljs-string">&quot;validate&quot;</span>))<br>    .onFailure(<span class="hljs-string">&quot;validate&quot;</span>, () -&gt; compensate(<span class="hljs-string">&quot;pull&quot;</span>))  <span class="hljs-comment">// 集中声明补偿</span><br>    .onFailure(<span class="hljs-string">&quot;apply&quot;</span>, () -&gt; &#123;<br>        compensate(<span class="hljs-string">&quot;validate&quot;</span>);<br>        compensate(<span class="hljs-string">&quot;pull&quot;</span>);<br>    &#125;);<br></code></pre></td></tr></table></figure>
+
+<p>优势很明显：<strong>一致性逻辑集中声明，回滚链路一目了然</strong>。DAG引擎持有全局状态，知道谁依赖谁，可以在任意节点失败时精确补偿上游。</p>
+<p>实现上，引擎可以利用Saga模式：为每个节点定义一个正向操作和一个补偿操作，失败时按逆序执行补偿。这种模式在微服务分布式事务中也有广泛应用。</p>
+<h3 id="但代价是什么？"><a href="#但代价是什么？" class="headerlink" title="但代价是什么？"></a>但代价是什么？</h3><p>在实际项目中评估后，我们发现了三个关键代价：</p>
+<p><strong>（1）DAG图维护成本</strong>。电商供应链的业务流程变化频繁——今天价格同步走A→B→C，明天可能走A→B→D→C。在中心化编排中，每次变更都要修改DAG定义，且线上DAG版本必须与代码一同发布。在Choreography模式中，修改<code>afterExecute</code>的<code>chain</code>调用就是改一行代码，随Handler一同部署。</p>
+<p><strong>（2）中心节点的单点扩展压力</strong>。DAG引擎通常需要一个集中的调度数据库或状态存储——所有节点的执行状态、补偿记录、重试计数都集中在一个地方。当任务量增长时，这个中心存储会成为瓶颈。而Choreography模式下，每个任务的上下文是独立的，天然适合分片。</p>
+<p><strong>（3）开发体验的割裂</strong>。Handler的业务逻辑和编排逻辑不在同一个文件中，调试时需要来回切换。而<code>afterExecute</code>让编排声明紧邻业务逻辑，阅读代码时逻辑闭环。</p>
+<p>当然，我不是说Orchestration模式不好。如果你的业务流程稳定、节点数量多、需要精确的回滚控制，DAG编排是更稳妥的选择。但如果你像我们一样——团队小、流程变、追求轻量——Choreography的代价是可以接受的。</p>
+<h2 id="架构减法哲学：选择”少”的力量"><a href="#架构减法哲学：选择”少”的力量" class="headerlink" title="架构减法哲学：选择”少”的力量"></a>架构减法哲学：选择”少”的力量</h2><p>到这里，我想引入一个贯穿SyncTask设计的核心思想：<strong>架构减法</strong>。</p>
+<p>每次我们面对一个工程问题时，本能反应是”加一个组件”——加个MQ解耦、加个DAG引擎编排、加个配置中心管理规则。但每一个组件都是一笔长期债务：要维护、要监控、要招人懂、要写文档传帮带。</p>
+<p>架构减法不是”什么方便用什么”，而是”能不能用已有的基础设施解决问题”。</p>
+<h3 id="Choreography模式下的”共识”"><a href="#Choreography模式下的”共识”" class="headerlink" title="Choreography模式下的”共识”"></a>Choreography模式下的”共识”</h3><p>DDIA第10章讨论的核心问题是：多个节点如何在不可靠的网络上达成共识。Raft&#x2F;Paxos通过多数派投票、日志复制、Leader选举来保证一致性，这是分布式共识协议。</p>
+<p>而Choreography模式下的”共识”机制不同：</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Raft&#x2F;Paxos</th>
+<th>Choreography + DB</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>共识目标</td>
+<td>所有节点对日志顺序达成一致</td>
+<td>各Handler对任务状态达成一致</td>
+</tr>
+<tr>
+<td>实现方式</td>
+<td>多数派投票、Leader选举</td>
+<td>数据库行锁 + 状态机</td>
+</tr>
+<tr>
+<td>故障恢复</td>
+<td>Leader切换、日志重放</td>
+<td>状态回查 + 任务重调度</td>
+</tr>
+<tr>
+<td>一致性级别</td>
+<td>强一致（线性一致）</td>
+<td>最终一致（通过重试+补偿收敛）</td>
+</tr>
+</tbody></table>
+<p>本质上，Choreography模式用<strong>数据库作为”共识的锚点”</strong>。每个Handler执行前检查上一节点的数据库状态，执行后更新自己的状态。这个设计利用了我们已有基础设施的能力，避免了引入Raft&#x2F;Paxos的复杂性。</p>
+<h3 id="没有单点瓶颈"><a href="#没有单点瓶颈" class="headerlink" title="没有单点瓶颈"></a>没有单点瓶颈</h3><p>另一个”减”出来的收益是：Choreography模式天然没有单点瓶颈。</p>
+<p>在Orchestration模式下，DAG引擎通常需要维护一个全局状态表——所有任务和它们的依赖关系。当并发任务量上来后，这张表会成为热点。</p>
+<p>在Choreography模式下，<code>TaskContext</code>各行独立，彼此只通过批次ID关联。数据库层面可以按批次ID分片，没有全局热点。任务也可以按数据类型分发到不同的执行节点——数据拉取走节点1，数据清洗走节点2——如果某个环节慢了，只影响那一类任务。</p>
+<h2 id="实战检验：几个真实案例"><a href="#实战检验：几个真实案例" class="headerlink" title="实战检验：几个真实案例"></a>实战检验：几个真实案例</h2><h3 id="案例1：供应商商品同步（每日150万SKU）"><a href="#案例1：供应商商品同步（每日150万SKU）" class="headerlink" title="案例1：供应商商品同步（每日150万SKU）"></a>案例1：供应商商品同步（每日150万SKU）</h3><p>链路：<code>SupplierPullHandler</code> → <code>CategoryMapHandler</code> → <code>PriceCalcHandler</code> → <code>InventorySyncHandler</code> → <code>ESIndexHandler</code></p>
+<p>某个周末，CategoryMapHandler因为第三方分类映射接口超时，导致整条链路的商品数据积压。</p>
+<p><strong>故障复现</strong>：SupplierPullHandler提交了当日拉取的150万条数据到临时表，CategoryMapHandler失败后，这些数据成为了”孤儿数据”。更糟的是，手动重跑时又拉了一遍数据，临时表翻倍到300万条。</p>
+<p><strong>SyncTask的处理</strong>：</p>
+<ol>
+<li>CategoryMapHandler超时后自动重试3次（指数退避），第3次仍然超时后标记FAILED</li>
+<li>引擎检测到FAILED后，调用SupplierPullHandler的补偿逻辑：DELETE临时表中该批次数据</li>
+<li>钉钉通知：”供应商商品同步失败，链路：SupplierPull→CategoryMap，已执行补偿，批次号：…”</li>
+<li>值班同学收到告警后排查分类接口，修复后重新触发任务</li>
+</ol>
+<p>如果没有补偿机制，临时表的残留数据会污染下一次同步，甚至导致PriceCalcHandler拿到脏数据计算出错误价格。</p>
+<h3 id="案例2：订单状态回写（一致性要求高）"><a href="#案例2：订单状态回写（一致性要求高）" class="headerlink" title="案例2：订单状态回写（一致性要求高）"></a>案例2：订单状态回写（一致性要求高）</h3><p>链路：<code>OrderStatusPullHandler</code> → <code>OrderStatusValidateHandler</code> → <code>OrderStatusUpdateHandler</code> → <code>NotifyShopHandler</code></p>
+<p>这个链路的关键风险是：如果前面三个Handler都成功了，NotifyShopHandler（通知商家）失败了，商家手动操作的状态和系统状态不一致怎么办？</p>
+<p><strong>SyncTask的处理</strong>：NotifyShopHandler的补偿不是回滚数据（前面的状态更新不应回滚），而是发送一条”消息投递失败”标记，触发人工核实流程。这个设计来自于我们对业务语义的理解——“通知失败”不等于”业务操作失败”，补偿粒度需要匹配业务语义。</p>
+<h2 id="推荐阅读与延伸思考"><a href="#推荐阅读与延伸思考" class="headerlink" title="推荐阅读与延伸思考"></a>推荐阅读与延伸思考</h2><p>如果你对类似问题感兴趣，以下资料值得一读：</p>
+<ul>
+<li><strong>《Designing Data-Intensive Applications》第10章——共识与协调</strong>：理解Raft&#x2F;Paxos和实际工程中”共识”的多样性。Choreography用DB+状态机做共识，是分布式中”足够好的一致性”的一个实例。</li>
+<li><strong>《Microservices Patterns》——Saga模式</strong>：Choreography Saga和Orchestration Saga的对比，和我们讨论的模式本质一致。Saga通过补偿事务实现最终一致性，是Choreography模式在微服务领域的经典应用。</li>
+<li><strong>AWS Step Functions vs EventBridge</strong>：前者是中心化编排（Orchestration），后者是事件驱动编排（Choreography）。AWS的实践表明这两种模式不是互斥的——Step Functions内部也可能使用EventBridge做事件路由，关键是选择正确的抽象层级。</li>
+<li><strong>DDIA第9章——一致性与共识</strong>：如果你对”Choreography模式下的一致性到底是什么级别”有疑问，第9章的一致性模型定义（线性一致、顺序一致、因果一致）可以为你提供理论锚点。</li>
+</ul>
+<p>这些资料不是必读——但它们构成了我设计SyncTask时核心的知识谱系。</p>
+<h2 id="结语：不是非此即彼，而是知道何时选择什么"><a href="#结语：不是非此即彼，而是知道何时选择什么" class="headerlink" title="结语：不是非此即彼，而是知道何时选择什么"></a>结语：不是非此即彼，而是知道何时选择什么</h2><p>写这篇文章的时候，我在想一个问题：如果我当时选择了Flowable&#x2F;Temporal，现在的SyncTask会是什么样？</p>
+<p>答案可能是：更”标准”的架构，更高的一致性保障，但同时也有更重的运维负担、更长的故障恢复链路、更难向新人讲清楚的执行模型。</p>
+<p>Choreography模式下的afterExecute编排，本质上是我们对”一致性复杂度”的一次重新定价。我们承认了Choreography的一致性短板，然后在五层防御（状态机、重试、补偿、幂等、监控）中把代价消化掉。最终交付的是一个对团队而言”刚好够用、刚好能维护”的系统。</p>
+<p>这不是最好的架构，但这是最适合我们的架构。</p>
+<p>而DDIA教给我的最重要一课，不是某个具体的技术方案，而是：<strong>在分布式系统中，你的问题从来不是”如何做到100%一致”，而是”在给定的约束下，你能接受多大的不一致，以及你用什么代价去缩小这个差距”</strong>。</p>
+<p>Choreography模式下的一致性，就是这个问题的一个实战答案。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/SyncTask/" class="print-no-link">#SyncTask</a>
+      
+        <a href="/tags/Choreography/" class="print-no-link">#Choreography</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
+      
+        <a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7/" class="print-no-link">#一致性</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍</div>
+      <div>https://aster-xu-lab.github.io/2026/08/28/2026-08-28-DDIA-10-Choreography一致性/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年8月28日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/08/28/2026-08-28-DDIA-10-2PC%E4%B8%8E%E5%85%B1%E8%AF%86/" title="DDIA-10-两阶段提交与共识的边界：电商库存扣减为什么不能偷懒">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-10-两阶段提交与共识的边界：电商库存扣减为什么不能偷懒</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/08/28/2026-08-28-DDIA-10-Raft%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95/" title="DDIA-10-Raft共识算法图解：选主+日志复制+安全性">
+                        <span class="hidden-mobile">DDIA-10-Raft共识算法图解：选主+日志复制+安全性</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

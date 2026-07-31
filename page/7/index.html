@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/01/06/2021-01-06-%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98DirectMemory/" target="_self">
-          直接内存 Direct Memory
+        <a href="/2026/07/16/sync-task-engine-family-bucket/" target="_self">
+          SyncTask Engine 全家桶：一个依赖就能跑的轻量级任务编排引擎
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/01/06/2021-01-06-%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98DirectMemory/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/07/16/sync-task-engine-family-bucket/" target="_self">
         <div>
-          不是虚拟机运行时数据区的一部分，也不是《Java虚拟机规范》中定义的内存区域。 直接内存是在Java堆外的、直接向系统申请的内存区间。 来源于NIO，通过存在堆中的DirectByteBuffer操作Native内存 通常，访问直接内存的速度会优于Java堆。即读写性能高。  因此出于性能考虑，读写频繁的场合可能会考虑使用直接内存。 Java的NIO库允许Java程序使用直接内存，用于数据缓冲区
+          背景2024 年，订单中心需要把单据同步到 10+ 个外部系统。每接一个新系统就写一个 xxl-job Handler，重复代码越来越多。 一年后 WMS 中心抄了这套设计，44 个 Handler。然后我们就陷入了两个项目维护同一套编排逻辑的窘境。 2026 年 7 月，SyncTask Engine 来了。但第一版其实只是个核心引擎——接入方得自己写 Java Config 组装 Bean，引
         </div>
       </a>
 
@@ -352,44 +352,31 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-01-06 09:55" pubdate>
-              2021-01-06
+            <time datetime="2026-07-16 00:00" pubdate>
+              2026-07-16
             </time>
           </div>
         
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
         
         
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/Java/">#Java</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">#架构设计</a>
             
-              <a href="/tags/%E7%9B%B4%E6%8E%A5%E5%86%85%E5%AD%98/">#直接内存</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E7%BC%96%E6%8E%92/">#任务编排</a>
             
-              <a href="/tags/DirectMemory/">#DirectMemory</a>
+              <a href="/tags/SPI/">#SPI</a>
+            
+              <a href="/tags/xxl-job/">#xxl-job</a>
+            
+              <a href="/tags/Spring-Boot/">#Spring Boot</a>
+            
+              <a href="/tags/MyBatis/">#MyBatis</a>
+            
+              <a href="/tags/Redisson/">#Redisson</a>
             
           </div>
         
@@ -403,15 +390,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/01/06/2021-01-06-%E5%AF%B9%E8%B1%A1%E5%AE%9E%E4%BE%8B%E5%8C%96%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80%E4%B8%8E%E8%AE%BF%E9%97%AE%E5%AE%9A%E4%BD%8D/" target="_self">
-          对象实例化内存布局与访问定位
+        <a href="/2026/07/10/2026-07-10-synctask-vs-nflow/" target="_self">
+          SyncTaskJob vs nFlow：自己手写的任务编排引擎，和业界方案差距在哪
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/01/06/2021-01-06-%E5%AF%B9%E8%B1%A1%E5%AE%9E%E4%BE%8B%E5%8C%96%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80%E4%B8%8E%E8%AE%BF%E9%97%AE%E5%AE%9A%E4%BD%8D/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/07/10/2026-07-10-synctask-vs-nflow/" target="_self">
         <div>
-          对象实例化面试题 对象在JVM中是怎么存储的？ 对象头信息里面有哪些东西？ Java对象头有什么？  从对象创建的方式 和 步骤开始说 对象创建方式 new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法 Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器 Constructor的newInstance(X
+          从代码细节到设计思想，对比订单中心自研的 SyncTaskJob 和北欧开源引擎 nFlow 的异同与差距。
         </div>
       </a>
 
@@ -419,8 +406,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-01-06 09:36" pubdate>
-              2021-01-06
+            <time datetime="2026-07-10 00:00" pubdate>
+              2026-07-10
             </time>
           </div>
         
@@ -435,8 +422,15 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
   
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="category-chain-item">源码分析</a>
+  
+  
+
   
 
       </span>
@@ -450,13 +444,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/Java/">#Java</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E7%BC%96%E6%8E%92/">#任务编排</a>
             
-              <a href="/tags/%E5%AF%B9%E8%B1%A1%E5%AE%9E%E4%BE%8B%E5%8C%96/">#对象实例化</a>
+              <a href="/tags/%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%BC%95%E6%93%8E/">#工作流引擎</a>
             
-              <a href="/tags/%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80/">#内存布局</a>
+              <a href="/tags/%E8%87%AA%E7%A0%94vs%E5%BC%80%E6%BA%90/">#自研vs开源</a>
             
           </div>
         
@@ -470,15 +464,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/01/05/2021-01-05-%E6%96%B9%E6%B3%95%E5%8C%BA/" target="_self">
-          方法区
+        <a href="/2026/07/10/sync-task-engine-design/" target="_self">
+          轻量级业务任务编排引擎 SyncTask Engine 设计手记
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/01/05/2021-01-05-%E6%96%B9%E6%B3%95%E5%8C%BA/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/07/10/sync-task-engine-design/" target="_self">
         <div>
-          前言这次所讲述的是运行时数据区的最后一个部分从线程共享与否的角度来看ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理 栈、堆、方法区的交互关系下面就涉及了对象的访问定位  Person：存放在元空间，也可以说方法区 person：存放在Java栈的局部变量表中 new Person()：存放在Java堆中  方法区的理解《Java虚拟机规范》中
+          背景2024 年，订单中心需要将销售、采购、售后、开票等单据同步到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS、抖音、快手……）。最初的做法很简单：每接入一个新系统就写一个独立的 xxl-job Handler。很快问题就来了——  重复代码太多：每个 Job 都要自己写失败重试、并发控制、错误告警，写到最后自己都搞不清哪个是哪个 扩展性差：每次加新系统都要改 xxl-job 调度配置，手滑配
         </div>
       </a>
 
@@ -486,44 +480,27 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-01-05 17:08" pubdate>
-              2021-01-05
+            <time datetime="2026-07-10 00:00" pubdate>
+              2026-07-10
             </time>
           </div>
         
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
         
         
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/Java/">#Java</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">#架构设计</a>
             
-              <a href="/tags/%E6%96%B9%E6%B3%95%E5%8C%BA/">#方法区</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E7%BC%96%E6%8E%92/">#任务编排</a>
             
-              <a href="/tags/%E5%85%83%E7%A9%BA%E9%97%B4/">#元空间</a>
+              <a href="/tags/SPI/">#SPI</a>
+            
+              <a href="/tags/xxl-job/">#xxl-job</a>
+            
+              <a href="/tags/Spring-Boot/">#Spring Boot</a>
             
           </div>
         
@@ -537,15 +514,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/01/04/2021-01-04-%E5%A0%86/" target="_self">
-          堆
+        <a href="/2026/07/10/2026-07-10-synctask-local-message-table/" target="_self">
+          SyncTaskJob 就是一张本地消息表——只是你自己没意识到
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/01/04/2021-01-04-%E5%A0%86/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/07/10/2026-07-10-synctask-local-message-table/" target="_self">
         <div>
-          堆的核心概念堆针对一个JVM进程来说是唯一的，也就是一个进程只有一个JVM，但是进程包含多个线程，他们是共享同一堆空间的。一个JVM实例只存在一个堆内存，堆也是Java内存管理的核心区域。Java堆区在JVM启动的时候即被创建，其空间大小也就确定了。是JVM管理的最大一块内存空间。  堆内存的大小是可以调节的。  《Java虚拟机规范》规定，堆可以处于物理上不连续的内存空间中，但在逻辑上它应该被视
+          拆解 SyncTaskJob 的 sync_task 表与业界标准本地消息表模式的异同——你不知不觉地实现了一个经典的分布式事务模式。
         </div>
       </a>
 
@@ -553,8 +530,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-01-04 17:09" pubdate>
-              2021-01-04
+            <time datetime="2026-07-10 00:00" pubdate>
+              2026-07-10
             </time>
           </div>
         
@@ -569,8 +546,15 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
   
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="category-chain-item">分布式事务</a>
+  
+  
+
   
 
       </span>
@@ -584,15 +568,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8/">#本地消息表</a>
             
-              <a href="/tags/%E5%A0%86/">#堆</a>
+              <a href="/tags/SyncTaskJob/">#SyncTaskJob</a>
             
-              <a href="/tags/Heap/">#Heap</a>
-            
-              <a href="/tags/GC/">#GC</a>
+              <a href="/tags/Transactional-Outbox/">#Transactional Outbox</a>
             
           </div>
         
@@ -606,15 +588,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/01/04/2021-01-04-%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88/" target="_self">
-          本地方法栈
+        <a href="/2026/07/03/hello-world/" target="_self">
+          Hello World
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/01/04/2021-01-04-%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%A0%88/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/07/03/hello-world/" target="_self">
         <div>
-          Java虚拟机栈于管理Java方法的调用，而本地方法栈用于管理本地方法的调用。 本地方法栈，也是线程私有的。 允许被实现成固定或者是可动态扩展的内存大小。（在内存溢出方面是相同的）  如果线程请求分配的栈容量超过本地方法栈允许的最大容量，Java虚拟机将会抛出一个stackoverflowError 异常。 如果本地方法栈可以动态扩展，并且在尝试扩展的时候无法申请到足够的内存，或者在创建新的线程时
+          Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer in troubleshooting or you can ask me on GitHub. Quick
         </div>
       </a>
 
@@ -622,8 +604,41 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-01-04 09:18" pubdate>
-              2021-01-04
+            <time datetime="2026-07-03 16:40" pubdate>
+              2026-07-03
+            </time>
+          </div>
+        
+        
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/06/15/2026-06-15-%E4%B8%83%E5%B9%B4Java%E5%90%8E%E7%AB%AF%E4%B9%8B%E8%B7%AF/" target="_self">
+          七年Java后端之路：我的技术成长与面试方法论
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/06/15/2026-06-15-%E4%B8%83%E5%B9%B4Java%E5%90%8E%E7%AB%AF%E4%B9%8B%E8%B7%AF/" target="_self">
+        <div>
+          七年 Java 后端之路：我的技术成长与面试方法论写在前面2019 年 1 月入行，到 2026 年，整整七年。 从宏智科技的外包开发，到通天晓的技术主管，再到能良的技术主管带 4 人团队——回头看，每个阶段都在做对的事情，只是当时不知道。 这篇文章不是成功学，是一个普通 Java 程序员的真实成长复盘。希望能给还在路上的同学一些参考。 第一阶段：野蛮生长（2019-2021，宏智科技）刚毕业进入
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-06-15 10:00" pubdate>
+              2026-06-15
             </time>
           </div>
         
@@ -638,7 +653,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/%E8%81%8C%E4%B8%9A%E5%8F%91%E5%B1%95/" class="category-chain-item">职业发展</a>
   
   
 
@@ -653,13 +668,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/%E8%81%8C%E4%B8%9A%E6%88%90%E9%95%BF/">#职业成长</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/%E9%9D%A2%E8%AF%95/">#面试</a>
             
-              <a href="/tags/%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95/">#本地方法</a>
+              <a href="/tags/%E6%8A%80%E6%9C%AF%E4%B8%BB%E7%AE%A1/">#技术主管</a>
             
-              <a href="/tags/JNI/">#JNI</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/">#分布式系统</a>
+            
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E5%B8%88/">#架构师</a>
+            
+              <a href="/tags/%E6%8A%80%E6%9C%AF%E5%A4%8D%E7%9B%98/">#技术复盘</a>
             
           </div>
         
@@ -673,15 +692,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/01/04/2021-01-04-%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%8E%A5%E5%8F%A3/" target="_self">
-          本地方法接口
+        <a href="/2026/03/22/2026-03-22-%E5%8D%B3%E6%97%B6%E9%9B%B6%E5%94%AE%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" target="_self">
+          即时零售中台：从异步批量到事件驱动秒级响应
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/01/04/2021-01-04-%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95%E6%8E%A5%E5%8F%A3/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/22/2026-03-22-%E5%8D%B3%E6%97%B6%E9%9B%B6%E5%94%AE%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" target="_self">
         <div>
-          概述什么是本地方法简单地讲，一个Native Methodt是一个Java调用非Java代码的接囗。一个Native Method是这样一个Java方法：该方法的实现由非Java语言实现，比如C。这个特征并非Java所特有，很多其它的编程语言都有这一机制，比如在C++中，你可以用extern “c” 告知c++编译器去调用一个c的函数。 “A native method is a Java met
+          即时零售中台：从异步批量到事件驱动秒级响应一个新的挑战做了三年订单中台（cloud-order），核心模式是：定时拉取 → 批量处理 → 异步同步。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。 但即时零售（闪购）完全不同：用户期望 30 分钟内送达。延迟从”分钟级可容忍”变成了”秒级就是事故”。 这篇文章聊聊订单中台和即时零售中台在架构上的本质
         </div>
       </a>
 
@@ -689,8 +708,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-01-04 09:15" pubdate>
-              2021-01-04
+            <time datetime="2026-03-22 14:00" pubdate>
+              2026-03-22
             </time>
           </div>
         
@@ -705,7 +724,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
   
   
 
@@ -720,13 +739,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/">#架构演进</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/%E5%8D%B3%E6%97%B6%E9%9B%B6%E5%94%AE/">#即时零售</a>
             
-              <a href="/tags/%E6%9C%AC%E5%9C%B0%E6%96%B9%E6%B3%95/">#本地方法</a>
+              <a href="/tags/%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/">#事件驱动</a>
             
-              <a href="/tags/JNI/">#JNI</a>
+              <a href="/tags/%E7%A7%92%E7%BA%A7%E5%93%8D%E5%BA%94/">#秒级响应</a>
+            
+              <a href="/tags/%E5%BA%93%E5%AD%98%E6%A8%A1%E5%9E%8B/">#库存模型</a>
+            
+              <a href="/tags/%E9%97%AA%E8%B4%AD/">#闪购</a>
             
           </div>
         
@@ -740,15 +763,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2020/09/24/2020-09-24-%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88/" target="_self">
-          虚拟机栈
+        <a href="/2026/01/12/2026-01-12-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" target="_self">
+          AI辅助代码审查实战：用Claude审查5.3万行供应链代码
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2020/09/24/2020-09-24-%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/01/12/2026-01-12-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" target="_self">
         <div>
-          虚拟机栈概述出现背景由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。 优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。 初步印象有不少Java开发人员一提到Java内存结构，就会非常粗粒度地将JVM中的内存区理解为仅有Java堆（heap）和Java栈（stack）？为什么？ 内存中的栈与堆首先栈是运行
+          AI 辅助代码审查实战：用 Claude 审查 5.3 万行供应链代码背景供应链计划系统（SCP）是我们从兄弟团队接手的一个项目，567 个 Java 文件，5.3 万行代码。接手后心里没底——代码质量到底怎么样？有哪些隐藏的坑？ 传统的 Code Review 方式面对这个量级根本不可能完成。我决定用 Claude 做一次全量代码审查。这篇文章记录完整过程和发现。 一、怎么喂代码给 AI？5.3
         </div>
       </a>
 
@@ -756,8 +779,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2020-09-24 23:20" pubdate>
-              2020-09-24
+            <time datetime="2026-01-12 15:00" pubdate>
+              2026-01-12
             </time>
           </div>
         
@@ -772,7 +795,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/AI%E8%BE%85%E5%8A%A9%E5%BC%80%E5%8F%91/" class="category-chain-item">AI辅助开发</a>
   
   
 
@@ -787,13 +810,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/Claude/">#Claude</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/AI/">#AI</a>
             
-              <a href="/tags/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88/">#虚拟机栈</a>
+              <a href="/tags/%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/">#代码审查</a>
             
-              <a href="/tags/%E6%A0%88%E5%B8%A7/">#栈帧</a>
+              <a href="/tags/God-Class/">#God Class</a>
+            
+              <a href="/tags/N-1%E6%9F%A5%E8%AF%A2/">#N+1查询</a>
+            
+              <a href="/tags/%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F/">#代码质量</a>
             
           </div>
         
@@ -807,15 +834,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2020/09/24/2020-09-24-%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8/" target="_self">
-          程序计数器
+        <a href="/2025/09/20/2025-09-20-ShardingSphere%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" target="_self">
+          渠道垂直分表的困局与ShardingSphere破局
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2020/09/24/2020-09-24-%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/09/20/2025-09-20-ShardingSphere%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" target="_self">
         <div>
-          介绍JVM中的程序计数寄存器（Program Counter Register）中，Register的命名源于CPU的寄存器，寄存器存储指令相关的现场信息。CPU只有把数据装载到寄存器才能够运行。这里，并非是广义上所指的物理寄存器，或许将其翻译为PC计数器（或指令计数器）会更加贴切（也称为程序钩子），并且也不容易引起一些不必要的误会。JVM中的PC寄存器是对物理PC寄存器的一种抽象模拟。  它是一
+          渠道垂直分表的困局与 ShardingSphere 破局从手工拆表说起订单中心对接 20+ 电商平台（淘宝、京东、拼多多、抖音…），不同渠道的订单量差异巨大。最初的设计是按渠道垂直分表： 123456-- 按渠道垂直分表order_pdd         -- 拼多多订单order_jd           -- 京东订单order_kuaishou     -- 快手订单order_taobao
         </div>
       </a>
 
@@ -823,8 +850,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2020-09-24 16:17" pubdate>
-              2020-09-24
+            <time datetime="2025-09-20 11:00" pubdate>
+              2025-09-20
             </time>
           </div>
         
@@ -839,7 +866,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
   
   
 
@@ -854,13 +881,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/MySQL/">#MySQL</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
             
-              <a href="/tags/%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8/">#程序计数器</a>
+              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">#分库分表</a>
             
-              <a href="/tags/PC%E5%AF%84%E5%AD%98%E5%99%A8/">#PC寄存器</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
+            
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/">#架构演进</a>
+            
+              <a href="/tags/JDBC/">#JDBC</a>
             
           </div>
         
@@ -874,15 +905,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2020/09/23/2020-09-23-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E6%A6%82%E8%BF%B0%E5%8F%8A%E7%BA%BF%E7%A8%8B/" target="_self">
-          运行时数据区概述及线程
+        <a href="/2025/06/18/2025-06-18-%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA%E5%8D%8F%E5%90%8C%E8%AE%BE%E8%AE%A1/" target="_self">
+          双状态机协同设计：工单状态机与任务状态机
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2020/09/23/2020-09-23-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E6%A6%82%E8%BF%B0%E5%8F%8A%E7%BA%BF%E7%A8%8B/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/06/18/2025-06-18-%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA%E5%8D%8F%E5%90%8C%E8%AE%BE%E8%AE%A1/" target="_self">
         <div>
-          概述运行时数据区，也就是下图这部分，它是在类加载完成后的阶段当我们通过前面的：类的加载-&gt; 验证 -&gt; 准备 -&gt; 解析 -&gt; 初始化 这几个阶段完成后，就会用到执行引擎对我们的类进行使用，同时执行引擎将会使用到我们运行时数据区也就是大厨做饭，我们把大厨后面的东西（切好的菜，刀，调料），比作是运行时数据区。而厨师可以类比于执行引擎，将通过准备的东西进行制作成精美的菜品内存是
+          双状态机协同设计：工单状态机与任务状态机问题：一个工单，多种任务，状态怎么协同？工单系统中，一个维修工单下面可能有三个任务：上门检测任务、备件更换任务、清理保养任务。每个任务有自己的生命周期（待接收→执行中→已完成），工单也有自己的生命周期（待分配→服务中→待确认→已完成）。 核心问题：工单状态和任务状态如何保持协同？ 比如：当所有任务都完成了，工单应该自动进入”待确认”状态。当工单被关闭，所有未
         </div>
       </a>
 
@@ -890,8 +921,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2020-09-23 23:32" pubdate>
-              2020-09-23
+            <time datetime="2025-06-18 16:00" pubdate>
+              2025-06-18
             </time>
           </div>
         
@@ -906,7 +937,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
   
   
 
@@ -921,80 +952,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">#设计模式</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
             
-              <a href="/tags/%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/">#运行时数据区</a>
+              <a href="/tags/%E7%8A%B6%E6%80%81%E6%9C%BA/">#状态机</a>
             
-              <a href="/tags/%E7%BA%BF%E7%A8%8B/">#线程</a>
+              <a href="/tags/COLA/">#COLA</a>
             
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2020/09/23/2020-09-23-%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%AD%90%E7%B3%BB%E7%BB%9F/" target="_self">
-          类加载子系统
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2020/09/23/2020-09-23-%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%AD%90%E7%B3%BB%E7%BB%9F/" target="_self">
-        <div>
-          概述完整流程如果自己想要手写一个Java虚拟机，主要考虑哪些结构  类加载器 执行引擎  类加载器子系统作用  类加载器子系统负责从文件系统或者网络中加载Class文件，class文件在文件开头有特定的文件标识。 ClassLoader只负责class文件的加载，至于它是否可以运行，则由Execution Engine决定。 加载的类信息存放于一块称为方法区的内存空间。除了类的信息外，方法区中还会
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2020-09-23 21:16" pubdate>
-              2020-09-23
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
+              <a href="/tags/%E5%B7%A5%E5%8D%95%E7%B3%BB%E7%BB%9F/">#工单系统</a>
             
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/JVM/">#JVM</a>
-            
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
-            
-              <a href="/tags/%E7%B1%BB%E5%8A%A0%E8%BD%BD/">#类加载</a>
-            
-              <a href="/tags/ClassLoader/">#ClassLoader</a>
+              <a href="/tags/%E9%A2%86%E5%9F%9F%E5%BB%BA%E6%A8%A1/">#领域建模</a>
             
           </div>
         
@@ -1006,7 +974,7 @@
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <a class="extend prev" rel="prev" href="/page/6/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/#board">5</a><a class="page-number" href="/page/6/#board">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/#board">8</a><a class="page-number" href="/page/9/#board">9</a><a class="page-number" href="/page/10/#board">10</a><a class="extend next" rel="next" href="/page/8/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/6/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/5/#board">5</a><a class="page-number" href="/page/6/#board">6</a><span class="page-number current">7</span><a class="page-number" href="/page/8/#board">8</a><a class="page-number" href="/page/9/#board">9</a><span class="space">&hellip;</span><a class="page-number" href="/page/16/#board">16</a><a class="extend next" rel="next" href="/page/8/#board"><i class="iconfont icon-arrowright"></i></a>
     </span>
   </nav>
 

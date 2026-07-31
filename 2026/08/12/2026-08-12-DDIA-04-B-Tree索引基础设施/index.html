@@ -1,0 +1,1054 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="深度拆解B-Tree的设计哲学、B+Tree的范围查询优化、InnoDB索引实现细节，并结合日均慢SQL 1124→6条的实战经验，讲透索引优化的核心思想。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-04-B-Tree：数据库索引的基础设施，为什么它60岁了还在用">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/12/2026-08-12-DDIA-04-B-Tree%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="深度拆解B-Tree的设计哲学、B+Tree的范围查询优化、InnoDB索引实现细节，并结合日均慢SQL 1124→6条的实战经验，讲透索引优化的核心思想。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-12T00:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-31T01:51:54.640Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="B-Tree">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="InnoDB">
+<meta property="article:tag" content="MySQL">
+<meta property="article:tag" content="慢SQL优化">
+<meta property="article:tag" content="数据库">
+<meta property="article:tag" content="索引">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-04-B-Tree：数据库索引的基础设施，为什么它60岁了还在用 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-04-B-Tree：数据库索引的基础设施，为什么它60岁了还在用"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-08-12 08:00" pubdate>
+          2026年8月12日 早上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          65 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-04-B-Tree：数据库索引的基础设施，为什么它60岁了还在用</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="为什么一个60年前的数据结构还是数据库的心脏？"><a href="#为什么一个60年前的数据结构还是数据库的心脏？" class="headerlink" title="为什么一个60年前的数据结构还是数据库的心脏？"></a>为什么一个60年前的数据结构还是数据库的心脏？</h2><p>B-Tree 诞生于 1971 年，由 Rudolf Bayer 和 Ed McCreight 在波音公司研究实验室提出。快60年过去了，MySQL InnoDB 用 B+Tree、PostgreSQL 用 B-Tree、SQLite 用 B+Tree——三大主流关系型数据库不约而同地把它作为默认索引结构。一个60年前的数据结构，在处理海量数据的今天仍然是最可靠的选择，这本身就意味着它的设计触碰到了某种本质。</p>
+<p>同时，理解 B-Tree 也不是搞懂一个数据结构那么简单。当你理解为什么 B-Tree 比二叉搜索树更适合磁盘、为什么 B+Tree 的叶子链表是范围查询的天才设计、为什么回表是慢 SQL 的头号凶手——你就知道怎么写出该走索引的 SQL，而不是靠幻想优化。</p>
+<p>这篇文章会从磁盘 IO 的物理特性出发，讲 B-Tree 设计的底层逻辑；再到 InnoDB 的聚簇索引和二级索引的具体实现；最后结合我主导的慢 SQL 治理项目（日均慢 SQL 从 1124 条降到 6 条，下降 99.4%），说明索引优化的实战方法。读完你会明白，B-Tree 不是一个过时的话题——它是你写出高效 SQL 的基础设施认知。</p>
+<hr>
+<h2 id="一、为什么不是二叉搜索树？——磁盘-IO-决定了数据结构的选择"><a href="#一、为什么不是二叉搜索树？——磁盘-IO-决定了数据结构的选择" class="headerlink" title="一、为什么不是二叉搜索树？——磁盘 IO 决定了数据结构的选择"></a>一、为什么不是二叉搜索树？——磁盘 IO 决定了数据结构的选择</h2><h3 id="1-1-内存和磁盘的天壤之别"><a href="#1-1-内存和磁盘的天壤之别" class="headerlink" title="1.1 内存和磁盘的天壤之别"></a>1.1 内存和磁盘的天壤之别</h3><p>一个经典的面试题：数据库索引为什么不用二叉搜索树？</p>
+<p>二叉搜索树查找一次可以排除一半数据，在内存中表现很好——<code>TreeMap</code> 用的就是红黑树（平衡二叉搜索树），O(log n) 很香。但一到磁盘上，二叉树就废了。</p>
+<p>因为磁盘 IO 有一个残酷的现实：<strong>寻道时间（5-10ms）是最大的瓶颈，而不是数据传输</strong>。</p>
+<p>一次磁盘寻道的时间，CPU 可以执行几十万甚至上百万条指令。如果你用二叉搜索树存 1000 万条数据，树高大约是 ceil(log₂ 10,000,000) ≈ 24 层。每次二分走到下一层，都可能触发一次新的磁盘 IO。最坏情况下一次查询要做 24 次寻道——240ms，在 130 万的日均订单场景下，这个延迟是灾难性的。</p>
+<h3 id="1-2-B-Tree-的核心创新：一个节点存更多-Key"><a href="#1-2-B-Tree-的核心创新：一个节点存更多-Key" class="headerlink" title="1.2 B-Tree 的核心创新：一个节点存更多 Key"></a>1.2 B-Tree 的核心创新：一个节点存更多 Key</h3><p>B-Tree 的回答很简单：<strong>既然 IO 是瓶颈，那就让每次 IO 取回来的数据含金量更高</strong>。</p>
+<p>B-Tree 的每个节点不存 1 个 Key，而是存几百个 Key。MySQL InnoDB 默认页大小 16KB，每个页就是一个 B+Tree 节点。一条索引记录（主键+指针）大约 10-20 字节，一个页能存 800-1600 个 Key。这意味着 B+Tree 的高度极低——1000 万条数据，树高通常只有 2-4 层。</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs css">二叉搜索树：<span class="hljs-number">1000</span>万条 → 树高<span class="hljs-number">24</span>层 → 最坏<span class="hljs-number">24</span>次IO<br><span class="hljs-selector-tag">B</span>-Tree/<span class="hljs-selector-tag">B</span>+Tree：<span class="hljs-number">1000</span>万条 → 树高<span class="hljs-number">2</span>-<span class="hljs-number">4</span>层 → 最坏<span class="hljs-number">4</span>次IO<br></code></pre></td></tr></table></figure>
+
+<p><strong>B-Tree 设计的核心权衡</strong>：用更大的节点体积（16KB vs 几个字节）来换取更少的树层数，从而将 IO 次数从 log₂(N) 降到 log_fanout(N)，其中扇出（fanout）可以达到数百甚至上千。这是数据结构史上最成功的算法-工程交叉设计之一。</p>
+<h3 id="1-3-B-Tree-的基本定义"><a href="#1-3-B-Tree-的基本定义" class="headerlink" title="1.3 B-Tree 的基本定义"></a>1.3 B-Tree 的基本定义</h3><p>B-Tree 是一个平衡多路搜索树，满足以下性质：</p>
+<ul>
+<li>每个节点最多 m 个子节点（m 称为阶）</li>
+<li>每个内部节点至少有 ceil(m&#x2F;2) 个子节点（根节点除外）</li>
+<li>根节点至少有 2 个子节点（除非是叶子节点）</li>
+<li>所有叶子节点在同一层——<strong>绝对平衡</strong></li>
+</ul>
+<p>这个「所有叶子在同一层」的性质至关重要。它意味着 B-Tree 不会退化——不像二叉搜索树插入有序数据会退化成链表，B-Tree 通过分裂和合并机制始终保持全局平衡，保证了最坏情况下的时间复杂度。</p>
+<hr>
+<h2 id="二、B-Tree：B-Tree-的范围查询优化版"><a href="#二、B-Tree：B-Tree-的范围查询优化版" class="headerlink" title="二、B+Tree：B-Tree 的范围查询优化版"></a>二、B+Tree：B-Tree 的范围查询优化版</h2><h3 id="2-1-一个区别改变了数据库的设计"><a href="#2-1-一个区别改变了数据库的设计" class="headerlink" title="2.1 一个区别改变了数据库的设计"></a>2.1 一个区别改变了数据库的设计</h3><p>B-Tree 和 B+Tree 的关键区别：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>B-Tree</th>
+<th>B+Tree</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据存储位置</td>
+<td>所有节点都可能存数据</td>
+<td><strong>只在叶子节点存数据</strong></td>
+</tr>
+<tr>
+<td>内部节点内容</td>
+<td>Key + Data + 子节点指针</td>
+<td><strong>只存 Key + 子节点指针</strong></td>
+</tr>
+<tr>
+<td>叶子节点连接</td>
+<td>无连接</td>
+<td><strong>双向链表连接</strong></td>
+</tr>
+<tr>
+<td>范围查询</td>
+<td>需要中序遍历</td>
+<td><strong>O(log n) 定位起点 + O(k) 顺序扫描</strong></td>
+</tr>
+</tbody></table>
+<p><strong>B+Tree 做对了两件事</strong>：</p>
+<p><strong>第一，把所有数据压到叶子节点。</strong> 内部节点不存数据，只存索引键和子节点指针。这样一来，同样 16KB 的页，内部节点能存更多 Key，扇出更大，树更矮。根节点通常可以常驻在 Buffer Pool 中，又省了一次 IO。</p>
+<p><strong>第二，用链表串联所有叶子节点。</strong> 这是一个天才设计。范围查询 <code>WHERE id BETWEEN 100 AND 200</code> 只需要二分定位到 id&#x3D;100 所在的叶子节点，然后顺着链表往后扫，读到 id &gt; 200 就停。InnoDB 用的是双向链表——叶子节点之间维护了 <code>prev</code> 和 <code>next</code> 指针——让升序和降序扫描都流畅通。</p>
+<h3 id="2-2-为什么链表这么重要"><a href="#2-2-为什么链表这么重要" class="headerlink" title="2.2 为什么链表这么重要"></a>2.2 为什么链表这么重要</h3><p>想象没有链表的范围查询：你需要从根节点出发，多次二分查找才能覆盖一段连续范围。因为叶子节点之间没有引线，每找一个下一个值都等于重新查询一次——这是 O(log n) × 范围大小的开销。</p>
+<p>有了链表之后，一次二分定位到起点，后面全是 O(1) 的顺序移动。<strong>范围查询从 O(k × log n) 降到了 O(log n + k)</strong>，其中 k 是结果集大小。</p>
+<p>订单中心的典型场景——「查询昨天所有已支付订单」「导出上个月某商户的全部交易」——都是范围查询。没有 B+Tree 的叶子链表，这些查询的性能根本撑不住 130 万日单。</p>
+<hr>
+<h2 id="三、InnoDB-如何实现-B-Tree：聚簇索引与二级索引"><a href="#三、InnoDB-如何实现-B-Tree：聚簇索引与二级索引" class="headerlink" title="三、InnoDB 如何实现 B+Tree：聚簇索引与二级索引"></a>三、InnoDB 如何实现 B+Tree：聚簇索引与二级索引</h2><h3 id="3-1-聚簇索引——数据就是索引，索引就是数据"><a href="#3-1-聚簇索引——数据就是索引，索引就是数据" class="headerlink" title="3.1 聚簇索引——数据就是索引，索引就是数据"></a>3.1 聚簇索引——数据就是索引，索引就是数据</h3><p>InnoDB 的聚簇索引是一个关键概念：<strong>表数据按主键顺序存储在 B+Tree 的叶子节点中</strong>。叶子节点存的是完整行数据，不是指向数据的指针。这意味着：</p>
+<ul>
+<li>有主键的表，数据物理上按主键有序存储</li>
+<li>没有显式主键，InnoDB 会找一个唯一非空索引，或者自动生成一个 6 字节的隐藏 row_id</li>
+<li>主键插入顺序直接影响页分裂频率——用自增 ID 或雪花算法比 UUID 好得多，因为顺序写入避免了页分裂</li>
+</ul>
+<p>为什么要关心页分裂？当你用 UUID 做主键，新数据随机插入到已满的页中间，InnoDB 必须把该页劈成两半，同时更新父节点的指针。频繁的页分裂导致：磁盘碎片、页利用率下降、写入性能变差。自增 ID 的插入永远是追加到最后一个叶子页，页写满了就开新页，干净利落。我在订单中心用的是雪花算法生成的分布式 ID，本质上也是趋势递增的方案。</p>
+<p>一句话：<strong>聚簇索引的叶子节点是数据页，非叶子节点是索引页，整个表就是一棵 B+Tree</strong>。</p>
+<h3 id="3-2-二级索引与回表——慢-SQL-的头号杀手"><a href="#3-2-二级索引与回表——慢-SQL-的头号杀手" class="headerlink" title="3.2 二级索引与回表——慢 SQL 的头号杀手"></a>3.2 二级索引与回表——慢 SQL 的头号杀手</h3><p>带你看一个每天都在发生的场景：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 假设表有主键 id，二级索引 idx_merchant_status(merchant_id, status)</span><br><span class="hljs-keyword">SELECT</span> order_no, amount, create_time<br><span class="hljs-keyword">FROM</span> t_order<br><span class="hljs-keyword">WHERE</span> merchant_id <span class="hljs-operator">=</span> <span class="hljs-number">12345</span> <span class="hljs-keyword">AND</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PAID&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>查询过程是这样的：</p>
+<ol>
+<li>在 <code>idx_merchant_status</code> 这个二级索引的 B+Tree 中，找到 (12345, ‘PAID’) 对应的叶子节点</li>
+<li>二级索引叶子节点存的是：索引列的值 + <strong>主键 id</strong></li>
+<li>拿到主键 id 后，<strong>再去聚簇索引的 B+Tree 中查一遍</strong>，取出完整的行数据</li>
+<li>这就是「回表」</li>
+</ol>
+<p><strong>回表问题是慢 SQL 优化的核心战场。</strong> 一次查询需要两颗 B+Tree、两次 IO 遍历。如果你查 1000 条数据，就是 1000 次随机 IO 回表——在 QPS 高的场景下直接打垮数据库。</p>
+<p>如何避免回表？答案是<strong>覆盖索引</strong>。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 覆盖索引：查询的列全部在二级索引中，不需要回表</span><br><span class="hljs-keyword">CREATE</span> INDEX idx_merchant_status_cover <span class="hljs-keyword">ON</span> t_order(merchant_id, status, order_no, amount, create_time);<br></code></pre></td></tr></table></figure>
+
+<p>现在查询只需要在二级索引的 B+Tree 中走一遍，叶子节点已经包含了所有需要的列——不需要回表，IO 减半。代价是索引变大。但是，<strong>在索引冗余和回表 IO 之间，索引冗余是更便宜的选择</strong>。</p>
+<p>我在慢 SQL 治理项目中，针对 TOP10 慢 SQL 加了 30 多个复合索引，核心原则就是覆盖索引。效果是立竿见影的：大量 5 秒以上查询下降到毫秒级。</p>
+<h3 id="3-3-最左前缀原则——联合索引的正确打开方式"><a href="#3-3-最左前缀原则——联合索引的正确打开方式" class="headerlink" title="3.3 最左前缀原则——联合索引的正确打开方式"></a>3.3 最左前缀原则——联合索引的正确打开方式</h3><p>联合索引 <code>(a, b, c)</code> 的 B+Tree 结构是按 a → b → c 的优先级排序的。这意味着：</p>
+<ul>
+<li><code>WHERE a = 1</code> 走索引——以 a 开头的查询可以定位到连续区域</li>
+<li><code>WHERE a = 1 AND b = 2</code> 走索引——a 和 b 都匹配</li>
+<li><code>WHERE a = 1 AND b = 2 AND c = 3</code> 走索引——全量匹配，最佳</li>
+<li><code>WHERE b = 2</code> <strong>不走索引</strong>——联合索引的排序是先按 a，再按 b。没有 a 的限定，b 在全局不是有序的，B+Tree 无法利用二分查找</li>
+<li><code>WHERE a = 1 AND c = 3</code> —— a 走索引，c 不走索引。<strong>等值查询可以跳过中间的 b</strong>，但 a 之后的数据按 b 排序，c 在 b 的值组内才有序，所以 c 的条件无法利用索引</li>
+</ul>
+<p>关键记忆法：<strong>等值可跳过，范围不可跳过</strong>。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- (a, b, c) 联合索引</span><br><span class="hljs-keyword">WHERE</span> a <span class="hljs-operator">=</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AND</span> c <span class="hljs-operator">=</span> <span class="hljs-number">3</span>       <span class="hljs-comment">-- a走索引，c不走（跳过了b但b是等值可跳过？等一下）</span><br><br><span class="hljs-comment">-- 注意这里：中间跳过的列如果是等值查询则后续可用，但这说的是另一回事</span><br><span class="hljs-comment">-- 实际上：只有 a 能用，c 在 a 确定后理论上按 b 排序，c 并不是有序的，所以 c 不走索引</span><br><br><span class="hljs-keyword">WHERE</span> a <span class="hljs-operator">=</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AND</span> b <span class="hljs-operator">&gt;</span> <span class="hljs-number">5</span> <span class="hljs-keyword">AND</span> c <span class="hljs-operator">=</span> <span class="hljs-number">3</span>   <span class="hljs-comment">-- a走索引，b走索引（范围），c不走索引</span><br><span class="hljs-comment">-- 因为 b 是范围查询，b 之后的 c 在 b 范围内可能是无序的</span><br></code></pre></td></tr></table></figure>
+
+<p>再提一个容易被忽略的点：<strong>索引字段的顺序决定了查询效率</strong>。把区分度高的字段放前面（如 merchant_id），区分度低的字段放后面（如 status 枚举值），可以用更少的扫描行数定位目标数据。</p>
+<h3 id="3-4-索引下推（ICP）——MySQL-5-6-的黑科技"><a href="#3-4-索引下推（ICP）——MySQL-5-6-的黑科技" class="headerlink" title="3.4 索引下推（ICP）——MySQL 5.6 的黑科技"></a>3.4 索引下推（ICP）——MySQL 5.6 的黑科技</h3><p>索引下推（Index Condition Pushdown）是 MySQL 5.6 引入的优化。它的思路很简单：<strong>把 WHERE 条件中对索引列的过滤，下推到存储引擎层执行</strong>，而不是把数据返回到 Server 层再过滤。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 联合索引 (name, age)</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t_user <span class="hljs-keyword">WHERE</span> name <span class="hljs-keyword">LIKE</span> <span class="hljs-string">&#x27;张%&#x27;</span> <span class="hljs-keyword">AND</span> age <span class="hljs-operator">=</span> <span class="hljs-number">25</span>;<br></code></pre></td></tr></table></figure>
+
+<p>没有 ICP：存储引擎通过 <code>name LIKE &#39;张%&#39;</code> 找到所有姓张的记录，全部返回给 Server 层，Server 再过滤 <code>age = 25</code>。如果有 10000 个姓张的人但只有 50 个年龄 25 的，你需要返回 10000 条数据。</p>
+<p>有 ICP：存储引擎在扫描索引时直接过滤 <code>age = 25</code>，只返回 50 条给 Server 层。网络传输和 Server 层处理量直接降了几个数量级。</p>
+<p>这是「让数据在离磁盘更近的地方被过滤掉」的思想——跟我们做缓冲区设计的思路一致。</p>
+<hr>
+<h2 id="四、实战：慢-SQL-1124→6-条背后的索引优化方法论"><a href="#四、实战：慢-SQL-1124→6-条背后的索引优化方法论" class="headerlink" title="四、实战：慢 SQL 1124→6 条背后的索引优化方法论"></a>四、实战：慢 SQL 1124→6 条背后的索引优化方法论</h2><h3 id="4-1-全貌数据"><a href="#4-1-全貌数据" class="headerlink" title="4.1 全貌数据"></a>4.1 全貌数据</h3><p>我主导的订单中心慢 SQL 治理分为四层：</p>
+<table>
+<thead>
+<tr>
+<th>层</th>
+<th>优化手段</th>
+<th>对应 B-Tree 概念</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>索引层</td>
+<td>覆盖索引 + 复合索引 + 最左前缀 + 删除无用索引</td>
+<td><strong>覆盖索引避免回表，复合索引优化排序</strong></td>
+</tr>
+<tr>
+<td>SQL层</td>
+<td>大 IN 拆分（50条&#x2F;批）、去无用 COUNT、缩小事务</td>
+<td><strong>每批 IN 走索引，减少锁范围</strong></td>
+</tr>
+<tr>
+<td>连接层</td>
+<td>连接池隔离（舱壁模式）</td>
+<td>避免慢查询拖垮所有业务线</td>
+</tr>
+<tr>
+<td>架构层</td>
+<td>Doris 分区剪枝 + 冷热分离</td>
+<td>OLAP 场景换引擎，B-Tree 不是万能的</td>
+</tr>
+</tbody></table>
+<p><strong>日均慢 SQL：1124 → 6，下降 99.4%，持续稳定。</strong></p>
+<h3 id="4-2-典型案例一：500-条-IN-拆成-10-批"><a href="#4-2-典型案例一：500-条-IN-拆成-10-批" class="headerlink" title="4.2 典型案例一：500 条 IN 拆成 10 批"></a>4.2 典型案例一：500 条 IN 拆成 10 批</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 原始SQL</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> merchant_id <span class="hljs-keyword">IN</span> (<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, ..., <span class="hljs-number">500</span>);<br></code></pre></td></tr></table></figure>
+
+<p>这 500 个 merchant_id 对应的数据分散在 B+Tree 的不同位置。MySQL 优化器会选择 <code>idx_merchant_id</code> 索引，然后依次二分定位 → 回表 500 次。每次回表都是一次随机 IO。</p>
+<p>优化方案：把 500 条 IN 拆成 10 批，每批 50 条，在应用层并发执行后归并。单批 50 条 IN 的索引扫描更集中，而且多批并发可以利用连接池的并行能力。</p>
+<p>背后的 B-Tree 原理：IN 查询等价于多个等值查询的 UNION，每个等值查询都走一次索引树。500 次索引查找的代价是 500 × O(log n) 的随机 IO。拆批并发后，10 批并发意味着在 10 个连接上同时走索引，墙钟时间缩短近 10 倍。</p>
+<h3 id="4-3-典型案例二：ORDER-BY-create-time-但没走索引"><a href="#4-3-典型案例二：ORDER-BY-create-time-但没走索引" class="headerlink" title="4.3 典型案例二：ORDER BY create_time 但没走索引"></a>4.3 典型案例二：ORDER BY create_time 但没走索引</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 慢SQL</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t_order <br><span class="hljs-keyword">WHERE</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PAID&#x27;</span> <br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> create_time <span class="hljs-keyword">DESC</span> <br>LIMIT <span class="hljs-number">20</span>;<br></code></pre></td></tr></table></figure>
+
+<p><code>status</code> 有索引但 <code>create_time</code> 没有被覆盖。查询流程是：</p>
+<ol>
+<li>走 <code>idx_status</code> 索引，找到所有 PAID 状态的订单主键</li>
+<li>回表取出完整数据</li>
+<li>在临时表中按 <code>create_time</code> 排序（Using filesort）</li>
+<li>取前 20 条</li>
+</ol>
+<p>如果 PAID 状态有 50 万条，那么要回表 50 万次然后在内存排序——这是个灾难。</p>
+<p>优化方案：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 1. 加联合索引覆盖排序字段</span><br><span class="hljs-keyword">CREATE</span> INDEX idx_status_ctime <span class="hljs-keyword">ON</span> t_order(status, create_time);<br><br><span class="hljs-comment">-- 2. 如果还有其他筛选字段，扩展为覆盖索引</span><br><span class="hljs-keyword">CREATE</span> INDEX idx_status_ctime_cover <span class="hljs-keyword">ON</span> t_order(status, create_time, order_no, amount);<br></code></pre></td></tr></table></figure>
+
+<p>加了复合索引后，B+Tree 中 status&#x3D;’PAID’ 的数据本身就按 create_time 排序，存储引擎扫描时直接从叶子链表中取前 20 条就完事了——不需要 filesort，不需要回表。</p>
+<p><strong>这个案例的核心思想</strong>：索引不只是用来定位数据的，也是用来排序的。B+Tree 的叶子节点天然有序，把 ORDER BY 的字段纳入联合索引，相当于把排序外包给了数据结构本身。</p>
+<h3 id="4-4-典型案例三：COUNT-杀死了高并发"><a href="#4-4-典型案例三：COUNT-杀死了高并发" class="headerlink" title="4.4 典型案例三：COUNT(*) 杀死了高并发"></a>4.4 典型案例三：COUNT(*) 杀死了高并发</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">COUNT</span>(<span class="hljs-operator">*</span>) <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PENDING&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>看起来人畜无害，但在 130 万日单的订单表上，这个查询要走 <code>idx_status</code> 索引扫描所有 PENDING 状态的记录。如果 PENDING 状态有 10 万行，就要扫描 10 万行索引。</p>
+<p>更致命的是，COUNT(*) 在 InnoDB 中不是 O(1) ——因为 MVCC 的存在，它不能维护一个计数器，必须遍历索引才能返回当前事务可见的行数。</p>
+<p>优化方案：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 在展示层使用近似值代替精确值</span><br><span class="hljs-comment">-- 方案一：用 Redis 计数器维护各状态数量（最终一致性）</span><br><span class="hljs-comment">-- 方案二：用 EXPLAIN 的 rows 字段做估算</span><br><span class="hljs-comment">-- 方案三（真正需要精确值）：用汇总表异步更新</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>核心认知</strong>：InnoDB 的 COUNT 是索引扫描，不是 O(1)。对于高并发系统，要接受「近似值」或转移到汇总层。</p>
+<h3 id="4-5-索引优化的终极心法"><a href="#4-5-索引优化的终极心法" class="headerlink" title="4.5 索引优化的终极心法"></a>4.5 索引优化的终极心法</h3><p>经过这个项目，我总结了索引优化的四个核心原则：</p>
+<ol>
+<li><strong>索引是二维的：定位 + 排序。</strong> B+Tree 的叶子节点有序，把 WHERE、ORDER BY、GROUP BY 的字段都纳入联合索引，可以一步完成定位和排序。</li>
+<li><strong>优先覆盖索引，其次才是索引字段选择。</strong> 少一次回表可能比选对索引字段更有效。二级索引的每个叶子节点都指向聚簇索引——覆盖索引相当于截断了这个回表路径。</li>
+<li><strong>EXPLAIN 的 type 列和 Extra 列是唯一的真相来源。</strong> type&#x3D;ALL 表示全表扫描，Extra 有 Using filesort 表示内存排序——这两个是红线。用 EXPLAIN 验证，不要靠感觉。</li>
+<li><strong>索引不是免费的。</strong> 每个索引都是一棵独立的 B+Tree，写入时要同步维护。索引越多，INSERT&#x2F;UPDATE 越慢。这是读性能 vs 写性能的经典权衡。</li>
+</ol>
+<hr>
+<h2 id="五、B-Tree-vs-LSM-Tree：两种存储哲学的对决"><a href="#五、B-Tree-vs-LSM-Tree：两种存储哲学的对决" class="headerlink" title="五、B-Tree vs LSM-Tree：两种存储哲学的对决"></a>五、B-Tree vs LSM-Tree：两种存储哲学的对决</h2><p>说了这么多 B-Tree 的好话，必须直面它的对手——LSM-Tree（Log-Structured Merge-Tree）。</p>
+<p>LSM-Tree 是 Google Bigtable、HBase、LevelDB、RocksDB 的底层数据结构。它的核心思想：<strong>把随机写变顺序写</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>B-Tree</th>
+<th>LSM-Tree</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>写入</strong></td>
+<td>随机写（原地更新 + 页分裂）</td>
+<td>顺序写（MemTable → SSTable）</td>
+</tr>
+<tr>
+<td><strong>读取</strong></td>
+<td>一次 IO（叶子节点定位）</td>
+<td>多层查找（MemTable + Level 0 + Level 1 + …）</td>
+</tr>
+<tr>
+<td><strong>空间放大</strong></td>
+<td>有碎片（页分裂导致）</td>
+<td>有写放大（Compaction 重写数据）</td>
+</tr>
+<tr>
+<td><strong>适合场景</strong></td>
+<td>读多写少（OLTP）</td>
+<td>写多读少（日志&#x2F;时序&#x2F;消息）</td>
+</tr>
+<tr>
+<td><strong>代表系统</strong></td>
+<td>MySQL InnoDB、PostgreSQL</td>
+<td>RocksDB、HBase、Cassandra</td>
+</tr>
+</tbody></table>
+<p><strong>B-Tree 是「读快写慢」，LSM-Tree 是「写快读慢」。</strong></p>
+<p>为什么 B-Tree 写慢？因为每次写入都要定位到叶子节点对应的页，这是随机 IO。如果页满了还要页分裂，分裂后还要更新父节点——一系列原地修改操作。</p>
+<p>为什么 LSM-Tree 写快？因为写入先到内存中的 MemTable（有序结构，通常是 SkipList），MemTable 满了就刷成磁盘上的 SSTable 文件——全程顺序写。这正是 B-Tree 的软肋。</p>
+<p>但对于 OLTP 数据库（订单&#x2F;用户&#x2F;商品），读多写少是常态。一个电商订单从创建到完成，经历几十次读（查库存、查价格、查优惠、查物流）和寥寥几次写（创建、支付、发货、完成）。这种负载特征决定了 B-Tree 是更适合的选择。</p>
+<p>另外，虽然部分 NewSQL 数据库（如 TiDB&#x2F;TiKV）底层用了 RocksDB（LSM-Tree），但它们在上面加了 Raft 协议做分布式一致性，整体的性能模型已经不完全等同于单机 LSM-Tree。<strong>B-Tree 在单机 OLTP 的地位短期内看不到替代者。</strong></p>
+<hr>
+<h2 id="六、60年的数据结构，依然是数据库的心脏"><a href="#六、60年的数据结构，依然是数据库的心脏" class="headerlink" title="六、60年的数据结构，依然是数据库的心脏"></a>六、60年的数据结构，依然是数据库的心脏</h2><p>回头看 B-Tree 诞生近 60 年的旅程，它证明了一个道理：<strong>优秀的数据结构设计不是解决当时的问题，而是抓住了问题的本质——而这个本质不会随硬件换代而改变。</strong></p>
+<p>B-Tree 的本质洞察——磁盘 IO 是瓶颈，用更大的节点换更少的 IO 次数——从 1971 年的机械硬盘时代一直管用到今天的 SSD 时代。SSD 的随机读延迟远低于 HDD，但仍然比内存操作慢 2-3 个数量级。B-Tree 减少 IO 次数的核心价值没有变。</p>
+<p>B+Tree 的两个补充——数据全在叶子节点 + 叶子节点链表——直接定义了关系型数据库 40 年的物理存储范式。InnoDB 的聚簇索引、二级索引、覆盖索引、索引下推，本质上都是在 B+Tree 这个基础数据结构上搭建的工程优化。不懂 B+Tree，你就不知道为什么加这个索引有效、加那个索引无效。</p>
+<p>我自己的体会是，慢 SQL 治理不是靠经验猜测，而是靠对索引数据结构的理解。你知道回表的代价有多大，你就会主动设计覆盖索引。你知道 B+Tree 叶子节点有序，你就会把 ORDER BY 的字段塞进联合索引。你知道最左前缀的物理含义，你就能一眼看出这个索引有没有被用上。</p>
+<hr>
+<p><strong>一个数据结构能活 60 年，不是因为它没有被替换，而是因为它足够好——好到每次有人想替换它（LSM-Tree、Fractal Tree、Bw-Tree），最后都只是证明了它在 OLTP 场景下的不可替代性。</strong></p>
+<p>B-Tree 是数据库的心脏，理解了它，你就理解了这个行业半个世纪的智慧结晶。</p>
+<hr>
+<p><em>下一篇预告：DDIA-05-LSM-Tree——为什么日志和消息中间件都选它，B-Tree 的镜像世界。</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#数据库</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/B-Tree/" class="print-no-link">#B-Tree</a>
+      
+        <a href="/tags/%E7%B4%A2%E5%BC%95/" class="print-no-link">#索引</a>
+      
+        <a href="/tags/InnoDB/" class="print-no-link">#InnoDB</a>
+      
+        <a href="/tags/%E6%85%A2SQL%E4%BC%98%E5%8C%96/" class="print-no-link">#慢SQL优化</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-04-B-Tree：数据库索引的基础设施，为什么它60岁了还在用</div>
+      <div>https://aster-xu-lab.github.io/2026/08/12/2026-08-12-DDIA-04-B-Tree索引基础设施/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年8月12日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/08/12/2026-08-12-DDIA-04-LSM-Tree%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" title="DDIA-04-从零实现LSM-Tree：日志结构存储引擎的核心思想">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-04-从零实现LSM-Tree：日志结构存储引擎的核心思想</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/08/12/2026-08-12-DDIA-04-%E6%85%A2SQL%E4%BC%98%E5%8C%96%E5%8E%9F%E7%90%86/" title="DDIA-04-实战：1124→6，慢SQL优化背后的存储引擎原理">
+                        <span class="hidden-mobile">DDIA-04-实战：1124→6，慢SQL优化背后的存储引擎原理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

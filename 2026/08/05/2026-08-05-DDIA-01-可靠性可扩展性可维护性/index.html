@@ -1,0 +1,1054 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="前言2026年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 七年过去，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群，从看着慢SQL列表头皮发麻到每天只关心那6条”">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/05/2026-08-05-DDIA-01-%E5%8F%AF%E9%9D%A0%E6%80%A7%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7%E5%8F%AF%E7%BB%B4%E6%8A%A4%E6%80%A7/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="前言2026年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 七年过去，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群，从看着慢SQL列表头皮发麻到每天只关心那6条”">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-04T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-31T01:51:54.671Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="可扩展性">
+<meta property="article:tag" content="可维护性">
+<meta property="article:tag" content="可靠性">
+<meta property="article:tag" content="架构">
+<meta property="article:tag" content="读书笔记">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-08-05 00:00" pubdate>
+          2026年8月5日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          53 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>2026年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。</p>
+<p>七年过去，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群，从看着慢SQL列表头皮发麻到每天只关心那6条”老面孔”。再翻DDIA，每一章都像在复盘自己的架构笔记。</p>
+<p>这个系列是我重读DDIA的实战笔记。第一篇，从第一章的三个永恒维度聊起：<strong>可靠性（Reliability）、可扩展性（Scalability）、可维护性（Maintainability）</strong>。这三个词，几乎概括了我们作为后端工程师工作的全部。</p>
+<hr>
+<h2 id="一、可靠性：系统不出错的”错觉”"><a href="#一、可靠性：系统不出错的”错觉”" class="headerlink" title="一、可靠性：系统不出错的”错觉”"></a>一、可靠性：系统不出错的”错觉”</h2><p>DDIA对可靠性的定义很朴素：</p>
+<blockquote>
+<p>即使发生了错误，系统也能继续正常工作。</p>
+</blockquote>
+<p>注意一个关键区分：<strong>故障（fault）不等于失效（failure）</strong>。故障是系统中某个组件偏离预期行为，失效是整个系统停止对外提供服务。容错机制的存在，就是为了让故障不演变成失效。</p>
+<p>生产环境中，故障来源分三个层次。</p>
+<h3 id="1-1-硬件故障"><a href="#1-1-硬件故障" class="headerlink" title="1.1 硬件故障"></a>1.1 硬件故障</h3><p>硬盘坏了、网线松了、电源烧了——这是最直观的故障。传统方案是冗余：RAID磁盘阵列、双路电源、热备服务器。对于小规模系统，硬件冗余足够了。</p>
+<p>但到了我们130万日订单的体量，机器够多了，硬件故障从”概率事件”变成了”必然事件”。一台机器宕机不可怕，可怕的是<strong>你的系统根本感知不到它宕机了</strong>。</p>
+<p>举个例子。我们订单中心依赖一个外部仓储系统的HTTP接口，远端服务所在机器突然网络中断，但TCP连接没有立刻断开。调用方线程卡在<code>readTimeout</code>上，默认60秒。60秒内，堆了2000个请求，线程池打满，整个服务雪崩。</p>
+<p><strong>教训</strong>：硬件故障不可怕，可怕的是没有快速失败的机制。后来我们做了三件事：</p>
+<ul>
+<li>所有外部调用统一设5秒超时，用CompletableFuture的<code>orTimeout()</code>；</li>
+<li>引入熔断降级，连续失败N次后直接走fallback；</li>
+<li>健康检查频率提高到10秒，尽早发现”假活”节点。</li>
+</ul>
+<h3 id="1-2-软件故障"><a href="#1-2-软件故障" class="headerlink" title="1.2 软件故障"></a>1.2 软件故障</h3><p>软件故障比硬件故障更难发现。它不是某个组件坏了，而是某些特定条件触发了隐藏Bug。典型案例：</p>
+<ul>
+<li><strong>并发竞态</strong>：两个订单同时占用同一批库存，乐观锁版本号碰撞后，一边重试一边死循环；</li>
+<li><strong>级联故障</strong>：一个非核心查询超时，导致整个请求链路膨胀，进而拖垮核心下单链路；</li>
+<li><strong>资源泄漏</strong>：ThreadLocal用完没清——我们SyncTask引擎V1版本就踩过这个坑。xxl-job的线程池是共享的，一个Handler的ThreadLocal残留会污染下一个Handler。</li>
+</ul>
+<p>软件故障本质上是<strong>系统对自己的假设过于乐观</strong>。预防手段包括：充分的测试（但不现实，特别是我们这类小团队）、详尽的可观测性（日志&#x2F;指标&#x2F;链路追踪三板斧）、以及——<strong>快速隔离和恢复的能力</strong>。</p>
+<p>我们SyncTask引擎V2做了一件事：每个Handler的线程池完全独立可配置，一个Handler的线程池打满不影响其他Handler。这就是隔离思维。Kubernetes的Pod、Sentinel的线程池隔离、甚至Java的ClassLoader隔离，都是同样的道理。</p>
+<h3 id="1-3-人为故障"><a href="#1-3-人为故障" class="headerlink" title="1.3 人为故障"></a>1.3 人为故障</h3><p>说出来你可能不信：<strong>生产环境最大的不稳定因素是人</strong>。DDIA引用了多项研究，指出人为操作失误是系统宕机的首要原因。</p>
+<p>我记忆最深的一次事故：凌晨2点运维同事误操作，把生产库的一条配置表全量更新了，SQL少了WHERE条件。200万条数据全部被改。</p>
+<p>恢复花了两小时——不是因为恢复难，而是因为<strong>我们根本不知道哪些数据被改了</strong>。逻辑备份有，但增量日志不完整，只能人工比对。</p>
+<p>事后我们做了几件事：</p>
+<ul>
+<li>生产环境DDL&#x2F;DML操作强制走审批流程，高危操作必须双人复核；</li>
+<li>配置变更接入审计日志，改了什么、谁改的、什么时候改的，全链路可追溯；</li>
+<li>关键表开启binlog订阅，配合数据闪回，出问题可以在秒级回滚到任意时间点；</li>
+<li>最重要的一点——给运维写了一套<strong>回滚SOP</strong>。不是在故障手册里写一句”执行回滚”，而是精确到每一步命令、每一步预期输出、每一步失败后的下一步方案。</li>
+</ul>
+<p>好的系统设计，应该假设人会犯错，然后让错误的代价尽可能小。</p>
+<hr>
+<h2 id="二、可扩展性：描述负载，而非追逐数字"><a href="#二、可扩展性：描述负载，而非追逐数字" class="headerlink" title="二、可扩展性：描述负载，而非追逐数字"></a>二、可扩展性：描述负载，而非追逐数字</h2><p>这是DDIA第一章最让人醍醐灌顶的部分。Kleppmann说：</p>
+<blockquote>
+<p>可扩展性不是”我的系统能不能抗住100万QPS”，而是”当负载增加时，我有没有一个合理的方式增加资源来应对”。</p>
+</blockquote>
+<h3 id="2-1-先描述负载，再谈扩展"><a href="#2-1-先描述负载，再谈扩展" class="headerlink" title="2.1 先描述负载，再谈扩展"></a>2.1 先描述负载，再谈扩展</h3><p>在谈可扩展性之前，你必须先回答一个问题：<strong>你的系统负载是什么？</strong></p>
+<p>不同系统的负载参数完全不同：</p>
+<ul>
+<li>Web服务：QPS、并发连接数；</li>
+<li>数据库：读写比例、数据量；</li>
+<li>消息队列：消息积压量、消费延迟；</li>
+<li>缓存：命中率、key空间大小。</li>
+</ul>
+<p>一个常见错误是：上来就说”我要支撑10万QPS”，然后开始堆机器。但你要先搞清楚，这10万QPS是均匀的，还是有峰谷？是读多写少，还是读写均衡？延迟敏感还是吞吐优先？</p>
+<p>我们订单系统典型的日负载剖面是这样的：上午10点到下午2点、晚上8点到11点是高峰，凌晨3点是低谷。高峰QPS是低谷的30倍以上。所以我们的弹性扩容策略是：白天16核机器×8台，晚上缩到×2台——省下来的机器成本，一年够发两个同事的工资。</p>
+<h3 id="2-2-别只看平均值，p99才是真实的用户体验"><a href="#2-2-别只看平均值，p99才是真实的用户体验" class="headerlink" title="2.2 别只看平均值，p99才是真实的用户体验"></a>2.2 别只看平均值，p99才是真实的用户体验</h3><p>DDIA花了大量篇幅强调：<strong>平均值是有欺骗性的</strong>。</p>
+<p>一个典型的请求延迟分布可能是这样的：</p>
+<ul>
+<li>一半请求在50ms内返回（p50 &#x3D; 50ms）；</li>
+<li>99%的请求在500ms内返回（p99 &#x3D; 500ms）；</li>
+<li>但剩下那1%，花了5秒。</li>
+</ul>
+<p>如果你只看平均延迟，可能是80ms——看起来很美。但那个1%的用户体验呢？而且更可怕的是，<strong>这1%的慢请求通常集中在少数用户身上</strong>——因为慢请求往往是因为数据量大、关联复杂。这些用户恰恰是你最重要的客户（大客户订单多、数据多）。</p>
+<p>我们系统刚开始做性能优化时，盯着每天一千多条慢SQL看，后来发现p50其实表现还行，核心问题都在p99。把精力收窄到p99的慢SQL上，从1124条压缩到6条，用户侧感受的变化比任何p50优化都明显。</p>
+<p><strong>所以，做性能优化时问自己三个问题</strong>：</p>
+<ul>
+<li>p50是多少？——代表大多数用户的体验基线；</li>
+<li>p99是多少？——代表长尾用户的体验；</li>
+<li>这1%的长尾请求，是集中在少数用户身上，还是均匀分布的？——决定你该做数据层优化还是架构层优化。</li>
+</ul>
+<h3 id="2-3-垂直扩展-vs-水平扩展"><a href="#2-3-垂直扩展-vs-水平扩展" class="headerlink" title="2.3 垂直扩展 vs 水平扩展"></a>2.3 垂直扩展 vs 水平扩展</h3><p>垂直扩展（scale up）：换更好的机器。简单粗暴，短平快。</p>
+<p>水平扩展（scale out）：加更多的机器。复杂，需要系统设计配合。</p>
+<p>我们系统经历了三个阶段：</p>
+<ul>
+<li><strong>阶段一（单机时代）</strong>：日订单1-5万，一台8核16G机器跑所有。MVC+MyBatis，连Redis都没有。这个阶段无脑垂直扩展是对的——人少事多，别折腾架构。</li>
+<li><strong>阶段二（垂直到瓶颈）</strong>：日订单到30万，单机数据库CPU长期80%+。我们做了读写分离+Redis缓存，但核心问题是：<strong>订单表太大了</strong>，一个表两亿行，索引都开始失效。这时候才真正需要水平扩展。</li>
+<li><strong>阶段三（分布式改造）</strong>：日订单130万，分库分表+消息削峰+分布式事务。QPS从2000涨到8000+，不是因为我们代码写得快了，而是因为<strong>请求不再集中在单点上</strong>。</li>
+</ul>
+<p>分享一个关键的架构决策逻辑：<strong>什么时候从垂直切换到水平？不是看QPS数字，而是看单点容量是否接近物理极限</strong>。我们的订单表单库单表撑到约2亿行时，DDL操作已经跑不动了，ALTER TABLE要锁表40分钟——这不是优化能解决的，物理天花板到了。</p>
+<hr>
+<h2 id="三、可维护性：写代码的不是你一个人"><a href="#三、可维护性：写代码的不是你一个人" class="headerlink" title="三、可维护性：写代码的不是你一个人"></a>三、可维护性：写代码的不是你一个人</h2><p>DDIA提出了三个设计原则：<strong>可运维性（Operability）、简单性（Simplicity）、可演化性（Evolvability）</strong>。</p>
+<h3 id="3-1-可运维性：让运维同事晚上能睡好"><a href="#3-1-可运维性：让运维同事晚上能睡好" class="headerlink" title="3.1 可运维性：让运维同事晚上能睡好"></a>3.1 可运维性：让运维同事晚上能睡好</h3><p>你写的系统，凌晨3点挂了，是你能秒级定位，还是运维同事要狂打电话把你叫醒？</p>
+<p>好的运维体验包括：</p>
+<ul>
+<li><strong>监控覆盖</strong>：QPS、延迟分位数、错误率、线程池水位、数据库连接池——这些是基础；</li>
+<li><strong>告警分层</strong>：P0核心链路挂了电话告警，P1非核心降级企业微信&#x2F;飞书告警，P2慢查询日报；</li>
+<li><strong>故障处理文档</strong>：不是”出问题了重启一下”，而是精确到场景的标准操作流程；</li>
+<li><strong>灰度发布</strong>：不要一次性全量，先单台、再小比例、再全量，每一步都有自动化验证。</li>
+</ul>
+<p>我们SyncTask引擎有一个设计细节值得说一下：每个Handler的状态变更全部落库（state machine + event sourcing），出问题时不需要查日志，直接查库就能还原当时的执行轨迹。这就是为运维友好做的设计取舍——多写一张表，省掉无数次凌晨排查。</p>
+<h3 id="3-2-简单性：最大的敌人是复杂度"><a href="#3-2-简单性：最大的敌人是复杂度" class="headerlink" title="3.2 简单性：最大的敌人是复杂度"></a>3.2 简单性：最大的敌人是复杂度</h3><p>这个行业最大的浪费，不是运行慢的代码，而是<strong>不必要的复杂度</strong>。</p>
+<p>DDIA有一句话我深有共鸣：<strong>偶然复杂度（accidental complexity）</strong> vs <strong>本质复杂度（essential complexity）</strong>。本质复杂度是问题本身固有的，你躲不掉；偶然复杂度是你自己引入的，完全可以通过好的设计消除。</p>
+<p>我们SyncTask引擎V2做过一个让我受益至今的决策：<strong>主动放弃DAG编排，用afterExecute回调链替代</strong>。</p>
+<p>当时面临的需求是：多个外部系统同步任务有顺序依赖——先同步商品，再同步库存，最后同步订单。团队里有人提议引入DAG，做可视化编排。</p>
+<p>我花了两个晚上画了6个方案对比，最终决定：不做。</p>
+<p>理由很简单：</p>
+<ul>
+<li>我们的Handler间依赖关系是<strong>固定的</strong>，不会频繁变更——DAG的动态编排能力属于过度设计；</li>
+<li>afterExecute + 责任链模式只需要不到100行代码就能实现同样的效果；</li>
+<li>DAG引入的调度器、解析器、图遍历逻辑会直接膨胀核心引擎的复杂度；</li>
+<li>团队4个人，维护一个DAG引擎的成本远大于维护一段回调逻辑。</li>
+</ul>
+<p>决策后有人问我：”你就不怕别人说我们这个引擎不够高级？”</p>
+<p>我说了一段至今仍然信的话：<strong>架构师最重要的能力不是加法，而是减法。知道什么不该做，比知道什么该做，难十倍。</strong> 这个决策后来成了面试时最有效的话术——它证明了你在做trade-off，而不是在炫技。</p>
+<h3 id="3-3-可演化性：为变化而设计"><a href="#3-3-可演化性：为变化而设计" class="headerlink" title="3.3 可演化性：为变化而设计"></a>3.3 可演化性：为变化而设计</h3><p>需求一定会变。一个好的系统，应该让未来修改它的人（很可能就是6个月后的你自己）不至于想杀了现在的你。</p>
+<p>几点实践体会：</p>
+<ul>
+<li><strong>SPI扩展点</strong>：我们SyncTask引擎定义了10个SPI接口，新的Handler接入不需要改一行引擎代码。这是可演化性的典型实践——开闭原则在架构层的应用。</li>
+<li><strong>防腐层（Anti-Corruption Layer）</strong>：对接金蝶、聚水潭、华为等十几个外部系统时，每个外部系统封装一个独立的Adapter，外部系统的变化不会污染核心域逻辑。</li>
+<li><strong>数据库字段不用枚举，用字典表</strong>：状态的演变远比你想的快。今天3个状态值，一年后可能变成12个。枚举类型改起来代价极大，字典表只需要插一条数据。</li>
+<li><strong>不要过早抽象</strong>：见过太多人在项目初期就搞出一套”万能框架”，最后发现80%的抽象从未被复用。等你有三个相似场景时再抽象，完全来得及。</li>
+</ul>
+<hr>
+<h2 id="四、实战串联：130万日订单系统的架构演进"><a href="#四、实战串联：130万日订单系统的架构演进" class="headerlink" title="四、实战串联：130万日订单系统的架构演进"></a>四、实战串联：130万日订单系统的架构演进</h2><p>最后，我把我经历的系统演进串起来，还原一个真实的架构成长路径。</p>
+<h3 id="起点：单体应用（2019）"><a href="#起点：单体应用（2019）" class="headerlink" title="起点：单体应用（2019）"></a>起点：单体应用（2019）</h3><p>技术栈：Spring Boot + MyBatis + MySQL + 单机Redis。日订单2-3万，一台8核16G机器全搞定。代码量十来万行，三个开发人员，上线靠Jenkins手动触发。</p>
+<p>这个阶段，三个维度的情况：</p>
+<ul>
+<li><strong>可靠性</strong>：基本靠硬件，偶尔数据库连接超时的报错，运维重启即可；</li>
+<li><strong>可扩展性</strong>：不存在，业务量太小；</li>
+<li><strong>可维护性</strong>：也不存在，代码写得很随意，功能上线就行。</li>
+</ul>
+<h3 id="转折点：30万日订单（2021）"><a href="#转折点：30万日订单（2021）" class="headerlink" title="转折点：30万日订单（2021）"></a>转折点：30万日订单（2021）</h3><p>数据库开始吃紧。慢SQL从每天几十条暴增到过千条，订单表扫描需要好几秒。我们做了：</p>
+<ul>
+<li>读写分离（Atlas中间件，现在回头看很原始但够用）；</li>
+<li>热数据上Redis缓存，缓存命中率从30%拉到85%；</li>
+<li>拆出了一套独立的工单服务（cloud-work-order），0到1交付，这是我第一次从业务需求到系统设计全链路负责。</li>
+</ul>
+<p>三个维度的变化：</p>
+<ul>
+<li><strong>可靠性</strong>：引入超时+熔断，平均故障恢复时间从小时级降到分钟级；</li>
+<li><strong>可扩展性</strong>：单体拆分，读写分离，QPS从2000开始往上走；</li>
+<li><strong>可维护性</strong>：工单服务做得比较好，模块边界清晰；订单主服务的代码结构开始混乱。</li>
+</ul>
+<h3 id="成熟期：130万日订单（2023-2024）"><a href="#成熟期：130万日订单（2023-2024）" class="headerlink" title="成熟期：130万日订单（2023-2024）"></a>成熟期：130万日订单（2023-2024）</h3><p>这是真正考验架构设计的阶段。</p>
+<h4 id="可靠性：99-9-→-99-99"><a href="#可靠性：99-9-→-99-99" class="headerlink" title="可靠性：99.9% → 99.99%"></a>可靠性：99.9% → 99.99%</h4><p>从三个9到四个9，看起来只是一个数字，背后是整套高可用体系的建设：</p>
+<ul>
+<li><strong>故障自动切换</strong>：数据库主从切换改成自动，中间件集群化，不再有单点；</li>
+<li><strong>分布式事务</strong>：从2PC改到TCC，核心链路性能提升40%以上。2PC的同步阻塞在高并发下太伤了，CC（Try-Confirm-Cancel）让资源锁粒度降到单操作级别；</li>
+<li><strong>降级预案</strong>：非核心链路挂了不拖核心，比如推荐服务挂了，订单照下。</li>
+</ul>
+<h4 id="可扩展性：QPS-2000-→-8000"><a href="#可扩展性：QPS-2000-→-8000" class="headerlink" title="可扩展性：QPS 2000 → 8000+"></a>可扩展性：QPS 2000 → 8000+</h4><ul>
+<li><strong>分库分表</strong>：按用户ID哈希分片，16个库×4张表。查询复杂度增加，但通过全局索引表+ES做二级索引，解决了非分片键查询问题；</li>
+<li><strong>SyncTask引擎V2</strong>：引入CompletableFuture并行处理+批次聚合，同一批订单并行同步到多个外部系统，吞吐量直接翻了数倍；</li>
+<li><strong>消息削峰</strong>：大促期间的流量峰谷用RocketMQ做缓冲，生产者和消费者解耦，保证下单接口不被打垮。</li>
+</ul>
+<h4 id="可维护性：从”不敢改”到”放心改”"><a href="#可维护性：从”不敢改”到”放心改”" class="headerlink" title="可维护性：从”不敢改”到”放心改”"></a>可维护性：从”不敢改”到”放心改”</h4><ul>
+<li><strong>SyncTask引擎独立组件化</strong>：从cloud-order和cloud-wms中抽离出独立的sync-task-engine项目，5个模块、10个SPI扩展点、93个Handler统一管理。新业务接入从几天降到几小时；</li>
+<li><strong>afterExecute回调编排</strong>：放弃DAG的决策让核心引擎保持极简，团队4个人轻松维护；</li>
+<li><strong>Handler级监控</strong>：每个Handler的执行次数、成功&#x2F;失败率、平均耗时、p99耗时全部接入Prometheus+Grafana，出问题秒级定位到具体Handler。</li>
+</ul>
+<h3 id="演进总结"><a href="#演进总结" class="headerlink" title="演进总结"></a>演进总结</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>起步期（2019）</th>
+<th>成长期（2021）</th>
+<th>成熟期（2024）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>日订单</td>
+<td>2-3万</td>
+<td>30万</td>
+<td>130万</td>
+</tr>
+<tr>
+<td>QPS</td>
+<td>&lt;500</td>
+<td>2000</td>
+<td>8000+</td>
+</tr>
+<tr>
+<td>可用性</td>
+<td>99%</td>
+<td>99.9%</td>
+<td>99.99%</td>
+</tr>
+<tr>
+<td>日均慢SQL</td>
+<td>几十</td>
+<td>1124</td>
+<td>6</td>
+</tr>
+<tr>
+<td>部署方式</td>
+<td>单机</td>
+<td>多实例+读写分离</td>
+<td>分库分表+弹性伸缩</td>
+</tr>
+<tr>
+<td>事务</td>
+<td>本地事务</td>
+<td>2PC</td>
+<td>TCC</td>
+</tr>
+<tr>
+<td>团队</td>
+<td>3人</td>
+<td>4人</td>
+<td>4人</td>
+</tr>
+</tbody></table>
+<p>三个阶段，三个维度的演进，本质上就是DDIA第一章所讨论的内容在现实中的投射。</p>
+<hr>
+<h2 id="结尾：架构就是权衡的艺术"><a href="#结尾：架构就是权衡的艺术" class="headerlink" title="结尾：架构就是权衡的艺术"></a>结尾：架构就是权衡的艺术</h2><p>DDIA第一章没有给我任何代码，但它给了我一套思考框架。后来我每次做架构决策，都自觉或不自觉地套用这三个维度：</p>
+<ul>
+<li>这个方案，<strong>可靠性</strong>够不够？故障了会不会雪崩？</li>
+<li>这个方案，<strong>可扩展性</strong>有没有天花板？半年后数据量翻倍了还撑得住吗？</li>
+<li>这个方案，<strong>可维护性</strong>好不好？6个月后的我和新同事能看懂吗？</li>
+</ul>
+<p>三个维度不可能同时满分。主备切换提升了可靠性，但增加了运维复杂度；分库分表提升了可扩展性，但牺牲了查询灵活性和运维简单性；放弃DAG降低了框架复杂度，但限制了未来可能需要的动态编排能力。</p>
+<p><strong>没有银弹，没有最佳实践，没有所谓的”正确架构”。只有在你当前的上下文里，权衡了所有trade-off之后，做出的那个最不坏的选择。</strong></p>
+<p>这就是DDIA教会我的第一课。</p>
+<hr>
+<p><em>本系列是《Designing Data-Intensive Applications》的读书笔记，结合本人7年电商供应链后端实战经验。下一篇将讨论数据模型与查询语言——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/DDIA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA读书笔记</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%8F%AF%E9%9D%A0%E6%80%A7/" class="print-no-link">#可靠性</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" class="print-no-link">#分布式</a>
+      
+        <a href="/tags/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="print-no-link">#读书笔记</a>
+      
+        <a href="/tags/%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7/" class="print-no-link">#可扩展性</a>
+      
+        <a href="/tags/%E5%8F%AF%E7%BB%B4%E6%8A%A4%E6%80%A7/" class="print-no-link">#可维护性</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度</div>
+      <div>https://aster-xu-lab.github.io/2026/08/05/2026-08-05-DDIA-01-可靠性可扩展性可维护性/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年8月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/08/05/2026-08-05-DDIA-01-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%96%B0%E6%8C%91%E6%88%98/" title="DDIA-01-云原生时代的架构新挑战：DDIA第二版新增内容解读">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-01-云原生时代的架构新挑战：DDIA第二版新增内容解读</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/07/17/2026-07-17-state-to-event-chain/" title="状态反推事件链——一个横跨四大领域的编程思想，我用20行递归就实现了">
+                        <span class="hidden-mobile">状态反推事件链——一个横跨四大领域的编程思想，我用20行递归就实现了</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

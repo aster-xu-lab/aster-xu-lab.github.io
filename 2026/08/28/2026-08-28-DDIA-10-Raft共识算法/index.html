@@ -1,0 +1,1033 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="引言：主从复制的终极矛盾——谁说了算在分布式系统的演进中，主从复制（Leader-Follower Replication）解决了读写分离和备份容灾的问题。但它留下了一个根本性矛盾：Leader挂了谁顶上？ 传统方案是让运维手动切主，或者写一个外部管理器（MHA、Orchestrator等）去监控切换。但这本质上是把”分布式一致性”外包给了一个非分布式的外部组件。外部管理器成了新的单点——它自己也">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-10-Raft共识算法图解：选主+日志复制+安全性">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/28/2026-08-28-DDIA-10-Raft%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="引言：主从复制的终极矛盾——谁说了算在分布式系统的演进中，主从复制（Leader-Follower Replication）解决了读写分离和备份容灾的问题。但它留下了一个根本性矛盾：Leader挂了谁顶上？ 传统方案是让运维手动切主，或者写一个外部管理器（MHA、Orchestrator等）去监控切换。但这本质上是把”分布式一致性”外包给了一个非分布式的外部组件。外部管理器成了新的单点——它自己也">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-27T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-31T01:51:54.676Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="Raft">
+<meta property="article:tag" content="共识算法">
+<meta property="article:tag" content="分布式">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-10-Raft共识算法图解：选主+日志复制+安全性 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-10-Raft共识算法图解：选主+日志复制+安全性"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-08-28 00:00" pubdate>
+          2026年8月28日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          65 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-10-Raft共识算法图解：选主+日志复制+安全性</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="引言：主从复制的终极矛盾——谁说了算"><a href="#引言：主从复制的终极矛盾——谁说了算" class="headerlink" title="引言：主从复制的终极矛盾——谁说了算"></a>引言：主从复制的终极矛盾——谁说了算</h2><p>在分布式系统的演进中，主从复制（Leader-Follower Replication）解决了读写分离和备份容灾的问题。但它留下了一个根本性矛盾：<strong>Leader挂了谁顶上？</strong></p>
+<p>传统方案是让运维手动切主，或者写一个外部管理器（MHA、Orchestrator等）去监控切换。但这本质上是把”分布式一致性”外包给了一个非分布式的外部组件。外部管理器成了新的单点——它自己也可能挂，它做决策时也可能出现网络分区导致脑裂。</p>
+<p>共识算法（Consensus Algorithm）就是为此而生的。它不是”更好的切主脚本”，而是<strong>让一群节点在没有人工干预和外部组件的条件下，就某个值达成一致的能力</strong>。在分布式系统中，”某个值”通常是：<strong>谁当主</strong>。</p>
+<p>这篇文章我们聚焦Raft——它被设计出来就是为了解决Paxos”太难懂”的问题。我见过不少面试者背Raft的三个阶段，但一问”为什么Leader只能提交当前Term的日志”就答不上来。读完本文，你不仅能答上来这个问题，还能把它和订单中心的真实架构联系起来。</p>
+<h2 id="一、Raft的铺垫：为什么需要共识算法"><a href="#一、Raft的铺垫：为什么需要共识算法" class="headerlink" title="一、Raft的铺垫：为什么需要共识算法"></a>一、Raft的铺垫：为什么需要共识算法</h2><h3 id="1-1-单主架构的困局"><a href="#1-1-单主架构的困局" class="headerlink" title="1.1 单主架构的困局"></a>1.1 单主架构的困局</h3><p>标准的主从复制架构：一组节点，Leader接收写入并复制到Follower。读写分离，容灾备份。看起来很完美，直到Leader挂了。</p>
+<p>此时你需要选一个新Leader。谁来选？如何保证所有节点一致？这里有一个核心命题：</p>
+<p><strong>分布式一致性的核心是”单个Leader”，而选举Leader本身就是一个分布式一致性问题。</strong></p>
+<p>你会发现这是一个鸡生蛋蛋生鸡的循环。Single-decree Paxos、Zab、Raft都是为了在一个故障模型（非拜占庭）下解决它。</p>
+<h3 id="1-2-共识算法的三个等价定义"><a href="#1-2-共识算法的三个等价定义" class="headerlink" title="1.2 共识算法的三个等价定义"></a>1.2 共识算法的三个等价定义</h3><p>一个有效的共识算法需要满足三点（等价表述）：</p>
+<ol>
+<li><strong>Termination</strong>：最终一定会选出有效的领导者</li>
+<li><strong>Agreement</strong>：所有正常节点上的共识值一致</li>
+<li><strong>Validity</strong>：达成共识的值必须是某个节点提出来的（不能凭空捏造）</li>
+</ol>
+<p>在Raft中，这三个属性分别由随机超时（解决Termination）、日志匹配&#x2F;最终一致性（解决Agreement）、以及Leader选举的多数派投票（解决Validity）来保证。</p>
+<h3 id="1-3-关键：共识解决的是”一致”而非”实时”"><a href="#1-3-关键：共识解决的是”一致”而非”实时”" class="headerlink" title="1.3 关键：共识解决的是”一致”而非”实时”"></a>1.3 关键：共识解决的是”一致”而非”实时”</h3><p>很多人混淆了”共识”和”实时同步”。共识不保证任意时刻所有节点状态一致——它只保证<strong>最终</strong>它们会收敛到一个一致的状态，且一旦一个值被”决定”就绝不会被推翻。</p>
+<p>这意味着：在任何一个瞬间，两个节点可能持有不同的值。但经过有限步骤后，它们必然会一致。理解这一点才能真正理解脑裂为什么可以优雅解决。</p>
+<h2 id="二、Raft的三个角色与状态转换（图解）"><a href="#二、Raft的三个角色与状态转换（图解）" class="headerlink" title="二、Raft的三个角色与状态转换（图解）"></a>二、Raft的三个角色与状态转换（图解）</h2><p>Raft将整个共识过程分解为三个独立的子问题，这也是它相比Paxos可理解性大幅提升的核心原因。</p>
+<h3 id="2-1-角色模型"><a href="#2-1-角色模型" class="headerlink" title="2.1 角色模型"></a>2.1 角色模型</h3><p>每个Raft节点在任意时刻处于三种角色之一：</p>
+<ol>
+<li><strong>Follower</strong>：被动节点，不发起任何请求，只响应Leader和Candidate</li>
+<li><strong>Candidate</strong>：参选者，发起选举请求以当选Leader</li>
+<li><strong>Leader</strong>：唯一的领导者，处理所有客户端请求，向Follower复制日志</li>
+</ol>
+<p>角色转换规则用ASCII图表示：</p>
+<figure class="highlight sqf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sqf">       Follower<br>         │  ↑<br>选举超时 │  │ 更晚的Term/<span class="hljs-built_in">Leader</span><br>         ↓  │<br>      Candidate ──→ 赢得选举 ──→ <span class="hljs-built_in">Leader</span><br>         ↑                         │<br>         └── 选举超时/平票 ────────┘<br></code></pre></td></tr></table></figure>
+
+<p><strong>Follower → Candidate</strong>：Follower在选举超时时间内未收到Leader心跳，递增Term，转换为Candidate，为自己投票，向所有节点发送RequestVote。</p>
+<p><strong>Candidate → Leader</strong>：若同一个Term内获得多数票，升级为Leader，立即发送心跳（空AppendEntries）宣告自己的权威。</p>
+<p><strong>Candidate&#x2F;Leader → Follower</strong>：若收到来自更高Term的RequestVote或AppendEntries（RPC中的Term字段），立即退回为Follower。</p>
+<p><strong>Candidate → Candidate（重新选举）</strong>：选举超时或出现平票（分裂投票），递增Term重新选举。</p>
+<h3 id="2-2-Term（任期）——Raft的全局时钟"><a href="#2-2-Term（任期）——Raft的全局时钟" class="headerlink" title="2.2 Term（任期）——Raft的全局时钟"></a>2.2 Term（任期）——Raft的全局时钟</h3><p>Raft把时间划分为Term，每个Term以选举开始。如果选不出Leader（平票），该Term结束直接进入下一Term。Term是单调递增的整数，它是Raft的”逻辑时钟”——所有RPC都携带Term字段，收到更高Term的一方立即退位。</p>
+<figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs prolog"><span class="hljs-symbol">Term</span> <span class="hljs-number">1</span>: [选举] → 选<span class="hljs-symbol">Leader</span>成功 → [正常复制] → 结束<br><span class="hljs-symbol">Term</span> <span class="hljs-number">2</span>: [选举] → 平票 → 结束<br><span class="hljs-symbol">Term</span> <span class="hljs-number">3</span>: [选举] → 选<span class="hljs-symbol">Leader</span>成功 → [正常复制] → ...<br></code></pre></td></tr></table></figure>
+
+<p>Term解决了两个经典问题：</p>
+<ul>
+<li><strong>过期Leader检测</strong>：旧Leader在网络分区中醒来，收到更高Term的节点直接拒绝，旧Leader发现不再有法定人数，退位。</li>
+<li><strong>陈旧请求识别</strong>：Follower收到小Term的请求直接丢弃。</li>
+</ul>
+<h2 id="三、Leader选举：随机超时为何如此精妙"><a href="#三、Leader选举：随机超时为何如此精妙" class="headerlink" title="三、Leader选举：随机超时为何如此精妙"></a>三、Leader选举：随机超时为何如此精妙</h2><h3 id="3-1-心跳和超时"><a href="#3-1-心跳和超时" class="headerlink" title="3.1 心跳和超时"></a>3.1 心跳和超时</h3><p>Leader周期性地向Follower发送AppendEntries心跳（间隔约50-100ms）。如果Follower在<strong>选举超时</strong>（Election Timeout，150-300ms）内没有收到心跳，就认为Leader失联，开始选举。</p>
+<h3 id="3-2-随机超时的精妙设计"><a href="#3-2-随机超时的精妙设计" class="headerlink" title="3.2 随机超时的精妙设计"></a>3.2 随机超时的精妙设计</h3><p>选举超时不是固定值，而是<strong>在150ms到300ms间随机选取</strong>。这可能是Raft最巧妙的设计之一：</p>
+<p>为什么要随机？</p>
+<p>如果所有节点的超时时间相同，Leader挂掉后，所有Follower会在同一时刻同时变成Candidate。N个节点竞逐N票，必然平票，进入下一轮，再次同时苏醒同时平票……系统陷入死锁。</p>
+<p>随机超时打破了这种同步。每个节点的超时不同，超时最早的先变成Candidate，在自己Term内拿到多数票的概率极高。这就是”随机化解决分布式死锁”的经典案例。</p>
+<h3 id="3-3-选举流程详解"><a href="#3-3-选举流程详解" class="headerlink" title="3.3 选举流程详解"></a>3.3 选举流程详解</h3><figure class="highlight coq"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs coq">节点A（Follower）超时<br>  → <span class="hljs-keyword">Term</span>++ → 变为Candidate → 投自己一票<br>  → 向B、C、D、E发送 RequestVote(term, lastLogIndex, lastLogTerm)<br>  → 每个Follower检查：<br>      <span class="hljs-number">1.</span> 请求中的<span class="hljs-keyword">Term</span> &gt;= 自己的<span class="hljs-keyword">Term</span>？（否则拒绝）<br>      <span class="hljs-number">2.</span> 自己在这个<span class="hljs-keyword">Term</span>是否已投过票？（已投则拒绝）<br>      <span class="hljs-number">3.</span> Candidate的日志是否至少和自己一样新？<br>         （比较lastLogTerm，再比较lastLogIndex）<br>  → 如满足，投票，重置选举超时<br>  → Candidate收到多数票 → 成为Leader → 发送心跳<br></code></pre></td></tr></table></figure>
+
+<p>这里日志比较是关键：<strong>Raft确保只有包含所有已提交日志的节点才能当选Leader</strong>。这是安全性保证的核心。</p>
+<h2 id="四、日志复制：AppendEntries的全部奥秘"><a href="#四、日志复制：AppendEntries的全部奥秘" class="headerlink" title="四、日志复制：AppendEntries的全部奥秘"></a>四、日志复制：AppendEntries的全部奥秘</h2><h3 id="4-1-日志的结构"><a href="#4-1-日志的结构" class="headerlink" title="4.1 日志的结构"></a>4.1 日志的结构</h3><p>每个日志条目格式：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs nix">&#123; <span class="hljs-params">Term:</span> <span class="hljs-number">3</span>, <span class="hljs-params">Command:</span> <span class="hljs-string">&quot;SET order_status=shipped WHERE order_id=10086&quot;</span>, <span class="hljs-params">Index:</span> <span class="hljs-number">15</span> &#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>(Term, Index)</code> 构成全局唯一的坐标，Raft保证：<strong>相同Index的日志条目必然来自相同的Term，而且有相同的Command</strong>。</p>
+<h3 id="4-2-复制流程"><a href="#4-2-复制流程" class="headerlink" title="4.2 复制流程"></a>4.2 复制流程</h3><figure class="highlight sqf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs sqf">Client → <span class="hljs-built_in">Leader</span><br>  → <span class="hljs-built_in">Leader</span>追加到本地日志（AppendLocal，此时Uncommitted）<br>  → <span class="hljs-built_in">Leader</span>向所有Follower复制 AppendEntries(entries[], leaderCommit, prevLogIndex, prevLogTerm)<br>  → Follower检查：<br>      <span class="hljs-number">1</span>. 本地日志在prevLogIndex上的Term是否等于prevLogTerm？<br>         不等于 → 返回<span class="hljs-literal">false</span>（一致性检查失败→<span class="hljs-built_in">Leader</span>回溯同步）<br>         等于 → 用entries覆盖本地从prevLogIndex+<span class="hljs-number">1</span>开始的日志<br>      <span class="hljs-number">2</span>. 根据leaderCommit更新本地commitIndex<br>      <span class="hljs-number">3</span>. 返回成功<br>  → <span class="hljs-built_in">Leader</span>收到多数成功 → 提交（commitIndex递增，应用到状态机）<br>  → <span class="hljs-built_in">Leader</span>在下一轮心跳中更新Follower的commitIndex<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-日志回溯——Raft的强制覆盖"><a href="#4-3-日志回溯——Raft的强制覆盖" class="headerlink" title="4.3 日志回溯——Raft的强制覆盖"></a>4.3 日志回溯——Raft的强制覆盖</h3><p>当Follower和Leader不一致（如Follower落后或多了未提交的旧Leader日志），AppendEntries中的一致性检查会失败。Leader的对策是：</p>
+<p>每次失败后，<code>prevLogIndex</code> 减1重试。最终找到一个完全匹配的日志位置，然后Leader用本地日志覆盖Follower该位置之后的所有日志。</p>
+<p>这意味着：<strong>Follower上任何与Leader不一致的日志都会被覆盖</strong>。只要某条日志被复制到多数节点，它就安全了——因为后续的Leader必然包含它。未被复制到多数的日志，可能在重新选举后被覆盖。</p>
+<h2 id="五、安全性：Leader只提交当前Term的日志"><a href="#五、安全性：Leader只提交当前Term的日志" class="headerlink" title="五、安全性：Leader只提交当前Term的日志"></a>五、安全性：Leader只提交当前Term的日志</h2><p>这是Raft最容易被忽视却最关键的规则，也是面试常见的深度问题。</p>
+<h3 id="5-1-为什么需要这个规则？"><a href="#5-1-为什么需要这个规则？" class="headerlink" title="5.1 为什么需要这个规则？"></a>5.1 为什么需要这个规则？</h3><p>看这个时序：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs armasm"><span class="hljs-symbol">Term</span> <span class="hljs-number">2</span>:<br>  <span class="hljs-built_in">S1</span> [Leader]: Index <span class="hljs-number">3</span>写入，复制到<span class="hljs-built_in">S2</span> → <span class="hljs-built_in">S1</span>挂了（Index <span class="hljs-number">3</span>在Term <span class="hljs-number">2</span>未提交）<br><br><span class="hljs-symbol">Term</span> <span class="hljs-number">3</span>:<br>  <span class="hljs-built_in">S5</span> [Leader]: Index <span class="hljs-number">3</span>写入（Term <span class="hljs-number">3</span>），复制到<span class="hljs-built_in">S2</span>,<span class="hljs-built_in">S3</span>,<span class="hljs-built_in">S4</span> → 提交了Index <span class="hljs-number">3</span><br><br><span class="hljs-symbol">Term</span> <span class="hljs-number">3</span>继续:<br>  <span class="hljs-built_in">S5</span>挂了 → <span class="hljs-built_in">S1</span>重新当选（日志比<span class="hljs-built_in">S2</span>/<span class="hljs-built_in">S3</span>/<span class="hljs-built_in">S4</span>旧）→ 覆盖<span class="hljs-built_in">S2</span>/<span class="hljs-built_in">S3</span>/<span class="hljs-built_in">S4</span>上Term <span class="hljs-number">3</span>的Index <span class="hljs-number">3</span><br></code></pre></td></tr></table></figure>
+
+<p>如果没有”Leader只能提交当前Term”的规则，S1可能在没收到AppendEntries之前就通过心跳把Index 3提交了，然后S1的日志被下一任Leader覆盖，导致”已提交日志被篡改”——破坏了安全性。</p>
+<h3 id="5-2-规则内容"><a href="#5-2-规则内容" class="headerlink" title="5.2 规则内容"></a>5.2 规则内容</h3><p><strong>Leader不能通过”数副本数”来提交之前Term的日志条目</strong>。只能提交当前Term的日志，当当前Term的日志被提交时，之前Term在该Index之前的日志因为”日志属性的递归性”也被隐式提交。</p>
+<p>这个规则的底层原理：</p>
+<ul>
+<li>Raft的日志匹配性质（Log Matching Property）：如果两个日志在同一Index上的Term相同，则它们从1到该Index的所有日志完全相同。</li>
+<li>因此只要提交了当前Term的一条日志，它之前的日志天然就是安全的——因为它们必定存在于多数节点的日志中，下一任选举出来的Leader（必须拥有多数派的最新日志）必然也包含它们。</li>
+</ul>
+<p>这条规则确保了<strong>已经提交的日志永远不会被覆写</strong>。</p>
+<h2 id="六、网络分区场景深度解析"><a href="#六、网络分区场景深度解析" class="headerlink" title="六、网络分区场景深度解析"></a>六、网络分区场景深度解析</h2><h3 id="6-1-场景设定"><a href="#6-1-场景设定" class="headerlink" title="6.1 场景设定"></a>6.1 场景设定</h3><p>5节点集群：A、B、C、D、E。Term 1，A为Leader。</p>
+<p>现在发生网络分区：{D, E} 被隔离，剩下 {A, B, C}。</p>
+<h3 id="6-2-两个”Leader”的并行世界"><a href="#6-2-两个”Leader”的并行世界" class="headerlink" title="6.2 两个”Leader”的并行世界"></a>6.2 两个”Leader”的并行世界</h3><p><strong>旧Leader A的视角</strong>（和B、C在一起）：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">A</span>复制日志到B、C → <span class="hljs-number">3</span>节点视为多数（<span class="hljs-number">5</span>/<span class="hljs-number">2</span>+<span class="hljs-number">1</span>=<span class="hljs-number">3</span>）→ 继续提交 ✅<br><span class="hljs-attribute">A</span>能正常工作，因为<span class="hljs-number">3</span>=多数派<br></code></pre></td></tr></table></figure>
+
+<p><strong>旧Follower D的视角</strong>（和E在一起）：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">D</span>在<span class="hljs-number">150</span>-<span class="hljs-number">300</span>ms内收不到心跳 → 选举超时 → Term++ → 变成Candidate<br><span class="hljs-attribute">D</span>向E请求投票 → <span class="hljs-number">1</span>票（自己）+<span class="hljs-number">1</span>票（E）=<span class="hljs-number">2</span>票 &lt; <span class="hljs-number">5</span>/<span class="hljs-number">2</span>+<span class="hljs-number">1</span>=<span class="hljs-number">3</span>票 ❌<br><span class="hljs-attribute">D</span>和E两个节点无法构成多数派 → 选举失败 → 继续等待<br></code></pre></td></tr></table></figure>
+
+<p><strong>D的日志也不会被提交</strong>：D只复制到E（2&#x2F;5&lt;3&#x2F;5），不够多数。当网络恢复后，D和E会收到A（或新Leader）更高Term的心跳，它们的未提交日志会被覆盖。</p>
+<h3 id="6-3-为什么旧Leader不能提交？"><a href="#6-3-为什么旧Leader不能提交？" class="headerlink" title="6.3 为什么旧Leader不能提交？"></a>6.3 为什么旧Leader不能提交？</h3><p>把问题反过来想：</p>
+<p>如果A挂了，D在隔离区自封Leader（5节点2票不可能当选），但当A真的挂了，集群剩下B、C、D、E→4节点，D和E的2票仍然&lt;3票，无法当选。</p>
+<p>但如果网络分区把5节点分成3+2，大于半数的一方能继续工作，少数方无法选举——这就是Raft用”多数派”保证的：</p>
+<p><strong>任何时刻最多只有一个分区能形成多数派，因此最多只有一个合法的Leader。</strong></p>
+<p>脑裂在此模型中不再是Bug，而是”被设计成不可能的Feature”。</p>
+<h3 id="6-4-双分区都达到多数的极端情况？"><a href="#6-4-双分区都达到多数的极端情况？" class="headerlink" title="6.4 双分区都达到多数的极端情况？"></a>6.4 双分区都达到多数的极端情况？</h3><p>如果是偶数节点（如4节点），分区成2+2，两边都无法达到多数（各自只有半数），整个集群不可用——<strong>Stop The World</strong>。</p>
+<p>这也是Raft推荐奇数节点（3、5、7）的原因之一：确保单一多数派的存在，提升可用性。</p>
+<h2 id="七、Raft-vs-Paxos：可理解性的革命"><a href="#七、Raft-vs-Paxos：可理解性的革命" class="headerlink" title="七、Raft vs Paxos：可理解性的革命"></a>七、Raft vs Paxos：可理解性的革命</h2><h3 id="7-1-Paxos为什么难懂"><a href="#7-1-Paxos为什么难懂" class="headerlink" title="7.1 Paxos为什么难懂"></a>7.1 Paxos为什么难懂</h3><p>Paxos（Lamport 1998）是第一个完备的共识算法，证明了分布式一致性问题在非拜占庭模型下可解。但它的描述是”单次决议”（Single-decree），要把多个日志条目串起来需要Multi-Paxos——而Multi-Paxos没有统一的工业标准，每个实现有自己的补丁。</p>
+<p>Paxos的难点：</p>
+<ul>
+<li>描述方式是反直觉的（”一个值被选中当且仅当…”的命题逻辑）</li>
+<li>Roles和Phase混在一起，学习者需要同时追踪多个维度</li>
+<li>从Paxos到工程实现中间有巨大的鸿沟</li>
+</ul>
+<h3 id="7-2-Raft的设计哲学"><a href="#7-2-Raft的设计哲学" class="headerlink" title="7.2 Raft的设计哲学"></a>7.2 Raft的设计哲学</h3><p>Raft作者Diego Ongaro在论文中明确说：他们的设计目标是<strong>understandability</strong>。为此采取的策略：</p>
+<table>
+<thead>
+<tr>
+<th>设计策略</th>
+<th>具体做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>问题分解</td>
+<td>Leader选举、日志复制、安全性拆成独立子问题</td>
+</tr>
+<tr>
+<td>状态空间压缩</td>
+<td>强Leader模型，日志只从Leader流向Follower</td>
+</tr>
+<tr>
+<td>角色明确</td>
+<td>三态Follower&#x2F;Candidate&#x2F;Leader，转换规则清晰</td>
+</tr>
+<tr>
+<td>机制简单化</td>
+<td>随机超时替代Paxos中的复杂冲突解决</td>
+</tr>
+</tbody></table>
+<p><strong>Raft没有在正确性或性能上超越Paxos</strong>（它们的FLP不可能上界是一致的），但它大幅降低了实现和理解的难度。这就是为什么etcd、consul、TiKV、nacos都选择了Raft而非Multi-Paxos。</p>
+<h2 id="八、实战：订单中心的MHA-vs-MGR"><a href="#八、实战：订单中心的MHA-vs-MGR" class="headerlink" title="八、实战：订单中心的MHA vs MGR"></a>八、实战：订单中心的MHA vs MGR</h2><h3 id="8-1-MySQL-MHA——外部管理器的困境"><a href="#8-1-MySQL-MHA——外部管理器的困境" class="headerlink" title="8.1 MySQL MHA——外部管理器的困境"></a>8.1 MySQL MHA——外部管理器的困境</h3><p>在我参与过的订单中心架构中，MySQL高可用曾经历两个阶段的演进。</p>
+<p><strong>第一阶段：MHA（Master High Availability）</strong></p>
+<p>架构如下：</p>
+<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs crmsh">┌─────────────────────────────┐<br>│       MHA Manager           │<br>│ (独立进程，需SSH免密/监控)    │<br>│  <span class="hljs-number">1</span>. 监控<span class="hljs-literal">Master</span>心跳           │<br>│  <span class="hljs-number">2</span>. 挂了→选最新数据的<span class="hljs-literal">Slave</span>    │<br>│  <span class="hljs-number">3</span>. 执行主从切换脚本          │<br>└──────┬──────────────────────┘<br>       │ SSH/监控<br>┌──────┴──────────────┐<br>│  <span class="hljs-keyword">Master</span>  <span class="hljs-title">│  Slave</span>...│<br>│  MySQL   │  MySQL   │<br>└─────────────────────┘<br></code></pre></td></tr></table></figure>
+
+<p>问题很明显：</p>
+<ul>
+<li><strong>MHA本身是单点</strong>：需要额外监控MHA进程</li>
+<li><strong>切换不透明</strong>：判定”Master挂了”的逻辑在外部，无法参与集群共识</li>
+<li><strong>脑裂可能</strong>：网络分区时MHA可能误判，切出新Master后原Master还在线</li>
+<li><strong>依赖SSH</strong>：网络抖动可能影响切换的可靠性</li>
+</ul>
+<h3 id="8-2-MySQL-Group-Replication（MGR）——内置Paxos"><a href="#8-2-MySQL-Group-Replication（MGR）——内置Paxos" class="headerlink" title="8.2 MySQL Group Replication（MGR）——内置Paxos"></a>8.2 MySQL Group Replication（MGR）——内置Paxos</h3><p><strong>第二阶段：MGR（MySQL Group Replication）</strong></p>
+<p>MGR内置了一个类Paxos的共识引擎（MySQL Group Communication Engine，基于XCom），主要改进：</p>
+<figure class="highlight sqf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sqf">组内每个节点都是Paxos Proposer和Acceptor<br>  → 写操作提交到组 → 共识引擎进行多数派决议<br>  → 决议通过后各节点<span class="hljs-built_in">apply</span><br>  → <span class="hljs-built_in">Leader</span>故障 → XCom自动选新<span class="hljs-built_in">Leader</span><br></code></pre></td></tr></table></figure>
+
+<p>对比优势：</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>MHA + 半同步复制</th>
+<th>MGR (Paxos)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>选主</td>
+<td>外部Manager触发，秒级</td>
+<td>组内自动选举，毫秒级</td>
+</tr>
+<tr>
+<td>数据一致性</td>
+<td>半同步可能丢最后一秒数据</td>
+<td>共识提交，已提交的不丢</td>
+</tr>
+<tr>
+<td>脑裂</td>
+<td>可能发生（网络分区+多Master）</td>
+<td>多数派机制拒绝少数派写入</td>
+</tr>
+<tr>
+<td>运维复杂度</td>
+<td>需维护Manager + 切换脚本</td>
+<td>内置，无需外部组件</td>
+</tr>
+<tr>
+<td>性能</td>
+<td>单主写入，性能高</td>
+<td>共识协议有额外延迟，性能略低</td>
+</tr>
+</tbody></table>
+<p>坦诚地说：<strong>MGR更可靠但更复杂</strong>。日订单130万的场景下，MGR的写入延迟增加了2-5ms（共识轮次开销），而MHA在主从复制上几乎没有额外延迟。但MGR换来了：</p>
+<ul>
+<li>不会出现MHA误判或未触发的脑裂场景</li>
+<li>切换速度快（MHA秒级 → MGR毫秒级）</li>
+<li>不需要维护额外的Manager进程</li>
+</ul>
+<p>最终我们选择的是：<strong>核心交易表走MGR单主模式，查询类的非关键表走异步复制。</strong></p>
+<h2 id="九、成熟的Raft开源实现——什么时候直接用它"><a href="#九、成熟的Raft开源实现——什么时候直接用它" class="headerlink" title="九、成熟的Raft开源实现——什么时候直接用它"></a>九、成熟的Raft开源实现——什么时候直接用它</h2><h3 id="9-1-三大主力"><a href="#9-1-三大主力" class="headerlink" title="9.1 三大主力"></a>9.1 三大主力</h3><table>
+<thead>
+<tr>
+<th>实现</th>
+<th>语言</th>
+<th>使用场景</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>etcd</strong> (Raft库)</td>
+<td>Go</td>
+<td>Kubernetes&#x2F;分布式配置中心</td>
+<td>Raft论文独立作者的实现，最权威参考</td>
+</tr>
+<tr>
+<td><strong>consul</strong> (Raft库)</td>
+<td>Go</td>
+<td>服务发现&#x2F;健康检查</td>
+<td>带完整的Membership&#x2F;TTL健康检查</td>
+</tr>
+<tr>
+<td><strong>nacos</strong> (CP模式，Raft)</td>
+<td>Java</td>
+<td>阿里微服务生态</td>
+<td>SOFAJRaft，阿里自研，TP999优化好</td>
+</tr>
+</tbody></table>
+<h3 id="9-2-什么时候直接用，什么时候自己造"><a href="#9-2-什么时候直接用，什么时候自己造" class="headerlink" title="9.2 什么时候直接用，什么时候自己造"></a>9.2 什么时候直接用，什么时候自己造</h3><p><strong>直接用（99%的情况）：</strong></p>
+<p>你需要的不是”一个Raft实现”，而是”一个高可用的KV存储&#x2F;配置中心&#x2F;服务发现”。etcd和nacos已经是完整的分布式基础设施产品，直接部署远比手写靠谱。</p>
+<p>如：配置中心需要在多地部署且需要强一致性 → 部署etcd集群，gRPC&#x2F;HTTP API即开即用。</p>
+<p><strong>自己实现Raft（1%的情况，但需要极其谨慎）：</strong></p>
+<p>当你的系统有特殊约束时：</p>
+<ul>
+<li>需要嵌入Java进程内部（如订单状态机需要本地强一致日志）→ 可基于SOFAJRaft（nacos使用的Java Raft库）嵌入</li>
+<li>需要自定义存储后端（etcd默认是BoltDB&#x2F;MVCC存储）→ 用CockroachDB的上层封装，或者基于Dragonboat（Go高性能Raft库）</li>
+<li>学习目的：实现一个微型Raft库（几百行核心逻辑）是极好的分布式系统练习</li>
+</ul>
+<p>我的建议：<strong>除非你的需求明确超出了etcd&#x2F;consul&#x2F;nacos的能力边界（且团队有分布式系统专家），否则永远不要自己实现Raft。</strong> 这句话适用度90%。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Raft将共识分解为三个子问题：</p>
+<ol>
+<li><strong>Leader选举</strong>：Term + 随机超时 → 打破对称死锁</li>
+<li><strong>日志复制</strong>：AppendEntries + 多数派提交</li>
+<li><strong>安全性</strong>：只能提交当前Term的日志 → 间接保证旧日志安全</li>
+</ol>
+<p>这三个子问题结合起来，解决了一个本质上”鸡生蛋”的问题：用多数派投票选Leader，Leader来同步日志，日志确定了选主的资格。这是一个优雅的自我参照。</p>
+<p>关键设计直觉拿走：</p>
+<ul>
+<li>多数派保证：任何时刻最多一个分区有法定人数 → 最多一个Leader</li>
+<li>随机化打破对称：不需要协调者也能解决选主冲突</li>
+<li>日志只单向流动（Leader→Follower）：简化一致性追溯</li>
+</ul>
+<p>关于实现：能用etcd就别自己写Raft。但如果面试官问”Raft的日志提交规则为什么需要只有当前Term”，你现在知道答案了。</p>
+<p>下一篇文章我们会在DDIA第10-11章基础上深入Raft的日志压缩（Snapshot）和成员变更（Membership Change）——这两者才是把Raft用到生产环境的真正难点。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" class="print-no-link">#分布式</a>
+      
+        <a href="/tags/Raft/" class="print-no-link">#Raft</a>
+      
+        <a href="/tags/%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95/" class="print-no-link">#共识算法</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-10-Raft共识算法图解：选主+日志复制+安全性</div>
+      <div>https://aster-xu-lab.github.io/2026/08/28/2026-08-28-DDIA-10-Raft共识算法/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年8月28日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/08/28/2026-08-28-DDIA-10-Choreography%E4%B8%80%E8%87%B4%E6%80%A7/" title="DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/08/28/2026-08-28-DDIA-10-%E4%B8%80%E8%87%B4%E6%80%A7%E6%A8%A1%E5%9E%8B%E9%98%B6%E6%A2%AF/" title="DDIA-10-从线性一致性到因果一致性：一致性模型的阶梯">
+                        <span class="hidden-mobile">DDIA-10-从线性一致性到因果一致性：一致性模型的阶梯</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

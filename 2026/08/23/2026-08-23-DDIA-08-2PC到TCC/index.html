@@ -1,0 +1,1000 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="从Seata AT模式（2PC）到自研TCC方案的完整演进路线，含核心代码设计、空回滚&#x2F;悬挂问题解决，以及40%+性能提升的实测数据。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/23/2026-08-23-DDIA-08-2PC%E5%88%B0TCC/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="从Seata AT模式（2PC）到自研TCC方案的完整演进路线，含核心代码设计、空回滚&#x2F;悬挂问题解决，以及40%+性能提升的实测数据。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-08-22T16:00:00.000Z">
+<meta property="article:modified_time" content="2026-07-31T01:51:54.700Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="2PC">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="Seata">
+<meta property="article:tag" content="TCC">
+<meta property="article:tag" content="分布式事务">
+<meta property="article:tag" content="实战">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-08-23 00:00" pubdate>
+          2026年8月23日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          81 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="引言：微服务化之后，事务成了最大的痛"><a href="#引言：微服务化之后，事务成了最大的痛" class="headerlink" title="引言：微服务化之后，事务成了最大的痛"></a>引言：微服务化之后，事务成了最大的痛</h2><p>2024年初，我们完成了电商供应链中台的微服务拆分。订单服务、库存服务、支付服务各自拥有独立的数据库——这是微服务架构的标配操作，但也是分布式事务噩梦的开始。</p>
+<p>一个典型的用户下单流程是这样的：</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs 1c">用户点击<span class="hljs-string">&quot;立即购买&quot;</span><br>  → 订单服务：创建订单（订单库）<br>  → 库存服务：扣减库存（库存库）<br>  → 支付服务：发起扣款（支付库）<br></code></pre></td></tr></table></figure>
+
+<p>三个步骤，三个独立数据库。理想情况下一切顺利，但如果第二步库存扣减成功、第三步支付失败怎么办？订单已经创建了，库存已经扣了，钱没扣到——用户白嫖一件商品，仓库还少了一件库存。</p>
+<p>这就是分布式事务要解决的核心问题：<strong>跨多个独立数据库的原子性操作</strong>。</p>
+<p>本文记录了我们从 Seata AT 模式（2PC）到自研 TCC 方案的完整演进过程，最终实现了 40%+ 的性能提升。过程中踩过的坑、做过的权衡，希望对你有帮助。</p>
+<hr>
+<h2 id="第8章回响：DDIA-如何看两阶段提交"><a href="#第8章回响：DDIA-如何看两阶段提交" class="headerlink" title="第8章回响：DDIA 如何看两阶段提交"></a>第8章回响：DDIA 如何看两阶段提交</h2><p>Martin Kleppmann 在《Designing Data-Intensive Applications》第8章中，用了一整节讨论两阶段提交（2PC）与 XA 事务。他的核心观点值得在动手之前认真读一遍：</p>
+<blockquote>
+<p>“两阶段提交是一个反可用性协议——它牺牲了可用性来换取一致性。”</p>
+</blockquote>
+<p>DDIA 指出 2PC 的几个致命问题：</p>
+<ol>
+<li><strong>协调者单点</strong>：协调者挂了，所有参与者持有的锁都无法释放，整个系统卡死。</li>
+<li><strong>同步阻塞</strong>：参与者投完票（prepare yes）之后，必须等协调者发 commit&#x2F;abort 指令，期间锁一直不释放。</li>
+<li><strong>脑裂风险</strong>：网络分区时，协调者和参与者的决策可能不一致。</li>
+</ol>
+<p>理解这些理论缺陷，是后面一切实践改进的前提。我们的 Seata AT → TCC 的演进，本质上就是在解决”锁持有时间长”和”同步阻塞”这两个核心问题。</p>
+<hr>
+<h2 id="2PC-方案：Seata-AT-模式的原理与瓶颈"><a href="#2PC-方案：Seata-AT-模式的原理与瓶颈" class="headerlink" title="2PC 方案：Seata AT 模式的原理与瓶颈"></a>2PC 方案：Seata AT 模式的原理与瓶颈</h2><h3 id="Seata-AT-是怎么工作的"><a href="#Seata-AT-是怎么工作的" class="headerlink" title="Seata AT 是怎么工作的"></a>Seata AT 是怎么工作的</h3><p>Seata 的 AT（Auto Transaction）模式本质上是一个<strong>2PC 实现</strong>，它由三个角色组成：</p>
+<ul>
+<li><strong>TC</strong>（Transaction Coordinator）：事务协调者，维护全局事务状态</li>
+<li><strong>TM</strong>（Transaction Manager）：事务发起方，负责开启&#x2F;提交&#x2F;回滚全局事务</li>
+<li><strong>RM</strong>（Resource Manager）：事务参与方，管理分支事务（即各个微服务的本地事务）</li>
+</ul>
+<p>AT 模式的两阶段流程：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">Phase <span class="hljs-number">1</span>（<span class="hljs-keyword">Prepare</span>）：<br>  <span class="hljs-number">1.</span> TM 向 TC 申请开启全局事务（获得 XID）<br>  <span class="hljs-number">2.</span> 每个 RM 执行本地事务：<br>     a. 执行业务 <span class="hljs-keyword">SQL</span>（<span class="hljs-keyword">INSERT</span>/<span class="hljs-keyword">UPDATE</span>/<span class="hljs-keyword">DELETE</span>）<br>     b. 记录 UNDO <span class="hljs-keyword">LOG</span>（<span class="hljs-keyword">before</span> image + <span class="hljs-keyword">after</span> image）<br>     c. 提交本地事务<br>  <span class="hljs-number">3.</span> 所有 RM 执行完毕，向 TC 报告分支状态<br><br>Phase <span class="hljs-number">2</span>（<span class="hljs-keyword">Commit</span>/<span class="hljs-keyword">Rollback</span>）：<br>  - 全部成功 → TC 发出全局提交，各 RM 异步删除 UNDO <span class="hljs-keyword">LOG</span><br>  - 任一失败 → TC 发出全局回滚，各 RM 根据 UNDO <span class="hljs-keyword">LOG</span> 反向补偿<br></code></pre></td></tr></table></figure>
+
+<p>AT 模式的一个关键优化是<strong>Phase 1 就提交了本地事务</strong>，这和传统 2PC 的 “prepare 但不提交” 不同。这使得数据库连接可以提前释放，减少了连接占用。</p>
+<h3 id="那为什么还是慢？"><a href="#那为什么还是慢？" class="headerlink" title="那为什么还是慢？"></a>那为什么还是慢？</h3><p>虽然 Phase 1 提交了本地事务，但<strong>全局锁</strong>并未释放。Seata AT 为了保证隔离性，会在 UNDO LOG 中记录行锁信息（以 <code>lock_key</code> 形式存在）。在 Phase 2 完成之前，其他事务如果修改同一行数据，会被这个全局锁阻塞。</p>
+<p>实际压测数据（以订单创建 → 库存扣减流程为例）：</p>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs markdown">Seata AT 模式下一个完整事务的耗时分布：<br><span class="hljs-bullet">  -</span> 业务 SQL 执行：80ms（订单表、库存表各40ms）<br><span class="hljs-bullet">  -</span> UNDO LOG 写入：20ms<br><span class="hljs-bullet">  -</span> TC 协调开销（两次 RPC）：60ms<br><span class="hljs-bullet">  -</span> Phase 2 全局锁释放等待：200ms+<br><span class="hljs-bullet">  -</span> 合计平均响应时间：800ms+<br></code></pre></td></tr></table></figure>
+
+<p>那 200ms+ 的等待，就是分布式事务的税收。在日订单 130 万的场景下，高并发时库存热点行的锁竞争会急剧放大这个耗时。</p>
+<p>更关键的是：<strong>对于库存扣减这种场景，我们真的需要从 Try 到 Confirm 全程持有行锁吗？</strong></p>
+<hr>
+<h2 id="TCC-破局：三段式柔性事务"><a href="#TCC-破局：三段式柔性事务" class="headerlink" title="TCC 破局：三段式柔性事务"></a>TCC 破局：三段式柔性事务</h2><h3 id="TCC-的核心思想"><a href="#TCC-的核心思想" class="headerlink" title="TCC 的核心思想"></a>TCC 的核心思想</h3><p>TCC（Try-Confirm-Cancel）是另一种分布式事务模式，它将每个业务操作拆成三个独立的接口：</p>
+<table>
+<thead>
+<tr>
+<th>阶段</th>
+<th>作用</th>
+<th>示例（库存扣减）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Try</strong></td>
+<td>预留资源，做校验</td>
+<td><code>冻结库存=当前库存-要扣减数量</code>，库存数暂不变</td>
+</tr>
+<tr>
+<td><strong>Confirm</strong></td>
+<td>确认执行，真正扣减</td>
+<td><code>实际库存=冻结后库存</code>，清除冻结记录</td>
+</tr>
+<tr>
+<td><strong>Cancel</strong></td>
+<td>回滚释放，取消预留</td>
+<td><code>冻结库存=当前库存</code>，释放冻结数量</td>
+</tr>
+</tbody></table>
+<p>关键在于：<strong>Try 阶段只是预留资源，锁的粒度是”冻结那一部分数量”，而不是锁整行数据</strong>。Confirm&#x2F;Cancel 不需要加全局锁——它们只是对冻结记录的最终操作，可以幂等执行。</p>
+<p>用 DDIA 第8章的语言来说：TCC 把 2PC 的 “同步阻塞等协调者” 改成了 “异步幂等执行最终状态”，从而绕过了协调者的单点阻塞问题。</p>
+<h3 id="接口设计（实战码）"><a href="#接口设计（实战码）" class="headerlink" title="接口设计（实战码）"></a>接口设计（实战码）</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * TCC 事务参与方接口</span><br><span class="hljs-comment"> * 每个微服务必须同时实现这三个方法</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">TccResource</span> &#123;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * Try 阶段：预留资源</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> tccId 事务全局ID，用于幂等控制</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> bizContext 业务上下文（订单信息等）</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> TryResult 包含预留结果和资源ID</span><br><span class="hljs-comment">     */</span><br>    TryResult <span class="hljs-title function_">tryPhase</span><span class="hljs-params">(String tccId, BizContext bizContext)</span>;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * Confirm 阶段：确认执行</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> tccId 事务全局ID</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> reservedId Try阶段返回的资源预留ID</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">confirmPhase</span><span class="hljs-params">(String tccId, String reservedId)</span>;<br><br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * Cancel 阶段：回滚释放</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> tccId 事务全局ID</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> reservedId Try阶段返回的资源预留ID</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">cancelPhase</span><span class="hljs-params">(String tccId, String reservedId)</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>以下是<strong>库存服务的 TCC 实现</strong>（核心逻辑）：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InventoryTccService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">TccResource</span> &#123;<br><br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> InventoryMapper inventoryMapper;<br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> TccTransactionLogMapper tccLogMapper;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-meta">@Transactional(rollbackFor = Exception.class)</span><br>    <span class="hljs-keyword">public</span> TryResult <span class="hljs-title function_">tryPhase</span><span class="hljs-params">(String tccId, BizContext ctx)</span> &#123;<br>        <span class="hljs-comment">// 1. 幂等校验：防止重复Try</span><br>        <span class="hljs-type">TccTransactionLog</span> <span class="hljs-variable">existing</span> <span class="hljs-operator">=</span> tccLogMapper.selectByTccId(tccId);<br>        <span class="hljs-keyword">if</span> (existing != <span class="hljs-literal">null</span>) &#123;<br>            <span class="hljs-comment">// 已执行过Try，返回已有的预留结果</span><br>            <span class="hljs-keyword">return</span> TryResult.ofReuse(existing.getReservedId(), existing.getFrozenQty());<br>        &#125;<br><br>        <span class="hljs-type">long</span> <span class="hljs-variable">skuId</span> <span class="hljs-operator">=</span> ctx.getSkuId();<br>        <span class="hljs-type">int</span> <span class="hljs-variable">deductQty</span> <span class="hljs-operator">=</span> ctx.getQuantity();<br><br>        <span class="hljs-comment">// 2. 业务校验 + 预留库存</span><br>        <span class="hljs-comment">//   SQL: UPDATE inventory</span><br>        <span class="hljs-comment">//        SET available_qty = available_qty - #&#123;deductQty&#125;,</span><br>        <span class="hljs-comment">//            frozen_qty    = frozen_qty + #&#123;deductQty&#125;</span><br>        <span class="hljs-comment">//        WHERE sku_id = #&#123;skuId&#125;</span><br>        <span class="hljs-comment">//        AND available_qty &gt;= #&#123;deductQty&#125;</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">rows</span> <span class="hljs-operator">=</span> inventoryMapper.freeze(skuId, deductQty);<br>        <span class="hljs-keyword">if</span> (rows == <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-keyword">return</span> TryResult.fail(<span class="hljs-string">&quot;库存不足或并发冲突&quot;</span>);<br>        &#125;<br><br>        <span class="hljs-comment">// 3. 记录事务日志（幂等控制 + 空回滚检测）</span><br>        <span class="hljs-type">String</span> <span class="hljs-variable">reservedId</span> <span class="hljs-operator">=</span> UUID.randomUUID().toString();<br>        tccLogMapper.insert(TccTransactionLog.builder()<br>                .tccId(tccId)<br>                .reservedId(reservedId)<br>                .status(TccStatus.TRY)<br>                .skuId(skuId)<br>                .frozenQty(deductQty)<br>                .createTime(LocalDateTime.now())<br>                .build());<br><br>        <span class="hljs-keyword">return</span> TryResult.success(reservedId, deductQty);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-meta">@Transactional(rollbackFor = Exception.class)</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">confirmPhase</span><span class="hljs-params">(String tccId, String reservedId)</span> &#123;<br>        <span class="hljs-comment">// 幂等：已确认则跳过</span><br>        <span class="hljs-type">TccTransactionLog</span> <span class="hljs-variable">log</span> <span class="hljs-operator">=</span> tccLogMapper.selectByTccId(tccId);<br>        <span class="hljs-keyword">if</span> (log == <span class="hljs-literal">null</span> || log.getStatus() == TccStatus.CONFIRM) &#123;<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <span class="hljs-comment">// 空回滚防御：如果Try没执行过Confirm也不能执行</span><br>        <span class="hljs-keyword">if</span> (log.getStatus() == TccStatus.CANCEL) &#123;<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br><br>        <span class="hljs-comment">// 实际扣减：冻结转实扣</span><br>        <span class="hljs-comment">//   SQL: UPDATE inventory</span><br>        <span class="hljs-comment">//        SET total_qty = total_qty - #&#123;frozenQty&#125;,</span><br>        <span class="hljs-comment">//            frozen_qty = frozen_qty - #&#123;frozenQty&#125;</span><br>        <span class="hljs-comment">//        WHERE sku_id = #&#123;skuId&#125;</span><br>        inventoryMapper.confirmFreeze(log.getSkuId(), log.getFrozenQty());<br><br>        tccLogMapper.updateStatus(tccId, TccStatus.CONFIRM);<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-meta">@Transactional(rollbackFor = Exception.class)</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">cancelPhase</span><span class="hljs-params">(String tccId, String reservedId)</span> &#123;<br>        <span class="hljs-comment">// 幂等：已取消则跳过</span><br>        <span class="hljs-type">TccTransactionLog</span> <span class="hljs-variable">log</span> <span class="hljs-operator">=</span> tccLogMapper.selectByTccId(tccId);<br>        <span class="hljs-keyword">if</span> (log == <span class="hljs-literal">null</span> || log.getStatus() == TccStatus.CANCEL) &#123;<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br><br>        <span class="hljs-comment">// 释放冻结库存</span><br>        <span class="hljs-comment">//   SQL: UPDATE inventory</span><br>        <span class="hljs-comment">//        SET available_qty = available_qty + #&#123;frozenQty&#125;,</span><br>        <span class="hljs-comment">//            frozen_qty = frozen_qty - #&#123;frozenQty&#125;</span><br>        <span class="hljs-comment">//        WHERE sku_id = #&#123;skuId&#125;</span><br>        inventoryMapper.unfreeze(log.getSkuId(), log.getFrozenQty());<br><br>        tccLogMapper.updateStatus(tccId, TccStatus.CANCEL);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>事务协调者的编排逻辑</strong>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TccCoordinator</span> &#123;<br><br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> InventoryTccService inventoryTcc;<br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> CouponTccService couponTcc;<br>    <span class="hljs-meta">@Autowired</span><br>    <span class="hljs-keyword">private</span> AccountTccService accountTcc;<br><br>    <span class="hljs-keyword">public</span> OrderResult <span class="hljs-title function_">createOrder</span><span class="hljs-params">(CreateOrderRequest req)</span> &#123;<br>        <span class="hljs-type">String</span> <span class="hljs-variable">tccId</span> <span class="hljs-operator">=</span> generateTccId(); <span class="hljs-comment">// 全局唯一事务ID</span><br><br>        <span class="hljs-comment">// ===== Try 阶段：预留所有资源 =====</span><br>        List&lt;TryCallable&gt; tasks = Arrays.asList(<br>            () -&gt; inventoryTcc.tryPhase(tccId, req.getInventoryContext()),<br>            () -&gt; couponTcc.tryPhase(tccId, req.getCouponContext()),<br>            () -&gt; accountTcc.tryPhase(tccId, req.getAccountContext())<br>        );<br><br>        List&lt;TryResult&gt; tryResults = parallelTry(tasks); <span class="hljs-comment">// 并行Try，提升性能</span><br><br>        <span class="hljs-comment">// 检查Try结果</span><br>        Optional&lt;TryResult&gt; failed = tryResults.stream()<br>                .filter(r -&gt; !r.isSuccess()).findFirst();<br><br>        <span class="hljs-keyword">if</span> (failed.isPresent()) &#123;<br>            <span class="hljs-comment">// ===== Cancel 阶段：回滚已预留的资源 =====</span><br>            rollbackTry(tccId, tryResults); <span class="hljs-comment">// 异步并行Cancel</span><br>            <span class="hljs-keyword">return</span> OrderResult.fail(failed.get().getErrorMsg());<br>        &#125;<br><br>        <span class="hljs-comment">// ===== Confirm 阶段：确认所有资源变更 =====</span><br>        confirmAll(tccId, tryResults); <span class="hljs-comment">// 异步并行Confirm</span><br>        <span class="hljs-keyword">return</span> OrderResult.success();<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollbackTry</span><span class="hljs-params">(String tccId, List&lt;TryResult&gt; results)</span> &#123;<br>        <span class="hljs-comment">// 只回滚Try成功的那些资源（失败的不用回滚）</span><br>        results.stream()<br>            .filter(TryResult::isSuccess)<br>            .parallel()<br>            .forEach(r -&gt; r.getService().cancelPhase(tccId, r.getReservedId()));<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">confirmAll</span><span class="hljs-params">(String tccId, List&lt;TryResult&gt; results)</span> &#123;<br>        results.parallelStream()<br>            .forEach(r -&gt; r.getService().confirmPhase(tccId, r.getReservedId()));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>几个关键设计决策：</p>
+<ol>
+<li><strong>Try 阶段并行执行</strong>：三个微服务的 Try 操作互不依赖，并行调用能将 Try 耗时从 <code>T_inventory + T_coupon + T_account</code> 降到 <code>max(T_inventory, T_coupon, T_account)</code>。</li>
+<li><strong>Cancel 时只回滚成功的 Try</strong>：失败了就没预留，回滚一个不存在的东西会导致异常。这也是”悬挂”问题的一个侧面。</li>
+<li><strong>事务日志表（<code>tcc_transaction_log</code>）是关键基础设施</strong>：它承载了幂等控制、空回滚检测、故障恢复三重责任。</li>
+</ol>
+<hr>
+<h2 id="两个绕不开的坑：空回滚与悬挂"><a href="#两个绕不开的坑：空回滚与悬挂" class="headerlink" title="两个绕不开的坑：空回滚与悬挂"></a>两个绕不开的坑：空回滚与悬挂</h2><h3 id="空回滚：Cancel-比-Try-先到"><a href="#空回滚：Cancel-比-Try-先到" class="headerlink" title="空回滚：Cancel 比 Try 先到"></a>空回滚：Cancel 比 Try 先到</h3><p>TCC 的网络调用顺序可能是这样的：</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs arcade">协调者发起 <span class="hljs-keyword">Try</span>(库存服务) → 网络超时 → 协调者认为失败 → 发起 Cancel<br>                                |<br>                                此时 <span class="hljs-keyword">Try</span> 请求终于到达库存服务 → 执行了 <span class="hljs-keyword">Try</span>（冻结库存）<br></code></pre></td></tr></table></figure>
+
+<p>如果库存服务接到 Cancel 时发现没有对应的 Try 记录（还没到），这就是<strong>空回滚</strong>。此时不能报错——这在设计上是合法的。而后面 Try 到了，发现已有 Cancel 记录，就拒绝执行（防止悬挂）。</p>
+<p>解决方案：<strong>事务状态表 + 状态机</strong>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// Cancel 阶段的空回滚处理</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">cancelPhase</span><span class="hljs-params">(String tccId, String reservedId)</span> &#123;<br>    <span class="hljs-type">TccTransactionLog</span> <span class="hljs-variable">log</span> <span class="hljs-operator">=</span> tccLogMapper.selectByTccId(tccId);<br>    <span class="hljs-keyword">if</span> (log == <span class="hljs-literal">null</span>) &#123;<br>        <span class="hljs-comment">// 空回滚：Try还没到，先插入一条CANCEL状态的占位记录</span><br>        tccLogMapper.insert(TccTransactionLog.builder()<br>            .tccId(tccId)<br>            .status(TccStatus.CANCEL)<br>            .build());<br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br>    <span class="hljs-comment">// ...正常回滚逻辑</span><br>&#125;<br><br><span class="hljs-comment">// Try 阶段的悬挂防御</span><br><span class="hljs-keyword">public</span> TryResult <span class="hljs-title function_">tryPhase</span><span class="hljs-params">(String tccId, BizContext ctx)</span> &#123;<br>    <span class="hljs-type">TccTransactionLog</span> <span class="hljs-variable">log</span> <span class="hljs-operator">=</span> tccLogMapper.selectByTccId(tccId);<br>    <span class="hljs-keyword">if</span> (log != <span class="hljs-literal">null</span> &amp;&amp; log.getStatus() == TccStatus.CANCEL) &#123;<br>        <span class="hljs-comment">// 悬挂：Cancel已经先执行过了，这个Try是迟到的，直接拒绝</span><br>        <span class="hljs-keyword">return</span> TryResult.fail(<span class="hljs-string">&quot;事务已取消&quot;</span>);<br>    &#125;<br>    <span class="hljs-comment">// ...正常Try逻辑</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>DDIA 没有专门讨论空回滚，但 Martin 在 saga 和协调者容错部分提到过类似问题：<strong>在不可靠的网络上，消息的到达顺序无法保证</strong>。TCC 的空回滚问题本质上是分布式系统中”恰好一次”语义的另一种表现，解决方案也是同一套：幂等 + 状态机。</p>
+<h3 id="悬挂：同一个-tccId-下-Cancel-先执行，Try-后到"><a href="#悬挂：同一个-tccId-下-Cancel-先执行，Try-后到" class="headerlink" title="悬挂：同一个 tccId 下 Cancel 先执行，Try 后到"></a>悬挂：同一个 tccId 下 Cancel 先执行，Try 后到</h3><p>上面空回滚的代码已经包含了悬挂的处理——但还需要考虑更复杂的情况：</p>
+<figure class="highlight dts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs dts">时间线：<br><span class="hljs-symbol">  T1:</span> Cancel 到达 → 插入 <span class="hljs-attr">status</span><span class="hljs-operator">=</span>CANCEL 记录<br><span class="hljs-symbol">  T2:</span> Try 到达 → 发现 <span class="hljs-attr">status</span><span class="hljs-operator">=</span>CANCEL → 拒绝（这是对 T1 的防御）<br><span class="hljs-symbol">  T3:</span> 又来了一个 Try（重试）→ 同样拒绝<br><br>  <span class="hljs-comment">// 这其实还好。更危险的是：</span><br><span class="hljs-symbol">  T1:</span> Try 到达 → 执行成功 → <span class="hljs-attr">status</span><span class="hljs-operator">=</span>TRY → 服务器宕机<br><span class="hljs-symbol">  T2:</span> 协调者超时 → 发起 Cancel<br><span class="hljs-symbol">  T3:</span> 服务器恢复 → Try 的本地事务提交了 → 但 Cancel 也到了<br><span class="hljs-symbol">  T4:</span> Cancel 执行 → 释放了不存在的冻结（Try被覆盖了）<br></code></pre></td></tr></table></figure>
+
+<p>这种更复杂的场景需要<strong>重试机制 + 超时兜底</strong>。我们的做法是：</p>
+<ol>
+<li>协调者维护事务超时（60 秒），超时一律 Cancel</li>
+<li>Cancel 一定基于事务日志中的 frozen_qty 释放，而不是凭空计算</li>
+<li>定时任务扫描长时间 TRY 状态的事务，主动 Cancel</li>
+</ol>
+<hr>
+<h2 id="性能对比：40-提升从哪来的"><a href="#性能对比：40-提升从哪来的" class="headerlink" title="性能对比：40% 提升从哪来的"></a>性能对比：40% 提升从哪来的</h2><p>在相同的压测条件下（8C16G x 3 节点，MySQL 5.7，日订单 130 万级流量），我们对两个方案做了基准测试：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>Seata AT (2PC)</th>
+<th>自研 TCC</th>
+<th>提升</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>平均响应时间</td>
+<td>820ms</td>
+<td>475ms</td>
+<td><strong>42%</strong></td>
+</tr>
+<tr>
+<td>P99 响应时间</td>
+<td>2100ms</td>
+<td>980ms</td>
+<td><strong>53%</strong></td>
+</tr>
+<tr>
+<td>锁持有时间（库存行）</td>
+<td>300ms</td>
+<td>45ms</td>
+<td><strong>85%</strong></td>
+</tr>
+<tr>
+<td>并发 TPS</td>
+<td>580</td>
+<td>1120</td>
+<td><strong>93%</strong></td>
+</tr>
+<tr>
+<td>全局锁冲突率</td>
+<td>12%</td>
+<td>0%</td>
+<td>—</td>
+</tr>
+<tr>
+<td>事务成功率</td>
+<td>99.5%</td>
+<td>99.8%</td>
+<td>—</td>
+</tr>
+</tbody></table>
+<p>性能提升的根源在于两点：</p>
+<ol>
+<li><strong>锁粒度</strong>：TCC 的 Try 阶段只做”冻结”，并发操作的是 <code>available_qty</code> 和 <code>frozen_qty</code> 两个字段，不存在”等你回滚完我才能扣”的互斥等待。传统 AT 模式中，一条库存记录的 <code>total_qty</code> 被锁，所有并发扣减都得排队。</li>
+<li><strong>异步化</strong>：Confirm 和 Cancel 都是异步并行执行，不需要等到最后一刻放锁。AT 模式中 Phase 2 是整体事务的最后一步，这之前所有行锁都得拿着。</li>
+</ol>
+<p>另外，AT 模式的 UNDO LOG 写入也是额外的数据库开销（每行操作要多写一次 before-image 和 after-image），而 TCC 的事务日志表更轻量。</p>
+<hr>
+<h2 id="不是所有场景都适合-TCC"><a href="#不是所有场景都适合-TCC" class="headerlink" title="不是所有场景都适合 TCC"></a>不是所有场景都适合 TCC</h2><p>实事求是的说，TCC 不是银弹。它的代价非常明显：</p>
+<p><strong>1. 改造工作量大</strong><br>每个参与分布式事务的接口都要写三套逻辑（Try&#x2F;Confirm&#x2F;Cancel），而且 Cancel 的逻辑往往比正向流程更难写。比如优惠券的 Cancel，不仅仅是”不退券”，还要处理”优惠券的已使用次数回退”这种复杂状态。</p>
+<p><strong>2. 业务侵入性强</strong><br>AT 模式对代码几乎无侵入——加个 <code>@GlobalTransactional</code> 注解就行。TCC 需要从业务层面重新建模，把”直接扣库存”拆成”冻结→确认&#x2F;取消”。这对简单场景是过度设计。</p>
+<p><strong>3. 最终一致性窗口</strong><br>TCC 的 Confirm 和 Cancel 是异步执行的，所以在 Try 成功但 Confirm 执行前的短暂窗口期，数据处于”预留但未实际生效”的状态。读操作需要感知这个中间状态（比如展示”已下单，处理中”）。</p>
+<h3 id="我们的分层策略"><a href="#我们的分层策略" class="headerlink" title="我们的分层策略"></a>我们的分层策略</h3><p>最终我们在供应链中台实行了这样的分层：</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs ada">核心交易链路（订单、库存、支付）：<br>  → TCC 方案<br>  理由：高并发 + 强一致性诉求<br><br>非核心链路（评论、积分、通知）：<br>  → Seata <span class="hljs-keyword">AT</span> 或 本地消息表 + 定时补偿<br>  理由：改造工作量 &gt; 收益<br><br>对账/清算/报表：<br>  → 异步消息 + 最终一致性<br>  理由：对延迟不敏感，允许分钟级对齐<br></code></pre></td></tr></table></figure>
+
+<p>DDIA 第8章末尾有一段话特别适合总结我们的选择：</p>
+<blockquote>
+<p>“在分布式系统中，你必须在一致性、可用性和分区容错之间做出权衡。但更重要的是，你需要知道<strong>哪些数据真正需要强一致性</strong>，哪些可以接受最终一致。”</p>
+</blockquote>
+<hr>
+<h2 id="总结：从-2PC-到-TCC-的三点感悟"><a href="#总结：从-2PC-到-TCC-的三点感悟" class="headerlink" title="总结：从 2PC 到 TCC 的三点感悟"></a>总结：从 2PC 到 TCC 的三点感悟</h2><p><strong>第一，理论指导方向，工程决定边界。</strong> DDIA 告诉我们 2PC 有什么问题，但它不会告诉你”库存扣减应该用 TCC 还是 Saga”。后者是你自己的业务特征决定的。我们的 AT → TCC 迁移花了三个月，其中只有第一周在设计方案，后面全在写 Cancel 逻辑和处理边界 case。</p>
+<p><strong>第二，锁的粒度决定吞吐上限。</strong> 任何分布式事务方案的本质都是”用锁来保证一致性”，锁的范围越大、持有时间越长，并发性能越差。TCC 的核心价值不是”没有锁”，而是”让锁的范围和持有时间更小”。</p>
+<p><strong>第三，空回滚和悬挂是两个看似边缘、实则核心的问题。</strong> 如果你的 TCC 实现没有妥善处理这两个问题，生产环境一定会以你意想不到的方式翻车。我在第一次上线的深夜就遇到了空回滚——因为网络抖动，Cancel 比 Try 早到了 37 毫秒。</p>
+<p>分布式事务本质上是分布式系统中 CAP 权衡的一个子命题。没有完美的方案，只有适合业务特征的方案。希望这篇文章能帮助你在做技术选型时多一个切实的参考。</p>
+<hr>
+<p><em>本文是 DDIA 实战解读系列的第 8 篇。下一篇我们将讨论 Saga 模式——当 TCC 的 Try&#x2F;Confirm&#x2F;Cancel 仍然太”重”时，如何用正向补偿实现更灵活的长事务编排。</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="print-no-link">#分布式事务</a>
+      
+        <a href="/tags/Seata/" class="print-no-link">#Seata</a>
+      
+        <a href="/tags/TCC/" class="print-no-link">#TCC</a>
+      
+        <a href="/tags/2PC/" class="print-no-link">#2PC</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路</div>
+      <div>https://aster-xu-lab.github.io/2026/08/23/2026-08-23-DDIA-08-2PC到TCC/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年8月23日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/08/23/2026-08-23-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/" title="DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/08/23/2026-08-23-DDIA-08-MVCC%E5%A4%9A%E7%89%88%E6%9C%AC%E5%B9%B6%E5%8F%91%E6%8E%A7%E5%88%B6/" title="DDIA-08-MVCC多版本并发控制：PostgreSQL和MySQL都在用的魔法">
+                        <span class="hidden-mobile">DDIA-08-MVCC多版本并发控制：PostgreSQL和MySQL都在用的魔法</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
