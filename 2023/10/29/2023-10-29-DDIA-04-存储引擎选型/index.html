@@ -1,0 +1,1033 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="前言上一篇文章我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊存储引擎。 坦白说，2019年我第一次读DDIA这部分时，只觉得是”数据库内部的机械结构”，跟我的日常工作有什么关系？我又不写数据库。 2026年回头看，这个想法错得离谱。 过去七年，我经历了三种典型的存储场景：订单核心的读写混合（InnoDB">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-04-从RocksDB到MySQL InnoDB：不同场景的存储引擎选型">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2023/10/29/2023-10-29-DDIA-04-%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E9%80%89%E5%9E%8B/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="前言上一篇文章我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊存储引擎。 坦白说，2019年我第一次读DDIA这部分时，只觉得是”数据库内部的机械结构”，跟我的日常工作有什么关系？我又不写数据库。 2026年回头看，这个想法错得离谱。 过去七年，我经历了三种典型的存储场景：订单核心的读写混合（InnoDB">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-10-29T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T11:12:09.747Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="B+Tree">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="InnoDB">
+<meta property="article:tag" content="LSM-Tree">
+<meta property="article:tag" content="MyRocks">
+<meta property="article:tag" content="RocksDB">
+<meta property="article:tag" content="存储引擎">
+<meta property="article:tag" content="选型">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-04-从RocksDB到MySQL InnoDB：不同场景的存储引擎选型 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-04-从RocksDB到MySQL InnoDB：不同场景的存储引擎选型"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-10-29 09:00" pubdate>
+          2023年10月29日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          8.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          71 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-04-从RocksDB到MySQL InnoDB：不同场景的存储引擎选型</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>上一篇文章我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊<strong>存储引擎</strong>。</p>
+<p>坦白说，2019年我第一次读DDIA这部分时，只觉得是”数据库内部的机械结构”，跟我的日常工作有什么关系？我又不写数据库。</p>
+<p>2026年回头看，这个想法错得离谱。</p>
+<p>过去七年，我经历了三种典型的存储场景：订单核心的读写混合（InnoDB扛了五年），SyncTask任务执行记录的海量写入（每天几百万条append-only记录），以及日志归档的冷热分离。三次遇到InnoDB的性能瓶颈，两次考虑换引擎，最终一次真的换了。这些痛苦记忆，让我彻底理解了DDIA第三章后半部分的价值。</p>
+<p><strong>存储引擎选型，本质是一个trade-off问题，不是一个技术问题。</strong> 你不是在技术上天入地地证明B+Tree比LSM-Tree更”好”，而是在你的业务场景下，权衡读写比例、数据量级、事务需求、运维复杂度之后，选择那个代价最小的方案。</p>
+<p>这篇文章，我从三个存储引擎讲起：MySQL InnoDB（B+Tree）、RocksDB（LSM-Tree）、MyRocks（LSM-Tree + MySQL），最后回到我们SyncTask引擎的实战推演。</p>
+<hr>
+<h2 id="一、InnoDB与B-Tree：OLTP的默认选择，但不是唯一答案"><a href="#一、InnoDB与B-Tree：OLTP的默认选择，但不是唯一答案" class="headerlink" title="一、InnoDB与B+Tree：OLTP的默认选择，但不是唯一答案"></a>一、InnoDB与B+Tree：OLTP的默认选择，但不是唯一答案</h2><h3 id="1-1-InnoDB为什么用B-Tree"><a href="#1-1-InnoDB为什么用B-Tree" class="headerlink" title="1.1 InnoDB为什么用B+Tree"></a>1.1 InnoDB为什么用B+Tree</h3><p>如果你做过MySQL面试题，大概率背过这个答案：InnoDB用B+Tree作为索引结构，因为B+Tree是一种平衡多路搜索树，叶子节点形成有序链表，适合范围查询，同时树的高度很小（一个3层B+Tree可以索引千万级数据），磁盘I&#x2F;O次数少。</p>
+<p>但DDIA的讲法不一样。它不给你背答案，它给你讲为什么。</p>
+<p>B+Tree的核心设计哲学是：<strong>用空间换时间，用有序换查询</strong>。</p>
+<ul>
+<li><strong>有序</strong>：叶子节点按键值排序，所以 <code>WHERE id BETWEEN 1000 AND 2000</code> 不需要全表扫描，只需要找到1000的位置然后顺序读下去。</li>
+<li><strong>平衡</strong>：无论插入什么数据，树保持平衡，任何key的查找路径长度都差不多，不会有极端退化。</li>
+<li><strong>页分裂的代价</strong>：插入数据时，如果目标页满了，B+Tree需要页分裂——把一页拆成两页，更新父节点的指针。页分裂是B+Tree写入放大的主要来源：你插一行数据，可能触发多次磁盘写入。</li>
+</ul>
+<h3 id="1-2-InnoDB的完整图景：不仅仅是B-Tree"><a href="#1-2-InnoDB的完整图景：不仅仅是B-Tree" class="headerlink" title="1.2 InnoDB的完整图景：不仅仅是B+Tree"></a>1.2 InnoDB的完整图景：不仅仅是B+Tree</h3><p>把InnoDB想象成一个B+Tree包装的完整存储系统，它包括：</p>
+<ol>
+<li><strong>缓冲池（Buffer Pool）</strong>：InnoDB不会每次都读写磁盘。热数据页放在内存的缓冲池里，读命中时直接返回，写操作先写内存页再异步刷盘。这是InnoDB性能的基础——如果你的工作集全部能塞进内存，B+Tree的性能其实非常接近纯内存结构。</li>
+<li><strong>Redo Log（WAL）</strong>：InnoDB的写操作实际上先写Redo Log（顺序写），再异步修改缓冲池中的页。Redo Log是InnoDB写入性能的关键优化——它把随机写（修改数据页）转成了顺序写（追加到Redo Log）。崩溃恢复时，用Redo Log回放未刷盘的数据。</li>
+<li><strong>Undo Log（MVCC）</strong>：InnoDB的多版本并发控制（MVCC）通过Undo Log实现。当你开启一个事务，你看到的是事务开始时刻的数据快照，即使其他事务同时修改了数据。这是InnoDB事务隔离性的基础。</li>
+<li><strong>锁机制</strong>：行锁、间隙锁、临键锁——InnoDB在高并发写入时的性能关键。</li>
+</ol>
+<p><strong>InnoDB适合什么场景？</strong> OLTP：点查+范围查询、读写混合、事务完善、数据量可控。</p>
+<p><strong>InnoDB不适合什么场景？</strong></p>
+<ul>
+<li><strong>写多读少的append-only场景</strong>。因为B+Tree的页分裂、索引更新的随机写开销，在写入密集场景下会成为瓶颈。</li>
+<li><strong>数据量远超内存的冷数据场景</strong>。B+Tree的查询性能依赖缓冲池命中率，一旦工作集超出内存，性能会断崖式下降——因为每一次随机读都可能触发磁盘I&#x2F;O。</li>
+</ul>
+<h3 id="1-3-实战教训：InnoDB的写入瓶颈是真实存在的"><a href="#1-3-实战教训：InnoDB的写入瓶颈是真实存在的" class="headerlink" title="1.3 实战教训：InnoDB的写入瓶颈是真实存在的"></a>1.3 实战教训：InnoDB的写入瓶颈是真实存在的</h3><p>我们SyncTask任务执行记录表就是典型案例。每一个Handler执行一次任务就写入一条记录，每天几百万条写入，而读操作只是偶尔查一下某个任务最近是否成功。纯append-only，写入量巨大，读极少。</p>
+<p>表结构大致是：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> sync_task_record (<br>    id <span class="hljs-type">BIGINT</span> AUTO_INCREMENT <span class="hljs-keyword">PRIMARY KEY</span>,<br>    task_id <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">64</span>) <span class="hljs-keyword">NOT NULL</span>,<br>    handler_name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">128</span>) <span class="hljs-keyword">NOT NULL</span>,<br>    status TINYINT <span class="hljs-keyword">NOT NULL</span> COMMENT <span class="hljs-string">&#x27;1-执行中 2-成功 3-失败&#x27;</span>,<br>    start_time DATETIME <span class="hljs-keyword">NOT NULL</span>,<br>    end_time DATETIME,<br>    KEY idx_task_id (task_id),<br>    KEY idx_handler_name (handler_name),<br>    KEY idx_status (status),<br>    KEY idx_start_time (start_time)<br>) ENGINE<span class="hljs-operator">=</span>InnoDB;<br></code></pre></td></tr></table></figure>
+
+<p>每天几百万条INSERT，意味着InnoDB主键索引（B+Tree）在不断追加数据，buffer pool中的热点页被不断地脏化、刷盘、加载。同时还有4个二级索引需要维护——每次INSERT都要更新5棵B+Tree。</p>
+<p>一年下来表膨胀到几亿行，buffer pool装不下工作集了。写入时触发频繁的页分裂、索引更新、磁盘I&#x2F;O。监控上，写入延迟的p99从早期的5ms逐步爬升到100ms+。</p>
+<p>我们当时的优化手段：归档老数据到备份表、调大buffer pool、优化索引数量。这些是在”不换引擎”的大前提下把InnoDB压榨到极致。效果有，但成本越来越高——DDL操作锁表时间越来越长，备份恢复越来越慢，运维负担越来越重。</p>
+<p>这就是为什么我开始认真研究LSM-Tree。</p>
+<hr>
+<h2 id="二、RocksDB与LSM-Tree：写入密集场景的王者"><a href="#二、RocksDB与LSM-Tree：写入密集场景的王者" class="headerlink" title="二、RocksDB与LSM-Tree：写入密集场景的王者"></a>二、RocksDB与LSM-Tree：写入密集场景的王者</h2><h3 id="2-1-LSM-Tree的核心思想"><a href="#2-1-LSM-Tree的核心思想" class="headerlink" title="2.1 LSM-Tree的核心思想"></a>2.1 LSM-Tree的核心思想</h3><p>LSM-Tree（Log-Structured Merge-Tree）的设计哲学和B+Tree截然相反：<strong>用读的代价换写的极致性能</strong>。</p>
+<p>核心操作：</p>
+<ol>
+<li><strong>写入</strong>：新数据先写入内存中的MemTable（通常是SkipList或红黑树），当MemTable满了（比如64MB），将其冻结并刷成一个**SSTable（Sorted String Table）**到磁盘上。这一步是纯顺序写，速度极快。</li>
+<li><strong>读取</strong>：查询一个key时，先查MemTable，再按时间从新到旧依次查各级SSTable。也就是说，读操作可能需要访问多个地方，最坏情况要扫描所有层。为了加速读，LSM-Tree用<strong>Bloom Filter</strong>快速判断某个SSTable中是否存在目标key，大幅减少不必要的磁盘读。</li>
+<li><strong>Compaction（合并）</strong>：磁盘上多个SSTable需要定期合并，消除冗余key（只保留最新版本），保持读效率。Compaction是LSM-Tree的隐形成本——它消耗磁盘带宽和CPU，如果控制不好，会影响前台读写性能。</li>
+</ol>
+<h3 id="2-2-RocksDB做了什么优化"><a href="#2-2-RocksDB做了什么优化" class="headerlink" title="2.2 RocksDB做了什么优化"></a>2.2 RocksDB做了什么优化</h3><p>RocksDB是Facebook基于Google LevelDB二次开发的嵌入式KV存储引擎，本质上就是LSM-Tree的工程顶配版。</p>
+<p>相比标准LSM-Tree，RocksDB的关键改进包括：</p>
+<ul>
+<li><strong>多线程Compaction</strong>：并行合并SST，减少Compaction对前台的影响；</li>
+<li><strong>分层压缩策略</strong>：Level Compaction、Universal Compaction、FIFO Compaction等多种策略，按场景选择；</li>
+<li><strong>布隆过滤器全层部署</strong>：每层SST都有Bloom Filter，读放大可控；</li>
+<li><strong>Column Family</strong>：逻辑上把不同类别的数据分开管理，相当于表分区的概念；</li>
+<li><strong>Merge Operator</strong>：支持自定义合并逻辑，比如计数器场景直接用Add Merge，不需要Read-Modify-Write。</li>
+</ul>
+<h3 id="2-3-什么场景应该选RocksDB"><a href="#2-3-什么场景应该选RocksDB" class="headerlink" title="2.3 什么场景应该选RocksDB"></a>2.3 什么场景应该选RocksDB</h3><ul>
+<li><strong>写多读少</strong>：日志、时序数据、IoT传感器数据、消息队列持久化——大量append-only写入，读占比低。</li>
+<li><strong>KV访问模式</strong>：不需要复杂的JOIN和事务，以简单的Put&#x2F;Get操作为主。</li>
+<li><strong>顺序写为主</strong>：数据的key有单调递增特性（比如时间戳），写入几乎全部落在最新的SST上，Compaction压力极小。</li>
+<li><strong>能接受ms级延迟波动</strong>：Compaction执行期间，磁盘资源和CPU被占用，前台读写延迟会出现毛刺。如果你的业务要求严格的p999延迟在1ms以内，RocksDB需要谨慎调优。</li>
+</ul>
+<p><strong>RocksDB不是什么场景都适合的。</strong> 如果你的业务需要多表JOIN、ACID事务、或者大量范围扫描（LSM-Tree的范围扫描可能跨多层SST，I&#x2F;O开销远大于B+Tree），RocksDB不是你该选的工具。</p>
+<hr>
+<h2 id="三、MyRocks：当你想用MySQL生态，但InnoDB写不动了"><a href="#三、MyRocks：当你想用MySQL生态，但InnoDB写不动了" class="headerlink" title="三、MyRocks：当你想用MySQL生态，但InnoDB写不动了"></a>三、MyRocks：当你想用MySQL生态，但InnoDB写不动了</h2><p>这一点跟我们团队的真实处境高度吻合。</p>
+<h3 id="3-1-Facebook为什么造MyRocks"><a href="#3-1-Facebook为什么造MyRocks" class="headerlink" title="3.1 Facebook为什么造MyRocks"></a>3.1 Facebook为什么造MyRocks</h3><p>Facebook的核心服务（社交、消息、Feed流）运行着巨大的MySQL集群。随着用户量和数据量的增长，InnoDB的写入性能和存储空间都成了问题：</p>
+<ul>
+<li><strong>写入放大</strong>：InnoDB的页分裂和二级索引维护，导致实际磁盘写入量远大于业务写入量。Facebook的测算显示，在某些场景下InnoDB的写入放大高达10倍；</li>
+<li><strong>存储膨胀</strong>：同样的数据，InnoDB的磁盘占用是压缩后RocksDB的2-3倍——因为B+Tree页有碎片（页分裂后留空洞），而LSM-Tree的SSTable是紧密打包的；</li>
+<li><strong>不想离开MySQL生态</strong>：Facebook有大量的MySQL运维工具、监控体系、备份恢复流程、开发框架，全部推到重写不现实。</li>
+</ul>
+<p>于是他们做了一件事：<strong>把RocksDB作为MySQL的存储引擎插件</strong>。这就是MyRocks——MySQl + RocksDB。</p>
+<p>你可以继续用标准的SQL、用InnoDB时用的那些ORM框架和连接池，只是在建表时指定 <code>ENGINE=ROCKSDB</code>，底层就切到了LSM-Tree。</p>
+<h3 id="3-2-MyRocks的权衡"><a href="#3-2-MyRocks的权衡" class="headerlink" title="3.2 MyRocks的权衡"></a>3.2 MyRocks的权衡</h3><p><strong>优点：</strong></p>
+<ul>
+<li>写入性能是InnoDB的2-10倍（取决于写入模式和Compaction配置）；</li>
+<li>磁盘空间占用是InnoDB的1&#x2F;2到1&#x2F;3（SSTable天然紧凑+压缩）；</li>
+<li>更高的写入吞吐量意味着可以用更少的机器支撑同样的写入压力。</li>
+</ul>
+<p><strong>代价：</strong></p>
+<ul>
+<li><strong>没有Gap Lock</strong>：MyRocks的事务隔离级别只到READ COMMITTED，不支持REPEATABLE READ和间隙锁。如果你的业务依赖InnoDB的默认隔离级别，需要改代码；</li>
+<li><strong>纯主键扫描比InnoDB慢</strong>：范围扫描在LSM-Tree中需要跨多层SST读取数据；</li>
+<li><strong>Compaction的延迟毛刺</strong>：虽然RocksDB做了大量优化，但高写入压力下Compaction仍然是不可忽视的前台延迟来源；</li>
+<li><strong>生态成熟度</strong>：MyRocks的用户群体远小于InnoDB，网上的踩坑经验和运维文档少得可怜。当你遇到问题时，很可能需要自己去翻RocksDB源码；</li>
+<li><strong>运维复杂度</strong>：MySQL DBA大多只懂InnoDB，MyRocks需要额外学习RocksDB的调优参数（Compaction策略、MemTable大小、Level数量、Block Cache……），团队能力门槛显著提高。</li>
+</ul>
+<hr>
+<h2 id="四、选型决策树：五个维度帮你做决策"><a href="#四、选型决策树：五个维度帮你做决策" class="headerlink" title="四、选型决策树：五个维度帮你做决策"></a>四、选型决策树：五个维度帮你做决策</h2><p>每次面对存储引擎选型，我都会拿出下面这个决策树。它不是教条的公式，而是帮助我们结构化思考的工具：</p>
+<h3 id="第一维：数据集大小"><a href="#第一维：数据集大小" class="headerlink" title="第一维：数据集大小"></a>第一维：数据集大小</h3><ul>
+<li><strong>工作集能全部塞进内存（比如几十GB以内）</strong>：InnoDB的缓冲池能覆盖全部热数据时，随机读基本没有磁盘I&#x2F;O。B+Tree的查询优势完全发挥，InnoDB是最省心的选择。</li>
+<li><strong>工作集远超内存（TB级别）</strong>：B+Tree的随机读不断触发磁盘I&#x2F;O，缓冲池命中率急剧下降。此时LSM-Tree虽然也有读放大，但通过Bloom Filter + 顺序读盘的方式，反而可能比B+Tree表现更好。</li>
+</ul>
+<h3 id="第二维：读写比例"><a href="#第二维：读写比例" class="headerlink" title="第二维：读写比例"></a>第二维：读写比例</h3><ul>
+<li><strong>读多写少（读写比 &gt; 5:1）</strong>：典型的OLTP业务——用户下单10次，可能查了50次订单状态。B+Tree的查询路径极短，InnoDB是标准答案。</li>
+<li><strong>读写均衡（读写比 ≈ 1:1到3:1）</strong>：大部分在线业务都在这区间。InnoDB依然是首选，但要注意写入热点——比如某个用户的订单特别多，可能导致单页频繁分裂。</li>
+<li><strong>写多读少（读写比 &lt; 1:3）</strong>：日志、时序、消息记录、任务执行记录——这是LSM-Tree的舒适区。顺序写极快，读放大可以通过Bloom Filter和大Block Cache控制。</li>
+</ul>
+<h3 id="第三维：是否需要事务"><a href="#第三维：是否需要事务" class="headerlink" title="第三维：是否需要事务"></a>第三维：是否需要事务</h3><ul>
+<li><strong>需要ACID事务 + REPEATABLE READ隔离级别</strong>：InnoDB几乎是你唯一的选择。MyRocks虽然也支持事务，但隔离级别不支持REPEATABLE READ，没有Gap Lock，在复杂事务场景下不如InnoDB成熟。</li>
+<li><strong>只需要单行事务（或最终一致性即可）</strong>：RocksDB（或MyRocks）完全够用。</li>
+</ul>
+<h3 id="第四维：延迟要求"><a href="#第四维：延迟要求" class="headerlink" title="第四维：延迟要求"></a>第四维：延迟要求</h3><ul>
+<li><strong>严格的p999延迟SLA（如&lt;50ms）</strong>：InnoDB的延迟更稳定——B+Tree的操作路径长度固定，不会因为后台Compaction出现剧烈延迟毛刺。业务高峰期数据量大的时候你需要对LSM-Tree的Compaction策略做大量配置调优，不然前台延迟就会出现”间歇性抽风”。</li>
+<li><strong>可以接受偶尔的延迟抖动</strong>：LSM-Tree的Compaction期间延迟毛刺通常为几百ms到几秒级别。可以通过限制Compaction速率、增加并发Compaction线程、使用Universal Compaction等方式缓解，但无法完全消除。</li>
+</ul>
+<h3 id="第五维：运维复杂度"><a href="#第五维：运维复杂度" class="headerlink" title="第五维：运维复杂度"></a>第五维：运维复杂度</h3><ul>
+<li><strong>团队是标准MySQL技术栈，DBA只懂InnoDB</strong>：保持InnoDB。技术选型不是一个人的事，是整个团队需要长期维护的决策。选存储引擎的时候，不光要考虑当下能不能跑通，还要考虑未来出问题的时候，是你一个人能修还是整个团队都能修。</li>
+<li><strong>团队有LSM-Tree调优经验或愿意投入学习成本</strong>：可以尝试RocksDB&#x2F;MyRocks。但要清楚：投入的是现在的时间，省下的是未来的机器成本。</li>
+</ul>
+<hr>
+<h2 id="五、实战推演：SyncTask任务执行记录的存储引擎选型"><a href="#五、实战推演：SyncTask任务执行记录的存储引擎选型" class="headerlink" title="五、实战推演：SyncTask任务执行记录的存储引擎选型"></a>五、实战推演：SyncTask任务执行记录的存储引擎选型</h2><p>这是全文最重要的部分。我不打算给一个标准答案，而是还原我们团队的真实思考过程。因为我认为，<strong>决策的过程比决策的结果更有分享价值</strong>。</p>
+<h3 id="5-1-场景画像"><a href="#5-1-场景画像" class="headerlink" title="5.1 场景画像"></a>5.1 场景画像</h3><p>SyncTask驿传引擎的任务执行记录表，数据特征：</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>特征</th>
+<th>分析</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>写入量</td>
+<td>每天数百万条INSERT</td>
+<td>纯append-only，没有UPDATE和DELETE</td>
+</tr>
+<tr>
+<td>读取量</td>
+<td>偶尔查最近状态</td>
+<td>读占比 &lt; 5%，且只查最近几小时的数据</td>
+</tr>
+<tr>
+<td>数据量</td>
+<td>一年积累数十亿行</td>
+<td>远超InnoDB缓冲池容量</td>
+</tr>
+<tr>
+<td>事务需求</td>
+<td>单行INSERT，无复杂事务</td>
+<td>事务需求极弱</td>
+</tr>
+<tr>
+<td>延迟要求</td>
+<td>写入p99 &lt; 200ms即可</td>
+<td>非用户请求链路，延迟不敏感</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-纯技术维度：LSM-Tree完胜"><a href="#5-2-纯技术维度：LSM-Tree完胜" class="headerlink" title="5.2 纯技术维度：LSM-Tree完胜"></a>5.2 纯技术维度：LSM-Tree完胜</h3><p>按照决策树的五个维度逐一套上去：</p>
+<ol>
+<li><strong>数据集大小</strong>：数十亿行，工作集（最近几天的数据）至少几十GB。InnoDB的缓冲池无法覆盖全部热数据 → LSM-Tree占优。</li>
+<li><strong>读写比例</strong>：写多读少，读写比可能高达1:10甚至更低 → LSM-Tree占优。</li>
+<li><strong>事务需求</strong>：单行INSERT，不需要复杂事务 → 两者皆可。</li>
+<li><strong>延迟要求</strong>：p99 &lt; 200ms即可，不是用户请求链路 → LSM-Tree完全满足。</li>
+<li><strong>运维复杂度</strong>：团队标准MySQL技术栈，4个人维护20+个服务 → InnoDB占优。</li>
+</ol>
+<p>纯技术维度，LSM-Tree（RocksDB）明显更适合这个场景。</p>
+<p><strong>但真实的架构决策从来不是纯技术维度。</strong></p>
+<h3 id="5-3-工程现实维度：为什么我们选了InnoDB"><a href="#5-3-工程现实维度：为什么我们选了InnoDB" class="headerlink" title="5.3 工程现实维度：为什么我们选了InnoDB"></a>5.3 工程现实维度：为什么我们选了InnoDB</h3><p>我们最终的决策是：<strong>以InnoDB为主力引擎，通过归档策略控制单表数据量，把MyRocks作为未来备选方案记录在技术债务文档中。</strong></p>
+<p>这个决策有四个工程现实考量：</p>
+<p><strong>第一，MySQL生态的惯性太大。</strong> 整个团队技术栈是 Spring Boot + MyBatis + MySQL，监控、备份、迁移、DDL变更审批流程全部围绕MySQL InnoDB构建。换引擎不是改一行SQL的事——你需要改造MyBatis对MyRocks的适配、需要让Prometheus监控兼容新的引擎指标、需要DBA学习RocksDB的运维知识、需要备份恢复流程重新验证。对于一个4人团队来说，这些都意味着什么？意味着你可能要在本来就很挤的排期里挤出整块的迁移窗口，同时还要保证迁移不出事。<strong>工程成本远大于技术收益。</strong></p>
+<p><strong>第二，归档比换引擎更便宜。</strong> 任务执行记录是冷热分明的数据：最近7天的数据占99%的读请求，超过30天的数据几乎不会被读取。所以我们用了一个简单的策略：每日凌晨跑一个定时任务，把超过30天的数据归档到备份表，原表只保留最近30天。单表数据量从数十亿压缩到2亿以内。写入延迟重回稳定范围。<strong>只要我们能通过归档控制单表在InnoDB的舒适区之内，换引擎的需求就不是迫切的。</strong></p>
+<p><strong>第三，风险收益比不够。</strong> MyRocks虽然长期能带来写入性能2-5倍的提升和存储空间节省，但引入了一个新引擎的运维风险：半夜两点InnoDB出问题，线上能搜到几万篇解决方案；半夜两点MyRocks出问题，你可能需要去GitHub issues用英文描述你的问题然后等回复。在一个事务需求弱、延迟不敏感的场景下，这种风险不值得冒。</p>
+<p><strong>第四，时机不对。</strong> 我们当时的Sprint排期已经很紧：即时零售订单中台上线、SyncTask引擎独立组件化、库存系统对接新渠道——这些都是直接面向业务的交付。存储引擎迁移属于基础设施层面的优化，优先级天然低于业务需求。<strong>“最好的决策”不是技术上的最优解，而是当前团队和业务上下文里的最不坏选择。</strong></p>
+<h3 id="5-4-把MyRocks作为技术债留着"><a href="#5-4-把MyRocks作为技术债留着" class="headerlink" title="5.4 把MyRocks作为技术债留着"></a>5.4 把MyRocks作为技术债留着</h3><p>我们在技术债务文档里记录了这样一条：</p>
+<blockquote>
+<p><strong>DEBT-2024-003: 任务执行记录表存储引擎选型</strong></p>
+<p>现状：InnoDB，每日归档控制单表数据量在2亿以内。写入延迟p99 &lt; 100ms，业务可接受。</p>
+<p>触发条件（满足任一即重新评估）：</p>
+<ol>
+<li>日写入量从百万级升至千万级（比如引擎接入的服务从3个扩展至10+）；</li>
+<li>归档策略无法继续压缩单表数据量（比如业务要求保留90天以上数据）；</li>
+<li>团队扩至6人以上，有额外人力投入基础设施优化。</li>
+</ol>
+<p>目标方案：对 sync_task_record 表切换 ENGINE&#x3D;ROCKSDB（MyRocks），锁定写入性能提升和存储空间节省。</p>
+<p>前置条件：团队至少一人完成RocksDB运维学习 + 测试环境完成一个完整版本的回归验证。</p>
+</blockquote>
+<p>这里面有一个很重要的原则：<strong>不是”不换”，是”现在不换”。</strong> 技术决策的时效性很重要——六个月前的正确决策放在今天可能就错了，因为上下文变化了。把这个决策记成技术债，明确触发条件，当条件满足时重新评估。</p>
+<h3 id="5-5-这个推演的真正价值"><a href="#5-5-这个推演的真正价值" class="headerlink" title="5.5 这个推演的真正价值"></a>5.5 这个推演的真正价值</h3><p>我写这段不是为了炫耀”我们选了InnoDB多英明”——如果条件变化，我们选MyRocks也完全可以。</p>
+<p>这个推演的真正价值在于：<strong>当你理解了B+Tree和LSM-Tree的底层原理后，你不会再被”MySQL就是InnoDB”的默认行为束缚住。你知道InnoDB只是B+Tree这个数据结构在MySQL中的一种实现，你知道RocksDB是LSM-Tree的另一种选择，你知道MyRocks是把两者桥接起来的工程解法。</strong></p>
+<p>存储引擎不再是魔法黑盒，而是你可以评估、权衡、替换的组件。</p>
+<hr>
+<h2 id="六、结尾：理解原理，不是为了造轮子"><a href="#六、结尾：理解原理，不是为了造轮子" class="headerlink" title="六、结尾：理解原理，不是为了造轮子"></a>六、结尾：理解原理，不是为了造轮子</h2><p>经常有同行问我：”我一个写业务代码的，了解B+Tree和LSM-Tree有什么用？我又不去写数据库。”</p>
+<p>我的回答是：</p>
+<p><strong>理解存储引擎原理，不是为了让你自己写一个存储引擎，而是为了让你知道什么时候该换存储引擎。</strong></p>
+<p>你知道为什么InnoDB在数据量超出内存后性能断崖式下降吗？因为你知道了B+Tree的随机读依赖缓冲池命中率，你就不会在几十亿行的append-only表上死磕InnoDB了。</p>
+<p>你知道为什么RocksDB的写入性能是InnoDB的2-10倍吗？因为你知道了LSM-Tree的顺序写+Compaction异步合并的原理，你就能判断什么时候值得引入它。</p>
+<p>你知道为什么MyRocks没有干掉InnoDB，但它确实在某些场景下是更好的选择吗？因为你理解了任何存储引擎都是trade-off的产物，不存在银弹。</p>
+<p>架构师的能力，不在于记住了多少个数据库的名字，而在于<strong>当系统遇到性能瓶颈时，你能准确判断瓶颈是在存储引擎这个层面，还是在查询优化、数据模型、缓存策略等其他层面</strong>。这种判断力，来自对原理的理解，而不是对技巧的背诵。</p>
+<p>这就是DDIA第三章留给我的最重要的一课。</p>
+<hr>
+<p><em>本系列是《Designing Data-Intensive Applications》的读书笔记，结合本人7年电商供应链后端实战经验。下一篇将讨论编码与演化——数据格式的向前兼容和向后兼容，以及我们为什么在SyncTask引擎中定义了严格的SPI接口版本规范。</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/DDIA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA读书笔记</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/InnoDB/" class="print-no-link">#InnoDB</a>
+      
+        <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" class="print-no-link">#存储引擎</a>
+      
+        <a href="/tags/%E9%80%89%E5%9E%8B/" class="print-no-link">#选型</a>
+      
+        <a href="/tags/RocksDB/" class="print-no-link">#RocksDB</a>
+      
+        <a href="/tags/MyRocks/" class="print-no-link">#MyRocks</a>
+      
+        <a href="/tags/LSM-Tree/" class="print-no-link">#LSM-Tree</a>
+      
+        <a href="/tags/B-Tree/" class="print-no-link">#B+Tree</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-04-从RocksDB到MySQL InnoDB：不同场景的存储引擎选型</div>
+      <div>https://aster-xu-lab.github.io/2023/10/29/2023-10-29-DDIA-04-存储引擎选型/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年10月29日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/11/09/2023-11-09-DDIA-04-%E6%85%A2SQL%E4%BC%98%E5%8C%96%E5%8E%9F%E7%90%86/" title="DDIA-04-实战：1124→6，慢SQL优化背后的存储引擎原理">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-04-实战：1124→6，慢SQL优化背后的存储引擎原理</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/10/18/2023-10-18-DDIA-04-%E5%88%97%E5%BC%8F%E5%AD%98%E5%82%A8/" title="DDIA-04-列式存储：为什么SELECT *在数仓里是性能杀手">
+                        <span class="hidden-mobile">DDIA-04-列式存储：为什么SELECT *在数仓里是性能杀手</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

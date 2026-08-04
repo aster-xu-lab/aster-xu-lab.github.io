@@ -1,0 +1,1019 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="分片键绝不是随便挑一个字段就行的，它决定了你未来两年的系统容量上限和运维复杂度。本文从查询模式、数据均匀性、扩缩容三个维度拆解分片键选择，并以电商订单系统为实战场景，推演user_id vs order_id的取舍与异构索引补偿方案。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/03/16/2024-03-16-DDIA-07-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E6%8B%A9%E8%89%BA%E6%9C%AF/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="分片键绝不是随便挑一个字段就行的，它决定了你未来两年的系统容量上限和运维复杂度。本文从查询模式、数据均匀性、扩缩容三个维度拆解分片键选择，并以电商订单系统为实战场景，推演user_id vs order_id的取舍与异构索引补偿方案。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-03-16T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T11:12:09.750Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="ShardingSphere">
+<meta property="article:tag" content="分片键">
+<meta property="article:tag" content="数据库设计">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-03-16 09:00" pubdate>
+          2024年3月16日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          78 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一、一个真实的翻车现场"><a href="#一、一个真实的翻车现场" class="headerlink" title="一、一个真实的翻车现场"></a>一、一个真实的翻车现场</h2><p>2022年，我接手过一个订单系统的分库分表方案。前任架构师选了<code>order_id</code>作为分片键，理由是”订单ID是唯一主键，天然适合做分片”。</p>
+<p>听起来没毛病。上线前半年一切正常。直到运营团队接入，需求是”查询过去7天所有待发货订单”——这条SQL没有order_id，只能全分片扫描。8个数据源，每个500万行，一个COUNT查询跑了12秒。</p>
+<p>运营投诉，临时加了一个Elasticsearch索引，Canal同步过去，勉强顶住。但半年后商家端要做”我的订单”功能，查的是merchant_id，又是全分片扫描。这回ES也救不了——商家端的排序、筛选、统计逻辑太复杂，ES的DSL写得团队怀疑人生。</p>
+<p>这不叫方案，这叫事故。根本原因只有一个：<strong>分片键选错了。</strong></p>
+<p>这篇是DDIA系列的第七篇，我们来把分片键这件事彻底讲透。</p>
+<h2 id="二、分片键选择的三个维度"><a href="#二、分片键选择的三个维度" class="headerlink" title="二、分片键选择的三个维度"></a>二、分片键选择的三个维度</h2><p>选分片键之前，先建立评估框架。我把所有考量归纳为三个维度，任何一个维度不及格，这把钥匙就不对。</p>
+<h3 id="2-1-维度一：查询模式——WHERE条件决定了分片命中率"><a href="#2-1-维度一：查询模式——WHERE条件决定了分片命中率" class="headerlink" title="2.1 维度一：查询模式——WHERE条件决定了分片命中率"></a>2.1 维度一：查询模式——WHERE条件决定了分片命中率</h3><p>这是最重要的维度。分片的本质是把数据按规则散列到不同的物理节点，查询时如果知道分片键的值，路由器就能精准定位到唯一的分片；不知道，就只能广播到所有分片，然后在内存中合并结果。</p>
+<p>判断标准很直接：把你的系统中TOP 5高频查询的WHERE条件列出来，看哪个字段出现频率最高。</p>
+<p>对于电商订单系统：</p>
+<ul>
+<li>买家查”我的订单”：WHERE user_id &#x3D; ?</li>
+<li>买家查”订单详情”：WHERE order_id &#x3D; ? AND user_id &#x3D; ?</li>
+<li>商家查”店铺订单”：WHERE merchant_id &#x3D; ?</li>
+<li>运营查”待发货订单”：WHERE status &#x3D; ? AND create_time BETWEEN ? AND ?</li>
+<li>定时任务”超时未支付取消”：WHERE status &#x3D; ‘UNPAID’ AND create_time &lt; ?</li>
+</ul>
+<p>你看，user_id在核心的C端查询中无处不在——第一优先级永远是它。</p>
+<h3 id="2-2-维度二：数据分布均匀性——热点是分片的癌症"><a href="#2-2-维度二：数据分布均匀性——热点是分片的癌症" class="headerlink" title="2.2 维度二：数据分布均匀性——热点是分片的癌症"></a>2.2 维度二：数据分布均匀性——热点是分片的癌症</h3><p>分片的初衷是负载均衡。如果选了某个字段导致80%的数据落在一个分片上，那分片就失去了意义。</p>
+<p>这里有一个经典的坑：<strong>按时间分片。</strong> 比如按<code>create_time</code>做范围分片，ds_2024放分片0，ds_2025放分片1，ds_2026放分片2。问题在哪？历史的冷数据占着分片没多少访问量，当前年份的分片被所有请求打爆。更致命的是，扩容时历史分片根本不需要扩，热分片扩了又只能承载一个年份——范围分片的负载天然不均衡。</p>
+<p>订单数量的分布呢？互联网业务中，用户的订单量是典型的长尾分布：少数活跃用户贡献了大量订单，绝大多数用户只有零星几单。如果按user_id分片，那个买了300单的大V用户的所有订单都在同一个分片上。但这个分片里还混着几十万普通用户——总数据量相对可控。对比之下，如果按merchant_id分片，头部商家的订单量可能是腰部商家的几千倍，那才叫真正的热点。</p>
+<p>哈希分片是应对热点的标准答案：无论原始键的分布如何，哈希后都均匀散列。user_id做哈希分片，数据分布接近完美。</p>
+<h3 id="2-3-维度三：扩缩容灵活性——分片方案的生命力"><a href="#2-3-维度三：扩缩容灵活性——分片方案的生命力" class="headerlink" title="2.3 维度三：扩缩容灵活性——分片方案的生命力"></a>2.3 维度三：扩缩容灵活性——分片方案的生命力</h3><p>系统会成长，数据会膨胀。好的分片方案在扩容时不应该让你通宵加班。</p>
+<p>一致性哈希是这个问题的经典解法。但现实中更常用的是<strong>虚拟槽（Virtual Slot）</strong>：预分1024个槽，扩容时只需迁移部分槽的数据。这个维度的核心考量是：你选的分片键能否让槽的迁移粒度足够细？</p>
+<p>举例：如果你按<code>user_id % 1024</code>直接对用户取模，扩容到2048时，几乎所有数据都要重新映射。但如果你用<code>hash(user_id) % 1024</code>，物理节点从4扩到8时，只需迁移一半的槽——另一半原封不动。</p>
+<p>综上，三个维度构成一个权衡三角：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">查询模式（精准命中）←→ 数据均匀性（无热点）←→ 扩缩容灵活性（低成本迁移）<br></code></pre></td></tr></table></figure>
+
+<p>没有完美的选择，只有针对业务特征的取舍。下面我们进入实战对比。</p>
+<h2 id="三、user-id-vs-order-id：一场必须打明白的架"><a href="#三、user-id-vs-order-id：一场必须打明白的架" class="headerlink" title="三、user_id vs order_id：一场必须打明白的架"></a>三、user_id vs order_id：一场必须打明白的架</h2><h3 id="3-1-按user-id分片：买家场景的最佳拍档"><a href="#3-1-按user-id分片：买家场景的最佳拍档" class="headerlink" title="3.1 按user_id分片：买家场景的最佳拍档"></a>3.1 按user_id分片：买家场景的最佳拍档</h3><p><strong>分片规则</strong>：<code>ds_index = hash(user_id) % shard_count</code></p>
+<p><strong>买家查”我的订单”</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> user_id <span class="hljs-operator">=</span> <span class="hljs-number">12345</span> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> create_time <span class="hljs-keyword">DESC</span> LIMIT <span class="hljs-number">20</span>;<br></code></pre></td></tr></table></figure>
+
+<p>路由逻辑：<code>hash(12345) % 8 = 3</code>，直接打到ds_3，单分片查询。速度快、资源省、索引友好。</p>
+<p><strong>买家查”订单详情”</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> order_id <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ORD20240820001&#x27;</span> <span class="hljs-keyword">AND</span> user_id <span class="hljs-operator">=</span> <span class="hljs-number">12345</span>;<br></code></pre></td></tr></table></figure>
+
+<p>由于WHERE里带了user_id，依然精准命中单个分片。这里有个细节：order_id的生成规则建议嵌入user_id信息（比如<code>ORD2024</code>+<code>user_id后6位</code>+<code>自增序号</code>），这样仅凭order_id也能反向推导出分片，避免查询订单详情时还要用户传user_id。</p>
+<p><strong>商家查”店铺订单”</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> merchant_id <span class="hljs-operator">=</span> <span class="hljs-number">67890</span> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> create_time <span class="hljs-keyword">DESC</span> LIMIT <span class="hljs-number">20</span>;<br></code></pre></td></tr></table></figure>
+
+<p>merchant_id不是分片键，这条SQL会广播到所有8个分片，每个分片独立执行WHERE过滤，然后在内存中合并排序取前20。分片越多，性能越差。</p>
+<p><strong>运营端全量查询</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">COUNT</span>(<span class="hljs-operator">*</span>), <span class="hljs-built_in">SUM</span>(amount) <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> create_time <span class="hljs-operator">&gt;=</span> <span class="hljs-string">&#x27;2024-08-13&#x27;</span> <span class="hljs-keyword">AND</span> create_time <span class="hljs-operator">&lt;</span> <span class="hljs-string">&#x27;2024-08-20&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>没有分片键，全部广播。这种场景就必须走Elasticsearch或只读副本绕行——后面展开。</p>
+<h3 id="3-2-按order-id分片：一碗水端平的假象"><a href="#3-2-按order-id分片：一碗水端平的假象" class="headerlink" title="3.2 按order_id分片：一碗水端平的假象"></a>3.2 按order_id分片：一碗水端平的假象</h3><p><strong>分片规则</strong>：<code>ds_index = hash(order_id) % shard_count</code></p>
+<p>按order_id分片，数据分布确实均匀。毕竟order_id本身随机性足够，哈希后完全是均匀的。</p>
+<p>但查询模式全面塌方：</p>
+<ul>
+<li>买家查”我的订单”：没有order_id，广播所有分片</li>
+<li>商家查”店铺订单”：没有order_id，广播所有分片</li>
+<li>运营查全量：广播所有分片</li>
+<li>只有”根据order_id查订单详情”能精准命中——而这是用户点击”查看详情”之后的事，之前必须先有订单列表。</li>
+</ul>
+<p>换句话说，order_id分片让系统中90%的查询都变成了全分片扫描。数据均匀了，查询均匀地打到了所有分片——这恰恰意味着每次查询都在浪费所有分片的资源。</p>
+<h3 id="3-3-结论"><a href="#3-3-结论" class="headerlink" title="3.3 结论"></a>3.3 结论</h3><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>user_id分片</th>
+<th>order_id分片</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>买家查订单</td>
+<td>精准命中单分片</td>
+<td>广播全部</td>
+</tr>
+<tr>
+<td>商家查订单</td>
+<td>广播全部</td>
+<td>广播全部</td>
+</tr>
+<tr>
+<td>订单详情</td>
+<td>精准命中（带user_id）</td>
+<td>精准命中</td>
+</tr>
+<tr>
+<td>数据分布</td>
+<td>良好（长尾可控）</td>
+<td>优秀（完全均匀）</td>
+</tr>
+<tr>
+<td>扩缩容</td>
+<td>一致性哈希友好</td>
+<td>一致性哈希友好</td>
+</tr>
+</tbody></table>
+<p>很明显，user_id覆盖了最核心的C端查询，是明确的优选。但还剩下一个问题：商家端的全分片扫描怎么办？</p>
+<h2 id="四、异构索引：当单一分片键不够用时"><a href="#四、异构索引：当单一分片键不够用时" class="headerlink" title="四、异构索引：当单一分片键不够用时"></a>四、异构索引：当单一分片键不够用时</h2><p>“数据只能有一份”是新手最常犯的认知错误。分片方案不需要解决所有问题——它只需要解决OLTP的核心读写路径。其他场景用异构索引补偿。</p>
+<h3 id="4-1-方案一：MySQL异构索引表"><a href="#4-1-方案一：MySQL异构索引表" class="headerlink" title="4.1 方案一：MySQL异构索引表"></a>4.1 方案一：MySQL异构索引表</h3><p>在同一个数据库实例（或独立的索引库）中维护一张映射表：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> t_order_user_index (<br>    user_id <span class="hljs-type">BIGINT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    order_id <span class="hljs-type">BIGINT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    create_time DATETIME <span class="hljs-keyword">NOT NULL</span>,<br>    <span class="hljs-keyword">PRIMARY KEY</span> (user_id, order_id),<br>    KEY idx_user_time (user_id, create_time)<br>);<br></code></pre></td></tr></table></figure>
+
+<p>写订单时，事务内同时写入主表和索引表。商家端查”我的订单”时，先通过merchant_id查到订单ID列表，再按order_id回表（如果order_id包含分片信息）或直接在主表查。</p>
+<p>但这个方案有两个硬伤：</p>
+<ul>
+<li><strong>一致性维护成本高</strong>：主表和索引表必须同事务提交，跨分片事务在ShardingSphere下不是做不到，但复杂度上升一个量级。</li>
+<li><strong>索引膨胀</strong>：merchant_id维度需要一张索引表，status+create_time维度需要一张，create_time维度又是一张。每多一个查询维度就多一张表，运维噩梦。</li>
+</ul>
+<p>真实场景中，这个方案只适合索引数据量小（亿级以内）、查询维度固定的有限场景。</p>
+<h3 id="4-2-方案二：Elasticsearch-Canal同步——真正落地的方案"><a href="#4-2-方案二：Elasticsearch-Canal同步——真正落地的方案" class="headerlink" title="4.2 方案二：Elasticsearch + Canal同步——真正落地的方案"></a>4.2 方案二：Elasticsearch + Canal同步——真正落地的方案</h3><p>架构：</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">MySQL主表(按user_id分片) ──<span class="hljs-keyword">binlog──→ </span>Canal ──实时同步──→ Elasticsearch<br>                                     │<br>                                     └──实时同步──→ Redis（热点缓存）<br></code></pre></td></tr></table></figure>
+
+<p>Canal伪装成MySQL从库，解析binlog，将增量数据实时写入ES。ES的索引设计如下：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;mappings&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;properties&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;user_id&quot;</span><span class="hljs-punctuation">:</span>      <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;long&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;merchant_id&quot;</span><span class="hljs-punctuation">:</span>  <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;long&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;order_id&quot;</span><span class="hljs-punctuation">:</span>     <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;keyword&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span>       <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;keyword&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;amount&quot;</span><span class="hljs-punctuation">:</span>       <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;integer&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;create_time&quot;</span><span class="hljs-punctuation">:</span>  <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;date&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;product_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;text&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;analyzer&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ik_max_word&quot;</span> <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>不同查询路径分流：</p>
+<ul>
+<li><strong>买家查订单</strong> → 数据库主表，走<code>user_id</code>分片路由，精准命中</li>
+<li><strong>商家查订单</strong> → Elasticsearch，<code>WHERE merchant_id = ?</code>，毫秒级返回</li>
+<li><strong>运营全量查询</strong> → Elasticsearch，支持任意维度组合筛选和聚合</li>
+<li><strong>订单详情</strong> → 数据库主表（带user_id分片键）或ES（仅需order_id）</li>
+</ul>
+<p>这里有三个要扣好的细节：</p>
+<ol>
+<li><strong>同步延迟</strong>：Canal+ES的同步延迟通常在100ms-500ms之间。用户下单后立即查看”我的订单”，如果走ES可能查不到。解决方案：下单后前端做乐观更新（直接在前端列表插入新订单），后台2秒后再次查询确认。</li>
+<li><strong>数据一致性兜底</strong>：定时任务（每小时）全量对账，对比MySQL和ES的订单数量，不一致时触发增量修复。</li>
+<li><strong>ES不是银弹</strong>：复杂的多表JOIN（比如订单+商品+物流状态聚合）在ES里做很痛苦。这种场景适合进数据仓库（Hive&#x2F;ClickHouse）做T+1离线计算，或者用Flink做实时宽表。</li>
+</ol>
+<h2 id="五、ShardingSphere分片算法实战"><a href="#五、ShardingSphere分片算法实战" class="headerlink" title="五、ShardingSphere分片算法实战"></a>五、ShardingSphere分片算法实战</h2><p>理论聊完，上代码。ShardingSphere 5.x提供了四种标准分片算法，下面逐个拆解。</p>
+<h3 id="5-1-INLINE：最常用也最受限"><a href="#5-1-INLINE：最常用也最受限" class="headerlink" title="5.1 INLINE：最常用也最受限"></a>5.1 INLINE：最常用也最受限</h3><p>基于Groovy表达式，适合简单的取模场景。</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">rules:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-type">!SHARDING</span><br>    <span class="hljs-attr">tables:</span><br>      <span class="hljs-attr">t_order:</span><br>        <span class="hljs-attr">actualDataNodes:</span> <span class="hljs-string">ds_$&#123;0..7&#125;.t_order_$&#123;0..15&#125;</span><br>        <span class="hljs-attr">databaseStrategy:</span><br>          <span class="hljs-attr">standard:</span><br>            <span class="hljs-attr">shardingColumn:</span> <span class="hljs-string">user_id</span><br>            <span class="hljs-attr">shardingAlgorithmName:</span> <span class="hljs-string">order_db_inline</span><br>        <span class="hljs-attr">tableStrategy:</span><br>          <span class="hljs-attr">standard:</span><br>            <span class="hljs-attr">shardingColumn:</span> <span class="hljs-string">user_id</span><br>            <span class="hljs-attr">shardingAlgorithmName:</span> <span class="hljs-string">order_table_inline</span><br><br>    <span class="hljs-attr">shardingAlgorithms:</span><br>      <span class="hljs-attr">order_db_inline:</span><br>        <span class="hljs-attr">type:</span> <span class="hljs-string">INLINE</span><br>        <span class="hljs-attr">props:</span><br>          <span class="hljs-attr">algorithm-expression:</span> <span class="hljs-string">ds_$&#123;user_id</span> <span class="hljs-string">%</span> <span class="hljs-number">8</span><span class="hljs-string">&#125;</span><br>      <span class="hljs-attr">order_table_inline:</span><br>        <span class="hljs-attr">type:</span> <span class="hljs-string">INLINE</span><br>        <span class="hljs-attr">props:</span><br>          <span class="hljs-attr">algorithm-expression:</span> <span class="hljs-string">t_order_$&#123;user_id</span> <span class="hljs-string">%</span> <span class="hljs-number">16</span><span class="hljs-string">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>优点：零代码，配置即用。<br>缺点：只支持简单的取模&#x2F;取整运算，不支持哈希。<code>user_id % 8</code>对于自增连续的用户ID可能导致数据倾斜（虽然对user_id来说通常还行）。</p>
+<h3 id="5-2-HINT：强制路由"><a href="#5-2-HINT：强制路由" class="headerlink" title="5.2 HINT：强制路由"></a>5.2 HINT：强制路由</h3><p>当查询条件不包含分片键，但业务逻辑明确知道分片位置时使用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 商家端：已知某订单的user_id，强制路由到对应分片</span><br><span class="hljs-keyword">try</span> (<span class="hljs-type">HintManager</span> <span class="hljs-variable">hintManager</span> <span class="hljs-operator">=</span> HintManager.getInstance()) &#123;<br>    hintManager.addDatabaseShardingValue(<span class="hljs-string">&quot;t_order&quot;</span>, userId);<br>    hintManager.addTableShardingValue(<span class="hljs-string">&quot;t_order&quot;</span>, userId);<br>    <span class="hljs-comment">// 这里查order_id，命中单个分片</span><br>    orderMapper.selectByOrderId(orderId);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>典型场景：已知某个order_id属于某个user_id时，通过HINT跳过广播。但不适用于需要扫多个分片的商家订单列表。</p>
+<h3 id="5-3-COMPLEX：多键分片"><a href="#5-3-COMPLEX：多键分片" class="headerlink" title="5.3 COMPLEX：多键分片"></a>5.3 COMPLEX：多键分片</h3><p>当分片需要同时依赖多个字段时使用。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderComplexSharding</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ComplexKeysShardingAlgorithm</span>&lt;Comparable&lt;?&gt;&gt; &#123;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> Collection&lt;String&gt; <span class="hljs-title function_">doSharding</span><span class="hljs-params">(</span><br><span class="hljs-params">            Collection&lt;String&gt; availableTargetNames,</span><br><span class="hljs-params">            ComplexKeysShardingValue&lt;Comparable&lt;?&gt;&gt; shardingValue)</span> &#123;<br><br>        Map&lt;String, Collection&lt;Comparable&lt;?&gt;&gt;&gt; columnValues = shardingValue.getColumnNameAndShardingValuesMap();<br>        Collection&lt;Comparable&lt;?&gt;&gt; userIds = columnValues.get(<span class="hljs-string">&quot;user_id&quot;</span>);<br>        Collection&lt;Comparable&lt;?&gt;&gt; orderIds = columnValues.get(<span class="hljs-string">&quot;order_id&quot;</span>);<br><br>        <span class="hljs-comment">// 优先用user_id路由</span><br>        <span class="hljs-keyword">if</span> (userIds != <span class="hljs-literal">null</span> &amp;&amp; !userIds.isEmpty()) &#123;<br>            <span class="hljs-type">Long</span> <span class="hljs-variable">userId</span> <span class="hljs-operator">=</span> (Long) userIds.iterator().next();<br>            <span class="hljs-type">String</span> <span class="hljs-variable">ds</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ds_&quot;</span> + (Math.abs(userId.hashCode()) % <span class="hljs-number">8</span>);<br>            <span class="hljs-keyword">return</span> Collections.singleton(ds);<br>        &#125;<br><br>        <span class="hljs-comment">// 只有order_id时，从order_id反推user_id（前提：order_id生成时嵌入了分片信息）</span><br>        <span class="hljs-keyword">if</span> (orderIds != <span class="hljs-literal">null</span> &amp;&amp; !orderIds.isEmpty()) &#123;<br>            <span class="hljs-type">Long</span> <span class="hljs-variable">orderId</span> <span class="hljs-operator">=</span> (Long) orderIds.iterator().next();<br>            <span class="hljs-type">Long</span> <span class="hljs-variable">userId</span> <span class="hljs-operator">=</span> extractUserIdFromOrderId(orderId);<br>            <span class="hljs-type">String</span> <span class="hljs-variable">ds</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;ds_&quot;</span> + (Math.abs(userId.hashCode()) % <span class="hljs-number">8</span>);<br>            <span class="hljs-keyword">return</span> Collections.singleton(ds);<br>        &#125;<br><br>        <span class="hljs-comment">// 两者都没有，全分片扫描</span><br>        <span class="hljs-keyword">return</span> availableTargetNames;<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> Long <span class="hljs-title function_">extractUserIdFromOrderId</span><span class="hljs-params">(Long orderId)</span> &#123;<br>        <span class="hljs-comment">// 假设订单号格式：时间戳(10位) + user_id后6位 + 序号(4位)</span><br>        <span class="hljs-type">String</span> <span class="hljs-variable">orderStr</span> <span class="hljs-operator">=</span> String.valueOf(orderId);<br>        <span class="hljs-keyword">return</span> Long.parseLong(orderStr.substring(<span class="hljs-number">10</span>, <span class="hljs-number">16</span>));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>COMPLEX的最大价值在于：当SQL同时携带user_id和order_id时，优先用user_id路由；如果没有user_id但能从order_id反推，也能精准命中。</p>
+<h3 id="5-4-自定义算法：一致性哈希"><a href="#5-4-自定义算法：一致性哈希" class="headerlink" title="5.4 自定义算法：一致性哈希"></a>5.4 自定义算法：一致性哈希</h3><p>ShardingSphere内置的取模算法在扩缩容时迁移成本高。生产环境推荐自定义一致性哈希。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ConsistentHashSharding</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">StandardShardingAlgorithm</span>&lt;Comparable&lt;?&gt;&gt; &#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">VIRTUAL_NODES</span> <span class="hljs-operator">=</span> <span class="hljs-number">256</span>;  <span class="hljs-comment">// 每个物理节点256个虚拟节点</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> TreeMap&lt;Integer, String&gt; ring = <span class="hljs-keyword">new</span> <span class="hljs-title class_">TreeMap</span>&lt;&gt;();<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">init</span><span class="hljs-params">(Properties props)</span> &#123;<br>        <span class="hljs-comment">// 从配置读取物理节点列表</span><br>        String[] shardingCount = props.getProperty(<span class="hljs-string">&quot;sharding-count&quot;</span>, <span class="hljs-string">&quot;8&quot;</span>).split(<span class="hljs-string">&quot;,&quot;</span>);<br>        <span class="hljs-keyword">for</span> (String node : shardingCount) &#123;<br>            <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; VIRTUAL_NODES; i++) &#123;<br>                <span class="hljs-type">int</span> <span class="hljs-variable">hash</span> <span class="hljs-operator">=</span> hash(node + <span class="hljs-string">&quot;#&quot;</span> + i);<br>                ring.put(hash, <span class="hljs-string">&quot;ds_&quot;</span> + node);<br>            &#125;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> String <span class="hljs-title function_">doSharding</span><span class="hljs-params">(</span><br><span class="hljs-params">            Collection&lt;String&gt; availableTargetNames,</span><br><span class="hljs-params">            PreciseShardingValue&lt;Comparable&lt;?&gt;&gt; shardingValue)</span> &#123;<br><br>        <span class="hljs-type">Long</span> <span class="hljs-variable">userId</span> <span class="hljs-operator">=</span> (Long) shardingValue.getValue();<br>        <span class="hljs-type">int</span> <span class="hljs-variable">hash</span> <span class="hljs-operator">=</span> hash(userId);<br>        <span class="hljs-comment">// 顺时针找第一个大于等于hash的虚拟节点</span><br>        Map.Entry&lt;Integer, String&gt; entry = ring.ceilingEntry(hash);<br>        <span class="hljs-keyword">if</span> (entry == <span class="hljs-literal">null</span>) &#123;<br>            entry = ring.firstEntry();<br>        &#125;<br>        <span class="hljs-keyword">return</span> entry.getValue();<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> <span class="hljs-title function_">hash</span><span class="hljs-params">(Object key)</span> &#123;<br>        <span class="hljs-comment">// MurmurHash或FNV-1a，避免JDK String.hashCode()的性能和碰撞问题</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">h</span> <span class="hljs-operator">=</span> key.hashCode();<br>        h ^= (h &gt;&gt;&gt; <span class="hljs-number">20</span>) ^ (h &gt;&gt;&gt; <span class="hljs-number">12</span>);<br>        <span class="hljs-keyword">return</span> h ^ (h &gt;&gt;&gt; <span class="hljs-number">7</span>) ^ (h &gt;&gt;&gt; <span class="hljs-number">4</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>配套配置：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">shardingAlgorithms:</span><br>  <span class="hljs-attr">order_db_consistent:</span><br>    <span class="hljs-attr">type:</span> <span class="hljs-string">CLASS_BASED</span><br>    <span class="hljs-attr">props:</span><br>      <span class="hljs-attr">strategy:</span> <span class="hljs-string">standard</span><br>      <span class="hljs-attr">algorithmClassName:</span> <span class="hljs-string">com.asterxu.sharding.ConsistentHashSharding</span><br>      <span class="hljs-attr">sharding-count:</span> <span class="hljs-string">&quot;0,1,2,3,4,5,6,7&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>一致性哈希的收益在扩容时体现：从8节点扩到16节点，只有约50%的槽需要迁移，而非取模方案的87.5%。</p>
+<h2 id="六、总结与选型速查"><a href="#六、总结与选型速查" class="headerlink" title="六、总结与选型速查"></a>六、总结与选型速查</h2><p>回到标题的问题：为什么user_id比order_id更适合做分片键？</p>
+<p>因为<strong>分片键的选择要以查询模式为第一优先级</strong>。在电商订单系统中，user_id覆盖了最核心、最高频的C端查询路径（我的订单、订单详情、购物车关联）。order_id虽然让数据分布更均匀，但导致90%的查询退化成了全分片扫描——这是用正确的技术解决了错误的问题。</p>
+<p>选型速查表：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐分片键</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>电商订单（买家端为主）</td>
+<td>user_id</td>
+<td>C端查询全部命中</td>
+</tr>
+<tr>
+<td>电商订单（商家端为主）</td>
+<td>merchant_id</td>
+<td>但要注意头部商家热点</td>
+</tr>
+<tr>
+<td>社交Feed</td>
+<td>user_id</td>
+<td>查个人主页、动态列表</td>
+</tr>
+<tr>
+<td>支付流水</td>
+<td>transaction_id</td>
+<td>单一主键查询为主</td>
+</tr>
+<tr>
+<td>日志&#x2F;监控</td>
+<td>trace_id + 时间范围</td>
+<td>trace_id定位，时间做分区裁剪</td>
+</tr>
+<tr>
+<td>工单系统</td>
+<td>tenant_id</td>
+<td>SaaS多租户隔离首选</td>
+</tr>
+</tbody></table>
+<p>关于异构索引的普适建议：<strong>MySQL主表负责带分片键的OLTP查询，ES负责灵活维度的OLAP查询</strong>。不要在MySQL里建一堆索引表企图包揽所有场景——那是2005年的架构思维。今天Canal + ES的同步链路已经非常成熟，把搜索类查询卸载到ES上，才是现代架构的合理选择。</p>
+<p>DDIA系列下一篇将深入讨论分布式事务的两阶段提交与TCC模式的实战对比，敬请关注。</p>
+<hr>
+<p><em>本文首发于 AsterXu Lab，转载请注明出处。</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/DDIA/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1/" class="print-no-link">#数据库设计</a>
+      
+        <a href="/tags/%E5%88%86%E7%89%87%E9%94%AE/" class="print-no-link">#分片键</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合</div>
+      <div>https://aster-xu-lab.github.io/2024/03/16/2024-03-16-DDIA-07-分片键选择艺术/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年3月16日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/03/27/2024-03-27-DDIA-07-%E8%B7%A8%E5%88%86%E7%89%87%E6%9F%A5%E8%AF%A2%E4%B8%83%E5%A4%A7%E8%A7%A3%E6%B3%95/" title="DDIA-07-跨分片查询的七大解法：从分页到聚合">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-07-跨分片查询的七大解法：从分页到聚合</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/03/05/2024-03-05-DDIA-07-%E5%88%86%E7%89%87%E5%85%A5%E9%97%A8/" title="DDIA-07-分片入门：当一张表大到MySQL装不下">
+                        <span class="hidden-mobile">DDIA-07-分片入门：当一张表大到MySQL装不下</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

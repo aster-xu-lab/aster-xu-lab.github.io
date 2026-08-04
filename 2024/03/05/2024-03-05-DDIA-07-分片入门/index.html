@@ -1,0 +1,976 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="引子：一张表，装不下了你负责的订单表，从一开始的几千行，到几十万，再到几千万。头一年，加索引、SQL优化都还顶得住。第二年，某个促销日之后，库房主管给你打电话：”系统卡了，捡货单刷不出来。” 你登上运维平台一看，MySQL的CPU一直在80%以上，磁盘已经用了460GB。再看那张t_order表，1.2亿行。 不是你的SQL写得不好，是这张表真的装不下了。 这就是分片（Sharding）要解决的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-07-分片入门：当一张表大到MySQL装不下">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/03/05/2024-03-05-DDIA-07-%E5%88%86%E7%89%87%E5%85%A5%E9%97%A8/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="引子：一张表，装不下了你负责的订单表，从一开始的几千行，到几十万，再到几千万。头一年，加索引、SQL优化都还顶得住。第二年，某个促销日之后，库房主管给你打电话：”系统卡了，捡货单刷不出来。” 你登上运维平台一看，MySQL的CPU一直在80%以上，磁盘已经用了460GB。再看那张t_order表，1.2亿行。 不是你的SQL写得不好，是这张表真的装不下了。 这就是分片（Sharding）要解决的">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-03-05T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T11:12:09.750Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="ShardingSphere">
+<meta property="article:tag" content="分库分表">
+<meta property="article:tag" content="数据库">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-07-分片入门：当一张表大到MySQL装不下 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-07-分片入门：当一张表大到MySQL装不下"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-03-05 09:00" pubdate>
+          2024年3月5日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          47 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-07-分片入门：当一张表大到MySQL装不下</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="引子：一张表，装不下了"><a href="#引子：一张表，装不下了" class="headerlink" title="引子：一张表，装不下了"></a>引子：一张表，装不下了</h2><p>你负责的订单表，从一开始的几千行，到几十万，再到几千万。头一年，加索引、SQL优化都还顶得住。第二年，某个促销日之后，库房主管给你打电话：”系统卡了，捡货单刷不出来。”</p>
+<p>你登上运维平台一看，MySQL的CPU一直在80%以上，磁盘已经用了460GB。再看那张<code>t_order</code>表，1.2亿行。</p>
+<p>不是你的SQL写得不好，是这张表真的装不下了。</p>
+<p>这就是分片（Sharding）要解决的问题。本文是DDIA学习笔记第7篇，聊聊分库分表的入门认知：什么时候该分、分片和垂直拆分有什么区别、分片的核心难点在哪里，以及一个来自真实业务场景的推演。</p>
+<h2 id="一、什么时候需要分片"><a href="#一、什么时候需要分片" class="headerlink" title="一、什么时候需要分片"></a>一、什么时候需要分片</h2><p>不是表大了就得拆。加索引、优化SQL、读写分离、加缓存，这些手段都试过之后，才轮到分片。判断标准可以从三个维度看：</p>
+<h3 id="1-1-单表数据量"><a href="#1-1-单表数据量" class="headerlink" title="1.1 单表数据量"></a>1.1 单表数据量</h3><p>MySQL InnoDB的一张表，B+树的高度取决于数据量和索引大小。假设一行数据1KB，2千万行大约就是20GB。这时候B+树高度大概3到4层——还在可控范围。</p>
+<p>超过2千万行之后，B+树的层数开始升高，每次查询涉及的磁盘IO次数增加，而MySQL的Buffer Pool就那么几百GB，热数据开始溢出到磁盘。<strong>实际上2千万行没有普遍意义——</strong> 这和行宽强相关。如果你的表一行只有200字节，一亿行也比不上一条宽表的2千万行。关键还是看磁盘和性能。</p>
+<p>一个更普适的经验值：<strong>单表超过20GB时，就开始警惕。</strong></p>
+<h3 id="1-2-磁盘空间"><a href="#1-2-磁盘空间" class="headerlink" title="1.2 磁盘空间"></a>1.2 磁盘空间</h3><p>单机磁盘容量是硬限制。云服务器附带的SSD云盘，典型容量在500GB到2TB之间。当你的一张表连同索引占用了300GB，剩下的空间还要留给binlog、备份、其他表——基本上已经到了该拆的时候。</p>
+<p>这里有一个很容易忽略的点：<strong>MySQL的数据文件和索引文件都在同一台机器上。</strong> 你把热数据和冷数据分区？MySQL不管你这些，索引还是得在这台机器上。</p>
+<h3 id="1-3-写入吞吐"><a href="#1-3-写入吞吐" class="headerlink" title="1.3 写入吞吐"></a>1.3 写入吞吐</h3><p>即使磁盘没满、行数没超，单库的写入吞吐也是有限制的。一个MySQL实例，能扛的TPS取决于硬件和配置——高端物理机可能几万TPS，云数据库通常几千到一万。如果你的业务写入量持续增长，早晚要面对这个瓶颈。</p>
+<p><strong>这三个维度不需要同时满足，任何一个先到极限，就是动手的信号。</strong></p>
+<h2 id="二、分片-vs-垂直拆分：两种不同的拆分思路"><a href="#二、分片-vs-垂直拆分：两种不同的拆分思路" class="headerlink" title="二、分片 vs 垂直拆分：两种不同的拆分思路"></a>二、分片 vs 垂直拆分：两种不同的拆分思路</h2><p>很多团队聊”分库分表”，实际上包含了两种性质完全不同的操作。理解它们的区别，是做拆分的起点。</p>
+<h3 id="2-1-垂直拆分（按业务）"><a href="#2-1-垂直拆分（按业务）" class="headerlink" title="2.1 垂直拆分（按业务）"></a>2.1 垂直拆分（按业务）</h3><p>垂直拆分就是把不同业务的数据放到不同的库。比如：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc">原来：                  拆分后：<br>┌─────────────┐      ┌──────────┐  ┌──────────┐  ┌──────────┐<br>│  单一数据库   │  →   │ 订单库    │  │ 用户库    │  │ 商品库    │<br>│  t<span class="hljs-emphasis">_order     │      │ t_order   │  │ t_user   │  │ t_product│</span><br><span class="hljs-emphasis">│  t_user      │      └──────────┘  └──────────┘  └──────────┘</span><br><span class="hljs-emphasis">│  t_product   │</span><br><span class="hljs-emphasis">│  t_</span>inventory │<br>└─────────────┘<br></code></pre></td></tr></table></figure>
+
+<p>垂直拆分的本质是<strong>把耦合低的业务域分开</strong>。带来的好处：</p>
+<ul>
+<li>独立的数据库资源（连接池、缓存、CPU），业务之间不互相拖累</li>
+<li>可以针对不同库做独立的优化和扩容</li>
+<li>符合微服务拆分的方向，每个服务有自己的数据库</li>
+</ul>
+<p>技术上垂直拆分相对简单，因为不同业务的数据原本就没有强关联——订单表和用户表的join，本来就不应该在生产环境运行。</p>
+<h3 id="2-2-水平分片（按数据行）"><a href="#2-2-水平分片（按数据行）" class="headerlink" title="2.2 水平分片（按数据行）"></a>2.2 水平分片（按数据行）</h3><p>水平分片是把<strong>同一张表的数据行</strong>分布到多个数据库实例或表中。</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs routeros">原来：                         拆分后：<br>┌──────────────┐      ┌──────────────┐  ┌──────────────┐<br>│ t_order (1亿) │  →   │ t_order_1    │  │ t_order_2    │<br>│              │      │ (user_id%<span class="hljs-attribute">2</span>=0)│  │ (user_id%<span class="hljs-attribute">2</span>=1)│<br>└──────────────┘      └──────────────┘  └──────────────┘<br></code></pre></td></tr></table></figure>
+
+<p>水平分片才是DDIA第7章讨论的”分区（Partitioning）”。这才是真正的技术难题——本来一张表里的数据现在散落在多台机器上，所有跨分片的操作都变得复杂起来。</p>
+<h3 id="2-3-真实世界的组合"><a href="#2-3-真实世界的组合" class="headerlink" title="2.3 真实世界的组合"></a>2.3 真实世界的组合</h3><p>实际项目里，两种方式是一起用的：<strong>先垂直拆库，再水平分片。</strong></p>
+<p>垂直拆分把业务边界划清，水平分片解决单库容量问题。一个典型的电商中台：</p>
+<ul>
+<li>订单库 → 按user_id分4个库 → 每个库16张表 → 总共64张表</li>
+<li>用户库 → 先不拆，量小</li>
+<li>商品库 → 先不拆，读多写少，加缓存</li>
+</ul>
+<h2 id="三、分片的核心问题"><a href="#三、分片的核心问题" class="headerlink" title="三、分片的核心问题"></a>三、分片的核心问题</h2><p>一旦数据分散到多个节点，四个问题随之而来。</p>
+<h3 id="3-1-分片键的选择"><a href="#3-1-分片键的选择" class="headerlink" title="3.1 分片键的选择"></a>3.1 分片键的选择</h3><p>这是分片最重要的决策，做错了代价极大——所有数据已经在各个库里了，要迁移等于重新上线一套系统。<strong>分片键的选择第一原则：让大多数查询命中一个分片。</strong></p>
+<p>怎么判断一个查询是否命中了一个分片？看WHERE条件。如果你的查询是：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> user_id <span class="hljs-operator">=</span> <span class="hljs-number">12345</span><br></code></pre></td></tr></table></figure>
+
+<p>而你的分片键正好是<code>user_id</code>，那么路由层直接算出这个用户的订单在哪个分片上，只查询那一个节点。</p>
+<p>如果你的查询是：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PAID&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>而分片键是<code>user_id</code>，这就麻烦了——这个查询必须广播到所有分片，然后在中间件层合并结果。这就是”分片键不匹配查询条件”的痛苦。</p>
+<p>所以选择分片键，就是选择<strong>你的业务查询最大的那个入口条件</strong>。在订单系统里，用户查自己的订单占了绝大多数场景，分片键当然是<code>user_id</code>。在商户后台查询系统里，商户按店铺查订单，那分片键可能得是<code>merchant_id</code>。</p>
+<h3 id="3-2-跨分片查询"><a href="#3-2-跨分片查询" class="headerlink" title="3.2 跨分片查询"></a>3.2 跨分片查询</h3><p>有时候跨分片查询无法避免。最常见的是管理员后台的模糊查询、全量数据导出、跨用户的数据分析。</p>
+<p>处理策略有三种：</p>
+<ol>
+<li><strong>能改成逐个分片查询就逐个查</strong>，在应用层汇总</li>
+<li><strong>建冗余表或搜索引擎</strong>（如把订单同步到Elasticsearch），复杂的多维查询走搜索引擎</li>
+<li><strong>容忍慢</strong>，后台查询本身就不是高频场景</li>
+</ol>
+<p>这里有一个认知纠正：<strong>并不是所有查询都必须快。</strong> 管理员半夜跑一个报表，等10秒完全可以接受。关键是不要把后台查询的复杂性带到核心交易链路里。</p>
+<h3 id="3-3-分布式事务"><a href="#3-3-分布式事务" class="headerlink" title="3.3 分布式事务"></a>3.3 分布式事务</h3><p>分片之后，单机事务变成了跨节点的事务问题。</p>
+<p>比如创建订单的经典场景：</p>
+<ul>
+<li>插入订单到分片A（用户的订单表）</li>
+<li>扣减库存（库存表可能在不同库）</li>
+<li>扣减优惠券（优惠券表又有自己的分片）</li>
+</ul>
+<p>这三个操作跨了不同数据库实例，ACID事务不可用。</p>
+<p>工业界的处理方式：</p>
+<ul>
+<li><strong>尽量避免</strong>。好的数据建模可以最小化跨分片写入。如果把库存扣减改成异步，把优惠券扣减也异步化，那么核心的”创建订单”只是一个单分片的写操作。</li>
+<li><strong>最终一致性</strong>。用本地消息表 + 重试机制，确保各方最终达到一致。这是绝大多数互联网公司的选择。</li>
+<li><strong>分布式事务框架</strong>。Seata AT模式、TCC模式，本质都是两阶段提交的变种，代价是性能和可用性。</li>
+</ul>
+<blockquote>
+<p>两阶段提交不是一个新技术。DDIA第9章对2PC有详尽的分析——它的核心问题在于协调者成为单点，而且持锁时间太长。在生产环境中大规模使用，要非常谨慎。</p>
+</blockquote>
+<h3 id="3-4-数据均衡"><a href="#3-4-数据均衡" class="headerlink" title="3.4 数据均衡"></a>3.4 数据均衡</h3><p>即使你选了很好的分片键，数据分布也可能不均匀。比如电商平台，”张三”只有3个订单，”李四”有3000个订单——按user_id哈希，hot user会导致某些分片数据量远大于其他分片。</p>
+<p>更隐蔽的问题是：新建的分片一开始数据很少，旧的快满了。这是时间维度的不均衡。</p>
+<p>常见的应对：</p>
+<ul>
+<li><strong>一致性哈希</strong>：减少节点增减时的数据迁移量</li>
+<li><strong>虚拟分片</strong>：先分1000个逻辑片，10个物理节点各分100个。扩容时移动一些逻辑片到新节点</li>
+<li><strong>定期rebalance</strong>：容忍一定程度的不均衡，在维护窗口做数据迁移</li>
+</ul>
+<h2 id="四、实战推演：1-17亿行的决策链"><a href="#四、实战推演：1-17亿行的决策链" class="headerlink" title="四、实战推演：1.17亿行的决策链"></a>四、实战推演：1.17亿行的决策链</h2><p>这里用我经历过的电商场景做一个推演：<strong>130万日订单。</strong></p>
+<h3 id="第一阶段：什么都不做"><a href="#第一阶段：什么都不做" class="headerlink" title="第一阶段：什么都不做"></a>第一阶段：什么都不做</h3><p>起始状态：一张<code>t_order</code>单表。索引整齐，SQL规范，Buffer Pool配到了128GB。数据开始累积。</p>
+<h3 id="第二阶段：时间维度拆分（按天分区）"><a href="#第二阶段：时间维度拆分（按天分区）" class="headerlink" title="第二阶段：时间维度拆分（按天分区）"></a>第二阶段：时间维度拆分（按天分区）</h3><p>MySQL 5.5+支持Range分区。可以按<code>create_time</code>做日分区：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">ALTER TABLE</span> t_order <span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span> (TO_DAYS(create_time)) (<br>    <span class="hljs-keyword">PARTITION</span> p20260101 <span class="hljs-keyword">VALUES</span> LESS THAN (TO_DAYS(<span class="hljs-string">&#x27;2026-01-02&#x27;</span>)),<br>    <span class="hljs-keyword">PARTITION</span> p20260102 <span class="hljs-keyword">VALUES</span> LESS THAN (TO_DAYS(<span class="hljs-string">&#x27;2026-01-03&#x27;</span>)),<br>    <span class="hljs-comment">-- ...</span><br>);<br></code></pre></td></tr></table></figure>
+
+<p>好处：按时间范围的查询（查询某天的订单）直接被分区裁剪。坏处：和分片键原则并不匹配——用户按自己ID查询时，仍然要扫全表。</p>
+<p>&lt; 这个方案适用于日志类数据、流水类数据。对于订单，治标不治本。</p>
+<h3 id="第三阶段：分表（按月）"><a href="#第三阶段：分表（按月）" class="headerlink" title="第三阶段：分表（按月）"></a>第三阶段：分表（按月）</h3><p>130万&#x2F;天 × 90天 &#x3D; 1.17亿行。什么时候开始分？一个好的测算：</p>
+<ul>
+<li>单表1000万行开始准备方案</li>
+<li>单表2000万行开始执行</li>
+<li>单表5000万行之前必须完成</li>
+</ul>
+<p>按这个节奏，日订单130万时，<strong>最迟第16天就要动手</strong>。当然实际上不会第16天就全量分——你还有MySQL分区扛一阵。但架构方案必须在数据到1000万之前敲定。</p>
+<p>按月分表：<code>t_order_202601</code>、<code>t_order_202602</code>……应用层根据查询时间自动路由。</p>
+<p>好处：实现简单，每张表数据量可控（130万×30&#x3D;3900万行）。<br>坏处：跨越时间查订单仍然要扫多张表，而且没有解决单库磁盘问题——所有月表都在同一个数据库实例里。</p>
+<h3 id="第四阶段：分库（按user-id）"><a href="#第四阶段：分库（按user-id）" class="headerlink" title="第四阶段：分库（按user_id）"></a>第四阶段：分库（按user_id）</h3><p>当数据量积累到一定程度（比如12个月的表都在这一个库里），单库磁盘和写入吞吐开始告警。这时候才走到最终形态：<strong>按user_id分库，每个库里再按月分表。</strong></p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs erlang">db_order_0 ── t_order_202601<br>          ├── t_order_202602<br>          └── ...<br>db_order_1 ── t_order_202601<br>          ├── t_order_202602<br>          └── ...<br>...<br></code></pre></td></tr></table></figure>
+
+<p>路由逻辑：<code>user_id % 4</code> → 定位到db_order_N → 根据月份定位到具体表。</p>
+<p><strong>这个架构的查询逻辑：</strong></p>
+<ul>
+<li>用户查自己的订单：<code>user_id % 4</code> → 单个数据库 → 按月表范围 → 1-3张表</li>
+<li>运营查某天的全部订单：4个库各查1张月表 → 中间件合并</li>
+<li>运营跨90天统计数据：这是数据仓库的事，不要来搞OLTP数据库</li>
+</ul>
+<p><strong>关键决策回顾：为什么不是按order_id分片？</strong></p>
+<p>因为用户查询的入口90%是user_id。按order_id分片，用户查”我的订单”就要广播到所有分片——每个用户每次请求都打满所有库，并发一大直接雪崩。</p>
+<blockquote>
+<p><strong>分片键的第一原则再次强调：让大多数查询命中一个分片。</strong></p>
+</blockquote>
+<h3 id="这个推演中的刻意留白"><a href="#这个推演中的刻意留白" class="headerlink" title="这个推演中的刻意留白"></a>这个推演中的刻意留白</h3><p>上面这个推演隐含了一个假设：你用了一个中间件来自动路由（ShardingSphere-Proxy或Sharding-JDBC），然后你的代码里至少应用层知道user_id和月份这两个路由信息。如果没有这样的中间件，手写路由逻辑也能用——只是开发团队要多写一坨代码，维护成本涨一截。</p>
+<h2 id="五、和DDIA第7章的呼应"><a href="#五、和DDIA第7章的呼应" class="headerlink" title="五、和DDIA第7章的呼应"></a>五、和DDIA第7章的呼应</h2><p>DDIA第7章从更本质的角度讨论了分区，很多概念和分库分表直接对应。</p>
+<h3 id="5-1-分区路由：哈希-vs-范围"><a href="#5-1-分区路由：哈希-vs-范围" class="headerlink" title="5.1 分区路由：哈希 vs 范围"></a>5.1 分区路由：哈希 vs 范围</h3><ul>
+<li><strong>哈希分区</strong>：<code>user_id % N</code> → 数据均匀分布，但不支持范围查询</li>
+<li><strong>范围分区</strong>：按时间范围切分 → 范围查询（查某段时间）走单分片，但数据可能不均匀</li>
+</ul>
+<p>我们第四阶段的分库分表方案，是对DDIA这个理论的最好应用——先按哈希（user_id）横向分布，再按范围（月份）纵向分布。<strong>两者组合使用，取各自的优势。</strong></p>
+<h3 id="5-2-二级索引：本地索引-vs-全局索引"><a href="#5-2-二级索引：本地索引-vs-全局索引" class="headerlink" title="5.2 二级索引：本地索引 vs 全局索引"></a>5.2 二级索引：本地索引 vs 全局索引</h3><p>分片之后，非分片键的索引怎么办？比如订单表里有<code>status</code>状态字段，现在数据散在四个库里。</p>
+<p>DDIA区分了两种方案：</p>
+<p><strong>本地索引</strong>：每个分片独立维护自己的索引，<code>status</code>索引在每个数据库里都有。查<code>WHERE status=&#39;PAID&#39;</code>时必须广播到所有分片，然后在中间件合并。优点是简单，缺点就是广播查询的性能损耗。</p>
+<p><strong>全局索引</strong>：建一张全局的索引表，里面的内容是<code>(status, order_id, user_id)</code>，这张索引表本身也要分片，但查询时先查索引表找到目标分片，再精准查询。优点是无需广播，缺点是引入了额外的数据和维护成本。</p>
+<p>工业界的折中：<strong>本地索引 + 分片键。</strong> 当你的绝大多数查询都能带上分片键的时候，本地索引完全够用。对于少数的跨分片查询，用搜索引擎（ES）或者异步构建宽表来解决。</p>
+<h2 id="六、总结：分片不是银弹"><a href="#六、总结：分片不是银弹" class="headerlink" title="六、总结：分片不是银弹"></a>六、总结：分片不是银弹</h2><p>分片解决问题，也制造问题。</p>
+<h3 id="你得到什么"><a href="#你得到什么" class="headerlink" title="你得到什么"></a>你得到什么</h3><ul>
+<li>容量无限扩展（理论上，加机器就行）</li>
+<li>每个分片的性能可控（数据量降下来了）</li>
+<li>故障隔离（一个分片挂了不至于全体不可用）</li>
+</ul>
+<h3 id="你失去什么"><a href="#你失去什么" class="headerlink" title="你失去什么"></a>你失去什么</h3><ul>
+<li><strong>Join没了</strong>。跨分片join直接不能用了，所有的关联必须在应用层做</li>
+<li><strong>事务没了</strong>。跨分片写操作不再原子化，需要最终一致性方案</li>
+<li><strong>运维复杂度暴增</strong>。建表要建N个库、数据迁移工具、监控要分片级别的</li>
+<li><strong>开发心智负担</strong>。每一个SQL都要想：这是走一个分片，还是广播？</li>
+</ul>
+<h3 id="什么时候不应该分"><a href="#什么时候不应该分" class="headerlink" title="什么时候不应该分"></a>什么时候不应该分</h3><ol>
+<li><strong>数据量还没到。</strong> 1000万行以下的表考虑分片属于过度设计，给自己找麻烦</li>
+<li><strong>可以归档。</strong> 很多”大表”有90%是冷数据，归档到对象存储比拆分更简单</li>
+<li><strong>读写分离 + 缓存能解决。</strong> 绝大多数读多写少的业务不需要分片</li>
+</ol>
+<h3 id="应该分的信号"><a href="#应该分的信号" class="headerlink" title="应该分的信号"></a>应该分的信号</h3><p>当你的DBA开始用”这周还行，下周不好说”来形容数据库——别等了，开始做方案。</p>
+<hr>
+<p><em>DDIA系列文章：</em></p>
+<ol>
+<li><em>DDIA-01：为什么说事务是数据库最大的谎言</em></li>
+<li><em>DDIA-02：B+树索引原理，面试官听完沉默了</em></li>
+<li><em>DDIA-03：LSM-Tree——写入性能的秘密</em></li>
+<li><em>DDIA-04：一个SQL的一生——从连接器到存储引擎</em></li>
+<li><em>DDIA-05：复制与读写分离——主从同步的那些坑</em></li>
+<li><em>DDIA-06：两阶段提交——分布式事务的理想与现实</em></li>
+<li><em>DDIA-07：分片入门——当一张表大到MySQL装不下（本文）</em></li>
+</ol>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA学习笔记</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
+      
+        <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" class="print-no-link">#分库分表</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#数据库</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-07-分片入门：当一张表大到MySQL装不下</div>
+      <div>https://aster-xu-lab.github.io/2024/03/05/2024-03-05-DDIA-07-分片入门/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年3月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/03/16/2024-03-16-DDIA-07-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E6%8B%A9%E8%89%BA%E6%9C%AF/" title="DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/02/24/2024-02-24-DDIA-07-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E6%8E%A8%E6%BC%94/" title="DDIA-07-实战：130万日订单的分库分表推演——基于ShardingSphere-JDBC">
+                        <span class="hidden-mobile">DDIA-07-实战：130万日订单的分库分表推演——基于ShardingSphere-JDBC</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

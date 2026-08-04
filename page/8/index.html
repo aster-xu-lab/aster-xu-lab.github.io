@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/04/05/2023-04-05-ShardingSphere%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87%E5%AE%9E%E6%88%98/" target="_self">
-          ShardingSphere 时间分片实战：INTERVAL vs AUTO_INTERVAL 与跨年处理
+        <a href="/2023/07/03/2023-07-03-DDIA-02-SLA%E4%B8%8ESLO%E5%AE%9E%E6%88%98/" target="_self">
+          DDIA-02SLA与SLO实战：从99.9%到99.99%的100倍差距
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/04/05/2023-04-05-ShardingSphere%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87%E5%AE%9E%E6%88%98/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/07/03/2023-07-03-DDIA-02-SLA%E4%B8%8ESLO%E5%AE%9E%E6%88%98/" target="_self">
         <div>
-          时间分片为什么要单独讲订单、流水、日志这类数据天然按时间查询，而且数据量随时间只增不减。时间分片（月表&#x2F;日表）是处理这类数据最自然的方式——但实际做起来有几个坑，尤其是跨年。 INTERVAL：真自然月分片INTERVAL 算法按时间区间自动路由到对应月表： 1234567Properties props = new Properties();props.setProperty(&qu
+          99.9%和99.99%只差一个9，但年度宕机时间从8.76小时降到52.6分钟，差了整整10倍。本文结合日订单130万、QPS 8000+的订单中心实战，讲清楚SLA/SLO/SLI三兄弟的区别、MTBF/MTTR的计算方法、以及可用性从99.9%爬到99.99%到底做了什么。
         </div>
       </a>
 
@@ -352,8 +352,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-04-05 09:00" pubdate>
-              2023-04-05
+            <time datetime="2023-07-03 09:00" pubdate>
+              2023-07-03
             </time>
           </div>
         
@@ -368,7 +368,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
   
   
 
@@ -383,17 +383,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+              <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/INTERVAL/">#INTERVAL</a>
+              <a href="/tags/SLA/">#SLA</a>
             
-              <a href="/tags/AUTO-INTERVAL/">#AUTO_INTERVAL</a>
+              <a href="/tags/%E5%8F%AF%E7%94%A8%E6%80%A7/">#可用性</a>
             
-              <a href="/tags/%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87/">#时间分片</a>
-            
-              <a href="/tags/%E5%8A%A8%E6%80%81%E8%A1%A8%E7%BB%B4%E6%8A%A4/">#动态表维护</a>
-            
-              <a href="/tags/%E8%B7%A8%E5%B9%B4/">#跨年</a>
+              <a href="/tags/SRE/">#SRE</a>
             
           </div>
         
@@ -407,15 +403,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/03/27/2023-03-27-ShardingSphere%E7%BB%91%E5%AE%9A%E8%A1%A8%E4%B8%8E%E5%B9%BF%E6%92%AD%E8%A1%A8/" target="_self">
-          ShardingSphere 绑定表与广播表：JOIN 与配置表的两大解法
+        <a href="/2023/06/22/2023-06-22-DDIA-01-%E6%9E%B6%E6%9E%84%E6%9D%83%E8%A1%A1%E6%B2%A1%E6%9C%89%E9%93%B6%E5%BC%B9/" target="_self">
+          DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/27/2023-03-27-ShardingSphere%E7%BB%91%E5%AE%9A%E8%A1%A8%E4%B8%8E%E5%B9%BF%E6%92%AD%E8%A1%A8/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/06/22/2023-06-22-DDIA-01-%E6%9E%B6%E6%9E%84%E6%9D%83%E8%A1%A1%E6%B2%A1%E6%9C%89%E9%93%B6%E5%BC%B9/" target="_self">
         <div>
-          JOIN 在分片下的尴尬分库分表后，JOIN 是个老大难。以订单为例：or_sales_info 和 or_sales_item 都在分片，按 order_id 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生笛卡尔积——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。 绑定表：解决分片表 JOIN绑定表的本质是
+          基于真实电商供应链中台经验，拆解4个核心架构权衡——同步vs异步、强一致vs最终一致、单体vs微服务、自研vs开源——没有银弹，只有场景下的最优解。
         </div>
       </a>
 
@@ -423,8 +419,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-03-27 09:00" pubdate>
-              2023-03-27
+            <time datetime="2023-06-22 09:00" pubdate>
+              2023-06-22
             </time>
           </div>
         
@@ -439,7 +435,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  <a href="/categories/DDIA%E5%AE%9E%E6%88%98%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA实战笔记</a>
   
   
 
@@ -454,15 +450,15 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+              <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/%E7%BB%91%E5%AE%9A%E8%A1%A8/">#绑定表</a>
+              <a href="/tags/%E6%9E%B6%E6%9E%84/">#架构</a>
             
-              <a href="/tags/%E5%B9%BF%E6%92%AD%E8%A1%A8/">#广播表</a>
+              <a href="/tags/%E7%94%B5%E5%95%86/">#电商</a>
             
-              <a href="/tags/JOIN/">#JOIN</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
             
-              <a href="/tags/%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF/">#笛卡尔积</a>
+              <a href="/tags/%E6%9D%83%E8%A1%A1/">#权衡</a>
             
           </div>
         
@@ -476,15 +472,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/03/18/2023-03-18-ShardingSphere%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8%E4%B8%8E%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/" target="_self">
-          ShardingSphere-JDBC 快速入门与核心概念
+        <a href="/2023/06/12/2023-06-12-DDIA-01-%E5%8F%AF%E9%9D%A0%E6%80%A7%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7%E5%8F%AF%E7%BB%B4%E6%8A%A4%E6%80%A7/" target="_self">
+          DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/18/2023-03-18-ShardingSphere%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8%E4%B8%8E%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/06/12/2023-06-12-DDIA-01-%E5%8F%AF%E9%9D%A0%E6%80%A7%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7%E5%8F%AF%E7%BB%B4%E6%8A%A4%E6%80%A7/" target="_self">
         <div>
-          问题的起点cloud-order 的 or_sales_info 表已经逼近 6000 万条，单表查询越来越慢，DBA 天天催着拆分。但分库分表一直是个”听起来很厉害，做起来很痛”的事——手写路由、改所有 DAO、跨分片聚合…… 直到引入了 ShardingSphere-JDBC。 本文记录我对 ShardingSphere-JDBC 的学习笔记，从最核心的概念讲起。 核心概念：逻辑表 vs 物
+          前言2026年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 七年过去，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群，从看着慢SQL列表头皮发麻到每天只关心那6条
         </div>
       </a>
 
@@ -492,8 +488,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-03-18 09:00" pubdate>
-              2023-03-18
+            <time datetime="2023-06-12 09:00" pubdate>
+              2023-06-12
             </time>
           </div>
         
@@ -508,8 +504,15 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
   
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/DDIA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA读书笔记</a>
+  
+  
+
   
 
       </span>
@@ -523,15 +526,19 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+              <a href="/tags/%E5%8F%AF%E9%9D%A0%E6%80%A7/">#可靠性</a>
             
-              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">#分库分表</a>
+              <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/JDBC/">#JDBC</a>
+              <a href="/tags/%E6%9E%B6%E6%9E%84/">#架构</a>
             
-              <a href="/tags/%E8%B7%AF%E7%94%B1/">#路由</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
             
-              <a href="/tags/SQL%E6%94%B9%E5%86%99/">#SQL改写</a>
+              <a href="/tags/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/">#读书笔记</a>
+            
+              <a href="/tags/%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7/">#可扩展性</a>
+            
+              <a href="/tags/%E5%8F%AF%E7%BB%B4%E6%8A%A4%E6%80%A7/">#可维护性</a>
             
           </div>
         
@@ -545,15 +552,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/03/10/2023-03-10-ShardingSphere%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5%E5%AE%9E%E6%88%98-5%E7%A7%8D%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E9%80%89/" target="_self">
-          ShardingSphere 分片策略实战：5 种算法怎么选
+        <a href="/2023/06/01/2023-06-01-DDIA-01-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%96%B0%E6%8C%91%E6%88%98/" target="_self">
+          DDIA-01-云原生时代的架构新挑战：DDIA第二版新增内容解读
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/10/2023-03-10-ShardingSphere%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5%E5%AE%9E%E6%88%98-5%E7%A7%8D%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E9%80%89/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/06/01/2023-06-01-DDIA-01-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%96%B0%E6%8C%91%E6%88%98/" target="_self">
         <div>
-          先看分布需求分片策略本质是回答一个问题：这条数据该存到哪张物理表？ 选择哪种算法，取决于数据特征和查询模式。本文用 5 种内置算法逐一验证，并给出选型建议。 1. INLINE —— 最灵活，Groovy 表达式1表达式: t_order_$&#123;order_id % 4&#125;  123Properties props = new Properties();props.setProp
+          DDIA第二版新增了云原生基础设施、Serverless数据库、可观测性等章节。本文结合作者7年电商供应链中台的实战经验，解读第二版的变化，诚实地面对自己的技术短板，探讨"不变的核心原理"如何在新环境下发挥作用。
         </div>
       </a>
 
@@ -561,8 +568,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-03-10 09:00" pubdate>
-              2023-03-10
+            <time datetime="2023-06-01 09:00" pubdate>
+              2023-06-01
             </time>
           </div>
         
@@ -577,7 +584,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  <a href="/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">读书笔记</a>
   
   
 
@@ -592,17 +599,11 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+              <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/%E5%88%86%E7%89%87/">#分片</a>
+              <a href="/tags/%E4%BA%91%E5%8E%9F%E7%94%9F/">#云原生</a>
             
-              <a href="/tags/INLINE/">#INLINE</a>
-            
-              <a href="/tags/HASH-MOD/">#HASH_MOD</a>
-            
-              <a href="/tags/INTERVAL/">#INTERVAL</a>
-            
-              <a href="/tags/COMPLEX/">#COMPLEX</a>
+              <a href="/tags/%E6%9E%B6%E6%9E%84/">#架构</a>
             
           </div>
         
@@ -616,84 +617,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/03/01/2023-03-01-ShardingSphere%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" target="_self">
-          渠道垂直分表的困局与ShardingSphere破局
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/01/2023-03-01-ShardingSphere%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" target="_self">
-        <div>
-          渠道垂直分表的困局与 ShardingSphere 破局从手工拆表说起订单中心对接 20+ 电商平台（淘宝、京东、拼多多、抖音…），不同渠道的订单量差异巨大。最初的设计是按渠道垂直分表： 123456-- 按渠道垂直分表order_pdd         -- 拼多多订单order_jd           -- 京东订单order_kuaishou     -- 快手订单order_taobao
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-03-01 09:00" pubdate>
-              2023-03-01
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/MySQL/">#MySQL</a>
-            
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
-            
-              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">#分库分表</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
-            
-              <a href="/tags/%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/">#架构演进</a>
-            
-              <a href="/tags/JDBC/">#JDBC</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2023/01/31/2023-01-31-%E4%B8%83%E5%B9%B4Java%E5%90%8E%E7%AB%AF%E4%B9%8B%E8%B7%AF/" target="_self">
+        <a href="/2023/03/31/2023-03-31-%E4%B8%83%E5%B9%B4Java%E5%90%8E%E7%AB%AF%E4%B9%8B%E8%B7%AF/" target="_self">
           七年Java后端之路：我的技术成长与面试方法论
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/31/2023-01-31-%E4%B8%83%E5%B9%B4Java%E5%90%8E%E7%AB%AF%E4%B9%8B%E8%B7%AF/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/31/2023-03-31-%E4%B8%83%E5%B9%B4Java%E5%90%8E%E7%AB%AF%E4%B9%8B%E8%B7%AF/" target="_self">
         <div>
           七年 Java 后端之路：我的技术成长与面试方法论写在前面2019 年 1 月入行，到 2026 年，整整七年。 从宏智科技的外包开发，到通天晓的技术主管，再到能良的技术主管带 4 人团队——回头看，每个阶段都在做对的事情，只是当时不知道。 这篇文章不是成功学，是一个普通 Java 程序员的真实成长复盘。希望能给还在路上的同学一些参考。 第一阶段：野蛮生长（2019-2021，宏智科技）刚毕业进入
         </div>
@@ -703,8 +633,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-01-31 09:00" pubdate>
-              2023-01-31
+            <time datetime="2023-03-31 09:00" pubdate>
+              2023-03-31
             </time>
           </div>
         
@@ -758,13 +688,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/01/18/2023-01-18-%E5%8D%B3%E6%97%B6%E9%9B%B6%E5%94%AE%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" target="_self">
+        <a href="/2023/03/10/2023-03-10-%E5%8D%B3%E6%97%B6%E9%9B%B6%E5%94%AE%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" target="_self">
           即时零售中台：从异步批量到事件驱动秒级响应
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/18/2023-01-18-%E5%8D%B3%E6%97%B6%E9%9B%B6%E5%94%AE%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/10/2023-03-10-%E5%8D%B3%E6%97%B6%E9%9B%B6%E5%94%AE%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" target="_self">
         <div>
           即时零售中台：从异步批量到事件驱动秒级响应一个新的挑战做了三年订单中台（cloud-order），核心模式是：定时拉取 → 批量处理 → 异步同步。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。 但即时零售（闪购）完全不同：用户期望 30 分钟内送达。延迟从”分钟级可容忍”变成了”秒级就是事故”。 这篇文章聊聊订单中台和即时零售中台在架构上的本质
         </div>
@@ -774,8 +704,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-01-18 09:00" pubdate>
-              2023-01-18
+            <time datetime="2023-03-10 09:00" pubdate>
+              2023-03-10
             </time>
           </div>
         
@@ -829,13 +759,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/01/05/2023-01-05-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" target="_self">
+        <a href="/2023/02/16/2023-02-16-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" target="_self">
           AI辅助代码审查实战：用Claude审查5.3万行供应链代码
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/05/2023-01-05-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/02/16/2023-02-16-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" target="_self">
         <div>
           AI 辅助代码审查实战：用 Claude 审查 5.3 万行供应链代码背景供应链计划系统（SCP）是我们从兄弟团队接手的一个项目，567 个 Java 文件，5.3 万行代码。接手后心里没底——代码质量到底怎么样？有哪些隐藏的坑？ 传统的 Code Review 方式面对这个量级根本不可能完成。我决定用 Claude 做一次全量代码审查。这篇文章记录完整过程和发现。 一、怎么喂代码给 AI？5.3
         </div>
@@ -845,8 +775,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-01-05 09:00" pubdate>
-              2023-01-05
+            <time datetime="2023-02-16 09:00" pubdate>
+              2023-02-16
             </time>
           </div>
         
@@ -900,13 +830,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/12/23/2022-12-23-%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA%E5%8D%8F%E5%90%8C%E8%AE%BE%E8%AE%A1/" target="_self">
+        <a href="/2023/01/26/2023-01-26-%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA%E5%8D%8F%E5%90%8C%E8%AE%BE%E8%AE%A1/" target="_self">
           双状态机协同设计：工单状态机与任务状态机
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/12/23/2022-12-23-%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA%E5%8D%8F%E5%90%8C%E8%AE%BE%E8%AE%A1/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/26/2023-01-26-%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA%E5%8D%8F%E5%90%8C%E8%AE%BE%E8%AE%A1/" target="_self">
         <div>
           双状态机协同设计：工单状态机与任务状态机问题：一个工单，多种任务，状态怎么协同？工单系统中，一个维修工单下面可能有三个任务：上门检测任务、备件更换任务、清理保养任务。每个任务有自己的生命周期（待接收→执行中→已完成），工单也有自己的生命周期（待分配→服务中→待确认→已完成）。 核心问题：工单状态和任务状态如何保持协同？ 比如：当所有任务都完成了，工单应该自动进入”待确认”状态。当工单被关闭，所有未
         </div>
@@ -916,8 +846,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-12-23 09:00" pubdate>
-              2022-12-23
+            <time datetime="2023-01-26 09:00" pubdate>
+              2023-01-26
             </time>
           </div>
         
@@ -971,13 +901,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/12/10/2022-12-10-%E5%B7%A5%E5%8D%95%E7%B3%BB%E7%BB%9FSpecCoding%E5%AE%9E%E8%B7%B5/" target="_self">
+        <a href="/2023/01/04/2023-01-04-%E5%B7%A5%E5%8D%95%E7%B3%BB%E7%BB%9FSpecCoding%E5%AE%9E%E8%B7%B5/" target="_self">
           从0到1交付一个中台：工单履约系统的Spec Coding实践
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/12/10/2022-12-10-%E5%B7%A5%E5%8D%95%E7%B3%BB%E7%BB%9FSpecCoding%E5%AE%9E%E8%B7%B5/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/04/2023-01-04-%E5%B7%A5%E5%8D%95%E7%B3%BB%E7%BB%9FSpecCoding%E5%AE%9E%E8%B7%B5/" target="_self">
         <div>
           从 0 到 1 交付一个中台：工单履约系统的 Spec Coding 实践先有 Spec，后有代码2024 年，公司决定做一个通用的工单履约管理中台，覆盖 3C 维修、贴膜、回收、导购四条业务线。我被指定为技术负责人，从 0 开始设计整个系统。 传统做法是拿到需求就开始建项目——拉 Spring Boot 脚手架、建表、写 CRUD。这次我换了个方式：先写 Spec，再写代码。这个决策让整个交付过
         </div>
@@ -987,8 +917,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-12-10 09:00" pubdate>
-              2022-12-10
+            <time datetime="2023-01-04 09:00" pubdate>
+              2023-01-04
             </time>
           </div>
         
@@ -1029,6 +959,77 @@
               <a href="/tags/%E4%BB%8E0%E5%88%B01/">#从0到1</a>
             
               <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">#架构设计</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/" target="_self">
+          百万订单系统的缓存与降级策略
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/" target="_self">
+        <div>
+          百万订单系统的缓存与降级策略前言我们订单中心日均处理百万级订单，双十一峰值还要翻几倍。对于 B 端系统来说，缓存策略跟 C 端完全不一样——B 端对一致性的要求更高，不能简单地”先查缓存、缓存没有查 DB”。 这篇文章聊聊我们在订单系统里的缓存和降级实践。 一、B端缓存的特殊性跟 C 端不一样的地方在于：  一致性要求高：用户看到订单状态”已发货”但实际是”待发货”，这就是客诉 数据量大但不全是热
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-12-14 09:00" pubdate>
+              2022-12-14
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="category-chain-item">性能优化</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E7%BC%93%E5%AD%98/">#缓存</a>
+            
+              <a href="/tags/Caffeine/">#Caffeine</a>
+            
+              <a href="/tags/Redis/">#Redis</a>
+            
+              <a href="/tags/%E9%99%8D%E7%BA%A7/">#降级</a>
+            
+              <a href="/tags/%E7%86%94%E6%96%AD/">#熔断</a>
+            
+              <a href="/tags/%E5%A4%A7%E4%BF%83%E4%BF%9D%E9%9A%9C/">#大促保障</a>
             
           </div>
         

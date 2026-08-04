@@ -1,0 +1,964 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="网络分区是分布式系统中最容易被忽视的故障模式。本文从脑裂的底层逻辑出发，结合订单中心的真实事故，讲清楚Fencing Token、共识算法多数派的原理，以及在xxl-job等调度系统里&quot;不靠谱的网络&quot;该如何兜底。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-09-脑裂与网络分区：CAP定理中P的残酷真相">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/07/01/2024-07-01-DDIA-09-%E8%84%91%E8%A3%82%E4%B8%8E%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="网络分区是分布式系统中最容易被忽视的故障模式。本文从脑裂的底层逻辑出发，结合订单中心的真实事故，讲清楚Fencing Token、共识算法多数派的原理，以及在xxl-job等调度系统里&quot;不靠谱的网络&quot;该如何兜底。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-07-01T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T11:12:09.753Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="CAP">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="Fencing">
+<meta property="article:tag" content="Raft">
+<meta property="article:tag" content="Split-Brain">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="网络分区">
+<meta property="article:tag" content="脑裂">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-09-脑裂与网络分区：CAP定理中P的残酷真相 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-09-脑裂与网络分区：CAP定理中P的残酷真相"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-07-01 09:00" pubdate>
+          2024年7月1日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          43 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-09-脑裂与网络分区：CAP定理中P的残酷真相</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一、一个真实的噩梦"><a href="#一、一个真实的噩梦" class="headerlink" title="一、一个真实的噩梦"></a>一、一个真实的噩梦</h2><p>2025年某天凌晨2点，订单中心的MySQL主库突然不可达。</p>
+<p>MHA（Master High Availability）检测到主库心跳超时，在15秒内完成了自动切换：选定一个从库提升为新主库，写入VIP漂移过去，一切看起来非常标准。</p>
+<p>但问题是——旧主库并没有真的挂。它只是和MHA管理器之间的网络抖动了3秒。</p>
+<p>3秒后网络恢复，旧主库”苏醒”过来，它不知道自己已经被”夺权”了，继续把自己当成主库，继续接收上游的写入请求。</p>
+<p>于是，同一个订单中心，<strong>两个MySQL实例同时认为自己才是主库</strong>，同时接受写入。</p>
+<p>这个状态持续了73秒，直到运维人工介入。</p>
+<p>造成的影响：<strong>11张核心表出现数据冲突，其中3张表的主键冲突导致订单状态机永久卡死，最终需要从binlog逐条回放修复。</strong></p>
+<p>这不是Bug，这是<strong>脑裂（Split Brain）</strong>——CAP定理中”P”最残酷的表现形式。</p>
+<h2 id="二、脑裂到底是怎么发生的？"><a href="#二、脑裂到底是怎么发生的？" class="headerlink" title="二、脑裂到底是怎么发生的？"></a>二、脑裂到底是怎么发生的？</h2><h3 id="2-1-先从”网络分区”说起"><a href="#2-1-先从”网络分区”说起" class="headerlink" title="2.1 先从”网络分区”说起"></a>2.1 先从”网络分区”说起</h3><p>CAP定理中的<strong>P（Partition Tolerance，网络分区容忍性）</strong>，说的是：当集群中部分节点之间的网络断开（或延迟极高），系统是否还能继续提供服务？</p>
+<p>很多人以为CAP定理里的”网络分区”是极小概率事件。实际上在云原生环境里，网络分区比你想象的频繁得多：</p>
+<ul>
+<li>交换机固件Bug导致的间歇性丢包</li>
+<li>云厂商虚拟网络隔离策略更新导致的瞬时断连</li>
+<li>机房机架顶交换机重启</li>
+<li>容器网络插件（Calico&#x2F;Flannel）的隧道故障</li>
+<li>甚至是——有人踢掉了机柜里的网线</li>
+</ul>
+<p>核心问题不是网络会不会断，而是<strong>断了之后，系统会怎么表现</strong>。</p>
+<h3 id="2-2-脑裂的本质"><a href="#2-2-脑裂的本质" class="headerlink" title="2.2 脑裂的本质"></a>2.2 脑裂的本质</h3><p>脑裂的经典场景：一个由N个节点组成的集群，因为网络分区被切成两个（或多个）不相连的子集。<strong>每个子集都不知道另一个子集的存在</strong>。</p>
+<p>如果每个子集都独立决定”我还能用，我继续服务”，那么：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs css">分区<span class="hljs-selector-tag">A</span>：节点<span class="hljs-number">1</span>, 节点<span class="hljs-number">2</span>         → 认为自己是多数，继续服务<br>分区<span class="hljs-selector-tag">B</span>：节点<span class="hljs-number">3</span>              → 也认为自己是多数，继续服务<br></code></pre></td></tr></table></figure>
+
+<p>两个”主库”同时存在 → 两边各自接受写入 → 网络恢复后数据无法自动合并 → <strong>数据冲突</strong>。</p>
+<p>DDIA第9章里有一句话非常精准：<strong>“在网络分区的情况下，你只能在一致性和可用性之间二选一。”</strong></p>
+<p>这不是”鱼与熊掌不可兼得”的哲学感叹——这是工程上的硬约束。</p>
+<h2 id="三、Fencing-Token：给旧主库的写入加上”过期标签”"><a href="#三、Fencing-Token：给旧主库的写入加上”过期标签”" class="headerlink" title="三、Fencing Token：给旧主库的写入加上”过期标签”"></a>三、Fencing Token：给旧主库的写入加上”过期标签”</h2><h3 id="3-1-思路"><a href="#3-1-思路" class="headerlink" title="3.1 思路"></a>3.1 思路</h3><p>脑裂的根本问题是：<strong>被夺权的老主库不知道自己已经”过期”了</strong>，它还在往存储层写数据。</p>
+<p>既然没办法阻止它”自以为是主库”，那就让<strong>存储层来拒绝它的写入</strong>。</p>
+<p>这就是**Fencing（栅栏）**的核心思路。</p>
+<h3 id="3-2-Fencing-Token-机制"><a href="#3-2-Fencing-Token-机制" class="headerlink" title="3.2 Fencing Token 机制"></a>3.2 Fencing Token 机制</h3><p>每当你选出一个新的Leader（新主库），就给这个新Leader分配一个<strong>单调递增的Token（栅栏令牌）</strong>——本质上是一个epoch号。</p>
+<p>所有写入请求都必须携带这个Token，存储层只接受Token &gt;&#x3D; 当前已记录的最大Token的写入。</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs routeros">时序：<br>T0: 旧Leader，<span class="hljs-attribute">epoch</span>=1           → 写入正常<br>T1: 网络分区发生<br>T2: 集群选出新Leader，<span class="hljs-attribute">epoch</span>=2<br>T3: 新Leader写入数据，<span class="hljs-attribute">epoch</span>=2   → 存储层记录 <span class="hljs-attribute">max_epoch</span>=2<br>T4: 旧Leader恢复，用<span class="hljs-attribute">epoch</span>=1写入 → 存储层拒绝（1 &lt; 2）<br></code></pre></td></tr></table></figure>
+
+<p>旧主库的写入被存储在底层直接拒绝，<strong>数据冲突从根本上被消除了</strong>。</p>
+<h3 id="3-3-工程落地细节"><a href="#3-3-工程落地细节" class="headerlink" title="3.3 工程落地细节"></a>3.3 工程落地细节</h3><p>这个概念听起来很简单，但工程上有几个细节：</p>
+<p><strong>Token的生成</strong>：必须是全局单调递增的。可以用ZooKeeper的zxid、etcd的revision，或者自己维护一个全局计数器。关键是不能回退。</p>
+<p><strong>Token的传递</strong>：写入链路中的每一跳都要携带Token。如果存储层是分片的（比如分布式KV），每个分片要独立记录max_epoch。</p>
+<p><strong>Token的存储</strong>：max_epoch本身要可靠存储，通常和业务数据存在同一个事务里（或者用CAS原子操作）。</p>
+<p>失败模式：如果存储层本身没有原子CAS能力（比如某些旧版MySQL），fencing的实现就很痛苦——你需要在业务层加一套版本号逻辑。</p>
+<h2 id="四、共识算法的答案：真相由多数派决定"><a href="#四、共识算法的答案：真相由多数派决定" class="headerlink" title="四、共识算法的答案：真相由多数派决定"></a>四、共识算法的答案：真相由多数派决定</h2><h3 id="4-1-Raft-Paxos-的优雅解法"><a href="#4-1-Raft-Paxos-的优雅解法" class="headerlink" title="4.1 Raft&#x2F;Paxos 的优雅解法"></a>4.1 Raft&#x2F;Paxos 的优雅解法</h3><p>Fencing解决的是”怎么写”，但”怎么选出唯一的Leader”本身也是一个分布式一致性问题。</p>
+<p>Raft和Paxos的解法出奇地简单：<strong>只有获得多数派（Majority）投票的节点才能成为Leader。</strong></p>
+<p>为什么”多数派”就够了？</p>
+<p>因为在一个有N个节点的集群中，任意两个多数派必然有交集（至少重叠1个节点）。这意味着：</p>
+<ul>
+<li>不可能同时存在两个Leader同时获得多数派投票</li>
+<li>新的Leader一定”见过”上一个Leader的部分状态</li>
+<li>日志的提交也必须获得多数派确认</li>
+</ul>
+<p>这就是Raft的安全性的数学基础。</p>
+<h3 id="4-2-为什么不是”全票”？"><a href="#4-2-为什么不是”全票”？" class="headerlink" title="4.2 为什么不是”全票”？"></a>4.2 为什么不是”全票”？</h3><p>有人会问：既然多数派能防止脑裂，那全票岂不是更安全？</p>
+<p>答案是——不可用。全票意味着任何一个节点故障都会导致集群无法选举Leader，系统完全不可用。</p>
+<p>多数派是安全性和可用性之间的精确平衡：</p>
+<ul>
+<li>3节点集群可以容忍1个节点故障</li>
+<li>5节点集群可以容忍2个节点故障</li>
+<li>容忍的故障数 &#x3D; floor((N-1)&#x2F;2)</li>
+</ul>
+<p>你让集群容错性更高，就要加更多节点——但节点多了，网络分区的概率也在增加。这是分布式系统设计里的经典权衡。</p>
+<h3 id="4-3-心跳和租约的本质"><a href="#4-3-心跳和租约的本质" class="headerlink" title="4.3 心跳和租约的本质"></a>4.3 心跳和租约的本质</h3><p>无论Raft的Leader Election还是分布式锁，底层都有一个共同机制：<strong>租约（Lease）</strong>。</p>
+<p>Leader定期发送心跳，Follower在租约到期前”信任”Leader的权威。如果心跳断了超过租约时间，Follower就启动新一轮选举。</p>
+<p>这里的关键细节是：<strong>租约时间的选择</strong>。</p>
+<ul>
+<li>租约太短：网络轻微抖动就触发选举，系统不稳定</li>
+<li>租约太长：Leader真的挂了，要等很久才能选出新Leader，系统长时间不可用</li>
+</ul>
+<p>生产环境的典型值：Raft心跳间隔100ms-300ms，选举超时150ms-500ms，租约总时长通常在秒级。</p>
+<h2 id="五、实战：订单中心MHA切换的复盘"><a href="#五、实战：订单中心MHA切换的复盘" class="headerlink" title="五、实战：订单中心MHA切换的复盘"></a>五、实战：订单中心MHA切换的复盘</h2><p>回到开头那个事故，我们来看看如果当时有Fencing会怎样。</p>
+<h3 id="5-1-MHA的局限"><a href="#5-1-MHA的局限" class="headerlink" title="5.1 MHA的局限"></a>5.1 MHA的局限</h3><p>MHA本身是一个比较”古老”的MySQL高可用方案。它的切换逻辑大致是：</p>
+<ol>
+<li>检测主库心跳超时</li>
+<li>选一个从库，通过<code>ssh</code>远程执行<code>change master to</code>和<code>set global read_only=0</code></li>
+<li>漂移VIP</li>
+</ol>
+<p>问题出在第2步：如果因为网络问题，MHA连接旧主库的ssh也断了，那MHA就<strong>没法执行”杀掉旧主库”的操作</strong>。旧主库的<code>read_only</code>没有被设回1，继续接受写入。</p>
+<p>这是<strong>MHA的致命缺陷</strong>：它的fencing依赖ssh连接，而ssh连接本身也走网络——当网络就是故障源时，fencing机制也跟着失效了。</p>
+<h3 id="5-2-如果加入Fencing"><a href="#5-2-如果加入Fencing" class="headerlink" title="5.2 如果加入Fencing"></a>5.2 如果加入Fencing</h3><p>如果我们在订单中心的写入链路上加一套Fencing机制：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs abnf">写入链路：<br>  业务服务 → ORM拦截器（附带epoch） → 写MySQL<br><br>MySQL存储层改造：<br>  在每张核心表上增加一个 epoch 字段<br>  写入条件：WHERE epoch &gt;<span class="hljs-operator">=</span> &#123;全局维护的当前合法epoch&#125;<br></code></pre></td></tr></table></figure>
+
+<p>新主库提升时，先通过<strong>共识组件</strong>（比如etcd）获得一个新的epoch号，更新全局epoch。旧主库的所有写SQL因为epoch字段不满足条件，直接被WHERE子句过滤掉——物理上不可写。</p>
+<p>这不是事后补数据，而是<strong>事前阻止冲突发生</strong>。</p>
+<h3 id="5-3-实际我们是怎么修的"><a href="#5-3-实际我们是怎么修的" class="headerlink" title="5.3 实际我们是怎么修的"></a>5.3 实际我们是怎么修的</h3><p>坦白说，我们当时没有做Fencing。事故之后我们做了三件事：</p>
+<ol>
+<li><strong>缩短MHA的切换窗口</strong>：把心跳检测间隔从3秒降到1秒，但这只是降低了概率，没有解决问题。</li>
+<li><strong>加入一个外部的kill脚本</strong>：切换时通过另一条网络链路（管理网卡）强制ssh旧主库并执行<code>set global read_only=1</code>。但说实话，这还是在依赖网络。</li>
+<li><strong>迁移到MySQL Group Replication（MGR）</strong>：MGR内置了基于Paxos的组成员管理，脑裂概率大幅降低。这才是真正从架构层面解决问题。</li>
+</ol>
+<p>教训很简单：<strong>Fencing机制不能依赖故障域内的任何组件。</strong> 用网络去修网络的问题，等于用Bug去修Bug。</p>
+<h2 id="六、SyncTask的视角：调度器和执行器的网络分区"><a href="#六、SyncTask的视角：调度器和执行器的网络分区" class="headerlink" title="六、SyncTask的视角：调度器和执行器的网络分区"></a>六、SyncTask的视角：调度器和执行器的网络分区</h2><p>这个话题和我们自己的系统也有关。</p>
+<p>我们团队维护的<strong>SyncTask引擎</strong>寄居在xxl-job之上。xxl-job的架构是典型的调度器-执行器模式：</p>
+<figure class="highlight cos"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs cos">xxl-<span class="hljs-keyword">job</span>-admin（调度器）<br>    ↓  HTTP调用<br>xxl-<span class="hljs-keyword">job</span>-executor（执行器，部署在业务服务中）<br></code></pre></td></tr></table></figure>
+
+<p>那么问题来了：<strong>如果调度器和执行器之间发生了网络分区，任务会不会被重复执行？</strong></p>
+<h3 id="6-1-网络分区的三种情形"><a href="#6-1-网络分区的三种情形" class="headerlink" title="6.1 网络分区的三种情形"></a>6.1 网络分区的三种情形</h3><p><strong>情形1：调度器调用执行器，网络超时</strong></p>
+<p>调度器发出HTTP请求，执行器已经收到并开始执行，但响应在网络中丢失了。调度器认为执行失败，触发重试 → <strong>任务被执行两次</strong>。</p>
+<p><strong>情形2：执行器心跳上报失败</strong></p>
+<p>执行器还在正常运行，但心跳包因为网络分区无法到达调度器。调度器认为该执行器已经”失联”，把该执行器负责的任务重新分配给其他执行器 → <strong>任务也被执行两次</strong>。</p>
+<p><strong>情形3：执行器之间网络分区</strong></p>
+<p>两个执行器实例之间网络不通，但它们各自都能和调度器通信。调度器把同一个分片任务发给了两个执行器 → <strong>任务被重复执行</strong>。</p>
+<h3 id="6-2-我们的兜底策略"><a href="#6-2-我们的兜底策略" class="headerlink" title="6.2 我们的兜底策略"></a>6.2 我们的兜底策略</h3><p>这就是为什么在SyncTask引擎的设计中，<strong>Handler的execute方法必须实现幂等</strong>——而且不是”尽量幂等”，是”强制幂等”。</p>
+<p>有三层保障：</p>
+<p><strong>第一层：业务幂等</strong>。Handler内部通过业务唯一键（订单号、任务ID等）做幂等判断。比如”该订单已经同步过，跳过”。</p>
+<p><strong>第二层：数据库唯一约束</strong>。SyncTask的任务记录表在<code>(task_type, business_key)</code>上加联合唯一索引。重复写入直接触发<code>DuplicateKeyException</code>，在数据库层面拒绝。</p>
+<p><strong>第三层：任务状态机</strong>。SyncTask的任务流转严格遵循状态机（PENDING → PROCESSING → SUCCESS&#x2F;FAILED）。重复调度的任务发现状态已经是<code>SUCCESS</code>，<strong>在应用层直接返回</strong>，不会重复执行。</p>
+<p>这三层兜底不是过度设计。<strong>在分布式环境下，”网络可靠”是假命题。任何依赖网络的协调机制，最终都必须有业务层的幂等兜底。</strong></p>
+<p>这也呼应了DDIA中的一个深刻洞察：<strong>“在分布式系统中，你很难确切知道任何事情。”</strong>——调度器不知道执行器是否真的在执行，执行器不知道调度器是否收到了确认，双方都不知道网络什么时候会恢复。</p>
+<p>能确定的事情只有一件：<strong>让操作本身变得幂等</strong>。</p>
+<h2 id="七、”真相由多数派决定”——DDIA第九章的哲学"><a href="#七、”真相由多数派决定”——DDIA第九章的哲学" class="headerlink" title="七、”真相由多数派决定”——DDIA第九章的哲学"></a>七、”真相由多数派决定”——DDIA第九章的哲学</h2><p>DDIA第9章标题是”Consistency and Consensus”，中文版翻译成”一致性与共识”。这一章有一个贯穿始终的主题：</p>
+<blockquote>
+<p><strong>The truth is defined by the majority.</strong></p>
+</blockquote>
+<p>翻译过来：<strong>真相由多数派决定。</strong> 不是你说了算，不是我说了算，也不是单个节点说了算——是多数派投票决定的才是”真相”。</p>
+<h3 id="7-1-这个哲学意味着什么"><a href="#7-1-这个哲学意味着什么" class="headerlink" title="7.1 这个哲学意味着什么"></a>7.1 这个哲学意味着什么</h3><p>在一个分布式系统中，<strong>不存在客观的、全局可见的”真相”</strong>。</p>
+<p>一个节点说”我已经提交了这个事务”——这不一定是真的。必须经过多数派确认，这件事才是”事实”。</p>
+<p>一个节点说”我是Leader”——这不一定是真的。必须经过一次成功的选举并获得多数派投票，这个身份才是”事实”。</p>
+<p>这个原则的推论是：<strong>分布式系统的正确性不是靠”不出错”保证的，而是靠”出了错也能检测到并拒绝错误状态”保证的。</strong></p>
+<h3 id="7-2-应用到工程实践中"><a href="#7-2-应用到工程实践中" class="headerlink" title="7.2 应用到工程实践中"></a>7.2 应用到工程实践中</h3><ul>
+<li><strong>Fencing Token</strong>：存储层不信任调用方自报的身份（epoch），而是自己维护”多数派决定的真相”（max_epoch），并拒绝”过期的真相”。</li>
+<li><strong>Raft Leader Election</strong>：不是”先到先得”或”谁嗓门大谁当Leader”，而是严格经过投票流程，只有多数派背书才是合法的Leader。</li>
+<li><strong>幂等设计</strong>：不假设”上游只会调用我一次”，因为上游基于的是它自己视角的”真相”，而这个真相可能是错的。</li>
+</ul>
+<h2 id="八、总结"><a href="#八、总结" class="headerlink" title="八、总结"></a>八、总结</h2><p>网络分区是分布式系统里不可避免的故障模式，脑裂是它最危险的表现形式。</p>
+<p>Fencing Token让存储层成为”真相”的最终裁决者——不管来者自称是谁，Token过期就拒绝。</p>
+<p>共识算法（Raft&#x2F;Paxos）用多数派机制从根源上防止脑裂——只有获得多数派投票的节点才能成为Leader。</p>
+<p>对于我们写业务代码的人来说，最务实的启示是：<strong>不要信任网络，不要信任对端的身份声明。让你的写入操作天然幂等，让你的存储层有最后的拒绝权。</strong></p>
+<p>DDIA第九章里的”真相由多数派决定”不是一句漂亮话。它是分布式系统设计最底层、最硬核的工程原则。</p>
+<hr>
+<p><em>本文是「DDIA读书笔记」系列的第9篇。下一篇我们会讨论分布式事务——从2PC到TCC，如何在一致性和性能之间找到平衡。</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" class="print-no-link">#分布式</a>
+      
+        <a href="/tags/CAP/" class="print-no-link">#CAP</a>
+      
+        <a href="/tags/%E8%84%91%E8%A3%82/" class="print-no-link">#脑裂</a>
+      
+        <a href="/tags/Split-Brain/" class="print-no-link">#Split-Brain</a>
+      
+        <a href="/tags/Fencing/" class="print-no-link">#Fencing</a>
+      
+        <a href="/tags/Raft/" class="print-no-link">#Raft</a>
+      
+        <a href="/tags/%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA/" class="print-no-link">#网络分区</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-09-脑裂与网络分区：CAP定理中P的残酷真相</div>
+      <div>https://aster-xu-lab.github.io/2024/07/01/2024-07-01-DDIA-09-脑裂与网络分区/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年7月1日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/07/12/2024-07-12-DDIA-09-%E8%B6%85%E6%97%B6%E4%B8%8E%E9%87%8D%E8%AF%95/" title="DDIA-09-超时与重试：如何设计一个不会雪崩的重试策略">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-09-超时与重试：如何设计一个不会雪崩的重试策略</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/06/20/2024-06-20-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" title="DDIA-09-分布式系统故障排查：你没见过不代表没发生过">
+                        <span class="hidden-mobile">DDIA-09-分布式系统故障排查：你没见过不代表没发生过</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
