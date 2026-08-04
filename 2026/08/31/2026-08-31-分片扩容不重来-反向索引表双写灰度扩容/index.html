@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="哈希分片扩容的痛：同单号落片变了反向索引表按单号 outer_order_no 哈希分片。假设从 8 片扩到 16 片： 12旧: 单号 X → X % 8  &#x3D; 3新: 单号 X → X % 16 &#x3D; 11    ← 路由变了！  片数一变，同一个单号在新旧两套落到了不同分片。取模分片扩容 &#x3D; 推倒重来，不能直接加片数。 为什么你的场景扩容其实不难关键洞察：你的主表按时间分片，索引表只">
+    <meta name="description" content="哈希分片扩容的痛：同单号落片变了反向索引表按单号 outer_order_no 哈希分片。假设从 8 片扩到 16 片： 12旧: 单号 X → X % 8  &#x3D; 3新: 单号 X → X % 16 &#x3D; 11    ← 路由变了！  片数一变，同一个单号在新旧两套落到了不同分片。取模分片扩容 &#x3D; 推倒重来，不能直接加片数。 扩容难点取决于分片方案扩容难度和分片方案强相关（or_sales">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分片扩容不重来：反向索引表用双写 + 灰度切流优雅扩容">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/31/2026-08-31-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E4%B8%8D%E9%87%8D%E6%9D%A5-%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E6%89%A9%E5%AE%B9/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="哈希分片扩容的痛：同单号落片变了反向索引表按单号 outer_order_no 哈希分片。假设从 8 片扩到 16 片： 12旧: 单号 X → X % 8  &#x3D; 3新: 单号 X → X % 16 &#x3D; 11    ← 路由变了！  片数一变，同一个单号在新旧两套落到了不同分片。取模分片扩容 &#x3D; 推倒重来，不能直接加片数。 为什么你的场景扩容其实不难关键洞察：你的主表按时间分片，索引表只">
+<meta property="og:description" content="哈希分片扩容的痛：同单号落片变了反向索引表按单号 outer_order_no 哈希分片。假设从 8 片扩到 16 片： 12旧: 单号 X → X % 8  &#x3D; 3新: 单号 X → X % 16 &#x3D; 11    ← 路由变了！  片数一变，同一个单号在新旧两套落到了不同分片。取模分片扩容 &#x3D; 推倒重来，不能直接加片数。 扩容难点取决于分片方案扩容难度和分片方案强相关（or_sales">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-08-31T07:30:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T08:52:59.079Z">
+<meta property="article:modified_time" content="2026-08-04T09:48:10.621Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="rehash">
@@ -331,7 +331,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.4k 字
+          1.6k 字
         
       </span>
     
@@ -342,7 +342,7 @@
         
         
         
-          12 分钟
+          14 分钟
         
       </span>
     
@@ -390,10 +390,14 @@
 <figure class="highlight tp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs tp">旧: 单号 <span class="hljs-keyword">X</span> → <span class="hljs-keyword">X</span> % <span class="hljs-number">8</span>  = <span class="hljs-number">3</span><br>新: 单号 <span class="hljs-keyword">X</span> → <span class="hljs-keyword">X</span> % <span class="hljs-number">16</span> = <span class="hljs-number">11</span>    ← 路由变了！<br></code></pre></td></tr></table></figure>
 
 <p>片数一变，同一个单号在新旧两套落到了不同分片。<strong>取模分片扩容 &#x3D; 推倒重来</strong>，不能直接加片数。</p>
-<h2 id="为什么你的场景扩容其实不难"><a href="#为什么你的场景扩容其实不难" class="headerlink" title="为什么你的场景扩容其实不难"></a>为什么你的场景扩容其实不难</h2><p>关键洞察：<strong>你的主表按时间分片，索引表只是映射</strong>。</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">主分片表   t_sales_info_&#123;yyyyMM&#125;  按 trade_time —— 加月表即扩容, 不用<span class="hljs-built_in">rehash</span><br>反向索引表 t_order_index_&#123;<span class="hljs-built_in">hash</span>&#125;   按单号 —— 只是一张映射表<br></code></pre></td></tr></table></figure>
+<h2 id="扩容难点取决于分片方案"><a href="#扩容难点取决于分片方案" class="headerlink" title="扩容难点取决于分片方案"></a>扩容难点取决于分片方案</h2><p>扩容难度和分片方案强相关（or_sales_info 已确认单号主分片）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">时间主分片 t_sales_info_&#123;yyyyMM&#125;  按 trade_time —— 加月表即扩容, 不用<span class="hljs-built_in">rehash</span>（但有广播问题）<br>单号主分片 t_sales_info_&#123;<span class="hljs-built_in">hash</span>&#125;    按 order_no —— 业务事件精准路由, 但扩容需 <span class="hljs-built_in">rehash</span><br></code></pre></td></tr></table></figure>
 
-<p>所以”扩容”<strong>不需要迁移主表数据</strong>（主表按时间，天然扩容），只需要重建一张映射表，成本低得多。</p>
+<ul>
+<li><strong>时间分片</strong>：扩容 &#x3D; 加月表，天然扩容，但”按单号处理的业务事件”会广播所有月表（写路径广播严重）</li>
+<li><strong>单号分片</strong>：业务事件精准路由，但扩容（8→16片）需<strong>重列全部分片数据</strong></li>
+</ul>
+<p>交易系统（订单）通常选<strong>单号主分片</strong>（业务事件是主维度），所以<strong>扩容走下面的双写+灰度流程</strong>——这是单号分片的必要代价，换来所有事件的精准路由。</p>
 <h2 id="无感扩容：双写-回填-对账-灰度切流"><a href="#无感扩容：双写-回填-对账-灰度切流" class="headerlink" title="无感扩容：双写 + 回填 + 对账 + 灰度切流"></a>无感扩容：双写 + 回填 + 对账 + 灰度切流</h2><p>业界标准四步（全程不停服）：</p>
 <h3 id="1-双写（保证在线数据两边一致）"><a href="#1-双写（保证在线数据两边一致）" class="headerlink" title="1. 双写（保证在线数据两边一致）"></a>1. 双写（保证在线数据两边一致）</h3><p>新增单号同时写旧8片 + 新16片：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java">writeOldIndex(orderNo);   <span class="hljs-comment">// 旧分片</span><br>writeNewIndex(orderNo);   <span class="hljs-comment">// 新分片(幂等)</span><br></code></pre></td></tr></table></figure>
@@ -426,12 +430,12 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>主表扩容</td>
-<td>按月加表, 天然扩容, 不用 rehash</td>
+<td>时间分片扩容</td>
+<td>按月加表, 天然扩容, 不用 rehash（但有”按单号写事件广播”缺陷）</td>
 </tr>
 <tr>
-<td>索引表扩容</td>
-<td>双写 + 回填 + 对账 + 灰度切流</td>
+<td>单号分片扩容</td>
+<td>双写 + 回填 + 对账 + 灰度切流（业务事件精准路由, 需 rehash）</td>
 </tr>
 <tr>
 <td>表名冲突</td>
@@ -442,7 +446,7 @@
 <td>新表优先 + 旧表兜底</td>
 </tr>
 </tbody></table>
-<p><strong>时间主分片最大的好处就体现在扩容上</strong>：主表不用迁，索引表这种映射表重建成本极低。这是它能优雅落地的核心原因。</p>
+<p><strong>交易系统(订单)选单号主分片</strong>：换来所有业务事件（创建&#x2F;发货&#x2F;取消&#x2F;签收）精准路由零广播，<br>代价是扩容需走”双写+灰度”流程。时间分片虽然扩容简单，但写命广播严重，不适合订单这类”事件按单号”的业务。</p>
 
                 
               </div>

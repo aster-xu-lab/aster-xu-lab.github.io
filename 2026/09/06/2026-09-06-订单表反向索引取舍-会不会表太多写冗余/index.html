@@ -27,7 +27,7 @@
 <meta property="og:description" content="分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是有取舍。 冗余的本质：为查询性能牺牲写复杂度每张反向索引表 &#x3D; 一条订单要多写一份数据。如果建 3 张索引表，写一条订单就要写 4 处（主表 + 3 索引）。这份冗余是真实成本，所以必须克制。 业界取舍：不是”每维度建表”，而是这三招招1：只在”最高频”维度">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-09-06T06:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T09:25:02.035Z">
+<meta property="article:modified_time" content="2026-08-04T09:47:20.072Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="C端B端">
 <meta property="article:tag" content="JDBC">
@@ -332,7 +332,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.3k 字
+          1.5k 字
         
       </span>
     
@@ -343,7 +343,7 @@
         
         
         
-          12 分钟
+          13 分钟
         
       </span>
     
@@ -440,6 +440,9 @@
 </tr>
 </tbody></table>
 <p><strong>通常只建 1 张（order_no 索引）+ 主表冗余 user_id 列就够。</strong></p>
+<blockquote>
+<p>⚠ 注（or_sales_info 已确认单号主分片）：如果订单表<strong>主分片键直接是 order_no</strong>（所有业务事件按单号），则单号天然精准路由，<strong>连 order_no 反向索引表都不需要</strong>。上面”建 order_no 索引表”针对的是”order_no 不是分片键”的情况。单选单号分片后，order_no 的索引表也省了，写冗余最小。</p>
+</blockquote>
 <h2 id="C端-vs-B端：数据源分离"><a href="#C端-vs-B端：数据源分离" class="headerlink" title="C端 vs B端：数据源分离"></a>C端 vs B端：数据源分离</h2><figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">C</span>端用户查询  → 高并发、低延迟、单条/浅列表 → 主用 <span class="hljs-function"><span class="hljs-title">OLTP</span>(<span class="hljs-variable">MySQL</span>分片)</span><br><span class="hljs-variable">B</span>端管理查询  → 低并发、大范围、复杂条件统计 → 主用 <span class="hljs-function"><span class="hljs-title">OLAP</span>(<span class="hljs-variable">ES</span>/<span class="hljs-variable">Doris</span>)</span><br></code></pre></td></tr></table></figure>
 
 <h3 id="C端（高并发，要”快”）"><a href="#C端（高并发，要”快”）" class="headerlink" title="C端（高并发，要”快”）"></a>C端（高并发，要”快”）</h3><ul>

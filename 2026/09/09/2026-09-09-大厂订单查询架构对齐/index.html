@@ -27,7 +27,7 @@
 <meta property="og:description" content="说明：大厂订单核心分片细节高度保密。本文基于公开技术分享与行业通用演进整理。标「确信」的是行业共识；标「推断」的具体某家口径请以官方技术分享为准。  一、核心共识：大厂订单查询都是「三层解耦」不管淘宝京东拼多多抖音，电商订单查询几乎都长这样： 123① 订单写入层(OLTP)   → 订单主库, 按唯一单号分库分表② 订单查询层(OLAP&#x2F;搜索) → ES &#x2F; 宽表(ClickHouse&#x2F;Dor">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-09-09T08:30:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T09:25:18.280Z">
+<meta property="article:modified_time" content="2026-08-04T09:48:43.054Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CDC">
 <meta property="article:tag" content="Canal">
@@ -346,7 +346,7 @@
         
         
         
-          17 分钟
+          16 分钟
         
       </span>
     
@@ -401,7 +401,7 @@
 
 <ul>
 <li>好处：<strong>单号详情 &#x3D; 天然精准路由，0 广播，也不需要”单号反向索引表”</strong></li>
-<li>这和你”时间主分片”方案不同——如果你的详情查询是绝对主力，按单号分片更直接</li>
+<li>or_sales_info 已确认同此选型（业务事件都按单号）→ 与业界一致</li>
 </ul>
 <h2 id="三、”我的订单”维度：不是建-user-id-索引表，而是上-ES"><a href="#三、”我的订单”维度：不是建-user-id-索引表，而是上-ES" class="headerlink" title="三、”我的订单”维度：不是建 user_id 索引表，而是上 ES"></a>三、”我的订单”维度：不是建 user_id 索引表，而是上 ES</h2><p>这是大厂与自建方案最大的差异：</p>
 <ul>
@@ -484,7 +484,7 @@
 <td>订单体系 + 消息驱动同步（事务内发MQ保证实时），宽表&#x2F;ES 查询</td>
 </tr>
 </tbody></table>
-<h2 id="八、你之前的方案对齐大厂"><a href="#八、你之前的方案对齐大厂" class="headerlink" title="八、你之前的方案对齐大厂"></a>八、你之前的方案对齐大厂</h2><table>
+<h2 id="八、你的方案对齐大厂"><a href="#八、你的方案对齐大厂" class="headerlink" title="八、你的方案对齐大厂"></a>八、你的方案对齐大厂</h2><table>
 <thead>
 <tr>
 <th>你的设计</th>
@@ -493,9 +493,14 @@
 </tr>
 </thead>
 <tbody><tr>
-<td>时间主分片</td>
+<td>单号主分片（2026-09确认）</td>
 <td>单号 hash 分库分表</td>
-<td>详情为主应改单号 hash</td>
+<td>✅ 与业界一致</td>
+</tr>
+<tr>
+<td>业务事件按单号</td>
+<td>单号主分片天然精准</td>
+<td>✅ 一致</td>
 </tr>
 <tr>
 <td>user_id 冗余列+游标</td>
@@ -503,14 +508,9 @@
 <td>有查询库就不建 user_id 索引</td>
 </tr>
 <tr>
-<td>order_no 反向索引表</td>
-<td>主库按单号分片不需要</td>
-<td>你建了反相索引 &#x3D; 弥补非单号分片</td>
-</tr>
-<tr>
-<td>B端查 Doris</td>
-<td>正是大厂做法</td>
-<td>✅ 一致</td>
+<td>时间统计</td>
+<td>Doris&#x2F;ES 宽表</td>
+<td>✅ 一致（不裸查 MySQL 分片）</td>
 </tr>
 <tr>
 <td>C端深分页游标</td>

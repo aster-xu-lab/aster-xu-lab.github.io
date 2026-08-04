@@ -19,26 +19,27 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一个真实的困境cloud-order 的 or_sales_info 有 6000 万数据，两个最常见的查询入口：  按时间查：WHERE trade_time BETWEEN &#39;2026-07-01&#39; AND &#39;2025-07-31&#39; 按平台单号查：WHERE outer_order_no &#x3D; &#39;221001008&#39;（平台侧生成的单号）  问题是—">
+    <meta name="description" content="本文记录一个分片键选型的重要修正：一开始基于”数据按时间查询”选择了时间主分片，但业务确认所有事件都按单号处理后，修正为单号主分片。这个修正过程本身就是分片键选型的最好案例。  一、初始思考：按时间查 + 按单号查，一个分片键不够or_sales_info 有 6000 万数据，最初看到两个查询入口：  按时间查：WHERE trade_time BETWEEN ... 按平台单号查：WHERE">
 <meta property="og:type" content="article">
-<meta property="og:title" content="分片键怎么选？订单表&quot;按时间查 + 按单号查&quot;的双查询入口解法">
+<meta property="og:title" content="分片键怎么选？从&quot;时间主分片&quot;修正为&quot;单号主分片&quot;的选型复盘">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/14/2026-08-14-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一个真实的困境cloud-order 的 or_sales_info 有 6000 万数据，两个最常见的查询入口：  按时间查：WHERE trade_time BETWEEN &#39;2026-07-01&#39; AND &#39;2025-07-31&#39; 按平台单号查：WHERE outer_order_no &#x3D; &#39;221001008&#39;（平台侧生成的单号）  问题是—">
+<meta property="og:description" content="本文记录一个分片键选型的重要修正：一开始基于”数据按时间查询”选择了时间主分片，但业务确认所有事件都按单号处理后，修正为单号主分片。这个修正过程本身就是分片键选型的最好案例。  一、初始思考：按时间查 + 按单号查，一个分片键不够or_sales_info 有 6000 万数据，最初看到两个查询入口：  按时间查：WHERE trade_time BETWEEN ... 按平台单号查：WHERE">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-08-14T07:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T08:51:32.626Z">
+<meta property="article:modified_time" content="2026-08-04T09:46:54.699Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="or_sales_info">
 <meta property="article:tag" content="分片键">
-<meta property="article:tag" content="双查询入口">
 <meta property="article:tag" content="反向索引表">
+<meta property="article:tag" content="订单号">
+<meta property="article:tag" content="选型">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>分片键怎么选？订单表&#34;按时间查 + 按单号查&#34;的双查询入口解法 - AsterXu Lab</title>
+  <title>分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘 - AsterXu Lab</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -307,7 +308,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="分片键怎么选？订单表&#34;按时间查 + 按单号查&#34;的双查询入口解法"></span>
+            <span id="subtitle" data-typed-text="分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘"></span>
           
         </div>
 
@@ -330,7 +331,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.8k 字
+          2.1k 字
         
       </span>
     
@@ -341,7 +342,7 @@
         
         
         
-          16 分钟
+          18 分钟
         
       </span>
     
@@ -380,62 +381,79 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">分片键怎么选？订单表&#34;按时间查 + 按单号查&#34;的双查询入口解法</h1>
+            <h1 id="seo-header">分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="一个真实的困境"><a href="#一个真实的困境" class="headerlink" title="一个真实的困境"></a>一个真实的困境</h2><p><code>cloud-order</code> 的 <code>or_sales_info</code> 有 6000 万数据，两个最常见的查询入口：</p>
+                <blockquote>
+<p>本文记录一个分片键选型的重要修正：一开始基于”数据按时间查询”选择了时间主分片，但<strong>业务确认所有事件都按单号处理</strong>后，修正为单号主分片。这个修正过程本身就是分片键选型的最好案例。</p>
+</blockquote>
+<h2 id="一、初始思考：按时间查-按单号查，一个分片键不够"><a href="#一、初始思考：按时间查-按单号查，一个分片键不够" class="headerlink" title="一、初始思考：按时间查 + 按单号查，一个分片键不够"></a>一、初始思考：按时间查 + 按单号查，一个分片键不够</h2><p><code>or_sales_info</code> 有 6000 万数据，最初看到两个查询入口：</p>
 <ol>
-<li><strong>按时间查</strong>：<code>WHERE trade_time BETWEEN &#39;2026-07-01&#39; AND &#39;2025-07-31&#39;</code></li>
-<li><strong>按平台单号查</strong>：<code>WHERE outer_order_no = &#39;221001008&#39;</code>（平台侧生成的单号）</li>
+<li><strong>按时间查</strong>：<code>WHERE trade_time BETWEEN ...</code></li>
+<li><strong>按平台单号查</strong>：<code>WHERE outer_order_no = &#39;221001008&#39;</code></li>
 </ol>
-<p>问题是——<strong>一个分片键没法同时精准命中两个入口</strong>：</p>
-<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc">选 trade<span class="hljs-emphasis">_time 分片 → 时间查精准, 但单号查要广播所有月表 ❌</span><br><span class="hljs-emphasis">选 outer_order_</span>no 分片 → 单号查精准, 但时间查要广播所有分片 ❌<br></code></pre></td></tr></table></figure>
+<p><strong>一个分片键没法同时精准命中两个入口</strong>：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc">选 trade<span class="hljs-emphasis">_time 分片 → 时间查精准, 单号查要广播所有月表 ❌</span><br><span class="hljs-emphasis">选 outer_order_</span>no 分片 → 单号查精准, 时间查要广播所有分片 ❌<br></code></pre></td></tr></table></figure>
 
-<p>这是分库分表的经典困局。业界标准解法：<strong>主分片表 + 反向索引表</strong>。</p>
-<h2 id="方案：时间主分片-单号反向索引表"><a href="#方案：时间主分片-单号反向索引表" class="headerlink" title="方案：时间主分片 + 单号反向索引表"></a>方案：时间主分片 + 单号反向索引表</h2><figure class="highlight dust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs dust"><span class="language-xml">主分片表   t_sales_info_</span><span class="hljs-template-variable">&#123;yyyyMM&#125;</span><span class="language-xml">    分片键 = trade_time（时间月表）</span><br><span class="language-xml">                              承载写入 + 按时间查</span><br><span class="language-xml"></span><br><span class="language-xml">反向索引表 t_sales_order_index_</span><span class="hljs-template-variable">&#123;hash&#125;</span><span class="language-xml">  分片键 = outer_order_no</span><br><span class="language-xml">                              只存映射 (单号 → 主表名 + 主表主键)</span><br><span class="language-xml">                              承载按单号查</span><br></code></pre></td></tr></table></figure>
+<p>最初基于”90% 查询带时间”的判断，选了<strong>时间主分片 + 单号反向索引表</strong>（双表结构，用反相索引补单号查询）。</p>
+<h2 id="二、关键转折：业务确认”所有事件都按单号”"><a href="#二、关键转折：业务确认”所有事件都按单号”" class="headerlink" title="二、关键转折：业务确认”所有事件都按单号”"></a>二、关键转折：业务确认”所有事件都按单号”</h2><p>深入业务后确认了一个决定性事实——<strong>所有业务事件（创建&#x2F;发货&#x2F;取消&#x2F;签收）都按单号处理</strong>：</p>
+<figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs lasso">创建: INSERT <span class="hljs-params">...</span> ORDER_NO 生成 → 后续按单号<br>发货: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br>取消: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br>签收: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br></code></pre></td></tr></table></figure>
 
-<h3 id="写入：双写"><a href="#写入：双写" class="headerlink" title="写入：双写"></a>写入：双写</h3><figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs arcade">新订单 → ①写主表(按trade_time路由到月表)<br>       → ②写索引表(按单号<span class="hljs-built_in">hash</span>路由, 存<span class="hljs-string">&quot;单号→主表位置&quot;</span>)<br></code></pre></td></tr></table></figure>
+<p>这意味着<strong>单号是业务操作的主维度</strong>，比”按时间查报表”高频得多。而如果表按时间分片，<strong>每一次发货&#x2F;取消&#x2F;签收都会广播所有月表——写路径广播比读更严重</strong>（要锁、要事务）。</p>
+<h2 id="三、修正结论：单号主分片"><a href="#三、修正结论：单号主分片" class="headerlink" title="三、修正结论：单号主分片"></a>三、修正结论：单号主分片</h2><p>既然所有事件都按单号，<strong>单号必须是主分片键</strong>：</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs arcade">主分片表  t_sales_info_&#123;单号<span class="hljs-built_in">hash</span>&#125;  分片键=outer_order_no<br>       承载写入 + 所有按单号的业务事件(创建/发货/取消/签收)精准路由零广播<br><br>时间统计  Doris/ES 宽表(OLAP)<br>       按时间/多维度复杂查询(广播在MySQL不可接受, 交给查询库)<br></code></pre></td></tr></table></figure>
 
-<h3 id="按时间查：直接精准走主表"><a href="#按时间查：直接精准走主表" class="headerlink" title="按时间查：直接精准走主表"></a>按时间查：直接精准走主表</h3><figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs n1ql"><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> t_sales_info <span class="hljs-keyword">WHERE</span> trade_time <span class="hljs-keyword">BETWEEN</span> ... → 精准<span class="hljs-number">1</span>张月表<br></code></pre></td></tr></table></figure>
+<h3 id="写入-事件：全按单号精准路由"><a href="#写入-事件：全按单号精准路由" class="headerlink" title="写入&#x2F;事件：全按单号精准路由"></a>写入&#x2F;事件：全按单号精准路由</h3><figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs lasso">发货/取消/签收: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ? → 精准路由单表, 零广播 ✅<br></code></pre></td></tr></table></figure>
 
-<h3 id="按单号查：两步定位，不广播"><a href="#按单号查：两步定位，不广播" class="headerlink" title="按单号查：两步定位，不广播"></a>按单号查：两步定位，不广播</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">① 查索引表(单号<span class="hljs-built_in">hash</span>精准路由): outer_order_no → 主表名 + <span class="hljs-built_in">id</span><br>② 用主表名+<span class="hljs-built_in">id</span> 精准回去取完整数据<br></code></pre></td></tr></table></figure>
+<h3 id="时间统计：走-Doris-ES，不裸查-MySQL-分片"><a href="#时间统计：走-Doris-ES，不裸查-MySQL-分片" class="headerlink" title="时间统计：走 Doris&#x2F;ES，不裸查 MySQL 分片"></a>时间统计：走 Doris&#x2F;ES，不裸查 MySQL 分片</h3><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">按时间统计/报表 → Doris 宽表, 数据的同步靠 Canal binlog → Kafka 秒级 ✅<br></code></pre></td></tr></table></figure>
 
-<p>实测：单号 <code>271234567</code> 从索引表定位到 <code>t_sales_info_202508</code> + id，再精准取回，全程只碰 2 张表，<strong>不广播</strong>。</p>
-<h2 id="平台单号是乱号？用-HASH-MOD"><a href="#平台单号是乱号？用-HASH-MOD" class="headerlink" title="平台单号是乱号？用 HASH_MOD"></a>平台单号是乱号？用 HASH_MOD</h2><p>平台单号格式五花八门（数字、字母、长短不一），<code>outer_order_no</code> 是字符串分片键。反向索引表<strong>一定要用 HASH_MOD</strong>（auto-tables 模式）才能在乱号下均匀分布：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">ShardingAutoTableRuleConfiguration</span> <span class="hljs-variable">indexRule</span> <span class="hljs-operator">=</span><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">ShardingAutoTableRuleConfiguration</span>(<span class="hljs-string">&quot;t_sales_order_index&quot;</span>, <span class="hljs-string">&quot;ds0&quot;</span>);<br>indexRule.setShardingStrategy(<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">StandardShardingStrategyConfiguration</span>(<span class="hljs-string">&quot;outer_order_no&quot;</span>, <span class="hljs-string">&quot;index-hash&quot;</span>));<br>rule.getAutoTables().add(indexRule);<br></code></pre></td></tr></table></figure>
+<h2 id="四、单号怎么均匀分片"><a href="#四、单号怎么均匀分片" class="headerlink" title="四、单号怎么均匀分片"></a>四、单号怎么均匀分片</h2><p>单号是<strong>字符串</strong>（平台侧生成，格式各异）。均匀分片的要点：</p>
+<ol>
+<li><strong>用字符串专用哈希</strong>：<code>HASH_MOD</code>（auto-tables 模式）或<strong>自定义 FNV&#x2F;Murmur</strong>，别裸用 <code>String.hashCode()</code></li>
+<li><strong>单号本身要有”熵”</strong>：若单号是自增&#x2F;低位规律，哈希也难救（但平台生成受限，靠好哈希兜底）</li>
+<li><strong>实测分布</strong>：跑真实单号样本看桶均衡度，倾斜就换哈希</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// HASH_MOD(auto-tables), 字符串单号均匀分片</span><br><span class="hljs-type">ShardingAutoTableRuleConfiguration</span> <span class="hljs-variable">tableRule</span> <span class="hljs-operator">=</span><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">ShardingAutoTableRuleConfiguration</span>(<span class="hljs-string">&quot;t_sales_info&quot;</span>, <span class="hljs-string">&quot;ds0&quot;</span>);<br>tableRule.setShardingStrategy(<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">StandardShardingStrategyConfiguration</span>(<span class="hljs-string">&quot;outer_order_no&quot;</span>, <span class="hljs-string">&quot;order-no-hash&quot;</span>));<br>rule.getAutoTables().add(tableRule);<br></code></pre></td></tr></table></figure>
 
-<h2 id="前置工作：平台归一化"><a href="#前置工作：平台归一化" class="headerlink" title="前置工作：平台归一化"></a>前置工作：平台归一化</h2><p>生产数据里平台名很混乱（<code>淘宝</code>&#x2F;<code>淘宝天猫</code>&#x2F;<code>淘宝网</code>&#x2F;<code>天猫</code>…… 同一个平台十几种写法）。如果直接用原始 <code>platform</code> 当分片键，同一个平台会被路由到不同物理表，平台隔离失效。</p>
-<p><strong>必须先建一张平台字典表做归一化</strong>：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-string">&quot;淘宝&quot;</span>→<span class="hljs-string">&quot;TB&quot;</span>, <span class="hljs-string">&quot;淘宝天猫&quot;</span>→<span class="hljs-string">&quot;TB&quot;</span>, <span class="hljs-string">&quot;淘宝网&quot;</span>→<span class="hljs-string">&quot;TB&quot;</span>,<br><span class="hljs-string">&quot;天猫&quot;</span>→<span class="hljs-string">&quot;TM&quot;</span>, <span class="hljs-string">&quot;天猫超市&quot;</span>→<span class="hljs-string">&quot;TM&quot;</span>, ...<br><span class="hljs-string">&quot;拼多多&quot;</span>→<span class="hljs-string">&quot;PDD&quot;</span>, <span class="hljs-string">&quot;抖音&quot;</span>→<span class="hljs-string">&quot;DY&quot;</span>, <span class="hljs-string">&quot;京东&quot;</span>→<span class="hljs-string">&quot;JD&quot;</span>,<br>其它所有长尾 → <span class="hljs-string">&quot;OTHER&quot;</span><br></code></pre></td></tr></table></figure>
-
-<h2 id="为什么索引表方案优于”纯哈希分片”"><a href="#为什么索引表方案优于”纯哈希分片”" class="headerlink" title="为什么索引表方案优于”纯哈希分片”"></a>为什么索引表方案优于”纯哈希分片”</h2><p>纯哈希分片（单按单号或单按平台）扩容要 rehash 全量数据。而<strong>时间主分片 + 反向索引</strong>：</p>
-<ul>
-<li><strong>主表按时间</strong> → 加一张月表就是扩容，历史数据不用 rehash</li>
-<li><strong>索引表</strong>只是一张映射表（数据量是主表零头），随时可重建，扩容成本极低</li>
-<li><strong>99% 场景</strong>：索引扩容只需重建映射表，不用搬主表数据</li>
-</ul>
-<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><table>
+<h2 id="五、反向索引表的取舍：单号主分片后不需要"><a href="#五、反向索引表的取舍：单号主分片后不需要" class="headerlink" title="五、反向索引表的取舍：单号主分片后不需要"></a>五、反向索引表的取舍：单号主分片后不需要</h2><p>新的认知：<strong>单一分片键无法同时满足”按单号”和”按时间”两个入口，但”主”的选择决定要不要反向索引</strong>。</p>
+<table>
 <thead>
 <tr>
-<th>查询入口</th>
-<th>怎么命中</th>
-<th>代价</th>
+<th>主分片键</th>
+<th>单号查询</th>
+<th>时间查询</th>
+<th>是否需要反相索引</th>
 </tr>
 </thead>
 <tbody><tr>
-<td>按时间</td>
-<td>主分片精准月表</td>
-<td>无</td>
+<td>时间</td>
+<td>广播</td>
+<td>精准</td>
+<td>需单号反相索引</td>
 </tr>
 <tr>
-<td>按平台单号</td>
-<td>索引二次路由</td>
-<td>索引表维护</td>
+<td><strong>单号</strong></td>
+<td><strong>精准</strong></td>
+<td>广播</td>
+<td><strong>不需要</strong>(走 Doris)</td>
 </tr>
 </tbody></table>
-<p><strong>双查询入口 &#x3D; 主分片表(按业务主查维度) + 反向索引表(次要维度)</strong>。这是应对”单分片键无法同时满足多个查询”的通用解法，非常值得在生产落地。</p>
+<p>单号主分片后，<strong>order_no 本身就是分片键，天然精准路由，不需要 order_no 反向索引表</strong>（它只存在于”非单号分片”方案里补单号查询）。时间统计交给 Doris，也不需要在 MySQL 建时间索引。</p>
+<h2 id="六、扩容：单号-hash-分片的代价"><a href="#六、扩容：单号-hash-分片的代价" class="headerlink" title="六、扩容：单号 hash 分片的代价"></a>六、扩容：单号 hash 分片的代价</h2><p>时间分片”加月表天然扩容”的优势在单号 hash 分片下没有了——<strong>扩展分片基数（8→16片）需 rehash</strong>：</p>
+<figure class="highlight erlang-repl"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs erlang-repl">双写 → 存量回填(扫单表按新算法算片) → 对账 → 灰度切流 → <span class="hljs-number">100</span><span class="hljs-comment">%切走 → 删旧表</span><br></code></pre></td></tr></table></figure>
+
+<p>但这是<strong>交易系统按单号分片的必要代价</strong>，换来的是所有业务事件零广播精准路由。</p>
+<h2 id="七、小结：分片键选型的第一原则"><a href="#七、小结：分片键选型的第一原则" class="headerlink" title="七、小结：分片键选型的第一原则"></a>七、小结：分片键选型的第一原则</h2><blockquote>
+<p><strong>分片键对准”最高频、最核心的操作维度”，而不是”查询最多的维度”。</strong></p>
+</blockquote>
+<ul>
+<li>这里”查询最多”是时间，但”<strong>操作最高频</strong>“是单号（所有事件按单号）</li>
+<li>交易系统写入&#x2F;状态流转都带单号 → <strong>单号主分片</strong>（业界主流）</li>
+<li>时间统计交给 Doris&#x2F;ES 宽表（Canal 同步），不纠结 MySQL 分片能否扛时间查询</li>
+</ul>
+<p><strong>这次修正的核心教训</strong>：选分片键前，先搞清楚<strong>业务的操作主维度</strong>（订单就是单号），而不是只看查询形态。写路径的广播（事件 update）比读路径广播严重得多，交易系统必须让主维度精准路由。</p>
 
                 
               </div>
@@ -471,13 +489,15 @@
       
         <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
       
+        <a href="/tags/%E9%80%89%E5%9E%8B/" class="print-no-link">#选型</a>
+      
         <a href="/tags/%E5%88%86%E7%89%87%E9%94%AE/" class="print-no-link">#分片键</a>
       
         <a href="/tags/%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8/" class="print-no-link">#反向索引表</a>
       
-        <a href="/tags/%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/" class="print-no-link">#双查询入口</a>
-      
         <a href="/tags/or-sales-info/" class="print-no-link">#or_sales_info</a>
+      
+        <a href="/tags/%E8%AE%A2%E5%8D%95%E5%8F%B7/" class="print-no-link">#订单号</a>
       
     </div>
   
@@ -489,7 +509,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>分片键怎么选？订单表&#34;按时间查 + 按单号查&#34;的双查询入口解法</div>
+      <div>分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘</div>
       <div>https://aster-xu-lab.github.io/2026/08/14/2026-08-14-分片键怎么选-时间与单号双查询入口/</div>
     </div>
     <div class="license-meta">
