@@ -1,0 +1,923 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="先看分布需求分片策略本质是回答一个问题：这条数据该存到哪张物理表？ 选择哪种算法，取决于数据特征和查询模式。本文用 5 种内置算法逐一验证，并给出选型建议。 1. INLINE —— 最灵活，Groovy 表达式1表达式: t_order_$&#123;order_id % 4&#125;  123Properties props &#x3D; new Properties();props.setProp">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ShardingSphere 分片策略实战：5 种算法怎么选">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2023/06/26/2023-06-26-ShardingSphere%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5%E5%AE%9E%E6%88%98-5%E7%A7%8D%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E9%80%89/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="先看分布需求分片策略本质是回答一个问题：这条数据该存到哪张物理表？ 选择哪种算法，取决于数据特征和查询模式。本文用 5 种内置算法逐一验证，并给出选型建议。 1. INLINE —— 最灵活，Groovy 表达式1表达式: t_order_$&#123;order_id % 4&#125;  123Properties props &#x3D; new Properties();props.setProp">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-06-26T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T10:59:47.160Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="COMPLEX">
+<meta property="article:tag" content="HASH_MOD">
+<meta property="article:tag" content="INLINE">
+<meta property="article:tag" content="INTERVAL">
+<meta property="article:tag" content="ShardingSphere">
+<meta property="article:tag" content="分片">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>ShardingSphere 分片策略实战：5 种算法怎么选 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="ShardingSphere 分片策略实战：5 种算法怎么选"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-06-26 09:00" pubdate>
+          2023年6月26日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          23 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">ShardingSphere 分片策略实战：5 种算法怎么选</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="先看分布需求"><a href="#先看分布需求" class="headerlink" title="先看分布需求"></a>先看分布需求</h2><p>分片策略本质是回答一个问题：<strong>这条数据该存到哪张物理表？</strong> 选择哪种算法，取决于数据特征和查询模式。本文用 5 种内置算法逐一验证，并给出选型建议。</p>
+<h2 id="1-INLINE-——-最灵活，Groovy-表达式"><a href="#1-INLINE-——-最灵活，Groovy-表达式" class="headerlink" title="1. INLINE —— 最灵活，Groovy 表达式"></a>1. INLINE —— 最灵活，Groovy 表达式</h2><figure class="highlight erlang"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs erlang">表达式: t_order_<span class="hljs-string">$&#123;</span>order_id <span class="hljs-comment">% 4&#125;</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Properties</span> <span class="hljs-variable">props</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Properties</span>();<br>props.setProperty(<span class="hljs-string">&quot;algorithm-expression&quot;</span>, <span class="hljs-string">&quot;t_order_$&#123;order_id % 4&#125;&quot;</span>);<br>rule.getShardingAlgorithms().put(<span class="hljs-string">&quot;inline-4&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">AlgorithmConfiguration</span>(<span class="hljs-string">&quot;INLINE&quot;</span>, props));<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>用 Groovy 表达式直接算目标表名，最灵活</li>
+<li>适合绝大多数”按某列取模&#x2F;取值”的场景</li>
+<li>⚠ 注意：表达式中<strong>别调 Java 对象方法</strong>（<code>hashCode</code>&#x2F;<code>format</code>），ShardingSphere 内置的 Groovy 版本对 Java 21 不兼容</li>
+</ul>
+<h2 id="2-MOD-——-直接取模"><a href="#2-MOD-——-直接取模" class="headerlink" title="2. MOD —— 直接取模"></a>2. MOD —— 直接取模</h2><figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs fortran"><span class="hljs-keyword">type</span>: <span class="hljs-built_in">MOD</span>, 参数: sharding-<span class="hljs-built_in">count</span>=<span class="hljs-number">16</span><br>规则: <span class="hljs-keyword">value</span> % <span class="hljs-number">16</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Properties</span> <span class="hljs-variable">props</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Properties</span>();<br>props.setProperty(<span class="hljs-string">&quot;sharding-count&quot;</span>, <span class="hljs-string">&quot;16&quot;</span>);<br>rule.getShardingAlgorithms().put(<span class="hljs-string">&quot;mod-16&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">AlgorithmConfiguration</span>(<span class="hljs-string">&quot;MOD&quot;</span>, props));<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>分片键的值直接取模，语义清晰</li>
+<li>适合<strong>数字类型</strong>的分片键（如自增 id）</li>
+</ul>
+<h2 id="3-HASH-MOD-——-字符串先-hash-再取模"><a href="#3-HASH-MOD-——-字符串先-hash-再取模" class="headerlink" title="3. HASH_MOD —— 字符串先 hash 再取模"></a>3. HASH_MOD —— 字符串先 hash 再取模</h2><figure class="highlight elm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs elm"><span class="hljs-keyword">type</span>: <span class="hljs-type">HASH_MOD</span>, 参数: sharding-count=16<br>规则: hashCode(value) % <span class="hljs-number">16</span><br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>对<strong>字符串分片键</strong>（如订单号、手机号）更均匀</li>
+<li>⚠ 必须用 <strong>auto-tables 模式</strong>（<code>ShardingAutoTableRuleConfiguration</code>），不能手动写 <code>actualDataNodes</code></li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">ShardingAutoTableRuleConfiguration</span> <span class="hljs-variable">tableRule</span> <span class="hljs-operator">=</span><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">ShardingAutoTableRuleConfiguration</span>(<span class="hljs-string">&quot;t_hash_order&quot;</span>, <span class="hljs-string">&quot;ds0&quot;</span>);  <span class="hljs-comment">// 只写数据源</span><br>tableRule.setShardingStrategy(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StandardShardingStrategyConfiguration</span>(<span class="hljs-string">&quot;order_no&quot;</span>, <span class="hljs-string">&quot;hash-mod-16&quot;</span>));<br>rule.getAutoTables().add(tableRule);<br></code></pre></td></tr></table></figure>
+
+<h2 id="4-INTERVAL-——-时间范围月分片"><a href="#4-INTERVAL-——-时间范围月分片" class="headerlink" title="4. INTERVAL —— 时间范围月分片"></a>4. INTERVAL —— 时间范围月分片</h2><figure class="highlight elm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs elm"><span class="hljs-keyword">type</span>: <span class="hljs-type">INTERVAL</span>, 按月分片 → t_order_202501, t_order_202502, ...<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Properties</span> <span class="hljs-variable">props</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Properties</span>();<br>props.setProperty(<span class="hljs-string">&quot;datetime-pattern&quot;</span>, <span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span>);<br>props.setProperty(<span class="hljs-string">&quot;datetime-lower&quot;</span>, <span class="hljs-string">&quot;2025-01-01 00:00:00&quot;</span>);<br>props.setProperty(<span class="hljs-string">&quot;datetime-upper&quot;</span>, <span class="hljs-string">&quot;2025-12-31 23:59:59&quot;</span>);<br>props.setProperty(<span class="hljs-string">&quot;sharding-suffix-pattern&quot;</span>, <span class="hljs-string">&quot;yyyyMM&quot;</span>);<br>props.setProperty(<span class="hljs-string">&quot;datetime-interval-unit&quot;</span>, <span class="hljs-string">&quot;MONTHS&quot;</span>);  <span class="hljs-comment">// 真自然月</span><br>props.setProperty(<span class="hljs-string">&quot;datetime-interval-amount&quot;</span>, <span class="hljs-string">&quot;1&quot;</span>);<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>按时间维度分片，月表&#x2F;日表，适合订单、流水类</li>
+<li><strong>真自然月</strong>（能处理 28&#x2F;29&#x2F;30&#x2F;31 天），不会错位</li>
+<li>时间分片天然扩容：<strong>加一张月表就是扩容</strong>，不用 rehash 历史数据</li>
+</ul>
+<h2 id="5-COMPLEX-——-多列复合分片"><a href="#5-COMPLEX-——-多列复合分片" class="headerlink" title="5. COMPLEX —— 多列复合分片"></a>5. COMPLEX —— 多列复合分片</h2><figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">分片键: platform_code + trade_time</span><br><span class="hljs-section">表: t_order_PDD_202501, t_order_JD_202501, ...</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">Properties</span> <span class="hljs-variable">props</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Properties</span>();<br>props.setProperty(<span class="hljs-string">&quot;sharding-columns&quot;</span>, <span class="hljs-string">&quot;platform_code,trade_time&quot;</span>);<br>props.setProperty(<span class="hljs-string">&quot;allow-range-query-with-inline-sharding&quot;</span>, <span class="hljs-string">&quot;true&quot;</span>);<br>props.setProperty(<span class="hljs-string">&quot;algorithm-expression&quot;</span>,<br>        <span class="hljs-string">&quot;t_complex_order_$&#123;platform_code&#125;_$&#123;trade_time...&#125;&quot;</span>);  <span class="hljs-comment">// Groovy 简写</span><br>rule.getShardingAlgorithms().put(<span class="hljs-string">&quot;complex-inline&quot;</span>, <span class="hljs-keyword">new</span> <span class="hljs-title class_">AlgorithmConfiguration</span>(<span class="hljs-string">&quot;COMPLEX_INLINE&quot;</span>, props));<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>适合<strong>多维度隔离</strong>（如多平台 + 时间）</li>
+<li>⚠ 查询<strong>必须带全部分片键列</strong>，否则拒绝；范围查询需显式开启</li>
+</ul>
+<h2 id="选型对照表"><a href="#选型对照表" class="headerlink" title="选型对照表"></a>选型对照表</h2><table>
+<thead>
+<tr>
+<th>算法</th>
+<th>分片键类型</th>
+<th>表模式</th>
+<th>典型场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INLINE</td>
+<td>任意</td>
+<td>manual</td>
+<td>通用取模&#x2F;取值</td>
+</tr>
+<tr>
+<td>MOD</td>
+<td>数值</td>
+<td>auto</td>
+<td>数字自增 id</td>
+</tr>
+<tr>
+<td>HASH_MOD</td>
+<td>字符串</td>
+<td>auto</td>
+<td>订单号&#x2F;手机号</td>
+</tr>
+<tr>
+<td>INTERVAL</td>
+<td>时间</td>
+<td>manual</td>
+<td>月&#x2F;日表、流水</td>
+</tr>
+<tr>
+<td>COMPLEX</td>
+<td>多列</td>
+<td>manual</td>
+<td>平台+时间隔离</td>
+</tr>
+</tbody></table>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>选型口诀：</p>
+<ul>
+<li><strong>字符串</strong>分片键 → HASH_MOD（均匀）</li>
+<li><strong>数字</strong>分片键 → MOD&#x2F;INLINE</li>
+<li><strong>按时间</strong>查 → INTERVAL 月表</li>
+<li><strong>多平台隔离</strong> → COMPLEX</li>
+</ul>
+<p>重点是先想清楚”<strong>业务怎么查</strong>“，再决定分片键，而不是先选算法。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
+      
+        <a href="/tags/%E5%88%86%E7%89%87/" class="print-no-link">#分片</a>
+      
+        <a href="/tags/INLINE/" class="print-no-link">#INLINE</a>
+      
+        <a href="/tags/HASH-MOD/" class="print-no-link">#HASH_MOD</a>
+      
+        <a href="/tags/INTERVAL/" class="print-no-link">#INTERVAL</a>
+      
+        <a href="/tags/COMPLEX/" class="print-no-link">#COMPLEX</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>ShardingSphere 分片策略实战：5 种算法怎么选</div>
+      <div>https://aster-xu-lab.github.io/2023/06/26/2023-06-26-ShardingSphere分片策略实战-5种算法怎么选/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年6月26日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/07/11/2023-07-11-ShardingSphere%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8%E4%B8%8E%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/" title="ShardingSphere-JDBC 快速入门与核心概念">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">ShardingSphere-JDBC 快速入门与核心概念</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/06/12/2023-06-12-%E4%B8%83%E5%B9%B4Java%E5%90%8E%E7%AB%AF%E4%B9%8B%E8%B7%AF/" title="七年Java后端之路：我的技术成长与面试方法论">
+                        <span class="hidden-mobile">七年Java后端之路：我的技术成长与面试方法论</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

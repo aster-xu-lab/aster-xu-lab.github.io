@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2026/09/09/2026-09-09-%E5%A4%A7%E5%8E%82%E8%AE%A2%E5%8D%95%E6%9F%A5%E8%AF%A2%E6%9E%B6%E6%9E%84%E5%AF%B9%E9%BD%90/" target="_self">
-          大厂订单查询架构对齐：淘宝、京东、拼多多、抖音是怎么处理的
+        <a href="/2026/07/30/2026-07-30-sync-task-engine-family-bucket/" target="_self">
+          SyncTask Engine 全家桶：一个依赖就能跑的轻量级任务编排引擎
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/09/2026-09-09-%E5%A4%A7%E5%8E%82%E8%AE%A2%E5%8D%95%E6%9F%A5%E8%AF%A2%E6%9E%B6%E6%9E%84%E5%AF%B9%E9%BD%90/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/07/30/2026-07-30-sync-task-engine-family-bucket/" target="_self">
         <div>
-          说明：大厂订单核心分片细节高度保密。本文基于公开技术分享与行业通用演进整理。标「确信」的是行业共识；标「推断」的具体某家口径请以官方技术分享为准。  一、核心共识：大厂订单查询都是「三层解耦」不管淘宝京东拼多多抖音，电商订单查询几乎都长这样： 123① 订单写入层(OLTP)   → 订单主库, 按唯一单号分库分表② 订单查询层(OLAP/搜索) → ES / 宽表(ClickHouse/Dor
+          背景2024 年，订单中心需要把单据同步到 10+ 个外部系统。每接一个新系统就写一个 xxl-job Handler，重复代码越来越多。 一年后 WMS 中心抄了这套设计，44 个 Handler。然后我们就陷入了两个项目维护同一套编排逻辑的窘境。 2026 年 7 月，SyncTask Engine 来了。但第一版其实只是个核心引擎——接入方得自己写 Java Config 组装 Bean，引
         </div>
       </a>
 
@@ -352,8 +352,112 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-09 16:30" pubdate>
-              2026-09-09
+            <time datetime="2026-07-30 09:00" pubdate>
+              2026-07-30
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java/">#Java</a>
+            
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">#架构设计</a>
+            
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E7%BC%96%E6%8E%92/">#任务编排</a>
+            
+              <a href="/tags/SPI/">#SPI</a>
+            
+              <a href="/tags/xxl-job/">#xxl-job</a>
+            
+              <a href="/tags/Spring-Boot/">#Spring Boot</a>
+            
+              <a href="/tags/MyBatis/">#MyBatis</a>
+            
+              <a href="/tags/Redisson/">#Redisson</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/07/16/2026-07-16-sync-task-engine-design/" target="_self">
+          轻量级业务任务编排引擎 SyncTask Engine 设计手记
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/07/16/2026-07-16-sync-task-engine-design/" target="_self">
+        <div>
+          背景2024 年，订单中心需要将销售、采购、售后、开票等单据同步到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS、抖音、快手……）。最初的做法很简单：每接入一个新系统就写一个独立的 xxl-job Handler。很快问题就来了——  重复代码太多：每个 Job 都要自己写失败重试、并发控制、错误告警，写到最后自己都搞不清哪个是哪个 扩展性差：每次加新系统都要改 xxl-job 调度配置，手滑配
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-07-16 09:00" pubdate>
+              2026-07-16
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java/">#Java</a>
+            
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">#架构设计</a>
+            
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E7%BC%96%E6%8E%92/">#任务编排</a>
+            
+              <a href="/tags/SPI/">#SPI</a>
+            
+              <a href="/tags/xxl-job/">#xxl-job</a>
+            
+              <a href="/tags/Spring-Boot/">#Spring Boot</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/06/17/2026-06-17-synctask-mq-persistence-comparison/" target="_self">
+          SyncTask Job 与基于日志的消息中间件 - 持久化机制对比
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/06/17/2026-06-17-synctask-mq-persistence-comparison/" target="_self">
+        <div>
+          问题的起点最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？ 答案是有相似的内核，但设计目标完全不同。本文以订单中心 cloud-order 项目中的实际代码为例，深入对比三种持久化机制。 订单中心
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-06-17 09:00" pubdate>
+              2026-06-17
             </time>
           </div>
         
@@ -383,25 +487,19 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/Doris/">#Doris</a>
+              <a href="/tags/SyncTask/">#SyncTask</a>
             
-              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">#分库分表</a>
+              <a href="/tags/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8/">#本地消息表</a>
             
-              <a href="/tags/CDC/">#CDC</a>
+              <a href="/tags/Transactional-Outbox/">#Transactional Outbox</a>
             
-              <a href="/tags/%E8%AE%A2%E5%8D%95%E6%9E%B6%E6%9E%84/">#订单架构</a>
+              <a href="/tags/Kafka/">#Kafka</a>
             
-              <a href="/tags/%E6%B7%98%E5%AE%9D/">#淘宝</a>
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
             
-              <a href="/tags/%E4%BA%AC%E4%B8%9C/">#京东</a>
+              <a href="/tags/%E6%8C%81%E4%B9%85%E5%8C%96/">#持久化</a>
             
-              <a href="/tags/%E6%8B%BC%E5%A4%9A%E5%A4%9A/">#拼多多</a>
-            
-              <a href="/tags/%E6%8A%96%E9%9F%B3/">#抖音</a>
-            
-              <a href="/tags/Canal/">#Canal</a>
-            
-              <a href="/tags/ES/">#ES</a>
+              <a href="/tags/WAL/">#WAL</a>
             
           </div>
         
@@ -415,13 +513,326 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2026/09/07/2026-09-07-DDIA-14-GDPR%E4%B8%8E%E9%9A%90%E7%A7%81%E8%AE%BE%E8%AE%A1/" target="_self">
+        <a href="/2026/06/03/2026-06-03-state-to-event-chain/" target="_self">
+          状态反推事件链——一个横跨四大领域的编程思想，我用20行递归就实现了
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/06/03/2026-06-03-state-to-event-chain/" target="_self">
+        <div>
+          从快手订单拉取的一个递归方法出发，追溯"通过状态反推事件链"这一思想在 Event Sourcing、声明式工作流引擎、AI 规划算法和 Kubernetes Controller 四大领域的完整谱系。
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-06-03 09:00" pubdate>
+              2026-06-03
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E8%AE%BE%E8%AE%A1/">#领域驱动设计</a>
+            
+              <a href="/tags/%E7%8A%B6%E6%80%81%E6%9C%BA/">#状态机</a>
+            
+              <a href="/tags/%E9%80%92%E5%BD%92/">#递归</a>
+            
+              <a href="/tags/Event-Sourcing/">#Event Sourcing</a>
+            
+              <a href="/tags/K8s/">#K8s</a>
+            
+              <a href="/tags/STRIPS/">#STRIPS</a>
+            
+              <a href="/tags/%E7%BC%96%E7%A8%8B%E8%8C%83%E5%BC%8F/">#编程范式</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/05/20/2026-05-20-synctask-vs-nflow/" target="_self">
+          SyncTaskJob vs nFlow：自己手写的任务编排引擎，和业界方案差距在哪
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/05/20/2026-05-20-synctask-vs-nflow/" target="_self">
+        <div>
+          从代码细节到设计思想，对比订单中心自研的 SyncTaskJob 和北欧开源引擎 nFlow 的异同与差距。
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-05-20 09:00" pubdate>
+              2026-05-20
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="category-chain-item">源码分析</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java/">#Java</a>
+            
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E7%BC%96%E6%8E%92/">#任务编排</a>
+            
+              <a href="/tags/%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%BC%95%E6%93%8E/">#工作流引擎</a>
+            
+              <a href="/tags/%E8%87%AA%E7%A0%94vs%E5%BC%80%E6%BA%90/">#自研vs开源</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/05/05/2026-05-05-synctask-local-message-table/" target="_self">
+          SyncTaskJob 就是一张本地消息表——只是你自己没意识到
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/05/05/2026-05-05-synctask-local-message-table/" target="_self">
+        <div>
+          拆解 SyncTaskJob 的 sync_task 表与业界标准本地消息表模式的异同——你不知不觉地实现了一个经典的分布式事务模式。
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-05-05 09:00" pubdate>
+              2026-05-05
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="category-chain-item">分布式事务</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
+            
+              <a href="/tags/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8/">#本地消息表</a>
+            
+              <a href="/tags/SyncTaskJob/">#SyncTaskJob</a>
+            
+              <a href="/tags/Transactional-Outbox/">#Transactional Outbox</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/04/21/2026-04-21-DDIA-14-%E6%95%B0%E6%8D%AE%E4%BC%A6%E7%90%86/" target="_self">
+          DDIA-14数据系统的伦理维度：你的推荐算法在做正确的事吗
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/04/21/2026-04-21-DDIA-14-%E6%95%B0%E6%8D%AE%E4%BC%A6%E7%90%86/" target="_self">
+        <div>
+          引言：DDIA 第二版的「新章节」为什么是它Martin Kleppmann 的 Designing Data-Intensive Applications 被誉为分布式系统和数据架构领域的”圣经”。2025 年第二版发布时，新增的几个章节中，第 14 章「数据系统的伦理」让我颇感意外 —— 一本以技术实现为核心的书中，单独拿出一个整章去谈伦理？然而读完后我发现，这一章才是第二版最值得每一个工程
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-04-21 09:00" pubdate>
+              2026-04-21
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/AI/">#AI</a>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E4%BC%A6%E7%90%86/">#伦理</a>
+            
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%B3%BB%E7%BB%9F/">#数据系统</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/04/07/2026-04-07-DDIA-14-%E5%B7%A5%E7%A8%8B%E5%B8%88%E7%A4%BE%E4%BC%9A%E8%B4%A3%E4%BB%BB/" target="_self">
+          DDIA-14：工程师的社会责任——代码即权力，架构即政治
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/04/07/2026-04-07-DDIA-14-%E5%B7%A5%E7%A8%8B%E5%B8%88%E7%A4%BE%E4%BC%9A%E8%B4%A3%E4%BB%BB/" target="_self">
+        <div>
+          一、DDIA的终章，也是起点读完《Designing Data-Intensive Applications》前面13章时，我以为Martijn Kleppmann只是写了一本“分布式系统百科全书”。从存储引擎到复制分片，从事务隔离到共识协议，每一章都在拆解一个硬核工程问题。 然后我翻到了第14章。 这章不长，没有代码片段，没有架构图。但它提出的问题是全书最重的：作为技术从业者，你所构建的数据系
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2026-04-07 09:00" pubdate>
+              2026-04-07
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%B8%88%E8%B4%A3%E4%BB%BB/">#工程师责任</a>
+            
+              <a href="/tags/%E6%8A%80%E6%9C%AF%E4%BC%A6%E7%90%86/">#技术伦理</a>
+            
+              <a href="/tags/%E5%8F%8D%E6%80%9D/">#反思</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2026/03/23/2026-03-23-DDIA-14-GDPR%E4%B8%8E%E9%9A%90%E7%A7%81%E8%AE%BE%E8%AE%A1/" target="_self">
           DDIA-14-GDPR与隐私设计：技术之外的法律红线
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/07/2026-09-07-DDIA-14-GDPR%E4%B8%8E%E9%9A%90%E7%A7%81%E8%AE%BE%E8%AE%A1/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/23/2026-03-23-DDIA-14-GDPR%E4%B8%8E%E9%9A%90%E7%A7%81%E8%AE%BE%E8%AE%A1/" target="_self">
         <div>
           GDPR的三大核心权利（被遗忘权、数据可携带权、知情权）对技术架构意味着什么？被遗忘权为什么远比一条DELETE SQL复杂得多？隐私设计七原则（PbD）如何落地到日常的数据库设计和API设计？
         </div>
@@ -431,8 +842,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-07 00:00" pubdate>
-              2026-09-07
+            <time datetime="2026-03-23 09:00" pubdate>
+              2026-03-23
             </time>
           </div>
         
@@ -482,107 +893,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2026/09/07/2026-09-07-DDIA-14-%E6%95%B0%E6%8D%AE%E4%BC%A6%E7%90%86/" target="_self">
-          DDIA-14数据系统的伦理维度：你的推荐算法在做正确的事吗
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/07/2026-09-07-DDIA-14-%E6%95%B0%E6%8D%AE%E4%BC%A6%E7%90%86/" target="_self">
-        <div>
-          引言：DDIA 第二版的「新章节」为什么是它Martin Kleppmann 的 Designing Data-Intensive Applications 被誉为分布式系统和数据架构领域的”圣经”。2025 年第二版发布时，新增的几个章节中，第 14 章「数据系统的伦理」让我颇感意外 —— 一本以技术实现为核心的书中，单独拿出一个整章去谈伦理？然而读完后我发现，这一章才是第二版最值得每一个工程师
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-07 00:00" pubdate>
-              2026-09-07
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/AI/">#AI</a>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E4%BC%A6%E7%90%86/">#伦理</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%B3%BB%E7%BB%9F/">#数据系统</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/09/07/2026-09-07-DDIA-14-%E5%B7%A5%E7%A8%8B%E5%B8%88%E7%A4%BE%E4%BC%9A%E8%B4%A3%E4%BB%BB/" target="_self">
-          DDIA-14：工程师的社会责任——代码即权力，架构即政治
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/07/2026-09-07-DDIA-14-%E5%B7%A5%E7%A8%8B%E5%B8%88%E7%A4%BE%E4%BC%9A%E8%B4%A3%E4%BB%BB/" target="_self">
-        <div>
-          一、DDIA的终章，也是起点读完《Designing Data-Intensive Applications》前面13章时，我以为Martijn Kleppmann只是写了一本“分布式系统百科全书”。从存储引擎到复制分片，从事务隔离到共识协议，每一章都在拆解一个硬核工程问题。 然后我翻到了第14章。 这章不长，没有代码片段，没有架构图。但它提出的问题是全书最重的：作为技术从业者，你所构建的数据系统
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-07 00:00" pubdate>
-              2026-09-07
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%B8%88%E8%B4%A3%E4%BB%BB/">#工程师责任</a>
-            
-              <a href="/tags/%E6%8A%80%E6%9C%AF%E4%BC%A6%E7%90%86/">#技术伦理</a>
-            
-              <a href="/tags/%E5%8F%8D%E6%80%9D/">#反思</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/09/06/2026-09-06-%E8%AE%A2%E5%8D%95%E8%A1%A8%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E5%8F%96%E8%88%8D-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E8%A1%A8%E5%A4%AA%E5%A4%9A%E5%86%99%E5%86%97%E4%BD%99/" target="_self">
+        <a href="/2026/03/09/2026-03-09-%E8%AE%A2%E5%8D%95%E8%A1%A8%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E5%8F%96%E8%88%8D-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E8%A1%A8%E5%A4%AA%E5%A4%9A%E5%86%99%E5%86%97%E4%BD%99/" target="_self">
           订单表反向索引的取舍：会不会表太多、写逻辑太冗余？
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/06/2026-09-06-%E8%AE%A2%E5%8D%95%E8%A1%A8%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E5%8F%96%E8%88%8D-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E8%A1%A8%E5%A4%AA%E5%A4%9A%E5%86%99%E5%86%97%E4%BD%99/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2026/03/09/2026-03-09-%E8%AE%A2%E5%8D%95%E8%A1%A8%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E5%8F%96%E8%88%8D-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E8%A1%A8%E5%A4%AA%E5%A4%9A%E5%86%99%E5%86%97%E4%BD%99/" target="_self">
         <div>
-          分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是有取舍。 冗余的本质：为查询性能牺牲写复杂度每张反向索引表 &#x3D; 一条订单要多写一份数据。如果建 3 张索引表，写一条订单就要写 4 处（主表 + 3 索引）。这份冗余是真实成本，所以必须克制。 业界取舍：不是”每维度建表”，而是这三招招1：只在”最高频”维度
+          分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是有取舍。 冗余的本质：为查询性能牺牲写复杂度每张反向索引表 &#x3D; 一条订单要多写一份数据。如果建 3 张索引表，写一条订单就要写 4 处（主表 + 3 索引）。这份冗余是真实成本，所以必须克制。 业界取舍：不是”每维度建表”，而是这三招招1：只在”最高频”维
         </div>
       </a>
 
@@ -590,8 +909,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-06 14:00" pubdate>
-              2026-09-06
+            <time datetime="2026-03-09 09:00" pubdate>
+              2026-03-09
             </time>
           </div>
         
@@ -634,326 +953,6 @@
               <a href="/tags/C%E7%AB%AFB%E7%AB%AF/">#C端B端</a>
             
               <a href="/tags/OLTP/">#OLTP</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/09/05/2026-09-05-DDIA-13-%E4%BA%8B%E4%BB%B6%E6%BA%AF%E6%BA%90%E4%B8%8ECQRS/" target="_self">
-          DDIA-13-事件溯源与CQRS：把数据库当成事件日志来设计
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/05/2026-09-05-DDIA-13-%E4%BA%8B%E4%BB%B6%E6%BA%AF%E6%BA%90%E4%B8%8ECQRS/" target="_self">
-        <div>
-          深入理解事件溯源（Event Sourcing）与CQRS的核心思想、实践推演，以及与DDIA第13章"从数据系统到流系统"的内在呼应。
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-05 18:45" pubdate>
-              2026-09-05
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E4%BA%8B%E4%BB%B6%E6%BA%AF%E6%BA%90/">#事件溯源</a>
-            
-              <a href="/tags/CQRS/">#CQRS</a>
-            
-              <a href="/tags/%E6%9E%B6%E6%9E%84%E6%A8%A1%E5%BC%8F/">#架构模式</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/09/05/2026-09-05-DDIA-13-%E6%B5%81%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%96%E7%95%8C%E8%A7%82/" target="_self">
-          DDIA-13流式系统的世界观：一切数据都是流
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/05/2026-09-05-DDIA-13-%E6%B5%81%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%96%E7%95%8C%E8%A7%82/" target="_self">
-        <div>
-          一、一句话改写你的世界观《Designing Data-Intensive Applications》第13章是一章会改变你世界观的内容。如果只让我用一句话概括它的核心洞见，那就是：  数据不是静态的快照，而是持续的流。数据库只是流在当前时刻的物化视图。  这句话如果放在2015年，可能听起来像一个哲学命题。但在2026年回头看，它已经成了数据基础设施的事实标准。Kafka、Flink、Risin
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-05 00:00" pubdate>
-              2026-09-05
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E6%B5%81%E5%A4%84%E7%90%86/">#流处理</a>
-            
-              <a href="/tags/%E4%BA%8B%E4%BB%B6%E6%BA%AF%E6%BA%90/">#事件溯源</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E6%9E%B6%E6%9E%84/">#数据架构</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/09/05/2026-09-05-DDIA-13-%E6%B5%81%E5%BC%8F%E6%9E%B6%E6%9E%84%E5%B7%A5%E7%A8%8B%E6%8C%91%E6%88%98/" target="_self">
-          DDIA-13-流式架构的工程挑战：乱序、重复、延迟——你能怎么办
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/05/2026-09-05-DDIA-13-%E6%B5%81%E5%BC%8F%E6%9E%B6%E6%9E%84%E5%B7%A5%E7%A8%8B%E6%8C%91%E6%88%98/" target="_self">
-        <div>
-          一、流处理的三个现实问题DDIA第13章给流处理描绘了一个美好的未来——一切数据都是流，数据库是流的物化视图。但落到工程实践，你首先要过三关：乱序、重复、延迟。 这三个问题不是独立的——解决一个往往加重另一个。这就是流处理最有挑战的地方。 二、乱序：消息不是按时间来的原因：网络延迟差异——同一个用户的两条消息走了不同网络路径，先发的后到。 场景：支付事件比下单事件先到达流处理系统。如果用事件时间做
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-05 00:00" pubdate>
-              2026-09-05
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%8A%80%E6%9C%AF/" class="category-chain-item">技术</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E5%B9%82%E7%AD%89/">#幂等</a>
-            
-              <a href="/tags/%E6%B5%81%E5%A4%84%E7%90%86/">#流处理</a>
-            
-              <a href="/tags/%E5%AE%9E%E6%97%B6/">#实时</a>
-            
-              <a href="/tags/%E4%B9%B1%E5%BA%8F/">#乱序</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/09/03/2026-09-03-%E5%88%86%E7%89%87%E4%B9%8B%E5%90%8E%E7%9A%84%E6%8E%92%E5%BA%8F%E4%B8%8E%E5%88%86%E9%A1%B5%E5%88%B0%E5%BA%95%E6%80%8E%E4%B9%88%E5%81%9A/" target="_self">
-          分片之后的排序与分页，到底怎么做
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/03/2026-09-03-%E5%88%86%E7%89%87%E4%B9%8B%E5%90%8E%E7%9A%84%E6%8E%92%E5%BA%8F%E4%B8%8E%E5%88%86%E9%A1%B5%E5%88%B0%E5%BA%95%E6%80%8E%E4%B9%88%E5%81%9A/" target="_self">
-        <div>
-          学习 ShardingSphere 分片后，一个很现实的问题是：分片之后排序和分页怎么办？ 单表一条 LIMIT 搞定，分片后却要先改写、再归并，深分页更是性能灾难。本文讲透原理和几种解法。 本地单表：最朴素1234SELECT * FROM or_sales_infoWHERE trade_time BETWEEN ...ORDER BY trade_time DESCLIMIT 0, 10
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-03 10:00" pubdate>
-              2026-09-03
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E6%8E%92%E5%BA%8F/">#排序</a>
-            
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
-            
-              <a href="/tags/%E5%88%86%E9%A1%B5/">#分页</a>
-            
-              <a href="/tags/%E6%B8%B8%E6%A0%87%E5%88%86%E9%A1%B5/">#游标分页</a>
-            
-              <a href="/tags/%E6%B7%B1%E5%88%86%E9%A1%B5/">#深分页</a>
-            
-              <a href="/tags/ORDER-BY/">#ORDER BY</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2026/09/02/2026-09-02-DDIA-12-%E6%B5%81%E5%A4%84%E7%90%86%E5%93%B2%E5%AD%A6-%E4%BA%8B%E4%BB%B6%E6%97%B6%E9%97%B4/" target="_self">
-          DDIA-12-流处理的哲学：事件时间vs处理时间，为什么这件事很重要
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2026/09/02/2026-09-02-DDIA-12-%E6%B5%81%E5%A4%84%E7%90%86%E5%93%B2%E5%AD%A6-%E4%BA%8B%E4%BB%B6%E6%97%B6%E9%97%B4/" target="_self">
-        <div>
-          一、引子：凌晨三点的异常告警凌晨三点，被告警电话吵醒。监控大盘显示，过去一小时的订单量暴跌90%。打开实时大屏——数据正常。再看时间轴：现在的数据是对的，但”过去一小时”那个窗口里，昨天的订单还在往里灌。 这就是处理时间（Processing Time）的经典陷阱。DDIA第12章用相当大的篇幅讨论了流处理中的时间语义。 二、两个”时间”的定义事件时间（Event Time）：数据在源头产生的时间
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2026-09-02 00:00" pubdate>
-              2026-09-02
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%8A%80%E6%9C%AF/" class="category-chain-item">技术</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E6%B5%81%E5%A4%84%E7%90%86/">#流处理</a>
-            
-              <a href="/tags/%E4%BA%8B%E4%BB%B6%E6%97%B6%E9%97%B4/">#事件时间</a>
-            
-              <a href="/tags/Flink/">#Flink</a>
             
           </div>
         

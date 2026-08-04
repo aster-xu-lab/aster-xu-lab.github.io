@@ -1,0 +1,1014 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效 《Designing Data-Intensive Applications》第 9 章「一致性与共识」是全书最硬核的章节之一。但在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：分布式系统为什么会出错？ 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时钟、部分失效。理解这三者，是理解">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2025/03/17/2025-03-17-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效 《Designing Data-Intensive Applications》第 9 章「一致性与共识」是全书最硬核的章节之一。但在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：分布式系统为什么会出错？ 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时钟、部分失效。理解这三者，是理解">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-03-17T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T10:59:47.170Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="幂等">
+<meta property="article:tag" content="故障处理">
+<meta property="article:tag" content="超时">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-03-17 09:00" pubdate>
+          2025年3月17日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          67 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h1 id="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效"><a href="#DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效" class="headerlink" title="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效"></a>DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效</h1><blockquote>
+<p>《Designing Data-Intensive Applications》第 9 章「一致性与共识」是全书最硬核的章节之一。但在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：<strong>分布式系统为什么会出错？</strong> 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时钟、部分失效。理解这三者，是理解一切分布式理论的起点。</p>
+</blockquote>
+<hr>
+<h2 id="一、核心命题：分布式与单机的根本区别"><a href="#一、核心命题：分布式与单机的根本区别" class="headerlink" title="一、核心命题：分布式与单机的根本区别"></a>一、核心命题：分布式与单机的根本区别</h2><p>一个刚接触分布式系统的程序员，最容易犯的错误是：<strong>把分布式系统想象成单机系统的放大版。</strong></p>
+<p>在单机上，函数调用要么成功、要么失败，CPU 执行指令要么对、要么错，内存数据要么完整、要么崩溃。这种「确定性」让单机编程成为一个相对可控的智力活动——你可以通过调试器一步步追踪状态变化，用单元测试覆盖边界条件。</p>
+<p>分布式系统完全不同。想象你现在要把一个订单状态更新同步到下游 WMS 系统：你的服务发了一个 HTTP POST，等了三秒没有响应。请问——</p>
+<ul>
+<li>请求真的发出去了吗？</li>
+<li>对方收到并处理了吗？</li>
+<li>是网络断了，还是对方进程挂了，还是对方在处理但太慢了？</li>
+<li>你该重试吗？重试了会不会导致重复处理？</li>
+</ul>
+<p>在单机上你永远不需要回答这些问题。但在分布式系统中，这恰恰是<strong>每一天都要面对的日常</strong>。</p>
+<p>Kleppmann 把这种根本差异归结为一个概念：<strong>部分失效（Partial Failure）</strong>。单机系统的失效是确定性的——要么全好，要么全坏；分布式系统的失效是<strong>非确定性的</strong>——有些节点正常运作，有些节点异常，而你能获得的信息总是滞后和不完整的。</p>
+<hr>
+<h2 id="二、不可靠网络：消息可能丢失、延迟、乱序"><a href="#二、不可靠网络：消息可能丢失、延迟、乱序" class="headerlink" title="二、不可靠网络：消息可能丢失、延迟、乱序"></a>二、不可靠网络：消息可能丢失、延迟、乱序</h2><h3 id="2-1-TCP-并不能解决所有问题"><a href="#2-1-TCP-并不能解决所有问题" class="headerlink" title="2.1 TCP 并不能解决所有问题"></a>2.1 TCP 并不能解决所有问题</h3><p>很多人有一个直觉：「既然我们用的都是 TCP 协议，TCP 有重传和确认机制，那网络不就是可靠的吗？」</p>
+<p>这是一个危险的误解。</p>
+<p>TCP 确实能在一段连接中保证：<strong>如果对端确认收到了数据，那数据一定到达了；如果连接断开，你一定会知道。</strong> 但 TCP 不能回答一个关键问题：<strong>你发了一个请求，在对端确认之前，数据到底有没有被处理？</strong></p>
+<p>典型场景如下：</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs arduino"><span class="hljs-built_in">Client</span>  →  [request]  →  <span class="hljs-built_in">Server</span><br><span class="hljs-built_in">Client</span>  ←  [? ? ? ?]  ←  <span class="hljs-built_in">Server</span>  (网络中断)<br></code></pre></td></tr></table></figure>
+
+<p>客户端发了一个扣减库存的请求，然后 TCP 连接断了。此时客户端的 TCP 栈告诉你「连接已断开」，但它不能告诉你：<strong>服务端到底有没有执行这次扣减。</strong></p>
+<ul>
+<li>可能请求在到达服务端之前就丢了——库存未扣减；</li>
+<li>可能请求到达了，服务端处理完成，但 ACK 包在返回途中丢了——库存已扣减；</li>
+<li>可能请求到达了，服务端处理完成并发送了响应，但响应包在网络中丢失——库存已扣减。</li>
+</ul>
+<p><strong>结论：TCP 提供的是「连接内」的可靠，而不是「语义上」的可靠。</strong> 应用层必须自己处理这种不确定性。</p>
+<h3 id="2-2-超时重试的两难困境"><a href="#2-2-超时重试的两难困境" class="headerlink" title="2.2 超时重试的两难困境"></a>2.2 超时重试的两难困境</h3><p>面对不可靠网络，最自然的应对策是<strong>超时重试</strong>。但重试本身会引入新问题——</p>
+<ul>
+<li><strong>重复执行</strong>：如果第一次请求实际成功但响应超时了，重试会导致同一个操作被执行两次。</li>
+<li><strong>加重故障</strong>：如果下游已经在高负载下挣扎，重试会雪上加霜。Kleppmann 在书中特别提到了这个问题，并建议采用**退避（backoff）**策略，以及更重要的——<strong>全局限流</strong>。</li>
+</ul>
+<blockquote>
+<p>实战提醒：不要只在单节点上做 local retry + exponential backoff，你还要防止 100 个上游节点同时对同一个下游做退避重试——它们的退避窗口很可能撞在一起。这时需要一个 <strong>client-side circuit breaker + retry budget</strong> 的组合策略。</p>
+</blockquote>
+<h3 id="2-3-网络拥塞和时间的不确定性"><a href="#2-3-网络拥塞和时间的不确定性" class="headerlink" title="2.3 网络拥塞和时间的不确定性"></a>2.3 网络拥塞和时间的不确定性</h3><p>在真实生产环境中，网络问题往往不是「通」或「不通」的二元状态。最常见的故障模式是——</p>
+<ul>
+<li><strong>长尾延迟</strong>：P99.9 的网络时延可能是 P50 的 10 倍甚至 100 倍。</li>
+<li><strong>丢包</strong>：交换机缓冲区溢出导致的数据包丢弃。</li>
+<li><strong>网络分区</strong>：一部分节点和另一部分节点之间完全无法通信，但每组内部仍然正常运行。</li>
+</ul>
+<p>这种「半死不活」的状态，比彻底挂掉更难诊断。</p>
+<hr>
+<h2 id="三、不可靠时钟：两个节点的时间无法直接比较"><a href="#三、不可靠时钟：两个节点的时间无法直接比较" class="headerlink" title="三、不可靠时钟：两个节点的时间无法直接比较"></a>三、不可靠时钟：两个节点的时间无法直接比较</h2><h3 id="3-1-两种时钟，两种误差"><a href="#3-1-两种时钟，两种误差" class="headerlink" title="3.1 两种时钟，两种误差"></a>3.1 两种时钟，两种误差</h3><p>分布式系统中的时钟按用途分为两类，但它们<strong>都不靠谱</strong>——</p>
+<p><strong>墙上时钟（Wall-clock Time &#x2F; Time-of-day Clock）：</strong></p>
+<ul>
+<li>即 <code>System.currentTimeMillis()</code> 或 <code>new Date()</code> 返回的时间。</li>
+<li><strong>问题一：NTP 同步误差。</strong> 两个节点的墙上时钟可能相差几百毫秒甚至几秒——取决于 NTP 同步频率和网络状况。</li>
+<li><strong>问题二：NTP 回拨。</strong> 如果 NTP 发现本地时钟比服务器快了，它会<strong>跳回</strong>到正确时间。你的代码可能看到时间「倒着跑」——刚才还是 10:00:05，现在突然变成了 10:00:01。</li>
+<li><strong>问题三：闰秒。</strong> 闰秒调整可能让同一秒出现两次（正闰秒）或跳过一秒（负闰秒），直接破坏了「时间线性递增」这个基本假设。</li>
+</ul>
+<p><strong>单调时钟（Monotonic Clock）：</strong></p>
+<ul>
+<li>即 <code>System.nanoTime()</code> 返回的时间（Linux 上的 <code>CLOCK_MONOTONIC</code>）。</li>
+<li>它保证一直往前进，不会回拨。</li>
+<li><strong>但问题在于：</strong> 单调时钟的<strong>频率</strong>可能漂移。同一台机器上，1ms 间隔的 nanoTime 差值可能偏好几微秒；不同机器之间，根本无法比较。</li>
+<li>单调时钟只适用于<strong>测量同一节点上的时间间隔</strong>（比如计算超时），绝对不能用于跨节点的时间比较。</li>
+</ul>
+<h3 id="3-2-时钟顺序信任的危害"><a href="#3-2-时钟顺序信任的危害" class="headerlink" title="3.2 时钟顺序信任的危害"></a>3.2 时钟顺序信任的危害</h3><p>一个典型的反模式：<strong>用 <code>created_at</code> 时间戳来推断事件的全局顺序。</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 危险：假设时间戳反映真实因果顺序</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> orders <br><span class="hljs-keyword">WHERE</span> created_at <span class="hljs-operator">&gt;</span> <span class="hljs-string">&#x27;2026-08-25 10:00:00&#x27;</span> <br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> created_at;<br></code></pre></td></tr></table></figure>
+
+<p>如果两个订单分别在机房 A 和机房 B 创建，机房 A 的 NTP 慢了 500ms，那你按 <code>created_at</code> 排序出来的结果就是错的——先创建的订单可能排在了后面。</p>
+<p>Kleppmann 为此提出了一个关键建议：<strong>将时间戳视为置信区间，而非精确值。</strong> 比如 Google 的 Spanner 用原子钟 + GPS 将 uncertainty 控制在 7ms 以内（TrueTime API），从而可以用时间戳安全地做出全局顺序判断。但对于绝大多数没有原子钟的普通系统，<strong>时间戳只能用于展示，不能用于决策。</strong></p>
+<h3 id="3-3-「等待固定时间」vs「等待逻辑条件」"><a href="#3-3-「等待固定时间」vs「等待逻辑条件」" class="headerlink" title="3.3 「等待固定时间」vs「等待逻辑条件」"></a>3.3 「等待固定时间」vs「等待逻辑条件」</h3><p>另一个因为时钟不可靠导致的典型 bug：「sleep + 假设数据已经可用」。</p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs scss">Thread<span class="hljs-selector-class">.sleep</span>(<span class="hljs-number">5000</span>);  <span class="hljs-comment">// 假设5秒后数据一定到了</span><br><span class="hljs-built_in">processNextStep</span>();<br></code></pre></td></tr></table></figure>
+
+<p>在分布式系统中，正确的做法不是等「物理时间」，而是等「逻辑条件」——用消息通知、回调、轮询检查标识位等方式。Kleppmann 明确指出：<strong>时钟只能用于测量超时（告诉你可以放弃等待），不能用于保障状态（断言数据已经就绪）。</strong></p>
+<hr>
+<h2 id="四、部分失效：分布式系统中最难处理的场景"><a href="#四、部分失效：分布式系统中最难处理的场景" class="headerlink" title="四、部分失效：分布式系统中最难处理的场景"></a>四、部分失效：分布式系统中最难处理的场景</h2><h3 id="4-1-不是挂，而是「半挂」"><a href="#4-1-不是挂，而是「半挂」" class="headerlink" title="4.1 不是挂，而是「半挂」"></a>4.1 不是挂，而是「半挂」</h3><p>单机系统最常见的两种失败：进程崩溃（确定性的停止工作）或 OOM Kill。分布式系统还有一种独特的失败模式：<strong>部分失效。</strong></p>
+<ul>
+<li>服务节点还活着，但只对一部分请求无响应（GC 停顿、线程池满）。</li>
+<li>数据库主库正常写入，但从库因为磁盘 IO 拥塞同步延迟 30 秒。</li>
+<li>Redis 集群中两个分片正常、一个分片网络闪断后刚刚恢复（数据可能不一致）。</li>
+</ul>
+<p>这些场景的共同特征是：<strong>你永远只能从外部观察到间接信号（超时、错误码、延迟上升），而无法像调试单机程序那样直接检查系统内部状态。</strong></p>
+<h3 id="4-2-信息的不完整性"><a href="#4-2-信息的不完整性" class="headerlink" title="4.2 信息的不完整性"></a>4.2 信息的不完整性</h3><p>Kleppmann 反复强调的一个观点：<strong>分布式系统中的节点只能通过消息交换来感知彼此状态，没有共享内存，没有全局时钟，没有「上帝视角」。</strong></p>
+<p>这意味着：当你作为节点 A 发现节点 B 没有在规定时间内回复时，你<strong>无法区分</strong>以下情况——</p>
+<ol>
+<li>B 已经挂了。</li>
+<li>B 没挂，但网络断了。</li>
+<li>B 没挂，网络也没断，但 B 负载过高，处理慢了。</li>
+<li>B 没挂，网络也没断，但你的超时阈值设得太短了。</li>
+</ol>
+<p>你做出的每一个决策，都是基于<strong>不完整的本地信息</strong>。这就是分布式系统为什么这么难。</p>
+<h3 id="4-3-错误处理的层次"><a href="#4-3-错误处理的层次" class="headerlink" title="4.3 错误处理的层次"></a>4.3 错误处理的层次</h3><p>很多系统在设计时只考虑了「正常路径」，错误处理是一个 <code>catch (Exception e) { log.error(...) }</code> 的补丁。Kleppmann 的建议是：<strong>把部分失效当作一等公民，而不是异常路径。</strong></p>
+<p>具体来说——</p>
+<ul>
+<li>配置超时不只是一个运维参数，它是一个<strong>设计决策</strong>：选择了什么超时阈值，就等于选择了「宁可被误判为故障（false positive）」还是「宁可延误发现故障（false negative）」。</li>
+<li><strong>死信队列</strong>和<strong>人工补偿工单</strong>不是失败的设计，而是<strong>必须存在</strong>的后备手段——因为有些部分失效机器无法自动判断意图。</li>
+<li>回滚不一定可行（下游已经消费了消息、第三方已经扣了钱），此时需要**补偿事务（Saga Pattern）**而非简单的 try-catch。</li>
+</ul>
+<hr>
+<h2 id="五、应对策：超时检测、幂等操作、租约"><a href="#五、应对策：超时检测、幂等操作、租约" class="headerlink" title="五、应对策：超时检测、幂等操作、租约"></a>五、应对策：超时检测、幂等操作、租约</h2><p>面对这三个问题，业界沉淀出了一套经过大规模生产验证的应对模式。以下是经过实践检验的组合拳。</p>
+<h3 id="5-1-超时检测：心跳-Phi-Accrual-Failure-Detector"><a href="#5-1-超时检测：心跳-Phi-Accrual-Failure-Detector" class="headerlink" title="5.1 超时检测：心跳 + Phi Accrual Failure Detector"></a>5.1 超时检测：心跳 + Phi Accrual Failure Detector</h3><p>简单的「ping 三次超时就判死」策略有一个明显问题：短暂的网络抖动会导致频繁的误判和 failover。Cassandra 社区推广的 <strong>Phi Accrual Failure Detector</strong> 是一个更优雅的方案——</p>
+<ul>
+<li><strong>不用固定阈值，而是用动态的可信度。</strong> 每次心跳到达或丢失，更新一个「怀疑级别」（Phi 值）。Phi 值越高，表示节点出故障的可能性越大。</li>
+<li><strong>自适应网络抖动。</strong> 如果某段时间网络整体延迟升高，检测器会自动调整 baseline，不会因为网络拥塞而误判大量节点死亡。</li>
+<li><strong>实现核心：</strong> 维护一个心跳到达时间的滑动窗口，用指数分布建模，计算当前采样在这个分布中的「异常程度」。</li>
+</ul>
+<p>在没有引入 Phi Accrual 的场景下，至少也要做到：</p>
+<ul>
+<li>心跳间隔和超时判断解耦（间隔 3s，至少要等 3 个间隔以上才判死）。</li>
+<li>增加重连试探阶段（判死后先尝试 re-establish connection，失败再确认）。</li>
+<li>判死和判活的阈值不对称（恢复需要更多次连续成功，避免「飘变」）。</li>
+</ul>
+<h3 id="5-2-幂等操作：at-least-once-去重"><a href="#5-2-幂等操作：at-least-once-去重" class="headerlink" title="5.2 幂等操作：at-least-once + 去重"></a>5.2 幂等操作：at-least-once + 去重</h3><p>既然网络不可靠，那<strong>不重试是不可能的</strong>。但如果你要重试，就必须让操作幂等。</p>
+<p>让一个非幂等操作变成幂等，有几种常见手段——</p>
+<p><strong>方案一：唯一 ID 去重。</strong><br>在请求中携带唯一的幂等键（idempotency key），接收方在数据库中记录每个 key 的处理结果。重复的 key 直接返回已有结果，不执行实际逻辑。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 请求端</span><br><span class="hljs-type">String</span> <span class="hljs-variable">idempotencyKey</span> <span class="hljs-operator">=</span> UUID.randomUUID().toString();<br><span class="hljs-comment">// 接收端</span><br><span class="hljs-keyword">if</span> (redis.setnx(<span class="hljs-string">&quot;idempotent:&quot;</span> + idempotencyKey, <span class="hljs-string">&quot;processing&quot;</span>, <span class="hljs-number">300</span>)) &#123;<br>    executeBusiness();<br>    redis.set(<span class="hljs-string">&quot;idempotent:&quot;</span> + idempotencyKey, <span class="hljs-string">&quot;done&quot;</span>, <span class="hljs-number">300</span>);<br>&#125; <span class="hljs-keyword">else</span> &#123;<br>    <span class="hljs-keyword">return</span> getCachedResult(idempotencyKey);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>方案二：状态机约束。</strong><br>操作声明前置条件（比如「仅当订单状态为 PAID 才能进入 SHIPPING」），利用状态机的确定性来保证重复执行不会产生副作用。</p>
+<p><strong>方案三：端到端幂等。</strong><br>在下游链路的每一个环节都保证幂等性，使得重试可以在最上游安全地进行。这需要每个接收方都明确支持去重。</p>
+<h3 id="5-3-租约（Lease）：带-TTL-的临时授权"><a href="#5-3-租约（Lease）：带-TTL-的临时授权" class="headerlink" title="5.3 租约（Lease）：带 TTL 的临时授权"></a>5.3 租约（Lease）：带 TTL 的临时授权</h3><p>锁在分布式系统中如果不带超时是危险的——持有锁的节点可能宕机或 GC 停顿，导致锁永远无法释放。<strong>租约（Lease）</strong> 通过给锁加上 TTL，确保锁一定会在特定时间后自动释放。</p>
+<p>要点：</p>
+<ul>
+<li><strong>租约是「权限 + 有效期」的组合，不是锁的简单替代。</strong> 持有租约的节点必须在有效期内完成操作，否则应该主动放弃。</li>
+<li><strong>fencing token 的配合：</strong> 在基于锁 + 租约的方案上，还需要一个递增的 token（fencing token），每次获取新租约时 token +1。写操作时携带 token，存储端拒绝比记录中更小的 token——防止一个过期但仍认为自己持有租约的「僵尸节点」做出错误写入。</li>
+</ul>
+<p>这就是 Chubby &#x2F; Zookeeper 底层思想的核心。</p>
+<hr>
+<h2 id="六、实战：订单系统时钟漂移的全链路排查"><a href="#六、实战：订单系统时钟漂移的全链路排查" class="headerlink" title="六、实战：订单系统时钟漂移的全链路排查"></a>六、实战：订单系统时钟漂移的全链路排查</h2><p>说点亲身经历的。</p>
+<p>我们有两个机房（可以理解为两个数据中心的逻辑隔离区），分别叫 S-1 和 S-2。订单系统做了跨机房双活，两个机房的订单服务各自独立接收请求、写本地缓存。</p>
+<p>某天客服反馈：<strong>「一个用户下了两单，第二单的时间显示比第一单还早。」</strong></p>
+<p>排查链路如下——</p>
+<ol>
+<li><strong>确认问题范围：</strong> 不是偶发，而是高频出现，且全部集中在「第一单在 S-2 创建、第二单在 S-1 创建」的组合上。</li>
+<li><strong>查看服务器时间：</strong> S-1 和 S-2 全部运行 NTP 服务，且都配置了同一个 NTP 服务器。但用 <code>ntpq -p</code> 检查发现，S-2 的 offset 稳定在 +450ms 左右（即 S-2 的时钟比 NTP 服务器快 450ms），而 S-1 的 offset 在 ±50ms 范围内。</li>
+<li><strong>根因定位：</strong> S-2 所在的物理机（当时还是混合部署）有一个老化硬件时钟（RTC），NTP 在校准时可以补偿 offset，但 NTP 不能修改硬件时钟本身。每次 NTP 服务重启（部署时偶发），会短暂地用硬件时钟初始化，然后又慢慢修正回来——导致墙上时钟在一个区间内来回跳动。</li>
+<li><strong>为何 NTP 没完全修正：</strong> 我们配置的 NTP 采用 <code>slew</code> 模式（<code>ntpd -x</code>），即通过调节时钟频率而非直接跳变来修正偏差。450ms 的 offset 需要数分钟才能完全恢复。在这个恢复窗口内产生的订单，<code>created_at</code> 就不可靠。</li>
+</ol>
+<h3 id="解决方案：用全局有序-ID-替代时间戳排序"><a href="#解决方案：用全局有序-ID-替代时间戳排序" class="headerlink" title="解决方案：用全局有序 ID 替代时间戳排序"></a>解决方案：用全局有序 ID 替代时间戳排序</h3><p>短期止血：</p>
+<ul>
+<li>统一到单个 NTP 时间源（两台机器的 NTP server 一致），加大同步频率。</li>
+<li>监控各个节点的 NTP offset，超过 200ms 告警。</li>
+</ul>
+<p><strong>长期解法（根本性解决）：</strong> 不再依赖墙上时钟做排序。</p>
+<p>我们引入了基于<strong>雪花算法（Snowflake）的全局唯一 ID</strong> 作为订单的主键和排序依据：</p>
+<ul>
+<li>41 位毫秒时间戳 + 10 位机器 ID + 12 位序列号。</li>
+<li>毫秒时间戳来自单调时钟（用服务启动基准时间 + <code>System.nanoTime()</code> 差值推算），不受 NTP 回拨影响。</li>
+<li>即使两个节点的时间存在微量偏差，机器 ID 的差异也能保证 ID 的全局唯一性。</li>
+<li>订单列表排序改为 <code>ORDER BY id DESC</code>，时间复杂度不变，可靠性质的飞跃。</li>
+</ul>
+<blockquote>
+<p>这次事故的教训：<strong>永远不要在分布式系统中把墙上时钟当作因果顺序的依据。</strong> 时间戳可以作为辅助信息展示（用户看到的「下单时间」），但不能参与任何业务逻辑判断——排序、幂等判定、因果推断，都不能依赖它。</p>
+</blockquote>
+<h2 id="七、回到-SyncTask：超时控制与幂等设计的工程落地"><a href="#七、回到-SyncTask：超时控制与幂等设计的工程落地" class="headerlink" title="七、回到 SyncTask：超时控制与幂等设计的工程落地"></a>七、回到 SyncTask：超时控制与幂等设计的工程落地</h2><p>这部分是我在 <strong>SyncTask 驿传引擎</strong>中的实际工程实践，刚好对应了 DDIA 第 9 章对超时和幂等的论述。</p>
+<h3 id="7-1-V2-版本的-CompletableFuture-超时控制"><a href="#7-1-V2-版本的-CompletableFuture-超时控制" class="headerlink" title="7.1 V2 版本的 CompletableFuture 超时控制"></a>7.1 V2 版本的 CompletableFuture 超时控制</h3><p>SyncTask 引擎最初的 V1 版本是基于 XXL-JOB 的分页拉取 + 同步串行处理。一个显著的痛点是：<strong>如果某个 Handler 调用下游超时或者死循环，整个执行线程会被卡住。</strong></p>
+<p>V2 版本的架构修复了这个问题。核心设计：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// V2 核心超时模型</span><br>CompletableFuture.allOf(tasks.toArray(<span class="hljs-keyword">new</span> <span class="hljs-title class_">CompletableFuture</span>[<span class="hljs-number">0</span>]))<br>    .get(timeoutSeconds, TimeUnit.SECONDS);<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>每个 Handler 的执行被包装为 <code>CompletableFuture</code>，放入线程池异步执行。</li>
+<li>主线程用 <code>get(timeout, unit)</code> 整体等待，超时后主动中断未完成任务。</li>
+<li>超时的 Future 会被标记为 <code>FAILED</code>，对应的批次记录写入 <code>task_execution_log</code> 表，方便后续人工补偿或自动重试。</li>
+</ul>
+<p>这里也暗合了 Kleppmann 提到的「超时不只是一个运维参数，而是设计决策」——我在 V2 中把超时值从常量改为了<strong>按 Handler 可配置的字段</strong>。为什么？因为不同的下游有不同的 SLA，一个调用「华为 ERP」的 Handler 和调用「金蝶财务」的 Handler 的超时阈值绝不可能是同一个数字。</p>
+<h3 id="7-2-幂等设计的落地"><a href="#7-2-幂等设计的落地" class="headerlink" title="7.2 幂等设计的落地"></a>7.2 幂等设计的落地</h3><p>SyncTask 引擎的任务模型天然支持幂等：每个任务有唯一 <code>taskId</code>，关联了 <code>businessKey</code>（业务唯一键）和 <code>taskStatus</code>。关键设计如下——</p>
+<ul>
+<li><strong>状态机保护：</strong> 任务状态流转严格遵循 <code>PENDING → PROCESSING → SUCCESS/FAILED</code>。幂等判断前置在 <code>PROCESSING</code> 之前的 <code>PENDING</code> 状态——如果任务已经在 <code>PROCESSING</code> 状态，重复触发直接返回已有结果。</li>
+<li><strong>分布式锁 + 状态双重保护：</strong> 即使锁因为 Redis 租约过期而释放（5.3 节讨论的问题），状态机的约束也能拦截「拿到了过期锁的僵尸节点」——因为状态已经不是 PENDING 了。</li>
+<li><strong>rentry-safe 的业务执行：</strong> 所有 Handler 的执行都被鼓励设计为可重入的，即如果被中断后重新调度，不会产生副作用。做不到的地方，用 <code>task_execution_log</code> 记录完整上下文，由人工兜底。</li>
+</ul>
+<h3 id="7-3-回看-DDIA-的「真相由多数派决定」"><a href="#7-3-回看-DDIA-的「真相由多数派决定」" class="headerlink" title="7.3 回看 DDIA 的「真相由多数派决定」"></a>7.3 回看 DDIA 的「真相由多数派决定」</h3><p>第 9 章后半部分讨论了 Quorum、两阶段提交、共识算法，Kleppmann 的核心论点是：<strong>在分布式系统中，单个节点不能宣判自己是正确的——真相必须由多数派决定。</strong></p>
+<p>这和 SyncTask 引擎的设计有直接呼应：</p>
+<ul>
+<li><strong>afterExecute 编排模式（Choreography）取代 DAG：</strong> 放弃集中式编排者的原因之一，就是不想把「这个任务链的下一步是什么」的决定权交给单一节点——如果一个节点挂了，整条链的状态就消失了。afterExecute 模式让每个 Handler 自行决定「我完成后把接力棒交给谁」，相当于<strong>每个参与者都参与了决策。</strong></li>
+<li><strong>任务状态被持久化到数据库（TaskStore），而不是内存：</strong> 这意味着即使执行节点完全挂掉，状态不会丢失，新节点可以从数据库读取状态后继续。数据库成了「多数派」的代言人——只有 commit 到数据库的状态才是真实的。</li>
+<li><strong>可插拔的 LockService（默认 Redis）：</strong> 锁本身可以被替换（比如换成 Zookeeper 的 ephemeral node），但锁的语义不变——<strong>被锁保护的那个资源，其当前状态的真相必须经过这个锁的仲裁。</strong></li>
+</ul>
+<hr>
+<h2 id="八、总结：三个问题的统一思想"><a href="#八、总结：三个问题的统一思想" class="headerlink" title="八、总结：三个问题的统一思想"></a>八、总结：三个问题的统一思想</h2><p>把不可靠网络、不可靠时钟、部分失效串起来，它们指向同一个核心思想——</p>
+<p><strong>分布式系统中的节点，没有全局视图，没有同步时钟，网络随时可能割裂。你能做的，不是消除不确定性（这不可能），而是设计能在不确定性中仍然正确运行的系统。</strong></p>
+<p>具体而言：</p>
+<ol>
+<li><strong>对于网络：</strong> 接受「消息可能丢 &#x2F; 可能晚到」，用超时 + 幂等 + 退避来兜底，而不是假设网络一直通畅。</li>
+<li><strong>对于时钟：</strong> 永远不用墙上时钟做逻辑决策（排序、因果、幂等）。用逻辑时钟（版本向量、事务 ID）替代物理时钟。</li>
+<li><strong>对于部分失效：</strong> 设计系统时默认「任何节点随时可能部分失效」。状态机、租约、fencing token、重试和补偿都是基础设施级的必需品，而不是「可选异常处理」。</li>
+</ol>
+<p>DDIA 第 9 章用一个很妙的话收束了整章：「分布式系统的问题，最终都是<strong>信息问题</strong>。」（原话是说共识问题的本质是「达成一致的过程就是一种信息传递」，我引申一下。）你设计超时、重试、租约、幂等，本质上都是在设计<strong>如何在不完整信息的条件下做出安全决策</strong>。</p>
+<p>理解这一点，比记住任何具体算法都重要。因为具体算法你随时可以查到，但这个思维框架——在不确定性中做安全决策——必须长在骨子里。</p>
+<hr>
+<p><em>下一篇预告：DDIA-09（下）——共识协议与 Raft 的工程直觉。为什么 Kafka 选 ISR、MongoDB 选 Paxos？共识算法的选型比原理更重要。</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" class="print-no-link">#分布式</a>
+      
+        <a href="/tags/%E8%B6%85%E6%97%B6/" class="print-no-link">#超时</a>
+      
+        <a href="/tags/%E5%B9%82%E7%AD%89/" class="print-no-link">#幂等</a>
+      
+        <a href="/tags/%E6%95%85%E9%9A%9C%E5%A4%84%E7%90%86/" class="print-no-link">#故障处理</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效</div>
+      <div>https://aster-xu-lab.github.io/2025/03/17/2025-03-17-DDIA-09-分布式系统三大问题/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年3月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/03/31/2025-03-31-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" title="DDIA-09-分布式系统故障排查：你没见过不代表没发生过">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-09-分布式系统故障排查：你没见过不代表没发生过</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/03/02/2025-03-02-DDIA-09-SyncTask%E8%B6%85%E6%97%B6%E5%B9%82%E7%AD%89/" title="DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复">
+                        <span class="hidden-mobile">DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

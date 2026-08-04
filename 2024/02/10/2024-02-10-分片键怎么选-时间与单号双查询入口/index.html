@@ -1,0 +1,900 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="本文记录一个分片键选型的重要修正：一开始基于”数据按时间查询”选择了时间主分片，但业务确认所有事件都按单号处理后，修正为单号主分片。这个修正过程本身就是分片键选型的最好案例。  一、初始思考：按时间查 + 按单号查，一个分片键不够or_sales_info 有 6000 万数据，最初看到两个查询入口：  按时间查：WHERE trade_time BETWEEN ... 按平台单号查：WHER">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分片键怎么选？从&quot;时间主分片&quot;修正为&quot;单号主分片&quot;的选型复盘">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/02/10/2024-02-10-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="本文记录一个分片键选型的重要修正：一开始基于”数据按时间查询”选择了时间主分片，但业务确认所有事件都按单号处理后，修正为单号主分片。这个修正过程本身就是分片键选型的最好案例。  一、初始思考：按时间查 + 按单号查，一个分片键不够or_sales_info 有 6000 万数据，最初看到两个查询入口：  按时间查：WHERE trade_time BETWEEN ... 按平台单号查：WHER">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-02-10T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T10:59:47.164Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="ShardingSphere">
+<meta property="article:tag" content="or_sales_info">
+<meta property="article:tag" content="分片键">
+<meta property="article:tag" content="反向索引表">
+<meta property="article:tag" content="订单号">
+<meta property="article:tag" content="选型">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-02-10 09:00" pubdate>
+          2024年2月10日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          18 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>本文记录一个分片键选型的重要修正：一开始基于”数据按时间查询”选择了时间主分片，但<strong>业务确认所有事件都按单号处理</strong>后，修正为单号主分片。这个修正过程本身就是分片键选型的最好案例。</p>
+</blockquote>
+<h2 id="一、初始思考：按时间查-按单号查，一个分片键不够"><a href="#一、初始思考：按时间查-按单号查，一个分片键不够" class="headerlink" title="一、初始思考：按时间查 + 按单号查，一个分片键不够"></a>一、初始思考：按时间查 + 按单号查，一个分片键不够</h2><p><code>or_sales_info</code> 有 6000 万数据，最初看到两个查询入口：</p>
+<ol>
+<li><strong>按时间查</strong>：<code>WHERE trade_time BETWEEN ...</code></li>
+<li><strong>按平台单号查</strong>：<code>WHERE outer_order_no = &#39;221001008&#39;</code></li>
+</ol>
+<p><strong>一个分片键没法同时精准命中两个入口</strong>：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc">选 trade<span class="hljs-emphasis">_time 分片 → 时间查精准, 单号查要广播所有月表 ❌</span><br><span class="hljs-emphasis">选 outer_order_</span>no 分片 → 单号查精准, 时间查要广播所有分片 ❌<br></code></pre></td></tr></table></figure>
+
+<p>最初基于”90% 查询带时间”的判断，选了<strong>时间主分片 + 单号反向索引表</strong>（双表结构，用反相索引补单号查询）。</p>
+<h2 id="二、关键转折：业务确认”所有事件都按单号”"><a href="#二、关键转折：业务确认”所有事件都按单号”" class="headerlink" title="二、关键转折：业务确认”所有事件都按单号”"></a>二、关键转折：业务确认”所有事件都按单号”</h2><p>深入业务后确认了一个决定性事实——<strong>所有业务事件（创建&#x2F;发货&#x2F;取消&#x2F;签收）都按单号处理</strong>：</p>
+<figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs lasso">创建: INSERT <span class="hljs-params">...</span> ORDER_NO 生成 → 后续按单号<br>发货: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br>取消: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br>签收: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br></code></pre></td></tr></table></figure>
+
+<p>这意味着<strong>单号是业务操作的主维度</strong>，比”按时间查报表”高频得多。而如果表按时间分片，<strong>每一次发货&#x2F;取消&#x2F;签收都会广播所有月表——写路径广播比读更严重</strong>（要锁、要事务）。</p>
+<h2 id="三、修正结论：单号主分片"><a href="#三、修正结论：单号主分片" class="headerlink" title="三、修正结论：单号主分片"></a>三、修正结论：单号主分片</h2><p>既然所有事件都按单号，<strong>单号必须是主分片键</strong>：</p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs arcade">主分片表  t_sales_info_&#123;单号<span class="hljs-built_in">hash</span>&#125;  分片键=outer_order_no<br>       承载写入 + 所有按单号的业务事件(创建/发货/取消/签收)精准路由零广播<br><br>时间统计  Doris/ES 宽表(OLAP)<br>       按时间/多维度复杂查询(广播在MySQL不可接受, 交给查询库)<br></code></pre></td></tr></table></figure>
+
+<h3 id="写入-事件：全按单号精准路由"><a href="#写入-事件：全按单号精准路由" class="headerlink" title="写入&#x2F;事件：全按单号精准路由"></a>写入&#x2F;事件：全按单号精准路由</h3><figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs lasso">发货/取消/签收: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ? → 精准路由单表, 零广播 ✅<br></code></pre></td></tr></table></figure>
+
+<h3 id="时间统计：走-Doris-ES，不裸查-MySQL-分片"><a href="#时间统计：走-Doris-ES，不裸查-MySQL-分片" class="headerlink" title="时间统计：走 Doris&#x2F;ES，不裸查 MySQL 分片"></a>时间统计：走 Doris&#x2F;ES，不裸查 MySQL 分片</h3><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">按时间统计/报表 → Doris 宽表, 数据的同步靠 Canal binlog → Kafka 秒级 ✅<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、单号怎么均匀分片"><a href="#四、单号怎么均匀分片" class="headerlink" title="四、单号怎么均匀分片"></a>四、单号怎么均匀分片</h2><p>单号是<strong>字符串</strong>（平台侧生成，格式各异）。均匀分片的要点：</p>
+<ol>
+<li><strong>用字符串专用哈希</strong>：<code>HASH_MOD</code>（auto-tables 模式）或<strong>自定义 FNV&#x2F;Murmur</strong>，别裸用 <code>String.hashCode()</code></li>
+<li><strong>单号本身要有”熵”</strong>：若单号是自增&#x2F;低位规律，哈希也难救（但平台生成受限，靠好哈希兜底）</li>
+<li><strong>实测分布</strong>：跑真实单号样本看桶均衡度，倾斜就换哈希</li>
+</ol>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// HASH_MOD(auto-tables), 字符串单号均匀分片</span><br><span class="hljs-type">ShardingAutoTableRuleConfiguration</span> <span class="hljs-variable">tableRule</span> <span class="hljs-operator">=</span><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">ShardingAutoTableRuleConfiguration</span>(<span class="hljs-string">&quot;t_sales_info&quot;</span>, <span class="hljs-string">&quot;ds0&quot;</span>);<br>tableRule.setShardingStrategy(<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">StandardShardingStrategyConfiguration</span>(<span class="hljs-string">&quot;outer_order_no&quot;</span>, <span class="hljs-string">&quot;order-no-hash&quot;</span>));<br>rule.getAutoTables().add(tableRule);<br></code></pre></td></tr></table></figure>
+
+<h2 id="五、反向索引表的取舍：单号主分片后不需要"><a href="#五、反向索引表的取舍：单号主分片后不需要" class="headerlink" title="五、反向索引表的取舍：单号主分片后不需要"></a>五、反向索引表的取舍：单号主分片后不需要</h2><p>新的认知：<strong>单一分片键无法同时满足”按单号”和”按时间”两个入口，但”主”的选择决定要不要反向索引</strong>。</p>
+<table>
+<thead>
+<tr>
+<th>主分片键</th>
+<th>单号查询</th>
+<th>时间查询</th>
+<th>是否需要反相索引</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>时间</td>
+<td>广播</td>
+<td>精准</td>
+<td>需单号反相索引</td>
+</tr>
+<tr>
+<td><strong>单号</strong></td>
+<td><strong>精准</strong></td>
+<td>广播</td>
+<td><strong>不需要</strong>(走 Doris)</td>
+</tr>
+</tbody></table>
+<p>单号主分片后，<strong>order_no 本身就是分片键，天然精准路由，不需要 order_no 反向索引表</strong>（它只存在于”非单号分片”方案里补单号查询）。时间统计交给 Doris，也不需要在 MySQL 建时间索引。</p>
+<h2 id="六、扩容：单号-hash-分片的代价"><a href="#六、扩容：单号-hash-分片的代价" class="headerlink" title="六、扩容：单号 hash 分片的代价"></a>六、扩容：单号 hash 分片的代价</h2><p>时间分片”加月表天然扩容”的优势在单号 hash 分片下没有了——<strong>扩展分片基数（8→16片）需 rehash</strong>：</p>
+<figure class="highlight erlang-repl"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs erlang-repl">双写 → 存量回填(扫单表按新算法算片) → 对账 → 灰度切流 → <span class="hljs-number">100</span><span class="hljs-comment">%切走 → 删旧表</span><br></code></pre></td></tr></table></figure>
+
+<p>但这是<strong>交易系统按单号分片的必要代价</strong>，换来的是所有业务事件零广播精准路由。</p>
+<h2 id="七、小结：分片键选型的第一原则"><a href="#七、小结：分片键选型的第一原则" class="headerlink" title="七、小结：分片键选型的第一原则"></a>七、小结：分片键选型的第一原则</h2><blockquote>
+<p><strong>分片键对准”最高频、最核心的操作维度”，而不是”查询最多的维度”。</strong></p>
+</blockquote>
+<ul>
+<li>这里”查询最多”是时间，但”<strong>操作最高频</strong>“是单号（所有事件按单号）</li>
+<li>交易系统写入&#x2F;状态流转都带单号 → <strong>单号主分片</strong>（业界主流）</li>
+<li>时间统计交给 Doris&#x2F;ES 宽表（Canal 同步），不纠结 MySQL 分片能否扛时间查询</li>
+</ul>
+<p><strong>这次修正的核心教训</strong>：选分片键前，先搞清楚<strong>业务的操作主维度</strong>（订单就是单号），而不是只看查询形态。写路径的广播（事件 update）比读路径广播严重得多，交易系统必须让主维度精准路由。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
+      
+        <a href="/tags/%E9%80%89%E5%9E%8B/" class="print-no-link">#选型</a>
+      
+        <a href="/tags/%E5%88%86%E7%89%87%E9%94%AE/" class="print-no-link">#分片键</a>
+      
+        <a href="/tags/%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8/" class="print-no-link">#反向索引表</a>
+      
+        <a href="/tags/or-sales-info/" class="print-no-link">#or_sales_info</a>
+      
+        <a href="/tags/%E8%AE%A2%E5%8D%95%E5%8F%B7/" class="print-no-link">#订单号</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘</div>
+      <div>https://aster-xu-lab.github.io/2024/02/10/2024-02-10-分片键怎么选-时间与单号双查询入口/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年2月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/02/25/2024-02-25-DDIA-04-B-Tree%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD/" title="DDIA-04-B-Tree：数据库索引的基础设施，为什么它60岁了还在用">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-04-B-Tree：数据库索引的基础设施，为什么它60岁了还在用</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/01/27/2024-01-27-ShardingSphere%E8%BF%9B%E9%98%B6%E7%89%B9%E6%80%A7-%E5%8A%A0%E5%AF%86%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%BD%B1%E5%AD%90%E5%BA%93/" title="ShardingSphere 进阶特性实战：数据加密 / 读写分离 / 影子库">
+                        <span class="hidden-mobile">ShardingSphere 进阶特性实战：数据加密 / 读写分离 / 影子库</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
