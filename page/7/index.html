@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/03/10/2024-03-10-DDIA-04-LSM-Tree%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" target="_self">
-          DDIA-04-从零实现LSM-Tree：日志结构存储引擎的核心思想
+        <a href="/2023/06/13/2023-06-13-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E4%B8%8D%E9%87%8D%E6%9D%A5-%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E6%89%A9%E5%AE%B9/" target="_self">
+          分片扩容不重来：反向索引表用双写 + 灰度切流优雅扩容
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/10/2024-03-10-DDIA-04-LSM-Tree%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/06/13/2023-06-13-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E4%B8%8D%E9%87%8D%E6%9D%A5-%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E6%89%A9%E5%AE%B9/" target="_self">
         <div>
-          为什么需要 LSM-Tree？假设你现在要设计一个简单的键值存储引擎，能想到的最朴素的方式是什么？ 一个带索引的追加写文件。 写入时，在文件末尾追加 key,value，同时维护一个内存哈希表记录 key -&gt; 文件偏移量。读的时候，先用哈希表定位偏移量，再 fseek 读那一行。这其实就是 Bitcask 的核心思路，Riak 的默认存储引擎。 但问题也很明显：内存哈希表必须能装下所有
+          哈希分片扩容的痛：同单号落片变了反向索引表按单号 outer_order_no 哈希分片。假设从 8 片扩到 16 片： 12旧: 单号 X → X % 8  = 3新: 单号 X → X % 16 = 11    ← 路由变了！  片数一变，同一个单号在新旧两套落到了不同分片。取模分片扩容 &#x3D; 推倒重来，不能直接加片数。 扩容难点取决于分片方案扩容难度和分片方案强相关（or_sale
         </div>
       </a>
 
@@ -352,8 +352,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-03-10 09:00" pubdate>
-              2024-03-10
+            <time datetime="2023-06-13 09:00" pubdate>
+              2023-06-13
             </time>
           </div>
         
@@ -368,7 +368,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
   
   
 
@@ -383,17 +383,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/DDIA/">#DDIA</a>
+              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
             
-              <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">#存储引擎</a>
+              <a href="/tags/%E5%8F%8C%E5%86%99/">#双写</a>
             
-              <a href="/tags/RocksDB/">#RocksDB</a>
+              <a href="/tags/%E6%89%A9%E5%AE%B9/">#扩容</a>
             
-              <a href="/tags/LSM-Tree/">#LSM-Tree</a>
+              <a href="/tags/%E7%81%B0%E5%BA%A6/">#灰度</a>
             
-              <a href="/tags/LevelDB/">#LevelDB</a>
+              <a href="/tags/%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95/">#反向索引</a>
             
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E5%86%85%E6%A0%B8/">#数据库内核</a>
+              <a href="/tags/rehash/">#rehash</a>
             
           </div>
         
@@ -407,15 +407,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/02/25/2024-02-25-DDIA-04-B-Tree%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD/" target="_self">
-          DDIA-04-B-Tree：数据库索引的基础设施，为什么它60岁了还在用
+        <a href="/2023/06/04/2023-06-04-%E5%88%86%E7%89%87%E4%B9%8B%E5%90%8E%E7%9A%84%E6%8E%92%E5%BA%8F%E4%B8%8E%E5%88%86%E9%A1%B5%E5%88%B0%E5%BA%95%E6%80%8E%E4%B9%88%E5%81%9A/" target="_self">
+          分片之后的排序与分页，到底怎么做
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/02/25/2024-02-25-DDIA-04-B-Tree%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/06/04/2023-06-04-%E5%88%86%E7%89%87%E4%B9%8B%E5%90%8E%E7%9A%84%E6%8E%92%E5%BA%8F%E4%B8%8E%E5%88%86%E9%A1%B5%E5%88%B0%E5%BA%95%E6%80%8E%E4%B9%88%E5%81%9A/" target="_self">
         <div>
-          深度拆解B-Tree的设计哲学、B+Tree的范围查询优化、InnoDB索引实现细节，并结合日均慢SQL 1124→6条的实战经验，讲透索引优化的核心思想。
+          学习 ShardingSphere 分片后，一个很现实的问题是：分片之后排序和分页怎么办？ 单表一条 LIMIT 搞定，分片后却要先改写、再归并，深分页更是性能灾难。本文讲透原理和几种解法。 本地单表：最朴素1234SELECT * FROM or_sales_infoWHERE trade_time BETWEEN ...ORDER BY trade_time DESCLIMIT 0, 10
         </div>
       </a>
 
@@ -423,8 +423,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-25 09:00" pubdate>
-              2024-02-25
+            <time datetime="2023-06-04 09:00" pubdate>
+              2023-06-04
             </time>
           </div>
         
@@ -439,7 +439,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
   
   
 
@@ -454,19 +454,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/MySQL/">#MySQL</a>
+              <a href="/tags/%E6%8E%92%E5%BA%8F/">#排序</a>
             
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
+              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
             
-              <a href="/tags/DDIA/">#DDIA</a>
+              <a href="/tags/%E5%88%86%E9%A1%B5/">#分页</a>
             
-              <a href="/tags/B-Tree/">#B-Tree</a>
+              <a href="/tags/%E6%B8%B8%E6%A0%87%E5%88%86%E9%A1%B5/">#游标分页</a>
             
-              <a href="/tags/%E7%B4%A2%E5%BC%95/">#索引</a>
+              <a href="/tags/%E6%B7%B1%E5%88%86%E9%A1%B5/">#深分页</a>
             
-              <a href="/tags/InnoDB/">#InnoDB</a>
-            
-              <a href="/tags/%E6%85%A2SQL%E4%BC%98%E5%8C%96/">#慢SQL优化</a>
+              <a href="/tags/ORDER-BY/">#ORDER BY</a>
             
           </div>
         
@@ -480,13 +478,293 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/02/10/2024-02-10-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/" target="_self">
+        <a href="/2023/05/26/2023-05-26-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/" target="_self">
+          ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/05/26/2023-05-26-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/" target="_self">
+        <div>
+          分片落地最痛的往往不是分片本身，而是与现有 ORM 的兼容性。我在把 ShardingSphere 接入 cloud-order（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。 坑1：分页 —— PageHelper 与 ShardingSphere 二选一现象：cloud-dal 的 PageUtils.startPage(
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-05-26 09:00" pubdate>
+              2023-05-26
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E8%B8%A9%E5%9D%91/">#踩坑</a>
+            
+              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+            
+              <a href="/tags/%E5%85%BC%E5%AE%B9%E6%80%A7/">#兼容性</a>
+            
+              <a href="/tags/MyBatis-Plus/">#MyBatis-Plus</a>
+            
+              <a href="/tags/PageHelper/">#PageHelper</a>
+            
+              <a href="/tags/%E5%85%83%E6%95%B0%E6%8D%AE/">#元数据</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/05/18/2023-05-18-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/" target="_self">
+          SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/05/18/2023-05-18-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/" target="_self">
+        <div>
+          真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承 cloud-parentcloud-order
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-05-18 09:00" pubdate>
+              2023-05-18
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/SpringBoot/">#SpringBoot</a>
+            
+              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+            
+              <a href="/tags/%E5%88%86%E9%A1%B5/">#分页</a>
+            
+              <a href="/tags/MyBatis-Plus/">#MyBatis-Plus</a>
+            
+              <a href="/tags/BaseMapper/">#BaseMapper</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/05/09/2023-05-09-ShardingSphere%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-SQL%E5%A6%82%E4%BD%95%E8%A2%AB%E6%94%B9%E5%86%99%E8%B7%AF%E7%94%B1/" target="_self">
+          ShardingSphere 源码解析：一条 SQL 是如何被改写路由的
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/05/09/2023-05-09-ShardingSphere%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-SQL%E5%A6%82%E4%BD%95%E8%A2%AB%E6%94%B9%E5%86%99%E8%B7%AF%E7%94%B1/" target="_self">
+        <div>
+          知其然也要知其所以然。前面用 ShardingSphere 把分片跑通了，我进一步读了源码，搞清楚一条 SQL 在 ShardingSphere 内部到底经历了什么。本文基于 5.4.1 源码，拆解调用链。 总入口：ShardingSQLRouter所有分片路由的门口是 ShardingSQLRouter.createRouteContext()： 1234567891011@org.apach
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-05-09 09:00" pubdate>
+              2023-05-09
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+            
+              <a href="/tags/%E8%B7%AF%E7%94%B1/">#路由</a>
+            
+              <a href="/tags/SQL%E6%94%B9%E5%86%99/">#SQL改写</a>
+            
+              <a href="/tags/%E6%BA%90%E7%A0%81/">#源码</a>
+            
+              <a href="/tags/ShardingSQLRouter/">#ShardingSQLRouter</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/04/30/2023-04-30-6000%E4%B8%87%E8%AE%A2%E5%8D%95%E8%A1%A8%E8%BF%81%E7%A7%BB%E5%88%86%E7%89%87-%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E5%9B%9E%E8%A1%A5/" target="_self">
+          6000万订单表迁移到分片：双写 + 灰度 + 回补 + 回滚全流程
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/04/30/2023-04-30-6000%E4%B8%87%E8%AE%A2%E5%8D%95%E8%A1%A8%E8%BF%81%E7%A7%BB%E5%88%86%E7%89%87-%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E5%9B%9E%E8%A1%A5/" target="_self">
+        <div>
+          迁移的难点：不能停服or_sales_info 有 6000 万存量数据，要从单表改成分片表。最难的不是写分片代码，而是存量数据怎么在业务不停服的情况下迁移过去。 我写了一个综合演练，模拟完整迁移流程（造数 → 双写 → 回补 → 灰度 → 校验 → 性能 → 回滚），下面拆解每一步。 整体流程123456789老单表 or_sales_legacy (6000万)        │ 双写
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-04-30 09:00" pubdate>
+              2023-04-30
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+            
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/">#数据迁移</a>
+            
+              <a href="/tags/%E5%8F%8C%E5%86%99/">#双写</a>
+            
+              <a href="/tags/%E7%81%B0%E5%BA%A6%E5%88%87%E6%8D%A2/">#灰度切换</a>
+            
+              <a href="/tags/%E5%8E%86%E5%8F%B2%E5%9B%9E%E8%A1%A5/">#历史回补</a>
+            
+              <a href="/tags/%E5%9B%9E%E6%BB%9A/">#回滚</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/04/22/2023-04-22-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/" target="_self">
           分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/02/10/2024-02-10-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/04/22/2023-04-22-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/" target="_self">
         <div>
           本文记录一个分片键选型的重要修正：一开始基于”数据按时间查询”选择了时间主分片，但业务确认所有事件都按单号处理后，修正为单号主分片。这个修正过程本身就是分片键选型的最好案例。  一、初始思考：按时间查 + 按单号查，一个分片键不够or_sales_info 有 6000 万数据，最初看到两个查询入口：  按时间查：WHERE trade_time BETWEEN ... 按平台单号查：WHER
         </div>
@@ -496,8 +774,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-10 09:00" pubdate>
-              2024-02-10
+            <time datetime="2023-04-22 09:00" pubdate>
+              2023-04-22
             </time>
           </div>
         
@@ -551,13 +829,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/01/27/2024-01-27-ShardingSphere%E8%BF%9B%E9%98%B6%E7%89%B9%E6%80%A7-%E5%8A%A0%E5%AF%86%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%BD%B1%E5%AD%90%E5%BA%93/" target="_self">
+        <a href="/2023/04/13/2023-04-13-ShardingSphere%E8%BF%9B%E9%98%B6%E7%89%B9%E6%80%A7-%E5%8A%A0%E5%AF%86%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%BD%B1%E5%AD%90%E5%BA%93/" target="_self">
           ShardingSphere 进阶特性实战：数据加密 / 读写分离 / 影子库
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/27/2024-01-27-ShardingSphere%E8%BF%9B%E9%98%B6%E7%89%B9%E6%80%A7-%E5%8A%A0%E5%AF%86%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%BD%B1%E5%AD%90%E5%BA%93/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/04/13/2023-04-13-ShardingSphere%E8%BF%9B%E9%98%B6%E7%89%B9%E6%80%A7-%E5%8A%A0%E5%AF%86%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%BD%B1%E5%AD%90%E5%BA%93/" target="_self">
         <div>
           分片只是 ShardingSphere 的基础，生产真正要落地，还得配合三个进阶特性：数据加密、读写分离、影子库。本文逐一实战验证。 1. 数据加密（Encrypt）：敏感字段落库即密文or_sales_info 里有手机号、身份证等敏感字段。需求：落库必须是密文（防泄露），但应用读到的还是明文。 ShardingSphere 的 Encrypt 特性：  INSERT 时自动用 AES 加密
         </div>
@@ -567,8 +845,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-01-27 09:00" pubdate>
-              2024-01-27
+            <time datetime="2023-04-13 09:00" pubdate>
+              2023-04-13
             </time>
           </div>
         
@@ -620,13 +898,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/01/13/2024-01-13-ShardingSphere%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87%E5%AE%9E%E6%88%98/" target="_self">
+        <a href="/2023/04/05/2023-04-05-ShardingSphere%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87%E5%AE%9E%E6%88%98/" target="_self">
           ShardingSphere 时间分片实战：INTERVAL vs AUTO_INTERVAL 与跨年处理
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/13/2024-01-13-ShardingSphere%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87%E5%AE%9E%E6%88%98/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/04/05/2023-04-05-ShardingSphere%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87%E5%AE%9E%E6%88%98/" target="_self">
         <div>
           时间分片为什么要单独讲订单、流水、日志这类数据天然按时间查询，而且数据量随时间只增不减。时间分片（月表&#x2F;日表）是处理这类数据最自然的方式——但实际做起来有几个坑，尤其是跨年。 INTERVAL：真自然月分片INTERVAL 算法按时间区间自动路由到对应月表： 1234567Properties props = new Properties();props.setProperty(&qu
         </div>
@@ -636,8 +914,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-01-13 09:00" pubdate>
-              2024-01-13
+            <time datetime="2023-04-05 09:00" pubdate>
+              2023-04-05
             </time>
           </div>
         
@@ -691,15 +969,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/12/29/2023-12-29-DDIA-03-%E5%A4%9A%E6%A8%A1%E5%9E%8B%E5%AD%98%E5%82%A8%E7%AD%96%E7%95%A5/" target="_self">
-          DDIA-03-实战：订单中心的多模型存储策略——MySQL主库+ES搜索+HBase归档
+        <a href="/2023/03/27/2023-03-27-ShardingSphere%E7%BB%91%E5%AE%9A%E8%A1%A8%E4%B8%8E%E5%B9%BF%E6%92%AD%E8%A1%A8/" target="_self">
+          ShardingSphere 绑定表与广播表：JOIN 与配置表的两大解法
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/12/29/2023-12-29-DDIA-03-%E5%A4%9A%E6%A8%A1%E5%9E%8B%E5%AD%98%E5%82%A8%E7%AD%96%E7%95%A5/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/03/27/2023-03-27-ShardingSphere%E7%BB%91%E5%AE%9A%E8%A1%A8%E4%B8%8E%E5%B9%BF%E6%92%AD%E8%A1%A8/" target="_self">
         <div>
-          一个存储引擎打天下的时代过去了。本文以日订单峰值130万的订单中心为例，拆解MySQL主存储、Elasticsearch搜索引擎、HBase归档存储三者如何协同工作。
+          JOIN 在分片下的尴尬分库分表后，JOIN 是个老大难。以订单为例：or_sales_info 和 or_sales_item 都在分片，按 order_id 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生笛卡尔积——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。 绑定表：解决分片表 JOIN绑定表的本质是
         </div>
       </a>
 
@@ -707,8 +985,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-12-29 09:00" pubdate>
-              2023-12-29
+            <time datetime="2023-03-27 09:00" pubdate>
+              2023-03-27
             </time>
           </div>
         
@@ -723,7 +1001,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
   
   
 
@@ -738,267 +1016,15 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
+              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
             
-              <a href="/tags/DDIA/">#DDIA</a>
+              <a href="/tags/%E7%BB%91%E5%AE%9A%E8%A1%A8/">#绑定表</a>
             
-              <a href="/tags/%E6%9E%B6%E6%9E%84/">#架构</a>
+              <a href="/tags/%E5%B9%BF%E6%92%AD%E8%A1%A8/">#广播表</a>
             
-              <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
+              <a href="/tags/JOIN/">#JOIN</a>
             
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2023/12/15/2023-12-15-DDIA-03-%E5%A4%9A%E5%AF%B9%E5%A4%9A%E5%85%B3%E7%B3%BB%E5%BB%BA%E6%A8%A1/" target="_self">
-          DDIA-03-多对多关系的数据库建模：从中间表到图遍历
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/12/15/2023-12-15-DDIA-03-%E5%A4%9A%E5%AF%B9%E5%A4%9A%E5%85%B3%E7%B3%BB%E5%BB%BA%E6%A8%A1/" target="_self">
-        <div>
-          一个让你血压飙升的查询去年年底，产品经理提了一个需求：给定一个供应商，查出它关联的所有订单的履约状态。听起来简单，对吧？ 但我们的数据链路是这样的：供应商→仓库→库存→商品→订单。五跳。 运营同学在后台点了一下查询，我去接水。水接完了，页面还在转圈。SQL执行了36秒。 这就是多对多关系建模不当的真实后果。今天我们来把这件事说透——不堆理论，只讲实战。 为什么多对多关系是最难的数据建模问题一对一
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-12-15 09:00" pubdate>
-              2023-12-15
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/">#数据模型</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1/">#数据库设计</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2023/12/01/2023-12-01-DDIA-03-%E5%A3%B0%E6%98%8E%E5%BC%8F%E6%9F%A5%E8%AF%A2vs-ORM/" target="_self">
-          DDIA-03-声明式查询的力量：为什么ORM有时候是你的敌人
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/12/01/2023-12-01-DDIA-03-%E5%A3%B0%E6%98%8E%E5%BC%8F%E6%9F%A5%E8%AF%A2vs-ORM/" target="_self">
-        <div>
-          本文是《Designing Data-Intensive Applications》（DDIA）读书笔记系列第3篇。前两篇我们聊了数据模型和存储引擎，今天来聊一个每个Java后端工程师每天都在用、但很少认真思考的话题：声明式查询与命令式查询的分野，以及ORM到底在帮你还是在害你。  两种范式：你要什么 vs 你怎么做SQL 和 Java 代码代表了两种截然不同的编程范式。 声明式（Declara
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-12-01 09:00" pubdate>
-              2023-12-01
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">读书笔记</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/SQL/">#SQL</a>
-            
-              <a href="/tags/ORM/">#ORM</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2023/11/16/2023-11-16-DDIA-03-%E5%9B%BE%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" target="_self">
-          DDIA-03-图数据模型：当你的订单关联比二叉树还复杂
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/11/16/2023-11-16-DDIA-03-%E5%9B%BE%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" target="_self">
-        <div>
-          供应链中台实战：为什么SQL JOIN不是万能的，以及图数据库什么时候值得放进工具箱。
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-11-16 09:00" pubdate>
-              2023-11-16
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/DDIA/%E6%95%B0%E6%8D%AE%E7%B3%BB%E7%BB%9F/" class="category-chain-item">数据系统</a>
-  
-  
-
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/">#数据模型</a>
-            
-              <a href="/tags/%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/">#图数据库</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2023/11/02/2023-11-02-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/" target="_self">
-          DDIA-03-关系模型vs文档模型：电商订单该存MySQL还是MongoDB
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/11/02/2023-11-02-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/" target="_self">
-        <div>
-          从130万日订单实战出发，深度对比关系模型与文档模型在电商订单场景中的选型逻辑。不是二选一，是场景匹配。
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-11-02 09:00" pubdate>
-              2023-11-02
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/MongoDB/">#MongoDB</a>
-            
-              <a href="/tags/MySQL/">#MySQL</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/">#数据模型</a>
-            
-              <a href="/tags/%E8%AE%A2%E5%8D%95%E7%B3%BB%E7%BB%9F/">#订单系统</a>
-            
-              <a href="/tags/%E6%9E%B6%E6%9E%84%E9%80%89%E5%9E%8B/">#架构选型</a>
+              <a href="/tags/%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF/">#笛卡尔积</a>
             
           </div>
         

@@ -1,0 +1,897 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="分片落地最痛的往往不是分片本身，而是与现有 ORM 的兼容性。我在把 ShardingSphere 接入 cloud-order（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。 坑1：分页 —— PageHelper 与 ShardingSphere 二选一现象：cloud-dal 的 PageUtils.startPage(">
+<meta property="og:type" content="article">
+<meta property="og:title" content="ShardingSphere 与 ORM 兼容性踩坑合集（分页 &#x2F; 元数据 &#x2F; 拦截器）">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2023/05/26/2023-05-26-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="分片落地最痛的往往不是分片本身，而是与现有 ORM 的兼容性。我在把 ShardingSphere 接入 cloud-order（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。 坑1：分页 —— PageHelper 与 ShardingSphere 二选一现象：cloud-dal 的 PageUtils.startPage(">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-05-26T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T11:09:04.374Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="MyBatis-Plus">
+<meta property="article:tag" content="PageHelper">
+<meta property="article:tag" content="ShardingSphere">
+<meta property="article:tag" content="元数据">
+<meta property="article:tag" content="兼容性">
+<meta property="article:tag" content="踩坑">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器） - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-05-26 09:00" pubdate>
+          2023年5月26日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          20 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<p>分片落地最痛的往往不是分片本身，而是<strong>与现有 ORM 的兼容性</strong>。我在把 ShardingSphere 接入 cloud-order（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。</p>
+<h2 id="坑1：分页-——-PageHelper-与-ShardingSphere-二选一"><a href="#坑1：分页-——-PageHelper-与-ShardingSphere-二选一" class="headerlink" title="坑1：分页 —— PageHelper 与 ShardingSphere 二选一"></a>坑1：分页 —— PageHelper 与 ShardingSphere 二选一</h2><p><strong>现象</strong>：cloud-dal 的 <code>PageUtils.startPage()</code> 用的是 <strong>PageHelper 5.3.0</strong>（独立分页库），而 ShardingSphere 自己也带分页改写。两个分页机制叠加，SQL 被重复追加 LIMIT。</p>
+<p><strong>源码确认</strong>：<code>PageUtils.startPage → PageHelper.startPage()</code>；而 <code>MybatisPlusAutoConfig</code> 里 <code>PaginationInnerInterceptor</code> 默认 <code>pagePluginEnable=false</code>（关闭）。所以 cloud-dal 实际用 PageHelper 分页。</p>
+<p><strong>解法</strong>：<strong>分页必须二选一</strong>，不能两个分页拦截器并存。</p>
+<ul>
+<li>保留 PageHelper → 关闭 ShardingSphere 分页改写（不推荐）</li>
+<li><strong>废除 PageHelper，改用 ShardingSphere 或 MyBatis-Plus 原生分页（推荐）</strong></li>
+</ul>
+<blockquote>
+<p>实测：MyBatis-Plus 的 <code>PaginationInnerInterceptor</code> 与 ShardingSphere 协同正常，<code>total/pages</code> 跨分片正确。这是我验证过最稳的组合。</p>
+</blockquote>
+<h2 id="坑2：物理表必须先建，再构造-ShardingSphere-数据源"><a href="#坑2：物理表必须先建，再构造-ShardingSphere-数据源" class="headerlink" title="坑2：物理表必须先建，再构造 ShardingSphere 数据源"></a>坑2：物理表必须先建，再构造 ShardingSphere 数据源</h2><p><strong>现象</strong>：Spring Boot 里逻辑表报 <code>Table or view &#39;t_demo_order&#39; does not exist</code>。</p>
+<p><strong>根因</strong>：<code>shardingDataSource()</code> 这个 <code>@Bean</code> 在容器早期创建，ShardingSphere 扫描元数据时若物理表还没建，元数据是<strong>空白快照</strong>。而 <code>@Component</code> 的 <code>CommandLineRunner</code> 建表在容器 ready 后，太晚了。</p>
+<p><strong>解法</strong>：在 <code>shardingDataSource()</code> Bean 方法内部、构造数据源前<strong>先建物理分片表（幂等）</strong>。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Bean</span><br><span class="hljs-keyword">public</span> DataSource <span class="hljs-title function_">shardingDataSource</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception &#123;<br>    createShardTables();   <span class="hljs-comment">// 1) 先建表</span><br>    <span class="hljs-keyword">return</span> ShardingSphereDataSourceFactory.createDataSource(...); <span class="hljs-comment">// 2) 再构造</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="坑3：非分片单表元数据不自动注册"><a href="#坑3：非分片单表元数据不自动注册" class="headerlink" title="坑3：非分片单表元数据不自动注册"></a>坑3：非分片单表元数据不自动注册</h2><p><strong>现象</strong>：读写分离&#x2F;影子库配置的<strong>单表</strong>报”表不存在”，但分片表正常。</p>
+<p><strong>根因</strong>：ShardingSphere 5.x 对非分片单表，JDBC 方式元数据可能不自动注册。</p>
+<p><strong>解法</strong>：<strong>叠加一条单表分片规则</strong>强制注册进元数据：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">ShardingTableRuleConfiguration</span> <span class="hljs-variable">tbRule</span> <span class="hljs-operator">=</span><br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">ShardingTableRuleConfiguration</span>(<span class="hljs-string">&quot;t_rw_order&quot;</span>, <span class="hljs-string">&quot;sds0.t_rw_order&quot;</span>);  <span class="hljs-comment">// 单节点</span><br>shardingRule.getTables().add(tbRule);<br></code></pre></td></tr></table></figure>
+
+<h2 id="坑4：读写分离-影子库的分片表节点要挂逻辑数据源"><a href="#坑4：读写分离-影子库的分片表节点要挂逻辑数据源" class="headerlink" title="坑4：读写分离&#x2F;影子库的分片表节点要挂逻辑数据源"></a>坑4：读写分离&#x2F;影子库的分片表节点要挂逻辑数据源</h2><p><strong>现象</strong>：读写分离没生效 &#x2F; 影子路由不生效。</p>
+<p><strong>根因</strong>：分片表的 <code>actualDataNodes</code> 数据源写成了裸物理数据源，而不是读写分离&#x2F;影子逻辑库。</p>
+<ul>
+<li>读写分离逻辑库名 &#x3D; <code>rw0</code></li>
+<li>影子逻辑库名 &#x3D; <code>sds0</code></li>
+</ul>
+<p><strong>正确写法</strong>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 读写分离: 挂 rw0</span><br><span class="hljs-string">&quot;rw0.t_rw_order_$&#123;0..3&#125;&quot;</span><br><span class="hljs-comment">// 影子库: 挂 sds0</span><br><span class="hljs-string">&quot;sds0.t_shadow_order&quot;</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="坑5：cloud-parent-生态里-SpringBootApplication-被中间件卡死"><a href="#坑5：cloud-parent-生态里-SpringBootApplication-被中间件卡死" class="headerlink" title="坑5：cloud-parent 生态里 @SpringBootApplication 被中间件卡死"></a>坑5：cloud-parent 生态里 @SpringBootApplication 被中间件卡死</h2><p><strong>现象</strong>：order-service 加 <code>@SpringBootApplication</code> 启动报 Seata&#x2F;Dubbo&#x2F;Redis 找不到配置或连不上。</p>
+<p><strong>根因</strong>：cloud-parent 带入大量中间件，spring.factories 注册了自动配置，<code>@SpringBootApplication</code> 全部加载。</p>
+<p><strong>解法</strong>（二选一）：</p>
+<ol>
+<li><code>@SpringBootApplication(exclude={...})</code> 排除所有中间件自动配置（清单很长且会漏）</li>
+<li><strong>新建独立模块，parent 用 spring-boot-starter-parent，只依赖干净依赖（推荐）</strong></li>
+</ol>
+<h2 id="坑6：Groovy-不兼容-Java-21"><a href="#坑6：Groovy-不兼容-Java-21" class="headerlink" title="坑6：Groovy 不兼容 Java 21"></a>坑6：Groovy 不兼容 Java 21</h2><p><strong>现象</strong>：INLINE 表达式里调 Java 对象方法报 Groovy 编译错。</p>
+<p><strong>根因</strong>：ShardingSphere 5.4.1 内置 Groovy 版本过老，不支持 Java 21 class 文件。</p>
+<p><strong>解法</strong>：INLINE 里只做简单的 <code>% 运算</code>；时间分片用 INTERVAL；字符串分片用 HASH_MOD。</p>
+<h2 id="排查手段总结"><a href="#排查手段总结" class="headerlink" title="排查手段总结"></a>排查手段总结</h2><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>手段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>路由不对</td>
+<td><code>sql-show=true</code> 看 Logic → Actual SQL</td>
+</tr>
+<tr>
+<td>版本冲突</td>
+<td><code>mvn dependency:tree</code></td>
+</tr>
+<tr>
+<td>API&#x2F;SPI type 不确定</td>
+<td>用 sources jar 反编译看</td>
+</tr>
+<tr>
+<td>数据落库不对</td>
+<td>底层 JDBC 直查物理表确认分布</td>
+</tr>
+</tbody></table>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>兼容性坑的共性问题就几个：<strong>分页二选一、物理表先建、元数据注册、逻辑数据源挂载</strong>。提前知道这些，能省掉大量调试时间。最推荐的生产组合：<strong>SpringBoot + MyBatis-Plus（原生分页）+ ShardingSphere</strong>，已在独立模块完整验证。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E8%B8%A9%E5%9D%91/" class="print-no-link">#踩坑</a>
+      
+        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
+      
+        <a href="/tags/%E5%85%BC%E5%AE%B9%E6%80%A7/" class="print-no-link">#兼容性</a>
+      
+        <a href="/tags/MyBatis-Plus/" class="print-no-link">#MyBatis-Plus</a>
+      
+        <a href="/tags/PageHelper/" class="print-no-link">#PageHelper</a>
+      
+        <a href="/tags/%E5%85%83%E6%95%B0%E6%8D%AE/" class="print-no-link">#元数据</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）</div>
+      <div>https://aster-xu-lab.github.io/2023/05/26/2023-05-26-ShardingSphere兼容性踩坑合集/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年5月26日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/06/04/2023-06-04-%E5%88%86%E7%89%87%E4%B9%8B%E5%90%8E%E7%9A%84%E6%8E%92%E5%BA%8F%E4%B8%8E%E5%88%86%E9%A1%B5%E5%88%B0%E5%BA%95%E6%80%8E%E4%B9%88%E5%81%9A/" title="分片之后的排序与分页，到底怎么做">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">分片之后的排序与分页，到底怎么做</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/05/18/2023-05-18-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/" title="SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战">
+                        <span class="hidden-mobile">SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

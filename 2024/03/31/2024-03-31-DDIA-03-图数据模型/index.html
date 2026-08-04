@@ -1,0 +1,954 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="供应链中台实战：为什么SQL JOIN不是万能的，以及图数据库什么时候值得放进工具箱。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-03-图数据模型：当你的订单关联比二叉树还复杂">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/03/31/2024-03-31-DDIA-03-%E5%9B%BE%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="供应链中台实战：为什么SQL JOIN不是万能的，以及图数据库什么时候值得放进工具箱。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-03-31T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T11:09:04.377Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="图数据库">
+<meta property="article:tag" content="数据模型">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-03-图数据模型：当你的订单关联比二叉树还复杂 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-03-图数据模型：当你的订单关联比二叉树还复杂"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-03-31 09:00" pubdate>
+          2024年3月31日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          50 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-03-图数据模型：当你的订单关联比二叉树还复杂</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="引言：当-JOIN-变成噩梦"><a href="#引言：当-JOIN-变成噩梦" class="headerlink" title="引言：当 JOIN 变成噩梦"></a>引言：当 JOIN 变成噩梦</h2><p>去年双十一大促复盘时，运营问了一个问题：”最近30天，有多少订单是因为同一辆配送车超载导致拆单的？我们要评估运力不足对用户体验的影响。”</p>
+<p>听起来是个合理的数据查询需求，对吧？</p>
+<p>我打开 cloud-supplychain-planning 的数据模型，画了一张关联图：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs objectivec">订单 → 订单明细 → <span class="hljs-built_in">SKU</span> → 波次 → 配送单 → 车辆 → 装载记录<br>                      ↘ 仓库 → 库位 → 拣货任务<br>                      ↘ 供应商 → 采购单 → 入库单<br></code></pre></td></tr></table></figure>
+
+<p>要回答运营的问题，SQL 需要 JOIN 7 张表，而且还有自关联（一个波次拆出多个配送单，配送单之间互相关联）。写完这个查询，代码审查时同事问：”这 SQL 写了 80 行，能跑吗？”</p>
+<p>能跑倒是能跑，但跑一次要 40 秒。而这个数据是运营每天早会都要的。</p>
+<p>这个问题让我开始思考：<strong>我们一直在用关系数据库建模一切，但有些关系天然不是”表”，而是”网”。</strong></p>
+<p>供应链上下游、用户推荐关系、物料 BOM 结构——这些数据的内在形态是一张图。用表去模拟图，就像用螺丝刀当锤子使，能敲进去，但每次都很别扭。</p>
+<h2 id="一、图的本质：顶点和边"><a href="#一、图的本质：顶点和边" class="headerlink" title="一、图的本质：顶点和边"></a>一、图的本质：顶点和边</h2><p>图数据模型的核心只有两个概念：</p>
+<p><strong>顶点（Vertex）</strong>：实体。比如一个用户、一个订单、一个仓库、一个 SKU。</p>
+<p><strong>边（Edge）</strong>：关系。比如”下单”、”包含”、”存放于”、”依赖”。</p>
+<p>一条边连接两个顶点，可以有方向（有向图），也可以带属性（属性图）。比如：</p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs scss">(用户A) -<span class="hljs-selector-attr">[:下单 &#123;时间: <span class="hljs-string">&quot;2026-01-15&quot;</span>&#125;]</span> → (订单<span class="hljs-number">12345</span>)<br>(订单<span class="hljs-number">12345</span>) -<span class="hljs-selector-attr">[:包含 &#123;数量: 3&#125;]</span> → (SKU-<span class="hljs-number">789</span>)<br>(SKU-<span class="hljs-number">789</span>) -<span class="hljs-selector-attr">[:需要]</span> → (原材料X)<br>(原材料X) -<span class="hljs-selector-attr">[:供应商是]</span> → (供应商S)<br></code></pre></td></tr></table></figure>
+
+<p>这就是属性图模型——Neo4j 等主流图数据库的实现方式。每个顶点有标签（如 <code>User</code>、<code>Order</code>），每条边有类型（如 <code>PLACED</code>、<code>CONTAINS</code>），顶点和边都可以携带 key-value 属性。</p>
+<p>还有一种学术上更严谨的三元组模型（RDF），用「主体-谓词-客体」表示所有关系，比如 <code>(订单12345, 包含, SKU-789)</code>。它的优势在于语义网的标准化，但在工程实践中，属性图因为更接近开发者直觉而占据了主流。本文后面的讨论都基于属性图。</p>
+<h3 id="为什么-SQL-不擅长图？"><a href="#为什么-SQL-不擅长图？" class="headerlink" title="为什么 SQL 不擅长图？"></a>为什么 SQL 不擅长图？</h3><p>关系数据库的核心抽象是”表 &#x3D; 行的集合”，查询靠 JOIN 连接表。这个模型对”一对多”关系非常高效：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 查用户的订单，一次 JOIN，轻松</span><br><span class="hljs-keyword">SELECT</span> u.name, o.order_id<br><span class="hljs-keyword">FROM</span> users u <span class="hljs-keyword">JOIN</span> orders o <span class="hljs-keyword">ON</span> u.id <span class="hljs-operator">=</span> o.user_id<br><span class="hljs-keyword">WHERE</span> u.id <span class="hljs-operator">=</span> <span class="hljs-number">42</span>;<br></code></pre></td></tr></table></figure>
+
+<p>但图的特点是”多对多、多跳”——要走多步才能到达目标，而且路径长度事先不知道。比如”找用户A的二度人脉”：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 用 SQL 写二度人脉</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">DISTINCT</span> f3.name<br><span class="hljs-keyword">FROM</span> users u1<br><span class="hljs-keyword">JOIN</span> friendships f1 <span class="hljs-keyword">ON</span> u1.id <span class="hljs-operator">=</span> f1.user_id<br><span class="hljs-keyword">JOIN</span> users u2 <span class="hljs-keyword">ON</span> f1.friend_id <span class="hljs-operator">=</span> u2.id<br><span class="hljs-keyword">JOIN</span> friendships f2 <span class="hljs-keyword">ON</span> u2.id <span class="hljs-operator">=</span> f2.user_id<br><span class="hljs-keyword">JOIN</span> users u3 <span class="hljs-keyword">ON</span> f2.friend_id <span class="hljs-operator">=</span> u3.id<br><span class="hljs-keyword">WHERE</span> u1.name <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;A&#x27;</span> <span class="hljs-keyword">AND</span> u3.id <span class="hljs-operator">!=</span> u1.id;<br></code></pre></td></tr></table></figure>
+
+<p>这才两跳就 JOIN 了 4 张表。三度人脉再加两个 JOIN。N 度人脉？你没法在 SQL 里写一个参数化的”走 N 步”——要么用递归 CTE 硬上，要么限制最大深度，每次都改 SQL。</p>
+<p>而用图数据库的 Cypher 查询语言：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs cypher">MATCH (u1:User &#123;name: &#x27;A&#x27;&#125;)-[:FRIEND_OF*2]-(u3:User)<br>WHERE u1 &lt;&gt; u3<br>RETURN DISTINCT u3.name<br></code></pre></td></tr></table></figure>
+
+<p><code>*2</code> 改成 <code>*3</code> 就是三度，改成 <code>*1..5</code> 就是 1 到 5 度。<strong>路径深度成了查询语言的一等公民，而不是 SQL 里需要绕弯子的东西。</strong></p>
+<h2 id="二、什么时候图数据库比关系数据库更合适"><a href="#二、什么时候图数据库比关系数据库更合适" class="headerlink" title="二、什么时候图数据库比关系数据库更合适"></a>二、什么时候图数据库比关系数据库更合适</h2><p>不是说所有场景都应该用图数据库。选择存储模型要看查询模式。</p>
+<h3 id="图数据库的甜点区"><a href="#图数据库的甜点区" class="headerlink" title="图数据库的甜点区"></a>图数据库的甜点区</h3><p><strong>场景 1：路径查找</strong></p>
+<p>“从供应商A到仓库B，经过哪些中转节点？”——这是典型的图遍历，每次走一条边、看相邻节点。图数据库的存储引擎针对这种访问模式做了优化：顶点和它的邻边在磁盘上通常存储在一起，一次 I&#x2F;O 就能拿到。</p>
+<p>关系数据库做同样的事，每次”走一步”都是一次 JOIN，而 JOIN 需要索引查找、可能跨页——随着跳数增加，代价指数上升。</p>
+<p><strong>场景 2：多跳关联查询</strong></p>
+<p>“这个缺陷零件影响了哪些成品，这些成品发给了哪些客户？”——从零件追溯到成品再追溯到客户，三跳起步。供应链里这种追溯查询非常常见。图数据库的遍历时间复杂度是 O(度数 × 跳数)，而 SQL JOIN 在缺少恰当索引时会退化到 O(n²)。</p>
+<p>关于这个问题，DDIA 第二章引用了 Michael Stonebraker 等人的一篇经典论文《The End of an Architectural Era》，核心观点是：<strong>传统 RDBMS 的架构是为 1970 年代的商业数据处理设计的</strong>，行存储、B+树索引、基于 JOIN 的查询优化器——这些都假设数据以”记录”为单位被访问。而图遍历、列式分析、流处理这些现代场景需要完全不同的架构。图数据库就是这种”专用化”趋势的代表。</p>
+<p><strong>场景 3：推荐和模式发现</strong></p>
+<p>“买了这个 SKU 的用户还买了什么？”——电商推荐引擎底层是用户-商品二分图。用 Cypher 可以很自然地表达：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cypher">MATCH (u:User)-[:PURCHASED]-&gt;(:Product &#123;id: 789&#125;)&lt;-[:PURCHASED]-(other:User)-[:PURCHASED]-&gt;(rec:Product)<br>WHERE rec.id &lt;&gt; 789<br>RETURN rec.name, count(*) AS frequency<br>ORDER BY frequency DESC<br>LIMIT 10;<br></code></pre></td></tr></table></figure>
+
+<p>逻辑清晰：找到同样买了这个商品的用户，看他们还买了什么。用 SQL 写要两次自关联 GROUP BY，可读性差一截。</p>
+<h3 id="图数据库不应该做什么"><a href="#图数据库不应该做什么" class="headerlink" title="图数据库不应该做什么"></a>图数据库不应该做什么</h3><p>坦率说，在我们的 130 万日订单场景里，图数据库不是主存储——也不会是。</p>
+<p>原因很简单：订单本身是典型的”记录”模型，订单的核心操作是”增删改查单条记录”，偶尔做范围扫描（”某时间段内的所有订单”）。这些是关系数据库的强项。把订单数据全部灌进图数据库，写入性能不如 MySQL，生态工具也不如 MySQL 成熟。</p>
+<p>所以<strong>图不是替代，是补充</strong>。主链路还是 MySQL + Redis + Elasticsearch，图数据库作为分析工具存在——离线把订单、用户、商品之间的关系导入 Neo4j，让数据团队用它做关联分析和模式发现。</p>
+<h2 id="三、实战：供应链-BOM-关系——递归-CTE-的维护之痛"><a href="#三、实战：供应链-BOM-关系——递归-CTE-的维护之痛" class="headerlink" title="三、实战：供应链 BOM 关系——递归 CTE 的维护之痛"></a>三、实战：供应链 BOM 关系——递归 CTE 的维护之痛</h2><p>回到我们的 cloud-supplychain-planning 项目。</p>
+<p>供应链计划里最核心也最头疼的数据结构之一是 <strong>BOM（Bill of Materials，物料清单）</strong>。一个成品由多个半成品组成，半成品又由其他半成品或原材料组成——形成一棵多层的物料树。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs x86asm">成品手机<br>├── 主板<br>│   ├── <span class="hljs-meta">CPU</span><br>│   │   └── 晶圆<br>│   ├── 内存颗粒<br>│   └── PCB板<br>├── 屏幕模组<br>│   ├── 玻璃面板<br>│   ├── 触摸层<br>│   └── OLED面板<br>└── 电池<br>    └── 电芯<br></code></pre></td></tr></table></figure>
+
+<p>这个结构在 MySQL 里的经典建模是「物料主数据表 + 物料关系表」：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 物料关系表</span><br><span class="hljs-keyword">CREATE TABLE</span> bom_relation (<br>    id <span class="hljs-type">BIGINT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    parent_material_id <span class="hljs-type">BIGINT</span> <span class="hljs-keyword">NOT NULL</span>,  <span class="hljs-comment">-- 父物料</span><br>    child_material_id <span class="hljs-type">BIGINT</span> <span class="hljs-keyword">NOT NULL</span>,   <span class="hljs-comment">-- 子物料</span><br>    quantity <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">10</span>,<span class="hljs-number">4</span>) <span class="hljs-keyword">NOT NULL</span>,     <span class="hljs-comment">-- 用量</span><br>    ...<br>);<br></code></pre></td></tr></table></figure>
+
+<p>问题来了：<strong>生产计划需要把成品需求展开到所有底层原材料</strong>。这叫 BOM 展开。</p>
+<h3 id="SQL-递归-CTE-方案"><a href="#SQL-递归-CTE-方案" class="headerlink" title="SQL 递归 CTE 方案"></a>SQL 递归 CTE 方案</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">WITH</span> <span class="hljs-keyword">RECURSIVE</span> bom_explosion <span class="hljs-keyword">AS</span> (<br>    <span class="hljs-comment">-- 起点：成品本身</span><br>    <span class="hljs-keyword">SELECT</span> child_material_id, quantity, <span class="hljs-number">1</span> <span class="hljs-keyword">AS</span> level<br>    <span class="hljs-keyword">FROM</span> bom_relation<br>    <span class="hljs-keyword">WHERE</span> parent_material_id <span class="hljs-operator">=</span> ?<br>    <br>    <span class="hljs-keyword">UNION</span> <span class="hljs-keyword">ALL</span><br>    <br>    <span class="hljs-comment">-- 递归：往下一层</span><br>    <span class="hljs-keyword">SELECT</span> br.child_material_id, <br>           be.quantity <span class="hljs-operator">*</span> br.quantity, <br>           be.level <span class="hljs-operator">+</span> <span class="hljs-number">1</span><br>    <span class="hljs-keyword">FROM</span> bom_explosion be<br>    <span class="hljs-keyword">JOIN</span> bom_relation br <span class="hljs-keyword">ON</span> be.child_material_id <span class="hljs-operator">=</span> br.parent_material_id<br>    <span class="hljs-keyword">WHERE</span> be.level <span class="hljs-operator">&lt;</span> <span class="hljs-number">20</span><br>)<br><span class="hljs-keyword">SELECT</span> child_material_id, <span class="hljs-built_in">SUM</span>(quantity)<br><span class="hljs-keyword">FROM</span> bom_explosion<br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> child_material_id;<br></code></pre></td></tr></table></figure>
+
+<p>这个方案能跑。但现实中的问题不在查询本身，而在于：</p>
+<ol>
+<li><p><strong>数据质量问题</strong>：BOM 里偶尔会有循环引用——A 包含 B，B 包含 C，C 又引用了 A。递归 CTE 遇到循环直接报错或死循环，所以必须加 <code>level &lt; 20</code> 这种防御。但问题是，循环本身是数据异常，查询不报错不代表数据没问题——这种异常就被默默地截断了。</p>
+</li>
+<li><p><strong>中间层物料的需求合并</strong>：BOM 展开不只是”一直拆到底”，有时需要停在某些中间层物料上（因为该物料有独立库存）。SQL 方案只能”全拆”或”不拆”，做不到”条件性停止”。</p>
+</li>
+<li><p><strong>维护成本</strong>：每次加一个业务规则（比如”跳过停用物料”、”考虑损耗率”），都要往递归 CTE 里加 JOIN 和 CASE WHEN。三个月后递归 CTE 膨胀到 120 行，维护它的同事已经转岗了。</p>
+</li>
+</ol>
+<h3 id="图数据库方案"><a href="#图数据库方案" class="headerlink" title="图数据库方案"></a>图数据库方案</h3><p>同样的 BOM 展开，用 Cypher：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs cypher">MATCH path = (finished:Material &#123;type: &#x27;FINISHED&#x27;&#125;)-[:BOM_CONTAINS*1..15]-&gt;(raw:Material &#123;type: &#x27;RAW&#x27;&#125;)<br>WHERE finished.id = &#x27;SKU-789&#x27;<br>RETURN raw.id AS material_id, <br>       reduce(qty = 1, r IN relationships(path) | qty * r.quantity) AS total_quantity<br></code></pre></td></tr></table></figure>
+
+<p>循环引用？图数据库的遍历引擎自带循环检测——同一个顶点在同一条路径中不会重复出现（Neo4j 的 <code>MATCH</code> 默认去重 ID）。条件性停止？加个 <code>WHERE</code> 在路径中间就行：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs cypher">MATCH path = (finished:Material &#123;type: &#x27;FINISHED&#x27;&#125;)-[:BOM_CONTAINS*1..15]-&gt;(mid:Material)<br>WHERE mid.independent_stock = false  -- 跳过有独立库存的中间层<br></code></pre></td></tr></table></figure>
+
+<p>关键是：<strong>这 6 行 Cypher 把递归逻辑完全委托给了数据库引擎</strong>，不用自己管理递归终止条件。复杂度的转移就是价值的所在。</p>
+<h3 id="实话实说"><a href="#实话实说" class="headerlink" title="实话实说"></a>实话实说</h3><p>我们的生产环境并没把 BOM 全部迁移到图数据库——切换存储的成本太高，而且 BOM 的增删改查还是主链路。但我们用 Neo4j 建了一个<strong>BOM 分析副本</strong>：每天晚上把 MySQL 的 BOM 数据同步到图数据库，供计划团队做路径分析、循环依赖检测、影响面评估。效果超出预期——以前要跑 30 分钟的全链路物料追溯，现在秒级出结果。</p>
+<h2 id="四、130万日订单：图数据库的真实定位"><a href="#四、130万日订单：图数据库的真实定位" class="headerlink" title="四、130万日订单：图数据库的真实定位"></a>四、130万日订单：图数据库的真实定位</h2><p>写到这可能有读者想问：你们 130 万日订单的电商场景，图数据库到底怎么用的？</p>
+<p>坦诚说：<strong>绝大部分流量走的是 MySQL + Redis</strong>。订单的创建、支付状态更新、用户查询订单列表——这些都是 Key-Value 或简单 JOIN，B+Tree 索引处理得非常好。图数据库不是来抢这个活的。</p>
+<p>但在以下场景，我们把数据同步到了 Neo4j（离线 T+1）：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>MySQL 的痛点</th>
+<th>图数据库的表现</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>供应链全链路追溯</td>
+<td>7+ 表 JOIN，递归 CTE</td>
+<td>Cypher 十来行，秒回</td>
+</tr>
+<tr>
+<td>仓库网络规划</td>
+<td>需要计算”从任意仓到任意客户的距离”</td>
+<td>图的最短路径算法天然支持</td>
+</tr>
+<tr>
+<td>异常订单关联分析</td>
+<td>分析拆单、缺货间的关联</td>
+<td>图聚类和社区发现</td>
+</tr>
+<tr>
+<td>欺诈检测</td>
+<td>需要关联账号、设备、IP 多跳关系</td>
+<td>图模式匹配，识别异常子图</td>
+</tr>
+</tbody></table>
+<p>这个架构的核心经验是：<strong>图数据库和关系数据库不是互斥的，而是分担不同查询模式的。</strong> OLTP 走关系型，OLAP&#x2F;图分析走专用引擎。这和 DDIA 一书的核心精神是一致的——没有银弹，只有合适的工具。</p>
+<h2 id="五、选型建议：图数据库值不值得学？"><a href="#五、选型建议：图数据库值不值得学？" class="headerlink" title="五、选型建议：图数据库值不值得学？"></a>五、选型建议：图数据库值不值得学？</h2><p>先说工具。目前图数据库领域 Neo4j 是事实标准，生态最完善。云上有 Neo4j Aura，也可以用 AWS Neptune、阿里云 GDB。如果你的数据量在千万级顶点、亿级边以内，单机 Neo4j 完全够用，部署成本很低。</p>
+<p>查询语言方面，Cypher 已经被 ISO 采纳为国际标准（GQL），学起来不会白费。</p>
+<p>一个常见的反对意见是：”我现在的项目没有图查询需求，学了用不上。” 我的经验是：<strong>不是你用不上，而是你还没学会用图的视角看数据。</strong> 一旦你理解了图模型，你会发现：</p>
+<ul>
+<li>用户的收藏、加购、下单行为天然形成了一张”用户-商品-行为”图</li>
+<li>权限系统的”用户-角色-资源”是典型的二分图</li>
+<li>微服务调用链天然是有向图</li>
+</ul>
+<p>这些场景用图建模和查询，往往比用 SQL 更自然。即使你最终因为运维原因没有引入图数据库，理解图模型也会改变你设计数据模型的方式——你会更敏感于”这个关系是 one-to-many 还是 many-to-many”，会在建表时就考虑到未来可能的多跳查询。</p>
+<h2 id="结语：图不是银弹，但值得放进工具箱"><a href="#结语：图不是银弹，但值得放进工具箱" class="headerlink" title="结语：图不是银弹，但值得放进工具箱"></a>结语：图不是银弹，但值得放进工具箱</h2><p>这一篇是 DDIA 系列的数据模型章节。前两篇我们讨论了关系模型和文档模型，今天把目光转向了图模型——它不是新概念（图论的年龄比计算机科学还大），但在工程实践中被严重低估。</p>
+<p>太多团队下意识地选 MySQL 建模一切，遇到多跳关联就写几十行的递归 CTE，然后抱怨”数据库慢”。问题不在数据库，在模型——你用错了抽象。</p>
+<p>图数据库的价值不是”替代关系数据库”，而是<strong>提供了一种处理关联密集型数据的原生语言和存储结构。</strong> 当你的数据关系像供应链上下游、用户推荐网络这样”比二叉树还复杂”的时候，打开 Neo4j 试试——你会发现很多问题变得简单了。</p>
+<p><strong>把图数据库放进你的工具箱，总有一天它会帮你解决一个用 SQL 必须绕远路的问题。</strong></p>
+<hr>
+<p><em>DDIA 系列笔记：</em></p>
+<ul>
+<li>第一章：可靠、可扩展、可维护</li>
+<li>第二章：数据模型与查询语言</li>
+<li>第三章（本文）：图数据模型</li>
+</ul>
+<p><em>下一篇预告：DDIA-04-存储与检索——LSM-Tree 和 B-Tree 的底层故事。</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/DDIA/%E6%95%B0%E6%8D%AE%E7%B3%BB%E7%BB%9F/" class="category-chain-item">数据系统</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" class="print-no-link">#数据模型</a>
+      
+        <a href="/tags/%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#图数据库</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-03-图数据模型：当你的订单关联比二叉树还复杂</div>
+      <div>https://aster-xu-lab.github.io/2024/03/31/2024-03-31-DDIA-03-图数据模型/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年3月31日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/04/12/2024-04-12-DDIA-03-%E5%A3%B0%E6%98%8E%E5%BC%8F%E6%9F%A5%E8%AF%A2vs-ORM/" title="DDIA-03-声明式查询的力量：为什么ORM有时候是你的敌人">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-03-声明式查询的力量：为什么ORM有时候是你的敌人</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/03/18/2024-03-18-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/" title="DDIA-03-关系模型vs文档模型：电商订单该存MySQL还是MongoDB">
+                        <span class="hidden-mobile">DDIA-03-关系模型vs文档模型：电商订单该存MySQL还是MongoDB</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

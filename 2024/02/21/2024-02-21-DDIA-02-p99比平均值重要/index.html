@@ -1,0 +1,1084 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="引言如果你家楼下早餐店的老板告诉你：”我们平均出餐时间是30秒”，你是不是觉得还挺快的？但如果我告诉你——这家店的油条需要1秒做好，但一碗豆腐脑要等20分钟，你还会觉得快吗？ 这就是平均值的陷阱。 你点的如果是油条（90%的订单），那确实快。但你只要点过一次豆腐脑，你下次大概率就不会再来了。而那个点了豆腐脑就走的顾客，可能恰好是你老板。 在分布式系统里也是一样：平均响应时间看起来很美，但p99（">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-02-性能指标的迷思：为什么p99比平均值重要得多">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/02/21/2024-02-21-DDIA-02-p99%E6%AF%94%E5%B9%B3%E5%9D%87%E5%80%BC%E9%87%8D%E8%A6%81/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="引言如果你家楼下早餐店的老板告诉你：”我们平均出餐时间是30秒”，你是不是觉得还挺快的？但如果我告诉你——这家店的油条需要1秒做好，但一碗豆腐脑要等20分钟，你还会觉得快吗？ 这就是平均值的陷阱。 你点的如果是油条（90%的订单），那确实快。但你只要点过一次豆腐脑，你下次大概率就不会再来了。而那个点了豆腐脑就走的顾客，可能恰好是你老板。 在分布式系统里也是一样：平均响应时间看起来很美，但p99（">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-02-21T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T11:09:04.377Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="Prometheus">
+<meta property="article:tag" content="分位数">
+<meta property="article:tag" content="性能">
+<meta property="article:tag" content="慢SQL">
+<meta property="article:tag" content="监控">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-02-性能指标的迷思：为什么p99比平均值重要得多 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-02-性能指标的迷思：为什么p99比平均值重要得多"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-02-21 09:00" pubdate>
+          2024年2月21日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          60 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-02-性能指标的迷思：为什么p99比平均值重要得多</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>如果你家楼下早餐店的老板告诉你：”我们平均出餐时间是30秒”，你是不是觉得还挺快的？但如果我告诉你——这家店的油条需要1秒做好，但一碗豆腐脑要等20分钟，你还会觉得快吗？</p>
+<p>这就是平均值的陷阱。</p>
+<p>你点的如果是油条（90%的订单），那确实快。但你只要点过一次豆腐脑，你下次大概率就不会再来了。而那个点了豆腐脑就走的顾客，可能恰好是你老板。</p>
+<p>在分布式系统里也是一样：平均响应时间看起来很美，但p99（99分位延迟）才是真正衡量用户体验的指标。今天我们就来聊一聊，为什么<strong>平均值是分布式系统里最会骗人的统计量</strong>，以及如何在实战中真正用好分位数。</p>
+<hr>
+<h2 id="一、平均值：温柔的陷阱"><a href="#一、平均值：温柔的陷阱" class="headerlink" title="一、平均值：温柔的陷阱"></a>一、平均值：温柔的陷阱</h2><h3 id="1-1-一个直觉反例"><a href="#1-1-一个直觉反例" class="headerlink" title="1.1 一个直觉反例"></a>1.1 一个直觉反例</h3><p>假设你的接口在100次请求中有99次在10ms返回，有1次因为Full GC花了10秒。平均值是多少？</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs tap">(99 *<span class="hljs-number"> 10 </span>+<span class="hljs-number"> 1 </span>* 10000) /<span class="hljs-number"> 100 </span>= 109.9ms<br></code></pre></td></tr></table></figure>
+
+<p>109.9ms——看起来还不错？但这个数字<a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%88%86%E4%BD%8D%E6%95%B0">失去了意义</a>。对于那99个用户来说，它<strong>高估了10倍</strong>；对于那一个倒霉的用户来说，它又<a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/607848481"><strong>低估了90倍</strong></a>。</p>
+<p>在统计上，这类响应时间分布通常符合<strong>长尾分布</strong>（Long-tail distribution）。少数的慢请求可能因为各种原因——GC停顿、锁竞争、磁盘I&#x2F;O抖动、网络重传——而被拖到离谱的程度。这些离群值在平均值计算中会被99%的正常请求稀释掉，但它们对用户体验的伤害是100%的。</p>
+<h3 id="1-2-长尾效应：为什么1-能影响100-的用户？"><a href="#1-2-长尾效应：为什么1-能影响100-的用户？" class="headerlink" title="1.2 长尾效应：为什么1%能影响100%的用户？"></a>1.2 长尾效应：为什么1%能影响100%的用户？</h3><p>Google在2013年发表了一篇著名的论文《The Tail at Scale》，里面提到一个反直觉的事实：</p>
+<blockquote>
+<p>在大型在线服务中，如果一个请求需要从几十台甚至上百台服务器并行获取数据再组装返回，那么即使每台服务器只有1%的请求是慢的，用户的<strong>整体请求慢下来的概率也会被急剧放大</strong>。</p>
+</blockquote>
+<p>举例说明：假设你的订单详情页面需要从10个微服务获取数据，每个服务有1%的概率响应超过1秒。那么用户最终看到页面变慢（超过1秒）的概率是多少？</p>
+<figure class="highlight basic"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs basic"><span class="hljs-symbol">1 </span>- (<span class="hljs-number">0.99</span>)^<span class="hljs-number">10</span> ≈ <span class="hljs-number">9.56</span>%<br></code></pre></td></tr></table></figure>
+
+<p>从1%变成了接近10%。如果调用链上有50个服务呢？这个概率暴涨到39.5%。你的每一个服务都可以拍着胸脯说”我99%的请求都在x毫秒内完成”，但用户的体验是——<strong>每三次访问就有一次卡顿</strong>。</p>
+<p>这就是为什么平均响应时间看起来OK，但老板却告诉你”首页打开好慢”的原因。</p>
+<hr>
+<h2 id="二、分位数：真正懂你的统计量"><a href="#二、分位数：真正懂你的统计量" class="headerlink" title="二、分位数：真正懂你的统计量"></a>二、分位数：真正懂你的统计量</h2><h3 id="2-1-p50-p95-p99-p999-是什么？"><a href="#2-1-p50-p95-p99-p999-是什么？" class="headerlink" title="2.1 p50 &#x2F; p95 &#x2F; p99 &#x2F; p999 是什么？"></a>2.1 p50 &#x2F; p95 &#x2F; p99 &#x2F; p999 是什么？</h3><p>分位数（Percentile）的定义很简单：</p>
+<ul>
+<li><strong>p50（中位数）</strong>：50%的请求响应时间低于这个值。它告诉你”大多数人感觉怎么样”。</li>
+<li><strong>p95</strong>：95%的请求低于这个值。它告诉你”绝大部分人感觉怎么样”。</li>
+<li><strong>p99</strong>：99%的请求低于这个值。它告诉你”最差的1%用户感觉怎么样”。</li>
+<li><strong>p999</strong>：99.9%的请求低于这个值。它告诉你”几乎没有人会超过这个值”。</li>
+</ul>
+<p>回到开头的早餐店例子：</p>
+<table>
+<thead>
+<tr>
+<th>指标</th>
+<th>响应时间</th>
+<th>解读</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>平均值</td>
+<td>~110ms</td>
+<td>看起来还行</td>
+</tr>
+<tr>
+<td>p50</td>
+<td>10ms</td>
+<td>大部分用户很快</td>
+</tr>
+<tr>
+<td>p99</td>
+<td>10,000ms</td>
+<td><strong>有1%的用户等了10秒！</strong></td>
+</tr>
+<tr>
+<td>p99.9</td>
+<td>10,000ms</td>
+<td>同上，极端情况</td>
+</tr>
+</tbody></table>
+<p>p99直接暴露了平均值掩盖的问题。这就是为什么在监控系统中，<strong>p99比平均值重要得多</strong>。</p>
+<h3 id="2-2-不同分位数的适用场景"><a href="#2-2-不同分位数的适用场景" class="headerlink" title="2.2 不同分位数的适用场景"></a>2.2 不同分位数的适用场景</h3><table>
+<thead>
+<tr>
+<th>分位数</th>
+<th>适用场景</th>
+<th>为什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p50</td>
+<td>粗略的健康检查，非关键路径</td>
+<td>告诉你系统在正常情况下的表现，但不够</td>
+</tr>
+<tr>
+<td>p95</td>
+<td>大多数HTTP API的SLO目标</td>
+<td>覆盖了绝大多数用户体验，识别常见的性能劣化</td>
+</tr>
+<tr>
+<td>p99</td>
+<td><strong>核心交易链路</strong>（下单&#x2F;支付&#x2F;库存）</td>
+<td>这1%的用户可能是你的高价值客户；长尾请求往往是系统问题的信号</td>
+</tr>
+<tr>
+<td>p999</td>
+<td>SLA承诺，对客户的合同保障</td>
+<td>表明你在乎极端情况，通常需要<a target="_blank" rel="noopener" href="https://sre.google/sre-book/service-level-objectives/">冗余和重试机制</a>来保证</td>
+</tr>
+</tbody></table>
+<p>一个典型的电商系统SLO设置可以是这样：</p>
+<ul>
+<li>商品列表API：p95 &lt; 200ms</li>
+<li>商品详情API：p95 &lt; 300ms</li>
+<li>下单接口：p99 &lt; 500ms</li>
+<li>支付回调：p99 &lt; 200ms（涉及资金，必须快）</li>
+</ul>
+<p>注意：下单接口用了p99而不是p95。为什么？因为<strong>下不了单的用户是最愤怒的用户</strong>。一个浏览商品的用户可能不会因为多等200毫秒而离开，但一个卡在支付环节的用户几乎一定会投诉。</p>
+<hr>
+<h2 id="三、实战：订单中心慢SQL治理"><a href="#三、实战：订单中心慢SQL治理" class="headerlink" title="三、实战：订单中心慢SQL治理"></a>三、实战：订单中心慢SQL治理</h2><h3 id="3-1-背景"><a href="#3-1-背景" class="headerlink" title="3.1 背景"></a>3.1 背景</h3><p>我在电商中台负责订单中心时，日均订单峰值约130万。系统表面上看没什么问题——接口平均响应时间在200ms以内，TPS也正常。但老板反馈了一个现象：<strong>偶尔会有用户投诉下单页面卡住十几秒</strong>。</p>
+<p>拉出Grafana一看，平均响应时间那条线确实平平稳稳，但一切换到p99——曲线宛如心电图。平均响应200ms，p99却稳定在5-8秒，偶尔飙到15秒以上。</p>
+<p>进一步排查，发现数据库慢查询日志里，<strong>日均慢SQL达到1124条</strong>（阈值设置为1秒）。</p>
+<h3 id="3-2-问题定位：平均值的乐观主义"><a href="#3-2-问题定位：平均值的乐观主义" class="headerlink" title="3.2 问题定位：平均值的乐观主义"></a>3.2 问题定位：平均值的乐观主义</h3><p>我们先来看一个典型场景。订单列表查询的核心SQL大致是这样：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> o.<span class="hljs-operator">*</span>, oi.<span class="hljs-operator">*</span> <br><span class="hljs-keyword">FROM</span> t_order o<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_order_item oi <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> oi.order_id<br><span class="hljs-keyword">WHERE</span> o.user_id <span class="hljs-operator">=</span> ? <br>  <span class="hljs-keyword">AND</span> o.create_time <span class="hljs-operator">&gt;=</span> ?<br>  <span class="hljs-keyword">AND</span> o.create_time <span class="hljs-operator">&lt;=</span> ?<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> o.create_time <span class="hljs-keyword">DESC</span><br>LIMIT <span class="hljs-number">20</span>;<br></code></pre></td></tr></table></figure>
+
+<p>表说明：<code>t_order</code>约5000万行，<code>t_order_item</code>约2亿行。索引是有的——<code>idx_user_create(user_id, create_time)</code>。在9000次查询中，大部分查询的用户订单很少（几十单），索引命中后几十毫秒就返回。但有一些用户——你猜是谁——是大客户或运营人员，历史订单好几万单。对这种用户，这条SQL需要扫描几万行数据后再JOIN，执行时间轻松超过3秒。</p>
+<p>平均值看不到这个问题，因为”大客户”在用户数量中占比不到1%。但p99把他们抓得明明白白。</p>
+<h3 id="3-3-治理方案"><a href="#3-3-治理方案" class="headerlink" title="3.3 治理方案"></a>3.3 治理方案</h3><p>我们采取的手段按优先级排列如下：</p>
+<p><strong>第一层：慢查询索引优化</strong></p>
+<p>对大订单量用户的分析发现，SQL的瓶颈在于<code>WHERE user_id + create_time范围</code>后的排序和JOIN。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 优化前：Using index; Using filesort</span><br><span class="hljs-comment">-- 优化后：Using index（覆盖索引，避免回表 + filesort）</span><br><br><span class="hljs-keyword">ALTER TABLE</span> t_order <span class="hljs-keyword">ADD</span> INDEX idx_user_create_cover <br>  (user_id, create_time <span class="hljs-keyword">DESC</span>, order_id, order_status, total_amount);<br></code></pre></td></tr></table></figure>
+
+<p>这个覆盖索引覆盖了WHERE、ORDER BY和SELECT中需要的关键字段，<strong>避免回表查询</strong>。在大用户（3万+订单）场景下，从3.2秒降到180ms。</p>
+<p><strong>第二层：连接池配置</strong></p>
+<p>发现一个隐藏问题：HikariCP连接池配置的<code>maximumPoolSize</code>默认是10，但我们的实际并发查询峰值会冲到50+。这导致请求在连接池层面排队，虽然SQL本身只需要几十毫秒，但等连接就等了2秒。</p>
+<p>调整后的配置：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span><br>  <span class="hljs-attr">datasource:</span><br>    <span class="hljs-attr">hikari:</span><br>      <span class="hljs-attr">maximum-pool-size:</span> <span class="hljs-number">50</span><br>      <span class="hljs-attr">minimum-idle:</span> <span class="hljs-number">10</span><br>      <span class="hljs-attr">connection-timeout:</span> <span class="hljs-number">3000</span><br>      <span class="hljs-attr">idle-timeout:</span> <span class="hljs-number">600000</span><br>      <span class="hljs-attr">max-lifetime:</span> <span class="hljs-number">1800000</span><br></code></pre></td></tr></table></figure>
+
+<p>配合对数据库连接数的扩容（从200升到500），p99立刻下降约40%。</p>
+<p><strong>第三层：缓存预热 + 多级缓存</strong></p>
+<p>对于”查订单列表”这种场景，完全依赖数据库是不现实的。我们引入多级缓存：</p>
+<ul>
+<li><strong>本地Caffeine缓存</strong>（1分钟TTL）：热点用户（最近下单的）订单列表</li>
+<li><strong>Redis缓存</strong>（5分钟TTL）：非热点用户的订单列表</li>
+<li>用户下单&#x2F;支付&#x2F;取消时通过Canal监听binlog，<strong>主动更新缓存</strong>，而不是等缓存过期</li>
+</ul>
+<p>这个方案的改动量不大，但对p99的影响非常显著——大部分请求不再穿透到数据库。</p>
+<p><strong>第四层：超时控制 + 熔断降级</strong></p>
+<p>对于实在无法优化的极端情况（比如运营后台的复杂报表查询），必须设置防线：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@HystrixCommand(</span><br><span class="hljs-meta">    fallbackMethod = &quot;orderListFallback&quot;,</span><br><span class="hljs-meta">    commandProperties = &#123;</span><br><span class="hljs-meta">        @HystrixProperty(name = &quot;execution.isolation.thread.timeoutInMilliseconds&quot;, </span><br><span class="hljs-meta">                         value = &quot;3000&quot;),</span><br><span class="hljs-meta">        @HystrixProperty(name = &quot;circuitBreaker.requestVolumeThreshold&quot;, value = &quot;10&quot;),</span><br><span class="hljs-meta">        @HystrixProperty(name = &quot;circuitBreaker.errorThresholdPercentage&quot;, value = &quot;50&quot;)</span><br><span class="hljs-meta">    &#125;</span><br><span class="hljs-meta">)</span><br><span class="hljs-keyword">public</span> List&lt;Order&gt; <span class="hljs-title function_">queryOrderList</span><span class="hljs-params">(Long userId, DateRange range)</span> &#123;<br>    <span class="hljs-comment">// 如果3秒内没返回，走降级逻辑</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>降级逻辑返回Redis中的缓存数据（即使可能是略微过期的），而不是让用户对着空白页面傻等。</p>
+<h3 id="3-4-治理效果"><a href="#3-4-治理效果" class="headerlink" title="3.4 治理效果"></a>3.4 治理效果</h3><table>
+<thead>
+<tr>
+<th>指标</th>
+<th>治理前</th>
+<th>治理后</th>
+<th>下降幅度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>日均慢SQL数量</td>
+<td>1124条</td>
+<td>6条</td>
+<td>99.5%</td>
+</tr>
+<tr>
+<td>接口p99延迟</td>
+<td>5-8秒</td>
+<td>480ms</td>
+<td>94%</td>
+</tr>
+<tr>
+<td>接口平均延迟</td>
+<td>200ms</td>
+<td>85ms</td>
+<td>57.5%</td>
+</tr>
+<tr>
+<td>数据库CPU峰值</td>
+<td>78%</td>
+<td>35%</td>
+<td>55%</td>
+</tr>
+</tbody></table>
+<p>最有意思的是最后一行：平均延迟从200ms降到85ms，降幅只有57.5%——单看这个数字，你甚至可能觉得”还行，原来也不差”。但p99从8秒降到480ms，这才是真实改善的用户体验。<strong>那些等了8秒的用户，在优化后终于只需要等半秒了。</strong></p>
+<hr>
+<h2 id="四、监控工具：Prometheus-Grafana"><a href="#四、监控工具：Prometheus-Grafana" class="headerlink" title="四、监控工具：Prometheus + Grafana"></a>四、监控工具：Prometheus + Grafana</h2><h3 id="4-1-为什么不用平均值做监控？"><a href="#4-1-为什么不用平均值做监控？" class="headerlink" title="4.1 为什么不用平均值做监控？"></a>4.1 为什么不用平均值做监控？</h3><p>我再强调一遍重点：如果你的告警规则写的是”平均响应时间 &gt; 500ms”，那你永远无法及时发现系统的劣化。假设你的服务在低峰期一切正常，高峰期来了几个大客户查询把一小部分请求拖到5秒，平均值可能只是从100ms变成150ms——依然低于500ms，告警不会触发，但已经有用户开始投诉了。</p>
+<h3 id="4-2-Histogram分位数的配置"><a href="#4-2-Histogram分位数的配置" class="headerlink" title="4.2 Histogram分位数的配置"></a>4.2 Histogram分位数的配置</h3><p>Prometheus提供了Histogram类型，可以精确计算分位数：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// Micrometer埋点</span><br><span class="hljs-meta">@RestController</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderController</span> &#123;<br>    <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Timer orderQueryTimer;<br>    <br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">OrderController</span><span class="hljs-params">(MeterRegistry registry)</span> &#123;<br>        <span class="hljs-built_in">this</span>.orderQueryTimer = Timer.builder(<span class="hljs-string">&quot;order.query.latency&quot;</span>)<br>            .description(<span class="hljs-string">&quot;订单查询延迟&quot;</span>)<br>            .publishPercentiles(<span class="hljs-number">0.5</span>, <span class="hljs-number">0.95</span>, <span class="hljs-number">0.99</span>) <span class="hljs-comment">// 预计算分位数</span><br>            .publishPercentileHistogram()         <span class="hljs-comment">// 启用直方图</span><br>            .minimumExpectedValue(Duration.ofMillis(<span class="hljs-number">1</span>))<br>            .maximumExpectedValue(Duration.ofSeconds(<span class="hljs-number">10</span>))<br>            .serviceLevelObjectives(<br>                Duration.ofMillis(<span class="hljs-number">10</span>),<br>                Duration.ofMillis(<span class="hljs-number">50</span>),<br>                Duration.ofMillis(<span class="hljs-number">100</span>),<br>                Duration.ofMillis(<span class="hljs-number">200</span>),<br>                Duration.ofMillis(<span class="hljs-number">500</span>),<br>                Duration.ofMillis(<span class="hljs-number">1000</span>),<br>                Duration.ofMillis(<span class="hljs-number">3000</span>),<br>                Duration.ofMillis(<span class="hljs-number">10000</span>)<br>            )<br>            .register(registry);<br>    &#125;<br>    <br>    <span class="hljs-meta">@GetMapping(&quot;/api/orders&quot;)</span><br>    <span class="hljs-keyword">public</span> List&lt;Order&gt; <span class="hljs-title function_">getOrders</span><span class="hljs-params">(<span class="hljs-meta">@RequestParam</span> Long userId)</span> &#123;<br>        <span class="hljs-keyword">return</span> orderQueryTimer.record(() -&gt; orderService.query(userId));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>关键配置说明：</p>
+<ul>
+<li><strong><code>publishPercentileHistogram()</code></strong>：让Micrometer发送完整的直方图数据给Prometheus，这样你可以在Grafana里计算任意分位数</li>
+<li><strong><code>serviceLevelObjectives()</code></strong>：定义了直方图的桶边界。桶的设计很重要——如果你只设置了[100ms, 500ms]两个桶，那一个3秒的请求和10秒的请求都在同一个桶里，你无法区分</li>
+<li><strong><code>minimumExpectedValue</code>和<code>maximumExpectedValue</code></strong>：如果实际延迟超出预期范围，会被裁切，所以设置要覆盖真实的取值范围</li>
+</ul>
+<h3 id="4-3-Grafana查询和可视化"><a href="#4-3-Grafana查询和可视化" class="headerlink" title="4.3 Grafana查询和可视化"></a>4.3 Grafana查询和可视化</h3><p>在Grafana中，利用Prometheus的<code>histogram_quantile()</code>函数计算分位数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs promql"># p99 订单查询延迟（1分钟窗口）<br>histogram_quantile(0.99, <br>  rate(order_query_latency_seconds_bucket[1m])<br>)<br><br># p95 <br>histogram_quantile(0.95, <br>  rate(order_query_latency_seconds_bucket[1m])<br>)<br><br># p50<br>histogram_quantile(0.50, <br>  rate(order_query_latency_seconds_bucket[1m])<br>)<br></code></pre></td></tr></table></figure>
+
+<p>同时，可以把p99和p50放在同一个面板上对比，直观展示长尾：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">Panel</span><span class="hljs-punctuation">:</span> <span class="hljs-string">订单查询延迟分位数</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">p50: 绿色（填充到p95，浅绿）</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">p95: 黄色</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">p99: 红色</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-string">平均: 蓝色虚线（参考，不要用来告警！）</span><br></code></pre></td></tr></table></figure>
+
+<p>告警规则应该是这样的：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">groups:</span><br>  <span class="hljs-bullet">-</span> <span class="hljs-attr">name:</span> <span class="hljs-string">order_latency</span><br>    <span class="hljs-attr">rules:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-attr">alert:</span> <span class="hljs-string">OrderQueryP99High</span><br>        <span class="hljs-attr">expr:</span> <span class="hljs-string">histogram_quantile(0.99,</span> <br>                <span class="hljs-string">rate(order_query_latency_seconds_bucket[5m]))</span> <span class="hljs-string">&gt;</span> <span class="hljs-number">1.0</span><br>        <span class="hljs-attr">for:</span> <span class="hljs-string">5m</span><br>        <span class="hljs-attr">labels:</span><br>          <span class="hljs-attr">severity:</span> <span class="hljs-string">critical</span><br>        <span class="hljs-attr">annotations:</span><br>          <span class="hljs-attr">summary:</span> <span class="hljs-string">&quot;订单查询p99超过1秒&quot;</span><br>          <span class="hljs-attr">description:</span> <span class="hljs-string">&quot;过去5分钟p99延迟为 <span class="hljs-template-variable">&#123;&#123; $value &#125;&#125;</span>秒，请检查数据库和下游服务&quot;</span><br>      <br>      <span class="hljs-comment"># 注意：我们没有对平均值设置告警！</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>最后一条注释是关键。</strong> 我们的告警只设置在p99上，平均值只是一个参考线。如果p99飙升但平均值没变，你有责任去追查那1%的慢请求，而不是指着平均值的仪表盘说”一切正常”。</p>
+<hr>
+<h2 id="五、长尾优化的通用手段"><a href="#五、长尾优化的通用手段" class="headerlink" title="五、长尾优化的通用手段"></a>五、长尾优化的通用手段</h2><p>回顾一下我们治理慢SQL的手段，可以提炼出一套通用的长尾优化方法论：</p>
+<table>
+<thead>
+<tr>
+<th>手段</th>
+<th>解决的问题</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>缓存预热</strong></td>
+<td>首次请求冷启动慢</td>
+<td>有规律的访问模式</td>
+</tr>
+<tr>
+<td><strong>连接池调优</strong></td>
+<td>排队等待连接</td>
+<td>高并发、短连接</td>
+</tr>
+<tr>
+<td><strong>慢查询索引优化</strong></td>
+<td>数据库层面慢</td>
+<td>数据量大、查询复杂</td>
+</tr>
+<tr>
+<td><strong>超时控制</strong></td>
+<td>个别请求拖死整个线程池</td>
+<td>微服务间调用</td>
+</tr>
+<tr>
+<td><strong>熔断降级</strong></td>
+<td>下游服务不可用拖慢上游</td>
+<td>有备选逻辑的接口</td>
+</tr>
+<tr>
+<td><strong>异步化</strong></td>
+<td>同步等待阻塞</td>
+<td>非实时性要求</td>
+</tr>
+<tr>
+<td><strong>冗余请求</strong></td>
+<td>个别节点慢</td>
+<td>高可用、低延迟要求</td>
+</tr>
+</tbody></table>
+<p>其中<strong>冗余请求</strong>（Hedged Requests）是一个值得展开的技巧。Google在论文中提到，如果你同时向两台服务器发送同一个查询，取先返回的结果，那么你被打到慢服务器的概率从1%降到了0.01%（1% × 1%）。代价是多了一倍的请求量，但对于极低延迟要求的场景（如搜索引擎），这是值得的。</p>
+<p>在实战中，我们不需要这么激进。更常用的做法是<strong>备份请求</strong>：在正常超时时间的90%时，如果没有返回，再发一个请求到另一台服务器。这在不显著增加负载的情况下，大幅降低长尾延迟。</p>
+<hr>
+<h2 id="六、结尾：那个等了8秒的用户"><a href="#六、结尾：那个等了8秒的用户" class="headerlink" title="六、结尾：那个等了8秒的用户"></a>六、结尾：那个等了8秒的用户</h2><p>回想我们优化前，订单中心日均1124条慢SQL，p99达到8秒。这意味着什么？</p>
+<p>日均订单峰值130万，p99就是每天有<strong>13000次请求</strong>（约1.3万次）的用户体验是——点了”提交订单”按钮后，页面转圈转了8秒。</p>
+<p>每天有一万三千次机会，让用户怀疑你的系统是不是挂了。</p>
+<p>每天有一万三千次机会，让用户觉得”下次换个平台吧”。</p>
+<p>每天有一万三千次机会，让某个刚好在老板电脑旁看你系统演示的同事陷入尴尬的沉默。</p>
+<p>你监控大盘上那条光滑的蓝色平均线，在那一刻什么也帮不了你。</p>
+<p><strong>关注p99，就是关注最差的用户体验。而那个体验最差的用户，可能是你的老板、你的投资人，或是一个本来要下一百万订单的大客户。</strong></p>
+<p>所以，下次团队做技术评审的时候，如果有人把”平均响应时间”拿出来汇报，你只有一个任务——问他：</p>
+<p><strong>“p99是多少？”</strong></p>
+<hr>
+<p><em>下一篇预告：《DDIA-03-可扩展性的本质：为什么你的系统扛不住第二波促销》</em></p>
+<hr>
+<p><em>参考阅读：</em></p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://dl.acm.org/doi/10.1145/2408776.2408794">Dean, J. and Barroso, L.A., 2013. The Tail at Scale. Communications of the ACM.</a></li>
+<li><a target="_blank" rel="noopener" href="https://sre.google/sre-book/service-level-objectives/">Google SRE Book - Service Level Objectives</a></li>
+<li><a target="_blank" rel="noopener" href="https://prometheus.io/docs/practices/histograms/">Prometheus Histogram and Quantile Documentation</a></li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%85%A2SQL/" class="print-no-link">#慢SQL</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E6%80%A7%E8%83%BD/" class="print-no-link">#性能</a>
+      
+        <a href="/tags/%E7%9B%91%E6%8E%A7/" class="print-no-link">#监控</a>
+      
+        <a href="/tags/%E5%88%86%E4%BD%8D%E6%95%B0/" class="print-no-link">#分位数</a>
+      
+        <a href="/tags/Prometheus/" class="print-no-link">#Prometheus</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-02-性能指标的迷思：为什么p99比平均值重要得多</div>
+      <div>https://aster-xu-lab.github.io/2024/02/21/2024-02-21-DDIA-02-p99比平均值重要/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年2月21日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/03/05/2024-03-05-DDIA-02-%E9%9D%9E%E5%8A%9F%E8%83%BD%E6%80%A7%E9%9C%80%E6%B1%82/" title="DDIA-02-非功能性需求：那些PM不会写进PRD的东西">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-02-非功能性需求：那些PM不会写进PRD的东西</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/02/08/2024-02-08-DDIA-02-SLA%E4%B8%8ESLO%E5%AE%9E%E6%88%98/" title="DDIA-02SLA与SLO实战：从99.9%到99.99%的100倍差距">
+                        <span class="hidden-mobile">DDIA-02SLA与SLO实战：从99.9%到99.99%的100倍差距</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,901 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="引言：一篇文章，三个时代2004年，Google发表了MapReduce论文，开启了大规模数据处理的纪元。十年后，Spark成为批处理的事实标准。又过了十年，我们站在了数据湖时代的门口。 这不只是一段技术发展史，更是一段关于「架构如何围绕物理瓶颈迭代」的故事。本文将沿着DDIA第11章的脉络，把MapReduce的痛点、Spark的破局、以及现代数据湖的演进串成一条线，并辅以我在供应链中台的实战">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-11-从MapReduce到Spark：批处理引擎的进化史">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2025/07/30/2025-07-30-DDIA-11-%E6%89%B9%E5%A4%84%E7%90%86%E8%BF%9B%E5%8C%96%E5%8F%B2/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="引言：一篇文章，三个时代2004年，Google发表了MapReduce论文，开启了大规模数据处理的纪元。十年后，Spark成为批处理的事实标准。又过了十年，我们站在了数据湖时代的门口。 这不只是一段技术发展史，更是一段关于「架构如何围绕物理瓶颈迭代」的故事。本文将沿着DDIA第11章的脉络，把MapReduce的痛点、Spark的破局、以及现代数据湖的演进串成一条线，并辅以我在供应链中台的实战">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-07-30T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T11:09:04.388Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="MapReduce">
+<meta property="article:tag" content="Spark">
+<meta property="article:tag" content="批处理">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-11-从MapReduce到Spark：批处理引擎的进化史 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-11-从MapReduce到Spark：批处理引擎的进化史"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-07-30 09:00" pubdate>
+          2025年7月30日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          37 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-11-从MapReduce到Spark：批处理引擎的进化史</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="引言：一篇文章，三个时代"><a href="#引言：一篇文章，三个时代" class="headerlink" title="引言：一篇文章，三个时代"></a>引言：一篇文章，三个时代</h2><p>2004年，Google发表了MapReduce论文，开启了大规模数据处理的纪元。十年后，Spark成为批处理的事实标准。又过了十年，我们站在了数据湖时代的门口。</p>
+<p>这不只是一段技术发展史，更是一段关于「架构如何围绕物理瓶颈迭代」的故事。本文将沿着DDIA第11章的脉络，把MapReduce的痛点、Spark的破局、以及现代数据湖的演进串成一条线，并辅以我在供应链中台的实战经验，带你理解批处理引擎进化的底层逻辑。</p>
+<hr>
+<h2 id="一、MapReduce时代：分布式计算的第一次抽象"><a href="#一、MapReduce时代：分布式计算的第一次抽象" class="headerlink" title="一、MapReduce时代：分布式计算的第一次抽象"></a>一、MapReduce时代：分布式计算的第一次抽象</h2><h3 id="1-1-核心思想"><a href="#1-1-核心思想" class="headerlink" title="1.1 核心思想"></a>1.1 核心思想</h3><p>MapReduce的贡献在于把一个分布式计算任务抽象成了两个阶段：</p>
+<ul>
+<li><strong>Map阶段</strong>：把输入数据拆成K-V对，逐条处理</li>
+<li><strong>Reduce阶段</strong>：按Key聚合Map的输出，生成最终结果</li>
+</ul>
+<p>这个模型足够简单通用——排序、聚合、Join、过滤，几乎所有数据分析问题都能套进去。它屏蔽了数据分片、任务调度、故障恢复等分布式系统的复杂性，让不会写分布式程序的程序员也能处理TB级数据。</p>
+<h3 id="1-2-三个致命的性能瓶颈"><a href="#1-2-三个致命的性能瓶颈" class="headerlink" title="1.2 三个致命的性能瓶颈"></a>1.2 三个致命的性能瓶颈</h3><p>但这种简单性是有代价的。DDIA第11章花了大量篇幅讨论MapReduce的局限性，我在实际工作中感受最深的三个痛点：</p>
+<p><strong>痛点一：中间结果必须落盘</strong></p>
+<p>Map阶段的输出不是直接交给Reduce，而是先写入本地磁盘，Reduce再通过网络拉取。这个设计本意是为了容错——如果Reduce挂了，不需要重新跑Map。但在实践中，磁盘I&#x2F;O成为整个Job的瓶颈。一个Join操作，Map输出写盘、Reduce读盘、排序写盘、最后输出再写盘，一个Job四轮磁盘读写是常态。</p>
+<p><strong>痛点二：Job间数据完全序列化&#x2F;反序列化</strong></p>
+<p>MapReduce的每个Job都是独立的，上游Job的输出必须通过HDFS文件传递。这带来两个问题：一是序列化&#x2F;反序列化消耗CPU；二是下游Job必须等上游全部完成才能开始，无法做流水线优化。供应链的日报表如果写成三个Job串联——提取、聚合、写入——每一步都要等前一步完全落地。</p>
+<p><strong>痛点三：编程模型受限</strong></p>
+<p>不是所有计算都能优雅地表达成Map+Reduce。经典的机器学习迭代算法需要在同一份数据上反复计算，用MapReduce就只能把中间结果写回HDFS然后启动新Job，一场迭代变成一串长Job链。而且除了Map和Reduce，没有其他原语可用——想加一个Filter？再写一个Job吧。</p>
+<hr>
+<h2 id="二、Spark：把数据留在内存里"><a href="#二、Spark：把数据留在内存里" class="headerlink" title="二、Spark：把数据留在内存里"></a>二、Spark：把数据留在内存里</h2><h3 id="2-1-RDD：弹性分布式数据集"><a href="#2-1-RDD：弹性分布式数据集" class="headerlink" title="2.1 RDD：弹性分布式数据集"></a>2.1 RDD：弹性分布式数据集</h3><p>Spark的核心创新是RDD（Resilient Distributed Dataset）。它是一个分布式的、不可变的、可分区的数据集合，最关键的属性是：<strong>RDD的数据默认留在内存中</strong>。</p>
+<p>这不是一个工程技巧，而是一个范式转移。MapReduce把中间状态当作文件来处理，Spark把中间状态当作内存中的集合来处理。当你写 <code>rdd.map().filter().reduceByKey()</code> 时，这些操作只是在构建一个执行计划，Spark会在最后一步才真正触发计算——这就是懒加载。</p>
+<h3 id="2-2-DAG调度器：一个Job替代三个Job"><a href="#2-2-DAG调度器：一个Job替代三个Job" class="headerlink" title="2.2 DAG调度器：一个Job替代三个Job"></a>2.2 DAG调度器：一个Job替代三个Job</h3><p>回到刚才供应链日报表的例子。用MapReduce需要三个Job：</p>
+<ol>
+<li><strong>Job 1</strong>：从HDFS读取原始订单数据，Map阶段提取<code>(sku_id, quantity)</code>，Reduce阶段按SKU汇总当天销量</li>
+<li><strong>Job 2</strong>：读取Job 1的输出，关联库存表做Join，计算库存周转天数</li>
+<li><strong>Job 3</strong>：读取Job 2的输出，格式化成报表写入MySQL</li>
+</ol>
+<p>每个Job之间都要经历：写HDFS → 读HDFS → 序列化 → 反序列化。顺利的话20分钟，数据量大一点就是小时级。</p>
+<p>用Spark，这三个Job被编译成<strong>一个DAG</strong>：</p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs scss">HDFS读取 → <span class="hljs-built_in">Map</span>(提取字段) → <span class="hljs-built_in">ReduceByKey</span>(按SKU聚合) → <span class="hljs-built_in">Join</span>(关联库存) → <span class="hljs-built_in">Map</span>(格式化) → 写入MySQL<br></code></pre></td></tr></table></figure>
+
+<p>所有的中间结果都在内存中传递，只有Shuffle阶段需要跨节点交换数据时才会写磁盘。实际效果是：同样数据量从20分钟压到了3分钟。</p>
+<h3 id="2-3-懒加载与Pipeline执行"><a href="#2-3-懒加载与Pipeline执行" class="headerlink" title="2.3 懒加载与Pipeline执行"></a>2.3 懒加载与Pipeline执行</h3><p>Spark的另一个关键设计是懒加载。Transformations（map&#x2F;filter&#x2F;join）不会立即执行，只有Actions（count&#x2F;collect&#x2F;save）才会触发计算。这允许Spark做全局优化：</p>
+<ul>
+<li><strong>算子合并</strong>：<code>rdd.map(f).map(g)</code> 会被合并成一条管道，每个分区单次遍历完成</li>
+<li><strong>Stage划分</strong>：只在需要Shuffle的地方切分Stage，Stage内以Pipeline方式执行</li>
+<li><strong>谓词下推</strong>：读取Parquet&#x2F;ORC文件时，Filter条件会被推到底层存储引擎</li>
+</ul>
+<p>这种设计意味着Spark不是简单地把MapReduce的Map和Reduce换成内存版本，而是从根本上改变了对计算过程的建模方式——从「步骤序列」变成了「逻辑DAG + 物理执行计划」。</p>
+<hr>
+<h2 id="三、核心矛盾：Shuffle为什么还是慢"><a href="#三、核心矛盾：Shuffle为什么还是慢" class="headerlink" title="三、核心矛盾：Shuffle为什么还是慢"></a>三、核心矛盾：Shuffle为什么还是慢</h2><h3 id="3-1-MapReduce的Sort-Merge模型"><a href="#3-1-MapReduce的Sort-Merge模型" class="headerlink" title="3.1 MapReduce的Sort-Merge模型"></a>3.1 MapReduce的Sort-Merge模型</h3><p>MapReduce的Shuffle是一个经典的Sort-Merge模型：</p>
+<ol>
+<li>Map端：输出先写入环形内存缓冲区，到达阈值后溢出到磁盘</li>
+<li><strong>必须排序</strong>：Map端按partition和key排序，生成有序的文件</li>
+<li>Reduce端：从各个Map节点拉取数据，做归并排序</li>
+</ol>
+<p>排序这一步是强制性的——因为它试图一遍做完数据分组和排序，简化了Reduce端的实现。</p>
+<h3 id="3-2-Spark的Hash-Shuffle-vs-Sort-Shuffle"><a href="#3-2-Spark的Hash-Shuffle-vs-Sort-Shuffle" class="headerlink" title="3.2 Spark的Hash Shuffle vs Sort Shuffle"></a>3.2 Spark的Hash Shuffle vs Sort Shuffle</h3><p>Spark早期使用Hash Shuffle：Map端为每个Reduce分区开一个文件，M个Map × R个Reduce &#x3D; M×R个文件。小文件问题严重，I&#x2F;O碎片化。</p>
+<p>Spark后来引入了Sort Shuffle（默认）：Map端只输出一个文件+索引，数据先排序再按分区写入。但这里的排序<strong>只是为了聚合同分区的数据</strong>，和MapReduce的排序有本质不同——MapReduce排序是为了Reduce端归并，Spark排序是为了把多个文件合并成一个。</p>
+<h3 id="3-3-为什么Shuffle逃不掉"><a href="#3-3-为什么Shuffle逃不掉" class="headerlink" title="3.3 为什么Shuffle逃不掉"></a>3.3 为什么Shuffle逃不掉</h3><p>无论哪种引擎，Shuffle的物理约束是一样的：</p>
+<ul>
+<li><strong>网络I&#x2F;O</strong>：数据必须在节点间移动，带宽有限</li>
+<li><strong>磁盘I&#x2F;O</strong>：内存装不下就溢出到磁盘</li>
+<li><strong>序列化</strong>：跨节点传输必须序列化</li>
+</ul>
+<p>Spark可以把非Shuffle操作的内存利用率做到极致，但Shuffle阶段依然要面对和MapReduce一样的物理限制。区别在于：MapReduce<strong>每个Job都要经历一轮完整的Map-文件落盘-Shuffle-Reduce-文件落盘</strong>，而Spark只在一个DAG的Shuffle节点才触发。</p>
+<p>所以Spark不是消灭了Shuffle，而是把它从「默认行为」变成了「必要时才触发」。</p>
+<hr>
+<h2 id="四、从引擎到生态：数据湖的崛起"><a href="#四、从引擎到生态：数据湖的崛起" class="headerlink" title="四、从引擎到生态：数据湖的崛起"></a>四、从引擎到生态：数据湖的崛起</h2><h3 id="4-1-引擎的边界"><a href="#4-1-引擎的边界" class="headerlink" title="4.1 引擎的边界"></a>4.1 引擎的边界</h3><p>MapReduce和Spark解决的是「怎么算」的问题。但当数据量从TB增长到PB，一个更大的问题浮现：「怎么管」？</p>
+<p>传统的Hive数仓方案是目录+分区，Schema靠人工维护，时间旅行靠备份恢复。引擎跑得再快，数据治理跟不上也是白搭。这就是数据湖技术崛起的原因。</p>
+<h3 id="4-2-三大数据湖框架"><a href="#4-2-三大数据湖框架" class="headerlink" title="4.2 三大数据湖框架"></a>4.2 三大数据湖框架</h3><ul>
+<li><strong>Apache Iceberg</strong>：解决了Hive表在对象存储上的原子性、一致性、性能问题。支持Snapshot隔离、时间旅行、分区演化——Schema和分区策略可以随数据变化而演进，不用重建整张表。</li>
+<li><strong>Apache Hudi</strong>：Uber开源的增量处理框架，主打Upsert和增量消费。如果你的供应链报表需要捕获CDC变更流做近实时更新，Hudi的mor表能平衡写延迟和读性能。</li>
+<li><strong>Delta Lake</strong>：Databricks出品的存储层，优势在于和Spark深度集成。事务日志、版本回滚、Schema强制，一句话：给它一个Parquet目录，还你一个ACID数据湖。</li>
+</ul>
+<h3 id="4-3-供应链日报表的现代架构"><a href="#4-3-供应链日报表的现代架构" class="headerlink" title="4.3 供应链日报表的现代架构"></a>4.3 供应链日报表的现代架构</h3><p>说回我们的日报表。有了数据湖之后，架构可以演进为：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java">业务MySQL → Canal CDC → Kafka → Spark <span class="hljs-title function_">Streaming</span><span class="hljs-params">(Hudi增量写入)</span><br>                                          ↓<br>                             Iceberg/Hudi表(ODS层)<br>                                          ↓<br>                          Spark <span class="hljs-title function_">SQL</span><span class="hljs-params">(聚合计算, Iceberg表, Snapshot隔离)</span><br>                                          ↓<br>                              BI看板 / 数据API<br></code></pre></td></tr></table></figure>
+
+<p>关键变化：</p>
+<ul>
+<li><strong>增量而非全量</strong>：Hudi支持Upsert，不再每天全量拉取订单表</li>
+<li><strong>Snapshot隔离</strong>：Iceberg的时间旅行让你随时回到某天的报表数据状态</li>
+<li><strong>引擎和存储解耦</strong>：计算用Spark，存储用Iceberg&#x2F;Hudi，两者独立演进</li>
+</ul>
+<hr>
+<h2 id="五、呼应DDIA：MapReduce是基石，也是墓碑"><a href="#五、呼应DDIA：MapReduce是基石，也是墓碑" class="headerlink" title="五、呼应DDIA：MapReduce是基石，也是墓碑"></a>五、呼应DDIA：MapReduce是基石，也是墓碑</h2><p>DDIA第11章用一句话总结了MapReduce的遗产：</p>
+<blockquote>
+<p>「MapReduce是批处理的基石，但它的时代已经过去了。」</p>
+</blockquote>
+<p>这句话值得细品。「基石」是因为它奠定了分布式数据处理的基本范式——数据分片、就近计算、故障恢复——这些思想深远地影响了后续所有批处理引擎。「已经过去」是因为它的物理假设（磁盘慢、内存贵、网络是瓶颈）已经不再成立。</p>
+<p>2004年，服务器内存还是GB级，磁盘是主要存储介质。2026年，单机TB级内存、NVMe SSD、RDMA网络已经是公共云标配。当物理约束变了，架构也必须变。MapReduce在磁盘时代是最优解，Spark在内存时代是最优解，数据湖在云原生时代是最优解——每次迭代都是对上一代物理假设的修正。</p>
+<p>但有一个逻辑始终没变：<strong>架构的竞争力，最终取决于对物理瓶颈的理解深度</strong>。你不需要手写MapReduce，但你需要理解Shuffle为什么慢；你不需要管理HDFS块，但你需要知道谓词下推能省多少I&#x2F;O。这些来自底层原理的认知，决定了你在选型时是照搬文档还是做合理取舍。</p>
+<hr>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>从MapReduce到Spark再到数据湖，批处理引擎的进化史，本质上是一部「从磁盘到内存、从JOB到DAG、从文件到表」的范式迁移史。如果你正在维护一套供应链报表系统，值得做几件事：</p>
+<ol>
+<li>确认你的Spark作业是否有效利用Pipeline执行，Stage合并是否合理</li>
+<li>评估Hive表迁移到Iceberg&#x2F;Hudi的收益——不是跟风，而是为了时间旅行、分区演化、ACID</li>
+<li>重新审视你的数据链路：哪些地方还在做全量同步？哪些地方可以用CDC+增量替代？</li>
+</ol>
+<p>下次有人问你Spark和MapReduce有什么区别，别只答「一个是内存计算一个是磁盘计算」。真正答案是：<strong>MapReduce把计算当步骤序列，Spark把计算当逻辑图——一个看的是路，一个看的是地图。</strong></p>
+<hr>
+<p><em>延伸阅读：</em></p>
+<ul>
+<li>DDIA第11章 MapReduce、第12章 数据流系统</li>
+<li>《Spark技术内幕》</li>
+<li>Apache Iceberg官方文档：表格式与Snapshot设计</li>
+<li>Apache Hudi文档：Copy-on-Write vs Merge-on-Read</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E6%89%B9%E5%A4%84%E7%90%86/" class="print-no-link">#批处理</a>
+      
+        <a href="/tags/Spark/" class="print-no-link">#Spark</a>
+      
+        <a href="/tags/MapReduce/" class="print-no-link">#MapReduce</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-11-从MapReduce到Spark：批处理引擎的进化史</div>
+      <div>https://aster-xu-lab.github.io/2025/07/30/2025-07-30-DDIA-11-批处理进化史/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年7月30日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/08/12/2025-08-12-DDIA-11-%E6%97%A5%E6%8A%A5%E8%A1%A8%E6%89%B9%E5%A4%84%E7%90%86%E5%AE%9E%E6%88%98/" title="DDIA-11-实战：电商日报表的批处理设计——从MySQL全量扫描到增量快照">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-11-实战：电商日报表的批处理设计——从MySQL全量扫描到增量快照</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/07/18/2025-07-18-DDIA-11-MapReduce%E7%81%B5%E9%AD%82/" title="DDIA-11-MapReduce的灵魂：分区、排序、归并为什么是批处理的基石">
+                        <span class="hidden-mobile">DDIA-11-MapReduce的灵魂：分区、排序、归并为什么是批处理的基石</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,892 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="开篇：一个线程池耗尽引发的血案2023年秋天，凌晨三点，手机警报响了。 告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。 登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handl">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2025/03/11/2025-03-11-DDIA-09-SyncTask%E8%B6%85%E6%97%B6%E5%B9%82%E7%AD%89/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="开篇：一个线程池耗尽引发的血案2023年秋天，凌晨三点，手机警报响了。 告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。 登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handl">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-03-11T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-04T11:09:04.385Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DDIA">
+<meta property="article:tag" content="SyncTask">
+<meta property="article:tag" content="实战">
+<meta property="article:tag" content="幂等">
+<meta property="article:tag" content="超时">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-03-11 09:00" pubdate>
+          2025年3月11日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          60 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="开篇：一个线程池耗尽引发的血案"><a href="#开篇：一个线程池耗尽引发的血案" class="headerlink" title="开篇：一个线程池耗尽引发的血案"></a>开篇：一个线程池耗尽引发的血案</h2><p>2023年秋天，凌晨三点，手机警报响了。</p>
+<p>告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。</p>
+<p>登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handler，对方接口响应超时，HTTP 连接池的连接全部耗尽，但我们的代码里<strong>没有设置超时时间</strong>。</p>
+<p>一行 <code>RestTemplate</code> 调用，没有 <code>setConnectTimeout</code>，没有 <code>setReadTimeout</code>，也没有任何超时后的 fallback 机制。</p>
+<p>一个 Handler 卡住，线程池 8 个线程全部阻塞，所有 49 个 Handler 的后续任务全部排队，系统不可用。</p>
+<p>这就是 DDIA 第九章说的那句话：<strong>“在一个由许多部件组成的系统中，某个部件出问题是常态，而不是例外。你的系统必须能容忍部分失效。”</strong> 而我们 V1 版本的 SyncTask 引擎，显然做不到。</p>
+<h2 id="V1-的问题全景"><a href="#V1-的问题全景" class="headerlink" title="V1 的问题全景"></a>V1 的问题全景</h2><p>SyncTask 引擎寄居在 xxl-job 之上，V1 版本的设计很简单：一个固定的线程池，轮询待执行的任务，逐个调用 <code>handler.execute()</code>。伪代码大体是这样：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// V1 版本——简化示意</span><br>List&lt;Task&gt; tasks = taskStore.fetchPendingTasks();<br><span class="hljs-keyword">for</span> (Task task : tasks) &#123;<br>    threadPool.submit(() -&gt; &#123;<br>        <span class="hljs-type">SyncTaskHandler</span> <span class="hljs-variable">handler</span> <span class="hljs-operator">=</span> registry.getHandler(task.getHandlerName());<br>        handler.execute(task);  <span class="hljs-comment">// 没有超时，没有隔离</span><br>    &#125;);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>看起来很干净。但在我们的场景里，93 个 Handler 对接了 10 多个外部系统：金蝶 ERP、聚水潭 WMS、华为商品中心、企业微信通知、多个第三方物流接口……每一个外部系统都可能在某个时刻变慢、超时、或完全不可用。</p>
+<p>V1 版本面对这些问题，毫无抵抗能力：</p>
+<ol>
+<li><strong>无超时控制</strong>：<code>handler.execute()</code> 是一个纯粹的同步调用，没有 timeout 保护</li>
+<li><strong>无故障隔离</strong>：所有 Handler 共用线程池，一个卡住，全部阻塞</li>
+<li><strong>无幂等保证</strong>：任务可能被 xxl-job 重复调度，DB 里有重复记录</li>
+<li><strong>无降级出口</strong>：没有 onTimeout&#x2F;onException 的扩展点</li>
+</ol>
+<p>DDIA 第九章讲的是”一致性与共识”，看起来跟我们这个任务引擎没什么关系。但 Kleppmann 用大量篇幅讨论了一个前置问题：<strong>在分布式系统中，你如何确认一个操作真的失败了？</strong> 答案是：你不能。你只能通过超时来推测它失败了，然后决定怎么办。</p>
+<p>这个洞察，恰好是 SyncTask V2 所有改进的起点。</p>
+<h2 id="修复-1：CompletableFuture-orTimeout-——-每个任务独立超时"><a href="#修复-1：CompletableFuture-orTimeout-——-每个任务独立超时" class="headerlink" title="修复 1：CompletableFuture.orTimeout —— 每个任务独立超时"></a>修复 1：CompletableFuture.orTimeout —— 每个任务独立超时</h2><p>Java 9 引入了一个简单但关键的 API：<code>CompletableFuture.orTimeout(long timeout, TimeUnit unit)</code>。它的语义非常精确：如果这个 Future 在指定时间内没有完成，就以 <code>TimeoutException</code> 异常完成它。</p>
+<p>V2 的核心改造，就是把每个 Handler 的执行包装成一个 <code>CompletableFuture</code>，并给它一个独立的超时时间：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// V2 版本——单任务超时</span><br>CompletableFuture&lt;Void&gt; future = CompletableFuture<br>    .runAsync(() -&gt; handler.execute(task, param), executor)<br>    .orTimeout(<span class="hljs-number">30</span>, TimeUnit.SECONDS)  <span class="hljs-comment">// 每个 Handler 独立 30s 超时</span><br>    .exceptionally(ex -&gt; &#123;<br>        <span class="hljs-comment">// 超时或异常统一处理</span><br>        handleFailure(task, ex);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;<br>    &#125;);<br></code></pre></td></tr></table></figure>
+
+<p>关键点在于<strong>每个 Handler 独立超时</strong>。Handler A 调用金蝶接口超时了，30 秒后它的 Future 以 TimeoutException 完成，对应的任务标记为失败，但 Handler B、Handler C 不受影响，继续执行各自的任务。</p>
+<p>一个任务挂了，不再影响其他所有任务。这是 V2 最重要的工程改进。</p>
+<p>有人可能会问：为什么不直接用线程池的 <code>Future.get(timeout)</code> ？两个原因。第一，<code>get(timeout)</code> 是阻塞的，你需要在某个地方等待它，这又回到线程池被占用的问题。第二，<code>orTimeout</code> 是异步的、非阻塞的——超时后框架自动触发 <code>exceptionally</code> 回调，你没占用任何额外线程来等待。</p>
+<p>这也是 DDIA 第九章反复强调的一个主题：<strong>超时检测不能依赖同步等待，它必须是系统架构的一部分，而不是调用方的负担。</strong></p>
+<h2 id="修复-2：批次聚合-整体超时"><a href="#修复-2：批次聚合-整体超时" class="headerlink" title="修复 2：批次聚合 + 整体超时"></a>修复 2：批次聚合 + 整体超时</h2><p>单个 Handler 有超时还不够。V2 引入了一个重要的执行模型：<strong>批次聚合</strong>。</p>
+<p>业务场景是这样的：一个 xxl-job 触发周期，需要执行一批任务（比如50个）。V1 是一个一个串行执行。V2 把它们聚合成一个批次，用 <code>CompletableFuture.allOf</code> 并行执行：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// V2 版本——批次聚合</span><br>List&lt;CompletableFuture&lt;Void&gt;&gt; futures = tasks.stream()<br>    .map(task -&gt; CompletableFuture<br>        .runAsync(() -&gt; handler.execute(task, param), executor)<br>        .orTimeout(<span class="hljs-number">30</span>, TimeUnit.SECONDS))<br>    .collect(Collectors.toList());<br><br>CompletableFuture&lt;Void&gt; batch = CompletableFuture<br>    .allOf(futures.toArray(<span class="hljs-keyword">new</span> <span class="hljs-title class_">CompletableFuture</span>[<span class="hljs-number">0</span>]))<br>    .orTimeout(<span class="hljs-number">120</span>, TimeUnit.SECONDS);  <span class="hljs-comment">// 整批 120s 兜底</span><br></code></pre></td></tr></table></figure>
+
+<p>这里有两层超时：单任务 30 秒，整批 120 秒。含义是：</p>
+<ul>
+<li><strong>正常情况</strong>：所有任务在 30 秒内完成，整批结束</li>
+<li><strong>部分任务超时</strong>：个别任务 30 秒后以 TimeoutException 完成，但不影响其他任务，整批继续等待</li>
+<li><strong>整体超时</strong>：如果 120 秒后仍有任务没完成（比如线程池被大量慢任务拖住），整批以超时结束，未完成的任务标记为失败</li>
+</ul>
+<p>这里有一个重要的架构决策：<strong>部分成功是合法的</strong>。一批 50 个任务，其中 3 个超时失败了，47 个成功——这是正常现象，不是异常。V2 的批次结果会明确区分 <code>成功数</code>、<code>失败数</code>、<code>超时数</code>，而不是简单地整体成功或失败。</p>
+<p>这跟微服务里 “partial failure” 的处理思路完全一致。DDIA 第九章讲了两阶段提交（2PC）的局限——它要求所有参与者都同意，任何一个不同意就全部回滚。但现实世界的分布式系统，很多时候要接受部分失败并继续前进。SyncTask V2 的批次聚合，就是这样一种务实的折中。</p>
+<h2 id="修复-3：线程池隔离-——-不同-Handler，不同待遇"><a href="#修复-3：线程池隔离-——-不同-Handler，不同待遇" class="headerlink" title="修复 3：线程池隔离 —— 不同 Handler，不同待遇"></a>修复 3：线程池隔离 —— 不同 Handler，不同待遇</h2><p>一个 Handler 慢，不应该拖慢其他 Handler。这是我们用 <code>orTimeout</code> 解决了的问题。</p>
+<p>但还有一种更隐蔽的问题：<strong>资源竞争</strong>。假设你有 49 个 Handler 共用 8 个线程。其中 5 个日志&#x2F;通知类 Handler 占用了 5 个线程（虽然它们单个很快，但数量多），那核心的业务 Handler 只剩 3 个线程可用。</p>
+<p>V2 的解决方案是<strong>线程池隔离</strong>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// V2 版本——线程池隔离（简化配置）</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ThreadPoolConfig</span> &#123;<br>    <span class="hljs-comment">// 核心业务 Handler（订单同步、库存同步等）</span><br>    <span class="hljs-meta">@Bean(&quot;coreBizExecutor&quot;)</span><br>    <span class="hljs-keyword">public</span> ThreadPoolTaskExecutor <span class="hljs-title function_">coreBizExecutor</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-type">ThreadPoolTaskExecutor</span> <span class="hljs-variable">executor</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadPoolTaskExecutor</span>();<br>        executor.setCorePoolSize(<span class="hljs-number">8</span>);<br>        executor.setMaxPoolSize(<span class="hljs-number">16</span>);<br>        executor.setQueueCapacity(<span class="hljs-number">100</span>);<br>        executor.setThreadNamePrefix(<span class="hljs-string">&quot;core-biz-&quot;</span>);<br>        <span class="hljs-keyword">return</span> executor;<br>    &#125;<br><br>    <span class="hljs-comment">// 通知/日志 Handler（企业微信通知、操作日志等）</span><br>    <span class="hljs-meta">@Bean(&quot;notifyExecutor&quot;)</span><br>    <span class="hljs-keyword">public</span> ThreadPoolTaskExecutor <span class="hljs-title function_">notifyExecutor</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-type">ThreadPoolTaskExecutor</span> <span class="hljs-variable">executor</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadPoolTaskExecutor</span>();<br>        executor.setCorePoolSize(<span class="hljs-number">2</span>);<br>        executor.setMaxPoolSize(<span class="hljs-number">4</span>);<br>        executor.setQueueCapacity(<span class="hljs-number">50</span>);<br>        executor.setThreadNamePrefix(<span class="hljs-string">&quot;notify-&quot;</span>);<br>        <span class="hljs-keyword">return</span> executor;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>每个 Handler 注册时声明自己使用的线程池：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// Handler 注册时声明线程池类型</span><br><span class="hljs-meta">@SyncTaskHandler(name = &quot;orderSync&quot;, executor = &quot;coreBizExecutor&quot;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderSyncHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">SyncTaskHandler</span> &#123; ... &#125;<br><br><span class="hljs-meta">@SyncTaskHandler(name = &quot;wechatNotify&quot;, executor = &quot;notifyExecutor&quot;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">WechatNotifyHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">SyncTaskHandler</span> &#123; ... &#125;<br></code></pre></td></tr></table></figure>
+
+<p>这样，通知类 Handler 即使全部卡死，也只影响通知线程池，核心业务的订单同步、库存同步完全不受影响。逻辑上，这就是<strong>船舱隔板</strong>（bulkhead）模式的应用，也是 DDIA 第九章强调的”故障隔离”（fault isolation）——局部故障不应传播为系统级故障。</p>
+<h2 id="修复-4：幂等设计——预防重复执行比事后补偿更简单"><a href="#修复-4：幂等设计——预防重复执行比事后补偿更简单" class="headerlink" title="修复 4：幂等设计——预防重复执行比事后补偿更简单"></a>修复 4：幂等设计——预防重复执行比事后补偿更简单</h2><p>任务引擎有个绕不开的问题：xxl-job 自己是<strong>至少一次</strong>（at-least-once）调度语义。调度器可能因为网络抖动重试，也可能因为前一次没来得及更新分片状态而再次触发。</p>
+<p>如果我们的 Handler 没有幂等保护，同一个订单被同步两次，就会产生重复数据——最坏的情况，一个订单被创建两次，仓库发了两份货。</p>
+<p>V2 的幂等设计分为两层：</p>
+<p><strong>第一层：任务状态机 + 乐观锁</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 任务表增加 status 字段和版本号</span><br><span class="hljs-keyword">UPDATE</span> sync_task <br><span class="hljs-keyword">SET</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;EXECUTING&#x27;</span>, version <span class="hljs-operator">=</span> version <span class="hljs-operator">+</span> <span class="hljs-number">1</span><br><span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> #&#123;taskId&#125; <br>  <span class="hljs-keyword">AND</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PENDING&#x27;</span>       <span class="hljs-comment">-- 只有 PENDING 状态才能抢占</span><br>  <span class="hljs-keyword">AND</span> next_execute_time <span class="hljs-operator">&lt;=</span> NOW()<br></code></pre></td></tr></table></figure>
+
+<p>通过一次带条件的 UPDATE 来”抢占”任务。如果 0 行被更新，说明这个任务已经被其他调度周期抢走了——直接跳过，不做任何事。这就是<strong>乐观锁抢占模式</strong>。</p>
+<p><strong>第二层：唯一索引兜底</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 业务唯一键防重</span><br><span class="hljs-keyword">ALTER TABLE</span> order_sync_log <br><span class="hljs-keyword">ADD</span> <span class="hljs-keyword">UNIQUE</span> KEY uk_order_sync (order_no, handler_name, execute_date);<br></code></pre></td></tr></table></figure>
+
+<p>即使应用层的状态机被绕过（比如直接写库），数据库层还有唯一约束兜底。<code>INSERT ... ON DUPLICATE KEY UPDATE</code> 保证同一天的同一笔订单、同一个 Handler 只会产生一条记录。</p>
+<p>很多团队喜欢在幂等上做复杂的分布式锁，或者引入 Redis 做去重。我们的经验是：<strong>预防重复执行比事后补偿简单得多，而数据库的唯一约束是最可靠、最简单的预防手段。</strong></p>
+<p>这也呼应了 DDIA 第九章的一个观点：在分布式系统中，”恰好一次”语义并不存在——你不可能同时保证可靠性和恰好一次。但你可以通过<strong>幂等性</strong>让”至少一次”的行为表现得像”恰好一次”。Kleppmann 称之为”幂等写入”（idempotent write），这是构建可靠系统的基本技术之一。</p>
+<h2 id="修复-5：ThreadLocal-泄漏修复——线程池复用的隐形炸弹"><a href="#修复-5：ThreadLocal-泄漏修复——线程池复用的隐形炸弹" class="headerlink" title="修复 5：ThreadLocal 泄漏修复——线程池复用的隐形炸弹"></a>修复 5：ThreadLocal 泄漏修复——线程池复用的隐形炸弹</h2><p>这个问题发现得很晚，因为它不会直接报错，只会慢慢泄露。</p>
+<p>我们的 Handler 在执行时会从 <code>TaskContext</code> 里获取当前任务的任务 ID、批次号等信息。在最开始的实现里，我们把 <code>TaskContext</code> 放进了 <code>ThreadLocal</code>，Handler 执行完成后……就忘了清理。</p>
+<p>线程池的线程是复用的。这次任务执行完了，线程不销毁，它身上的 ThreadLocal 里的上一次任务上下文也不会自动消失。下次这个线程被分配执行另一个任务时，如果新任务忘记设置 TaskContext，它读到的是上一个任务的旧数据。</p>
+<p>最典型的问题：告警消息里竟然出现了上一批任务的任务 ID。</p>
+<p>V2 的修复是在 <code>afterExecute</code> 里强制清理：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// V2 版本——afterExecute 清理 ThreadLocal</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TaskThreadPoolExecutor</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">ThreadPoolExecutor</span> &#123;<br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">afterExecute</span><span class="hljs-params">(Runnable r, Throwable t)</span> &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">// 通知生命周期监听器</span><br>            <span class="hljs-keyword">for</span> (TaskLifecycleListener listener : listeners) &#123;<br>                listener.afterExecute(taskContext);<br>            &#125;<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            <span class="hljs-comment">// 关键：清理 ThreadLocal，防止线程池复用导致内存泄漏</span><br>            TaskContextHolder.clear();<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>本质很简单：<strong>谁设置谁清理，用完了就还回去。</strong> 线程池里的线程不是你的，是共享资源。这个道理说起来容易，但在没有规范 ThreadLocal 使用习惯的团队里，几乎一定会出问题。</p>
+<h2 id="监控埋点：TaskLifecycleListener-——-预留的扩展位"><a href="#监控埋点：TaskLifecycleListener-——-预留的扩展位" class="headerlink" title="监控埋点：TaskLifecycleListener —— 预留的扩展位"></a>监控埋点：TaskLifecycleListener —— 预留的扩展位</h2><p>V2 定义了一个 <code>TaskLifecycleListener</code> 接口：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">TaskLifecycleListener</span> &#123;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">beforeExecute</span><span class="hljs-params">(TaskContext context)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">afterExecute</span><span class="hljs-params">(TaskContext context)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">onException</span><span class="hljs-params">(TaskContext context, Throwable ex)</span>;<br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">onTimeout</span><span class="hljs-params">(TaskContext context)</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在 <code>afterExecute</code>、<code>onException</code>、<code>onTimeout</code> 这些关键节点，我们预留了埋点——但没有实现完整的 Metrics 采集。</p>
+<p>说实话，如果你问我 V2 最大的遗憾是什么，我会说是监控。虽然埋点都留好了，但我们没有接 Prometheus、没有 Grafana 面板，告警还是靠 xxl-job 的邮件通知 + 人工巡检。这也是团队当时工程化水平的一个侧面反映——知道该做什么，但优先级被业务压着没能做。</p>
+<p>不过，埋点本身已经为后续的 Metrics 升级做好了准备。后来只需要加一个 <code>TaskLifecycleListener</code> 的实现类，把 <code>afterExecute</code>、<code>onTimeout</code>、<code>onException</code> 的数据推送到 Prometheus pushgateway，就可以看到每类任务的执行耗时分布、超时率、成功率——这是 V3 的事了。</p>
+<h2 id="结尾：工程是迭代出来的"><a href="#结尾：工程是迭代出来的" class="headerlink" title="结尾：工程是迭代出来的"></a>结尾：工程是迭代出来的</h2><p>SyncTask V2 的这些改进，没有一个是开天眼一次做对的。</p>
+<p>线程池隔离，是通知服务挂了三次之后才加的。orTimeout，是凌晨告警之后第二天早上改的。幂等设计，是对账发现重复数据之后补的。ThreadLocal 泄漏，是排查了一个告警乱码 bug 之后修的。</p>
+<p>每一条改进后面，都有一个线上事故。如果你问我架构能力是怎么长的，答案就是：被事故喂出来的。</p>
+<p>DDIA 第九章结尾有一段话，大意是：分布式系统的难点不是实现功能，而是处理各种可能的故障。你要考虑网络分区、时钟不可靠、节点重启、消息乱序……一个看似简单的操作，在分布式环境下可能以十几种方式失败。</p>
+<p>SyncTask 引擎面对的，正是这种”部分失效”的典型场景。93 个 Handler，10 多个外部系统，任何一个都可能在任意时刻出问题。V2 用超时控制 + 故障隔离 + 幂等设计，让引擎从”一个卡住全部死”变成了”挂了几个不影响整体”。</p>
+<p>这不是因为 V2 的架构有多超前，恰恰相反——V2 的每一项改进都是被逼出来的，是塌了一次才补上一块砖。</p>
+<p>工程就是这样：不是设计出来的，是迭代出来的。</p>
+<hr>
+<p><em>DDIA 实战系列，下一篇聊分布式锁和事务一致性在 SyncTask 引擎里的实践。</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/SyncTask/" class="print-no-link">#SyncTask</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
+      
+        <a href="/tags/%E8%B6%85%E6%97%B6/" class="print-no-link">#超时</a>
+      
+        <a href="/tags/%E5%B9%82%E7%AD%89/" class="print-no-link">#幂等</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复</div>
+      <div>https://aster-xu-lab.github.io/2025/03/11/2025-03-11-DDIA-09-SyncTask超时幂等/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年3月11日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/03/24/2025-03-24-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/" title="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/02/27/2025-02-27-DDIA-08-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%BA%8B%E5%8A%A1%E4%B8%96%E7%95%8C/" title="DDIA-08-隔离级别的事务世界：从读未提交到可序列化">
+                        <span class="hidden-mobile">DDIA-08-隔离级别的事务世界：从读未提交到可序列化</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
