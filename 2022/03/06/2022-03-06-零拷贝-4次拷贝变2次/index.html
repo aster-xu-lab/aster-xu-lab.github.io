@@ -1,0 +1,900 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="先看一次最普通的”读文件发网络”你的服务要从磁盘读一个文件，通过 socket 发给客户端。直觉上这是一次很简单的操作，但操作系统底层要为它搬 4 次数据： 123磁盘 ──①DMA──▶ 内核页缓存 ──②CPU──▶ 用户态缓冲区                                      │网卡 ◀──④DMA── 内核 socket 缓冲区 ──③CPU──┘   ① DM">
+<meta property="og:type" content="article">
+<meta property="og:title" content="零拷贝：4次拷贝变2次，Kafka和Netty的&quot;零&quot;其实是两回事">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/06/2022-03-06-%E9%9B%B6%E6%8B%B7%E8%B4%9D-4%E6%AC%A1%E6%8B%B7%E8%B4%9D%E5%8F%982%E6%AC%A1/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="先看一次最普通的”读文件发网络”你的服务要从磁盘读一个文件，通过 socket 发给客户端。直觉上这是一次很简单的操作，但操作系统底层要为它搬 4 次数据： 123磁盘 ──①DMA──▶ 内核页缓存 ──②CPU──▶ 用户态缓冲区                                      │网卡 ◀──④DMA── 内核 socket 缓冲区 ──③CPU──┘   ① DM">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-03-06T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.850Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="DMA">
+<meta property="article:tag" content="Kafka">
+<meta property="article:tag" content="Netty">
+<meta property="article:tag" content="sendfile">
+<meta property="article:tag" content="零拷贝">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>零拷贝：4次拷贝变2次，Kafka和Netty的&#34;零&#34;其实是两回事 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="零拷贝：4次拷贝变2次，Kafka和Netty的&#34;零&#34;其实是两回事"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-03-06 09:00" pubdate>
+          2022年3月6日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          20 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">零拷贝：4次拷贝变2次，Kafka和Netty的&#34;零&#34;其实是两回事</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="先看一次最普通的”读文件发网络”"><a href="#先看一次最普通的”读文件发网络”" class="headerlink" title="先看一次最普通的”读文件发网络”"></a>先看一次最普通的”读文件发网络”</h2><p>你的服务要从磁盘读一个文件，通过 socket 发给客户端。直觉上这是一次很简单的操作，但操作系统底层要为它搬 4 次数据：</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs x86asm">磁盘 ──①DMA──▶ 内核页缓存 ──②<span class="hljs-meta">CPU</span>──▶ 用户态缓冲区<br>                                      │<br>网卡 ◀──④DMA── 内核 socket 缓冲区 ──③<span class="hljs-meta">CPU</span>──┘<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>① DMA：磁盘 → 内核页缓存</strong>。DMA（Direct Memory Access）由硬件&#x2F;驱动完成搬运，<strong>不占 CPU</strong>。</li>
+<li><strong>② CPU 拷贝：内核页缓存 → 用户态</strong>。这是业务代码能看到数据的地方（<code>FileInputStream.read()</code>）。</li>
+<li><strong>③ CPU 拷贝：用户态 → 内核 socket 缓冲区</strong>。把数据写进 socket（<code>SocketOutputStream.write()</code>）。</li>
+<li><strong>④ DMA：内核 socket 缓冲区 → 网卡</strong>。发出去。</li>
+</ul>
+<p>所以是 <strong>2 次 DMA + 2 次 CPU 拷贝</strong>，而且中间还夹着 <strong>2 次用户态&#x2F;内核态切换</strong>（进内核读文件、进内核写 socket）。</p>
+<p>问题很清楚：<strong>数据为了”看一眼”用户态，被 CPU 拷贝了两次</strong>——明明只是从磁盘搬到网卡，中间根本不关心内容，却要在用户态兜一大圈。</p>
+<h2 id="二、零拷贝-sendfile：让数据别来用户态"><a href="#二、零拷贝-sendfile：让数据别来用户态" class="headerlink" title="二、零拷贝 sendfile：让数据别来用户态"></a>二、零拷贝 sendfile：让数据别来用户态</h2><p>零拷贝的思路一句话：<strong>数据全程留在内核里，从磁盘直接 DMA 到网卡，不经过用户态</strong>。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">磁盘 ──①DMA──▶ 内核页缓存 ──②DMA──▶ 网卡<br></code></pre></td></tr></table></figure>
+
+<p>只剩 <strong>2 次 DMA</strong>，都是硬件搬运，<strong>CPU 一次都不用搬</strong>，也<strong>没有用户态&#x2F;内核态切换</strong>。Linux 提供的系统调用是 <code>sendfile</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// Java 里的封装：FileChannel.transferTo</span><br><span class="hljs-keyword">try</span> (<span class="hljs-type">FileChannel</span> <span class="hljs-variable">fileChannel</span> <span class="hljs-operator">=</span> FileChannel.open(path);<br>     <span class="hljs-type">SocketChannel</span> <span class="hljs-variable">socketChannel</span> <span class="hljs-operator">=</span> SocketChannel.open(addr)) &#123;<br>    fileChannel.transferTo(<span class="hljs-number">0</span>, fileChannel.size(), socketChannel);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>所以”零拷贝”这个叫法很容易误导人——它<strong>不是 0 次拷贝</strong>，而是 <strong>0 次 CPU 拷贝、0 次用户态参与</strong>。那 2 次 DMA 搬运仍然存在，只是 DMA 是硬件干活，不消耗 CPU，也跟用户态无关。</p>
+<blockquote>
+<p>关键认知：<strong>DMA 让数据在”内核页缓存 ↔ 网卡”之间直达，CPU 只发指令，不搬字节。</strong></p>
+</blockquote>
+<h2 id="三、mmap-是另一个思路"><a href="#三、mmap-是另一个思路" class="headerlink" title="三、mmap 是另一个思路"></a>三、mmap 是另一个思路</h2><p><code>mmap</code>（内存映射）是零拷贝的另一种实现：把文件映射到进程的虚拟地址空间，业务代码读文件时<strong>不触发用户态拷贝</strong>，因为数据在内核页缓存里，映射后业务代码直接”看到”这块内存。</p>
+<figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs x86asm">磁盘 ──DMA──▶ 内核页缓存（通过 mmap 直接映射给用户态，无需 <span class="hljs-meta">CPU</span> 拷贝）<br></code></pre></td></tr></table></figure>
+
+<p>Java 里 <code>MappedByteBuffer</code> 就是它的封装。不过 mmap 有它的代价：映射需要页对齐、大文件映射会占地址空间、写回时机不可控。sendfile 适合”从文件到 socket”这种<strong>不关心内容</strong>的搬运，mmap 适合”要真正读&#x2F;改文件内容”的场景。</p>
+<h2 id="四、Kafka-为什么吞吐百万级"><a href="#四、Kafka-为什么吞吐百万级" class="headerlink" title="四、Kafka 为什么吞吐百万级"></a>四、Kafka 为什么吞吐百万级</h2><p>Kafka 把”零拷贝”用在了最该用的地方：<strong>broker 把日志段文件发给消费者</strong>——这正是”读文件发网络、不关心内容”的典型场景。</p>
+<p>但零拷贝只是 Kafka 高吞吐的一块拼图。完整链条是：</p>
+<ol>
+<li><strong>日志模型 + 顺序写</strong>：消息追加进分区的日志段文件，只在尾部顺序 append、不随机覆盖。机械盘顺序写远比随机写快（随机写要寻道，一次寻道约 10ms；顺序写是连续的，一次 IO 写一片）——<strong>这是吞吐的物理地基</strong>；</li>
+<li><strong>PageCache</strong>：读写在操作系统的页缓存上做缓冲，命中页缓存就不碰磁盘，性能”接近内存”；</li>
+<li><strong>sendfile 零拷贝</strong>：broker 把日志段发给消费者时，数据从磁盘经内核直接 DMA 到网卡，<strong>4 次变 2 次</strong>。</li>
+</ol>
+<p>一句话主线：<strong>日志模型 + 顺序 append + PageCache + sendfile</strong>，把”落盘”和”网卡发送”都推到最省的道路上。</p>
+<h2 id="五、Netty-的”零拷贝”是另一回事"><a href="#五、Netty-的”零拷贝”是另一回事" class="headerlink" title="五、Netty 的”零拷贝”是另一回事"></a>五、Netty 的”零拷贝”是另一回事</h2><p>容易被混在一起的是 Netty 的”零拷贝”。Netty 里的零拷贝<strong>不是操作系统层面的 sendfile</strong>，而是<strong>避免内存复制</strong>——用 <code>CompositeByteBuf</code> 把多个缓冲<strong>逻辑拼成</strong>一块、用 <code>slice</code> 把一段缓冲<strong>逻辑切出</strong>，<strong>都不真的 copy 数据</strong>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 把两个 ByteBuf 逻辑拼成一个，不复制数据</span><br><span class="hljs-type">CompositeByteBuf</span> <span class="hljs-variable">composite</span> <span class="hljs-operator">=</span> Unpooled.compositeBuffer();<br>composite.addComponents(<span class="hljs-literal">true</span>, buf1, buf2);<br></code></pre></td></tr></table></figure>
+
+<p>两种”零拷贝”的区别：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>sendfile（OS 层）</th>
+<th>Netty Composite&#x2F;slice（应用层）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>省的是什么</td>
+<td>CPU 拷贝 + 用户态切换</td>
+<td>内存复制</td>
+</tr>
+<tr>
+<td>数据真的动吗</td>
+<td>DMA 搬运（不动 CPU）</td>
+<td>完全不动，只动引用</td>
+</tr>
+<tr>
+<td>场景</td>
+<td>文件 → socket</td>
+<td>多个缓冲拼&#x2F;切</td>
+</tr>
+</tbody></table>
+<p><strong>面试&#x2F;博客里把它俩分开讲，才算真的懂。</strong> 我写这篇的时候专门对照了复习卡 09 和 18，很容易把”Netty 零拷贝”和”Kafka sendfile”混成一句话——它们只是名字都叫”零拷贝”，机制完全不同。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>普通 IO：<strong>4 次拷贝</strong>（2 次 DMA + 2 次 CPU），带 2 次用户态&#x2F;内核态切换；</li>
+<li>sendfile：<strong>2 次 DMA</strong>，零 CPU 拷贝、零用户态参与；</li>
+<li>“零拷贝” &#x3D; “零 CPU 拷贝”，不是 0 次搬运；</li>
+<li>Kafka 用它做”日志段 → 消费者”，是顺序写 + PageCache 之后的最后一块拼图；</li>
+<li>Netty 的”零拷贝”是应用层<strong>避免内存复制</strong>（Composite&#x2F;slice），跟 sendfile 机制不同，别混。</li>
+</ul>
+<hr>
+<p><em>发表于 2022 年 3 月 · 标签: 零拷贝, sendfile, DMA, Kafka, Netty</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="category-chain-item">网络与操作系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Kafka/" class="print-no-link">#Kafka</a>
+      
+        <a href="/tags/%E9%9B%B6%E6%8B%B7%E8%B4%9D/" class="print-no-link">#零拷贝</a>
+      
+        <a href="/tags/sendfile/" class="print-no-link">#sendfile</a>
+      
+        <a href="/tags/DMA/" class="print-no-link">#DMA</a>
+      
+        <a href="/tags/Netty/" class="print-no-link">#Netty</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>零拷贝：4次拷贝变2次，Kafka和Netty的&#34;零&#34;其实是两回事</div>
+      <div>https://aster-xu-lab.github.io/2022/03/06/2022-03-06-零拷贝-4次拷贝变2次/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年3月6日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/03/10/2022-03-10-fork%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6COW-%E4%BB%8E%E8%BF%9B%E7%A8%8B%E5%85%8B%E9%9A%86%E5%88%B0Redis%E5%BF%AB%E7%85%A7/" title="fork写时复制COW：从进程克隆到Redis RDB快照">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">fork写时复制COW：从进程克隆到Redis RDB快照</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/03/02/2022-03-02-IO%E6%A8%A1%E5%9E%8B%E6%BC%94%E8%BF%9B-%E4%BB%8EBIO%E5%88%B0epoll/" title="IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密">
+                        <span class="hidden-mobile">IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

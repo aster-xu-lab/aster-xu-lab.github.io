@@ -1,0 +1,883 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一、大促保障四件套高并发场景（大促&#x2F;秒杀）的保障，核心是四件套一起上：  限流：入口控制量，按 QPS&#x2F;并发线程限流，防止打爆； 降级：非核心功能降级（营销&#x2F;推荐只保留基础、二级缓存降级走 Redis）； 熔断：下游异常快速失败，保护自己； 缓存：热点数据预热、缓存降级。  我的订单中心大促：按 QPS 限流防打爆、下游仓储&#x2F;SAP 异常时熔断快速失败、非">
+<meta property="og:type" content="article">
+<meta property="og:title" content="大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2023/05/09/2023-05-09-%E5%A4%A7%E4%BF%83%E4%BF%9D%E9%9A%9C%E4%B8%8E%E7%A7%92%E6%9D%80%E8%AE%BE%E8%AE%A1-%E9%99%90%E6%B5%81%E9%99%8D%E7%BA%A7%E7%86%94%E6%96%AD%E7%BC%93%E5%AD%98/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一、大促保障四件套高并发场景（大促&#x2F;秒杀）的保障，核心是四件套一起上：  限流：入口控制量，按 QPS&#x2F;并发线程限流，防止打爆； 降级：非核心功能降级（营销&#x2F;推荐只保留基础、二级缓存降级走 Redis）； 熔断：下游异常快速失败，保护自己； 缓存：热点数据预热、缓存降级。  我的订单中心大促：按 QPS 限流防打爆、下游仓储&#x2F;SAP 异常时熔断快速失败、非">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-05-09T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.828Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="大促">
+<meta property="article:tag" content="库存">
+<meta property="article:tag" content="秒杀">
+<meta property="article:tag" content="系统设计">
+<meta property="article:tag" content="限流">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-05-09 09:00" pubdate>
+          2023年5月9日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          12 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一、大促保障四件套"><a href="#一、大促保障四件套" class="headerlink" title="一、大促保障四件套"></a>一、大促保障四件套</h2><p>高并发场景（大促&#x2F;秒杀）的保障，核心是四件套一起上：</p>
+<ul>
+<li><strong>限流</strong>：入口控制量，按 QPS&#x2F;并发线程限流，防止打爆；</li>
+<li><strong>降级</strong>：非核心功能降级（营销&#x2F;推荐只保留基础、二级缓存降级走 Redis）；</li>
+<li><strong>熔断</strong>：下游异常快速失败，保护自己；</li>
+<li><strong>缓存</strong>：热点数据预热、缓存降级。</li>
+</ul>
+<p><strong>我的订单中心大促</strong>：按 QPS 限流防打爆、下游仓储&#x2F;SAP 异常时熔断快速失败、非核心功能降级只保留基础。配合”预热 + 风控 + 异步”，是完整的大促保障体系。</p>
+<h2 id="二、经典场景题：秒杀系统怎么设计"><a href="#二、经典场景题：秒杀系统怎么设计" class="headerlink" title="二、经典场景题：秒杀系统怎么设计"></a>二、经典场景题：秒杀系统怎么设计</h2><p>秒杀是系统设计的高频题，核心矛盾是<strong>瞬时超高并发 + 库存有限</strong>。分阶段设计：</p>
+<h3 id="①-提前：预热"><a href="#①-提前：预热" class="headerlink" title="① 提前：预热"></a>① 提前：预热</h3><ul>
+<li>商品信息<strong>缓存预热</strong>（热点商品提前放 Redis）；</li>
+<li><strong>库存缓存预扣</strong>：库存从 DB 预扣到 Redis，避免瞬间打爆 DB。</li>
+</ul>
+<h3 id="②-请求：限流-排队-异步"><a href="#②-请求：限流-排队-异步" class="headerlink" title="② 请求：限流 + 排队 + 异步"></a>② 请求：限流 + 排队 + 异步</h3><ul>
+<li><strong>限流</strong>：用户限频、IP 限流，防止脚本刷；</li>
+<li><strong>排队</strong>：消息队列削峰——请求先进队列，后端异步消化；</li>
+<li><strong>异步下单</strong>：真正的下单处理在队列消费者里，不阻塞前端。</li>
+</ul>
+<h3 id="③-库存：Redis-预扣-DB-最终扣减"><a href="#③-库存：Redis-预扣-DB-最终扣减" class="headerlink" title="③ 库存：Redis 预扣 + DB 最终扣减"></a>③ 库存：Redis 预扣 + DB 最终扣减</h3><ul>
+<li><strong>Redis 预扣防超卖</strong>：<code>DECR inventory</code> 原子扣减，扣到 0 拒绝；</li>
+<li><strong>最终 DB 扣减</strong>：异步把 Redis 的扣减落库；</li>
+<li>防止超卖：<strong>Redis 预扣是”能不能抢”的闸，DB 扣减是”最终账”</strong>。</li>
+</ul>
+<h3 id="④-一致性：先扣-Redis-防超卖，异步-DB-对账"><a href="#④-一致性：先扣-Redis-防超卖，异步-DB-对账" class="headerlink" title="④ 一致性：先扣 Redis 防超卖，异步 DB 对账"></a>④ 一致性：先扣 Redis 防超卖，异步 DB 对账</h3><ul>
+<li>Redis 预扣 + 异步 DB 扣减，靠<strong>对账兜底</strong>收敛最终一致。</li>
+</ul>
+<h2 id="三、大促的完整保障套路"><a href="#三、大促的完整保障套路" class="headerlink" title="三、大促的完整保障套路"></a>三、大促的完整保障套路</h2><p>我的订单中心实战总结：</p>
+<ol>
+<li><strong>限流</strong>：Sentinel 按 QPS&#x2F;并发限流，防止打爆；</li>
+<li><strong>降级</strong>：非核心功能降级（二级缓存降级走 Redis&#x2F;cache）；</li>
+<li><strong>熔断</strong>：下游异常快速失败，保护自己；</li>
+<li><strong>缓存</strong>：热点数据预热、缓存降级；</li>
+<li><strong>异步</strong>：MQ 解耦耗时操作，削峰。</li>
+</ol>
+<p><strong>这套从”缓存到分库分表到 OLAP”的完整链路，就是我处理高并发&#x2F;大促的方案</strong>——订单中台日均 15 万单（峰值 50 万），通天晓传统 OMS 双十一峰值 130 万日单，都是同一套。</p>
+<h2 id="四、为什么秒杀要”排队”"><a href="#四、为什么秒杀要”排队”" class="headerlink" title="四、为什么秒杀要”排队”"></a>四、为什么秒杀要”排队”</h2><p>秒杀的本质是<strong>瞬时流量远超处理能力</strong>。如果不排队，所有请求同时打 DB，DB 直接挂。</p>
+<p>排队（MQ）的价值：<strong>把瞬时尖峰平滑成持续流量</strong>——请求先落队列，后端按自己的吞吐慢慢消化。用户看到”排队中”，但不会丢请求。这就是”削峰”的落地。</p>
+<h2 id="五、防超卖的底层"><a href="#五、防超卖的底层" class="headerlink" title="五、防超卖的底层"></a>五、防超卖的底层</h2><p>超卖 &#x3D; 卖出的比库存多。防超卖的关键在<strong>扣减的原子性</strong>：</p>
+<ul>
+<li>Redis：<code>DECR</code> 是原子的，扣到 0 拒绝——<strong>保证不超卖</strong>；</li>
+<li>DB：<code>UPDATE stock SET num = num - 1 WHERE num &gt; 0</code>（条件更新）——<strong>保证不超卖</strong>；</li>
+<li>先 Redis 预扣（挡流量），再 DB 条件扣减（落账），对账兜底。</li>
+</ul>
+<p>两层都”条件扣减”，才能既扛流量又不超卖。</p>
+<h2 id="六、和面试的连接"><a href="#六、和面试的连接" class="headerlink" title="六、和面试的连接"></a>六、和面试的连接</h2><p>被问”设计一个秒杀系统”，就用这套：<strong>预热 → 限流排队异步 → Redis 预扣 + DB 条件扣减 → 对账</strong>。每一步都有 trade-off（比如 Redis 预扣可能和 DB 不一致，靠对账收敛），能讲清取舍就是 P7 水平。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>大促四件套：<strong>限流 + 降级 + 熔断 + 缓存</strong>，配合预热&#x2F;风控&#x2F;异步；</li>
+<li>秒杀分阶段：<strong>预热 → 限流排队异步 → Redis 预扣 + DB 扣减 → 对账</strong>；</li>
+<li>削峰靠<strong>队列</strong>，把瞬时尖峰平滑成持续流量；</li>
+<li>防超卖靠<strong>原子扣减</strong>（Redis DECR + DB 条件更新），两层都不超卖；</li>
+<li>我的订单中心（日均 15 万&#x2F;峰值 50 万）和通天晓大促（130 万日单）是这套的完整验证。</li>
+</ul>
+<hr>
+<p><em>发表于 2023 年 5 月 · 标签: 系统设计, 秒杀, 大促, 限流, 库存</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" class="category-chain-item">系统设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" class="print-no-link">#系统设计</a>
+      
+        <a href="/tags/%E9%99%90%E6%B5%81/" class="print-no-link">#限流</a>
+      
+        <a href="/tags/%E7%A7%92%E6%9D%80/" class="print-no-link">#秒杀</a>
+      
+        <a href="/tags/%E5%A4%A7%E4%BF%83/" class="print-no-link">#大促</a>
+      
+        <a href="/tags/%E5%BA%93%E5%AD%98/" class="print-no-link">#库存</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳</div>
+      <div>https://aster-xu-lab.github.io/2023/05/09/2023-05-09-大促保障与秒杀设计-限流降级熔断缓存/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年5月9日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/06/01/2023-06-01-DDIA-01-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%96%B0%E6%8C%91%E6%88%98/" title="DDIA-01-云原生时代的架构新挑战：DDIA第二版新增内容解读">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-01-云原生时代的架构新挑战：DDIA第二版新增内容解读</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/05/05/2023-05-05-%E5%9B%9B%E5%A4%A7%E9%99%90%E6%B5%81%E7%AE%97%E6%B3%95-%E5%9B%BA%E5%AE%9A%E7%AA%97%E5%8F%A3%E5%88%B0%E4%BB%A4%E7%89%8C%E6%A1%B6/" title="四大限流算法：固定窗口、滑动窗口、漏桶、令牌桶">
+                        <span class="hidden-mobile">四大限流算法：固定窗口、滑动窗口、漏桶、令牌桶</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

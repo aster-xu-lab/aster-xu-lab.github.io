@@ -1,0 +1,914 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一、先分清三个名字很像的问题“穿透&#x2F;击穿&#x2F;雪崩”三个词常被记混，它们其实对应三种完全不同的场景：    问题 定义 关键区分 解决    穿透 查数据库里不存在的数据 缓存和库都没有 布隆过滤器 &#x2F; 缓存空值   击穿 单个热点 key 过期瞬间 一个 key 扛不住了 互斥锁 &#x2F; 逻辑过期   雪崩 一批 key 同时过期（或 Redis 挂） 一大批">
+<meta property="og:type" content="article">
+<meta property="og:title" content="缓存三兄弟与缓存一致性：穿透、击穿、雪崩和延迟双删">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/02/01/2024-02-01-%E7%BC%93%E5%AD%98%E4%B8%89%E5%85%84%E5%BC%9F%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7-%E7%A9%BF%E9%80%8F%E5%87%BB%E7%A9%BF%E9%9B%AA%E5%B4%A9/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一、先分清三个名字很像的问题“穿透&#x2F;击穿&#x2F;雪崩”三个词常被记混，它们其实对应三种完全不同的场景：    问题 定义 关键区分 解决    穿透 查数据库里不存在的数据 缓存和库都没有 布隆过滤器 &#x2F; 缓存空值   击穿 单个热点 key 过期瞬间 一个 key 扛不住了 互斥锁 &#x2F; 逻辑过期   雪崩 一批 key 同时过期（或 Redis 挂） 一大批">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-02-01T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.842Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="二级缓存">
+<meta property="article:tag" content="缓存">
+<meta property="article:tag" content="缓存一致性">
+<meta property="article:tag" content="缓存穿透">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>缓存三兄弟与缓存一致性：穿透、击穿、雪崩和延迟双删 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="缓存三兄弟与缓存一致性：穿透、击穿、雪崩和延迟双删"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-02-01 09:00" pubdate>
+          2024年2月1日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          16 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">缓存三兄弟与缓存一致性：穿透、击穿、雪崩和延迟双删</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一、先分清三个名字很像的问题"><a href="#一、先分清三个名字很像的问题" class="headerlink" title="一、先分清三个名字很像的问题"></a>一、先分清三个名字很像的问题</h2><p>“穿透&#x2F;击穿&#x2F;雪崩”三个词常被记混，它们其实对应三种完全不同的场景：</p>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>定义</th>
+<th>关键区分</th>
+<th>解决</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>穿透</strong></td>
+<td>查<strong>数据库里不存在</strong>的数据</td>
+<td>缓存和库都没有</td>
+<td>布隆过滤器 &#x2F; 缓存空值</td>
+</tr>
+<tr>
+<td><strong>击穿</strong></td>
+<td><strong>单个热点 key</strong> 过期瞬间</td>
+<td>一个 key 扛不住了</td>
+<td>互斥锁 &#x2F; 逻辑过期</td>
+</tr>
+<tr>
+<td><strong>雪崩</strong></td>
+<td><strong>一批 key 同时过期</strong>（或 Redis 挂）</td>
+<td>一大批 key 全挂</td>
+<td>过期加随机值 &#x2F; 多级缓存</td>
+</tr>
+</tbody></table>
+<p>一句话记忆：<strong>穿透 &#x3D; 数据不存在、击穿 &#x3D; 一个热点、雪崩 &#x3D; 一批 key</strong>。</p>
+<h2 id="二、缓存穿透：查不存在的数据"><a href="#二、缓存穿透：查不存在的数据" class="headerlink" title="二、缓存穿透：查不存在的数据"></a>二、缓存穿透：查不存在的数据</h2><p><strong>定义</strong>：请求的数据在缓存和数据库里<strong>都不存在</strong>（比如恶意请求一个不存在的订单号）。缓存永远 miss，每次都打到数据库。</p>
+<p><strong>解法</strong>：</p>
+<ul>
+<li><strong>布隆过滤器</strong>：请求先过布隆过滤器，不存在直接返回，不查库（布隆判断”一定不在”是准的）；</li>
+<li><strong>缓存空值</strong>：查库发现不存在，也往缓存写一个空值 + 短过期，后续请求命中空值。</li>
+</ul>
+<h2 id="三、缓存击穿：单个热点-key-过期"><a href="#三、缓存击穿：单个热点-key-过期" class="headerlink" title="三、缓存击穿：单个热点 key 过期"></a>三、缓存击穿：单个热点 key 过期</h2><p><strong>定义</strong>：<strong>单个热点 key</strong> 过期瞬间，大量并发请求同时打到数据库（比如一个爆款商品的缓存刚好过期，瞬间涌入的查询全 miss）。</p>
+<p><strong>解法</strong>：</p>
+<ul>
+<li><strong>互斥锁（mutex）</strong>：第一个请求拿锁去查库重建缓存，其他请求等锁（拿不到就稍等重试或返回默认值）——保证只有一个请求打库；</li>
+<li><strong>逻辑过期</strong>：缓存不设物理过期，value 里带逻辑过期时间，发现逻辑过期就异步重建；</li>
+<li><strong>不过期</strong>：热点数据干脆不设过期，靠主动更新。</li>
+</ul>
+<h2 id="四、缓存雪崩：一批-key-同时过期"><a href="#四、缓存雪崩：一批-key-同时过期" class="headerlink" title="四、缓存雪崩：一批 key 同时过期"></a>四、缓存雪崩：一批 key 同时过期</h2><p><strong>定义</strong>：<strong>一批 key 同时过期</strong>（比如都设了同一时刻的过期时间），或者 Redis 直接挂了，大量请求同时打到数据库。</p>
+<p><strong>解法</strong>：</p>
+<ul>
+<li><strong>过期加随机值</strong>：过期时间 <code>base + random</code>，让一批 key 的过期时间错开；</li>
+<li><strong>多级缓存</strong>：本地缓存（Caffeine）+ Redis 双层，Redis 挂了本地还能扛；</li>
+<li><strong>熔断限流</strong>：数据库扛不住时熔断降级，而不是硬扛。</li>
+</ul>
+<h2 id="五、缓存一致性：延迟双删"><a href="#五、缓存一致性：延迟双删" class="headerlink" title="五、缓存一致性：延迟双删"></a>五、缓存一致性：延迟双删</h2><p>缓存和数据库的双写一致性，是另一个高频问题。核心矛盾：<strong>更新数据库和更新缓存的时机</strong>。</p>
+<p>主流做法是 <strong>Cache Aside + 延迟双删</strong>：</p>
+<ol>
+<li><strong>先更新数据库</strong>；</li>
+<li><strong>删除缓存</strong>（而不是更新缓存——因为并发写缓存会引入更多不一致）；</li>
+<li><strong>隔一小段时间再删一次</strong>（延迟双删）。</li>
+</ol>
+<p>为什么延迟再删一次？因为极端情况下：删完缓存后，<strong>另一个线程读到了旧数据库值并写回缓存</strong>（读旧库回写），缓存又脏了。延迟一段再删一次，把这个”脏回写”清掉。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 延迟双删的伪代码</span><br>updateDB(order);        <span class="hljs-comment">// 1. 先更新数据库</span><br>deleteCache(key);       <span class="hljs-comment">// 2. 删除缓存</span><br>Thread.sleep(<span class="hljs-number">500</span>);      <span class="hljs-comment">// 3. 等一小段（防止读旧库回写）</span><br>deleteCache(key);       <span class="hljs-comment">// 4. 再删一次</span><br></code></pre></td></tr></table></figure>
+
+<p>更稳的方案还有：<strong>消息队列&#x2F;监听 binlog（Canal）异步删缓存</strong>——由数据库变更驱动，不依赖应用层时序。</p>
+<h2 id="六、一个务实的选择：删除缓存而不是更新缓存"><a href="#六、一个务实的选择：删除缓存而不是更新缓存" class="headerlink" title="六、一个务实的选择：删除缓存而不是更新缓存"></a>六、一个务实的选择：删除缓存而不是更新缓存</h2><p>很多人纠结”更新缓存还是删除缓存”。答案是<strong>删除</strong>，理由很实际：</p>
+<ul>
+<li><strong>更新缓存会引入并发写</strong>：两个线程同时写缓存，谁后写谁赢，但可能后写的是旧值；</li>
+<li><strong>删除缓存是惰性</strong>：下次读 miss 再重建，天然避免了并发写，代价是重建那一下要查库（但有上面击穿的手段兜底）。</li>
+</ul>
+<p>所以”先更新 DB 再删缓存”是主流，因为它在”DB 及时性”和”缓存一致性”之间取得了平衡。</p>
+<h2 id="七、结合我的项目：Caffeine-Redis-二级缓存"><a href="#七、结合我的项目：Caffeine-Redis-二级缓存" class="headerlink" title="七、结合我的项目：Caffeine + Redis 二级缓存"></a>七、结合我的项目：Caffeine + Redis 二级缓存</h2><p>订单中台用了 <strong>Caffeine（本地缓存）+ Redis（分布式缓存）</strong> 的二级缓存：</p>
+<ul>
+<li><strong>第一级 Caffeine</strong>：本地内存，命中最快，减少 Redis IO；</li>
+<li><strong>第二级 Redis</strong>：分布式共享，多实例一致；</li>
+<li><strong>缓存一致性</strong>：延迟双删 + 版本号控制，更新 DB 后删 Redis，再通过版本号兜底；</li>
+<li><strong>缓存降级</strong>：大促时降级二级缓存走 Redis，Redis 挂了走本地缓存&#x2F;降级到 DB 限流。</li>
+</ul>
+<p>二级缓存 + 降级，本身也是<strong>多级缓存</strong>思想对”雪崩”的防御——Redis 挂了对本地缓存是盲区，但至少本地还在扛。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><strong>穿透</strong>（数据不存在）→ 布隆过滤器 &#x2F; 缓存空值；</li>
+<li><strong>击穿</strong>（单热点过期）→ 互斥锁 &#x2F; 逻辑过期；</li>
+<li><strong>雪崩</strong>（一批 key 过期）→ 过期加随机值 &#x2F; 多级缓存 &#x2F; 熔断限流；</li>
+<li><strong>一致性</strong> → Cache Aside + 延迟双删（先更 DB、删缓存、隔一会再删）；</li>
+<li><strong>删缓存优于更新缓存</strong>：避免并发写，代价是重建那一下；</li>
+<li>项目里 Caffeine + Redis 二级缓存 + 延迟双删 + 降级，是大促削峰的完整组合。</li>
+</ul>
+<hr>
+<p><em>发表于 2024 年 2 月 · 标签: Redis, 缓存, 缓存穿透, 缓存一致性, 二级缓存</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E7%BC%93%E5%AD%98/" class="print-no-link">#缓存</a>
+      
+        <a href="/tags/Redis/" class="print-no-link">#Redis</a>
+      
+        <a href="/tags/%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F/" class="print-no-link">#缓存穿透</a>
+      
+        <a href="/tags/%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7/" class="print-no-link">#缓存一致性</a>
+      
+        <a href="/tags/%E4%BA%8C%E7%BA%A7%E7%BC%93%E5%AD%98/" class="print-no-link">#二级缓存</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>缓存三兄弟与缓存一致性：穿透、击穿、雪崩和延迟双删</div>
+      <div>https://aster-xu-lab.github.io/2024/02/01/2024-02-01-缓存三兄弟与一致性-穿透击穿雪崩/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年2月1日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/02/02/2024-02-02-DDIA-06-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%AE%9E%E6%88%98/" title="DDIA-06-实战：订单中心读写分离——主库扛写从库扛读的正确姿势">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-06-实战：订单中心读写分离——主库扛写从库扛读的正确姿势</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/01/22/2024-01-22-DDIA-06-%E5%A4%9A%E4%B8%BB%E5%A4%8D%E5%88%B6%E4%B8%8ECAP/" title="DDIA-06-多主复制与无主复制：CAP定理的博弈现场">
+                        <span class="hidden-mobile">DDIA-06-多主复制与无主复制：CAP定理的博弈现场</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

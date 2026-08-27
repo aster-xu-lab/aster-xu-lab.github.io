@@ -1,0 +1,876 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：  先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RocketMQ事务消息：半消息与回查，怎么做到&quot;业务成功消息必达&quot;">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/01/2024-04-01-RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF-%E5%8D%8A%E6%B6%88%E6%81%AF%E4%B8%8E%E5%9B%9E%E6%9F%A5/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：  先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-04-01T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.837Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="RocketMQ">
+<meta property="article:tag" content="事务消息">
+<meta property="article:tag" content="半消息">
+<meta property="article:tag" content="消息队列">
+<meta property="article:tag" content="顺序消息">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>RocketMQ事务消息：半消息与回查，怎么做到&#34;业务成功消息必达&#34; - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="RocketMQ事务消息：半消息与回查，怎么做到&#34;业务成功消息必达&#34;"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-04-01 09:00" pubdate>
+          2024年4月1日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          21 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">RocketMQ事务消息：半消息与回查，怎么做到&#34;业务成功消息必达&#34;</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="先抛一个问题：业务成功了，消息却没发出去"><a href="#先抛一个问题：业务成功了，消息却没发出去" class="headerlink" title="先抛一个问题：业务成功了，消息却没发出去"></a>先抛一个问题：业务成功了，消息却没发出去</h2><p>订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。</p>
+<p>最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：</p>
+<ul>
+<li><strong>先发消息再提交业务</strong>：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——<strong>消息是幽灵消息</strong>；</li>
+<li><strong>先提交业务再发消息</strong>：业务提交成功了，但发消息那一刻网络抖一下、Broker 没收到，消息就<strong>丢了</strong>——下游永远不知道这单发生了，<strong>漏消息</strong>。</li>
+</ul>
+<p>这两个方向都在赌：<strong>本地事务和发消息这两件事，无法保证原子性</strong>。要么都发生，要么都不发生。</p>
+<p>RocketMQ 的事务消息就是来解决这个问题的。</p>
+<h2 id="二、事务消息：半消息-回查"><a href="#二、事务消息：半消息-回查" class="headerlink" title="二、事务消息：半消息 + 回查"></a>二、事务消息：半消息 + 回查</h2><p>核心思路是”<strong>先把消息寄存起来，等本地事务的结果出来再决定放行还是销毁</strong>“。完整流程：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql">①  Producer 发&quot;半消息&quot;（half message）──▶ Broker<br>    半消息暂存，消费者此刻看不到它<br>②  Producer 收到半消息 ACK 后，执行本地事务（如扣库存、改订单状态）<br>③  本地事务成功 → 发 <span class="hljs-keyword">Commit</span>  → 半消息转正，消费者可见<br>    本地事务失败 → 发 <span class="hljs-keyword">Rollback</span> → 半消息销毁，消费者永远看不到<br>④  兜底：Producer 发完半消息就宕机<span class="hljs-operator">/</span>超时没回 <span class="hljs-keyword">Commit</span>，<br>    Broker 定时&quot;回查&quot; Producer，询问本地事务结果，再决定 <span class="hljs-keyword">Commit</span> 还是 <span class="hljs-keyword">Rollback</span><br></code></pre></td></tr></table></figure>
+
+<p>几个关键点：</p>
+<ul>
+<li><strong>半消息对消费者不可见</strong>——避免”消息到了，业务还没提交”的幽灵消息问题；</li>
+<li><strong>回查是兜底</strong>——靠它解决”Producer 发完半消息挂了，本地事务结果石沉大海”的场景。Broker 主动找 Producer 要答案，所以 Producer 端必须<strong>实现一个查本地事务状态的接口</strong>（<code>LocalTransactionChecker</code>）；</li>
+<li>业务实现方要保证：<strong>本地事务成功 ⟺ 发 Commit</strong>。如果本地事务提交了但 Commit 消息丢了，靠回查也能补上（回查时查本地事务已提交 → 返回提交）。</li>
+</ul>
+<p>这样，<strong>业务提交和消息放行被绑定成了原子操作</strong>：要么本地事务成功且消息可见，要么都不发生。</p>
+<blockquote>
+<p>一个容易混的点：事务消息是<strong>最终一致性</strong>——半消息转正的瞬间才可见，中间是”暂存”状态，不是强一致。它跟 Seata 的 TCC（强一致，Try 预留 + Confirm&#x2F;Cancel）不是一回事。</p>
+</blockquote>
+<h2 id="三、存储架构：事务消息为什么能”先寄存”"><a href="#三、存储架构：事务消息为什么能”先寄存”" class="headerlink" title="三、存储架构：事务消息为什么能”先寄存”"></a>三、存储架构：事务消息为什么能”先寄存”</h2><p>事务消息能”先寄存、后转正”，依赖 RocketMQ 的存储设计——<strong>消息先落盘，消费可见性另算</strong>：</p>
+<figure class="highlight lsl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs lsl">CommitLog：所有消息按序追加的大文件（一条消息写在这里）<br>ConsumeQueue：每个队列一个，存<span class="hljs-string">&quot;逻辑偏移/消息大小/物理 offset&quot;</span>的轻索引<br>IndexFile：按 <span class="hljs-type">key</span> 建的索引，供按 <span class="hljs-type">key</span> 查<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>写</strong>：所有消息<strong>顺序追加</strong>进同一个 CommitLog 文件——顺序写盘，这是 RocketMQ 高吞吐的物理地基（和 Kafka 分区顺序写是同一思想，只是 RocketMQ 所有队列共用一个文件）；</li>
+<li><strong>读</strong>：消费端先查 ConsumeQueue 拿到消息在 CommitLog 里的偏移，再去读真正的内容；</li>
+<li>半消息的”不可见”就是<strong>不建 ConsumeQueue 索引</strong>——消息在 CommitLog 里躺着，但消费端查不到它；Commit 后补建索引，消费者就能看到了。</li>
+</ul>
+<h2 id="四、顺序消息：同-key-进同一队列"><a href="#四、顺序消息：同-key-进同一队列" class="headerlink" title="四、顺序消息：同 key 进同一队列"></a>四、顺序消息：同 key 进同一队列</h2><p>订单场景里，”同一个订单的多条消息必须按顺序消费”是刚需。RocketMQ 的做法：</p>
+<figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs lasso">Producer：同一 orderId 用 MessageQueueSelector 按 key 哈希 → 落到同一个 <span class="hljs-built_in">Queue</span><br><span class="hljs-built_in">Queue</span> 内：单机存储天然 FIFO 有序<br>Consumer：用顺序监听器（MessageListenerOrderly）单线程消费<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">SendResult</span> <span class="hljs-variable">send</span> <span class="hljs-operator">=</span> producer.send(msg, <span class="hljs-keyword">new</span> <span class="hljs-title class_">MessageQueueSelector</span>() &#123;<br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> MessageQueue <span class="hljs-title function_">select</span><span class="hljs-params">(List&lt;MessageQueue&gt; mqs, Message msg, Object arg)</span> &#123;<br>        <span class="hljs-type">String</span> <span class="hljs-variable">orderId</span> <span class="hljs-operator">=</span> (String) arg;<br>        <span class="hljs-type">int</span> <span class="hljs-variable">index</span> <span class="hljs-operator">=</span> orderId.hashCode() % mqs.size();  <span class="hljs-comment">// 同 orderId 永远选同一个 Queue</span><br>        <span class="hljs-keyword">return</span> mqs.get(index);<br>    &#125;<br>&#125;, orderId);<br></code></pre></td></tr></table></figure>
+
+<p>这跟 Kafka 的<strong>分区有序</strong>是同一个模型：RocketMQ 的 Queue ≈ Kafka 的 Partition，同 key 哈希进同一队列&#x2F;分区 + 队列内有序 + 单线程消费。</p>
+<p><strong>注意区分全局顺序和分区顺序</strong>：全局顺序要整个 topic 只用一个 Queue、一个消费者，代价是完全没有并发；绝大多数业务场景要的是<strong>分区顺序（局部有序）</strong>——同一个订单内的消息有序，不同订单之间随便并发。</p>
+<h2 id="五、订单中台里的落点"><a href="#五、订单中台里的落点" class="headerlink" title="五、订单中台里的落点"></a>五、订单中台里的落点</h2><p>这是我简历上 RocketMQ 的真实场景：<strong>订单中台管核心交易链路，用事务消息保证”订单下发&#x2F;回传不丢”</strong>。SyncTask 引擎驱动的各种同步任务里，涉及”本地改状态 + 通知下游”的关键路径，就靠这套事务消息 + 可靠投递撑着。</p>
+<p><strong>业务提交成功但消息没发出去 &#x3D; 漏消息，这是交易链路绝不能容忍的</strong>——事务消息就是把这条边界堵死。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>朴素方案的两个方向都漏：先发消息再提交有幽灵消息，先提交再发消息会漏消息；</li>
+<li>事务消息 &#x3D; <strong>半消息（暂存不可见）→ 执行本地事务 → Commit&#x2F;Rollback → 宕机则 Broker 回查</strong>；</li>
+<li>本质是<strong>最终一致</strong>，跟 TCC 的强一致不同；</li>
+<li>存储靠 CommitLog 顺序写 + ConsumeQueue 索引，半消息”不建索引”实现暂存不可见；</li>
+<li>顺序消息：同 key 哈希进同一 Queue + 队列内 FIFO + 单线程消费 &#x3D; 分区有序。</li>
+</ul>
+<hr>
+<p><em>发表于 2024 年 4 月 · 标签: RocketMQ, 事务消息, 半消息, 顺序消息, 消息队列</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="print-no-link">#消息队列</a>
+      
+        <a href="/tags/RocketMQ/" class="print-no-link">#RocketMQ</a>
+      
+        <a href="/tags/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF/" class="print-no-link">#事务消息</a>
+      
+        <a href="/tags/%E5%8D%8A%E6%B6%88%E6%81%AF/" class="print-no-link">#半消息</a>
+      
+        <a href="/tags/%E9%A1%BA%E5%BA%8F%E6%B6%88%E6%81%AF/" class="print-no-link">#顺序消息</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>RocketMQ事务消息：半消息与回查，怎么做到&#34;业务成功消息必达&#34;</div>
+      <div>https://aster-xu-lab.github.io/2024/04/01/2024-04-01-RocketMQ事务消息-半消息与回查/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年4月1日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/" title="分布式任务引擎的可靠性设计：防重、断点续传与四级告警">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">分布式任务引擎的可靠性设计：防重、断点续传与四级告警</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/03/29/2024-03-29-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" title="双层权重调度：分层时间轮在业务调度中的应用">
+                        <span class="hidden-mobile">双层权重调度：分层时间轮在业务调度中的应用</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

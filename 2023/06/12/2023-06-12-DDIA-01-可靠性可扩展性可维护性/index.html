@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="前言2026年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 七年过去，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群，从看着慢SQL列表头皮发麻到每天只关心那6条">
+    <meta name="description" content="前言今年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 这几年，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群。再翻DDIA，每一章都像在复盘自己的架构笔记。 这个">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/06/12/2023-06-12-DDIA-01-%E5%8F%AF%E9%9D%A0%E6%80%A7%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7%E5%8F%AF%E7%BB%B4%E6%8A%A4%E6%80%A7/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="前言2026年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 七年过去，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群，从看着慢SQL列表头皮发麻到每天只关心那6条">
+<meta property="og:description" content="前言今年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 这几年，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群。再翻DDIA，每一章都像在复盘自己的架构笔记。 这个">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-06-12T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.743Z">
+<meta property="article:modified_time" content="2026-08-27T09:54:18.729Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="分布式">
@@ -388,8 +388,8 @@
               <div class="markdown-body">
                 
                 <hr>
-<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>2026年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。</p>
-<p>七年过去，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群，从看着慢SQL列表头皮发麻到每天只关心那6条”老面孔”。再翻DDIA，每一章都像在复盘自己的架构笔记。</p>
+<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>今年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。</p>
+<p>这几年，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群。再翻DDIA，每一章都像在复盘自己的架构笔记。</p>
 <p>这个系列是我重读DDIA的实战笔记。第一篇，从第一章的三个永恒维度聊起：<strong>可靠性（Reliability）、可扩展性（Scalability）、可维护性（Maintainability）</strong>。这三个词，几乎概括了我们作为后端工程师工作的全部。</p>
 <hr>
 <h2 id="一、可靠性：系统不出错的”错觉”"><a href="#一、可靠性：系统不出错的”错觉”" class="headerlink" title="一、可靠性：系统不出错的”错觉”"></a>一、可靠性：系统不出错的”错觉”</h2><p>DDIA对可靠性的定义很朴素：</p>

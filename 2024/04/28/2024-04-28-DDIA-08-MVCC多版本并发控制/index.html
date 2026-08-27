@@ -27,7 +27,7 @@
 <meta property="og:description" content="引言假设你正在双11零点抢购，同一时刻有100万用户也在做同样的事。你的订单提交请求，和库存扣减、支付回调、优惠券核销，所有这些操作都在数据库里并行执行。如果数据库只能串行处理请求——一个事务等另一个——那双11还没开始就已经结束了。 这就是MVCC（Multi-Version Concurrency Control，多版本并发控制）存在的意义。它是现代关系型数据库实现高并发事务处理的基石，Po">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-04-28T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.751Z">
+<meta property="article:modified_time" content="2026-08-27T09:54:18.731Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="InnoDB">
@@ -388,7 +388,7 @@
 <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>假设你正在双11零点抢购，同一时刻有100万用户也在做同样的事。你的订单提交请求，和库存扣减、支付回调、优惠券核销，所有这些操作都在数据库里并行执行。如果数据库只能串行处理请求——一个事务等另一个——那双11还没开始就已经结束了。</p>
 <p>这就是MVCC（Multi-Version Concurrency Control，多版本并发控制）存在的意义。它是现代关系型数据库实现高并发事务处理的基石，PostgreSQL依赖它，MySQL InnoDB依赖它，Oracle也依赖它。它让”读不阻塞写，写不阻塞读”从理想变成了现实。</p>
 <h2 id="一、为什么需要MVCC：一个没有版本的世界"><a href="#一、为什么需要MVCC：一个没有版本的世界" class="headerlink" title="一、为什么需要MVCC：一个没有版本的世界"></a>一、为什么需要MVCC：一个没有版本的世界</h2><p>在没有MVCC的世界里，数据库靠锁来保证并发安全。一个事务要读数据，加共享锁；要写数据，加排他锁。规则很简单：读锁和写锁互斥（你在读，我就不能写），写锁和写锁互斥。</p>
-<p>想象运营同事正在后台拉一份销售报表，<code>SELECT COUNT(*) FROM orders WHERE create_time &gt; &#39;2026-01-01&#39;</code>。这个查询扫描了500万行数据，耗时30秒。在锁定策略下，这30秒内所有写入操作——用户下单、支付回调、退款——全部被阻塞。整个系统瘫痪。</p>
+<p>想象运营同事正在后台拉一份销售报表，<code>SELECT COUNT(*) FROM orders WHERE create_time &gt; &#39;2024-01-01&#39;</code>。这个查询扫描了500万行数据，耗时30秒。在锁定策略下，这30秒内所有写入操作——用户下单、支付回调、退款——全部被阻塞。整个系统瘫痪。</p>
 <p>MVCC从根本上改变了游戏规则：<strong>每个事务不再直接操作数据本身，而是操作数据的一个”版本”（Version）。</strong> 当事务开始时，它看到的是一个一致的数据快照（Snapshot），整个事务期间都基于这个快照工作。</p>
 <p>DDIA第7章中Martin Kleppmann对此有一段精辟的总结——<strong>MVCC的本质是把”事务看到什么”和”数据实际是什么”解耦。</strong></p>
 <h2 id="二、InnoDB的行结构：看不见的隐藏列"><a href="#二、InnoDB的行结构：看不见的隐藏列" class="headerlink" title="二、InnoDB的行结构：看不见的隐藏列"></a>二、InnoDB的行结构：看不见的隐藏列</h2><p>你以为<code>orders</code>表里一行记录长这样：</p>
@@ -580,9 +580,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2024/05/08/2024-05-08-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/" title="DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验">
+                      <a href="/2024/04/30/2024-04-30-state-to-event-chain/" title="状态反推事件链——一个横跨四大领域的编程思想，我用20行递归就实现了">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验</span>
+                        <span class="hidden-mobile">状态反推事件链——一个横跨四大领域的编程思想，我用20行递归就实现了</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -590,8 +590,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2024/04/17/2024-04-17-DDIA-08-ACID%E7%9C%9F%E6%AD%A3%E5%90%AB%E4%B9%89/" title="DDIA-08-ACID到底是什么意思：比面试官问的深一点">
-                        <span class="hidden-mobile">DDIA-08-ACID到底是什么意思：比面试官问的深一点</span>
+                      <a href="/2024/04/23/2024-04-23-synctask-mq-persistence-comparison/" title="SyncTask Job 与基于日志的消息中间件 - 持久化机制对比">
+                        <span class="hidden-mobile">SyncTask Job 与基于日志的消息中间件 - 持久化机制对比</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

@@ -1,0 +1,924 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="定位：学习笔记。同一个 Agent 功能，我写了两遍——一遍自己实现，一遍用 Spring AI。差异本身就是最好的教材。  一、同一个功能，两种实现我先把 Agent 的核心循环自己实现了一遍（30 行，见上一篇），再用 Spring AI 写了一遍。对比下来：     自己实现 Spring AI    Agent 核心 ~30 行（显式 ReAct 循环） ~8 行（一个方法调用）">
+<meta property="og:type" content="article">
+<meta property="og:title" content="自己写 Agent vs Spring AI：210 行和 30 行的取舍">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/01/18/2026-01-18-%E8%87%AA%E5%B7%B1%E5%86%99Agent-vs-SpringAI-%E5%8F%96%E8%88%8D/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="定位：学习笔记。同一个 Agent 功能，我写了两遍——一遍自己实现，一遍用 Spring AI。差异本身就是最好的教材。  一、同一个功能，两种实现我先把 Agent 的核心循环自己实现了一遍（30 行，见上一篇），再用 Spring AI 写了一遍。对比下来：     自己实现 Spring AI    Agent 核心 ~30 行（显式 ReAct 循环） ~8 行（一个方法调用）">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-01-18T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.841Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="Java">
+<meta property="article:tag" content="Spring AI">
+<meta property="article:tag" content="框架对比">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>自己写 Agent vs Spring AI：210 行和 30 行的取舍 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="自己写 Agent vs Spring AI：210 行和 30 行的取舍"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-01-18 09:00" pubdate>
+          2026年1月18日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          24 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">自己写 Agent vs Spring AI：210 行和 30 行的取舍</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>定位：学习笔记。同一个 Agent 功能，我写了两遍——一遍自己实现，一遍用 Spring AI。差异本身就是最好的教材。</p>
+</blockquote>
+<h2 id="一、同一个功能，两种实现"><a href="#一、同一个功能，两种实现" class="headerlink" title="一、同一个功能，两种实现"></a>一、同一个功能，两种实现</h2><p>我先把 Agent 的核心循环自己实现了一遍（30 行，见上一篇），再用 Spring AI 写了一遍。对比下来：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>自己实现</th>
+<th>Spring AI</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Agent 核心</strong></td>
+<td>~30 行（显式 ReAct 循环）</td>
+<td>~8 行（一个方法调用）</td>
+</tr>
+<tr>
+<td><strong>LLM 客户端</strong></td>
+<td>~100 行（HTTP + JSON 解析）</td>
+<td>0 行（自动配置）</td>
+</tr>
+<tr>
+<td><strong>工具注册</strong></td>
+<td>~20 行（ToolRegistry）</td>
+<td>0 行（<code>@Tool</code> 注解自动发现）</td>
+</tr>
+<tr>
+<td><strong>工具定义</strong></td>
+<td>每个 ~30 行（实现 Tool 接口）</td>
+<td>每个 ~8 行（加注解）</td>
+</tr>
+<tr>
+<td><strong>总计（2 个工具）</strong></td>
+<td><strong>~210 行</strong></td>
+<td><strong>~30 行</strong></td>
+</tr>
+</tbody></table>
+<h2 id="二、代码对比：30-行-vs-8-行"><a href="#二、代码对比：30-行-vs-8-行" class="headerlink" title="二、代码对比：30 行 vs 8 行"></a>二、代码对比：30 行 vs 8 行</h2><p><strong>自己实现——每一行都看得懂：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> String <span class="hljs-title function_">run</span><span class="hljs-params">(String goal)</span> &#123;<br>    List&lt;Message&gt; history = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;&gt;();<br>    history.add(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Message</span>(<span class="hljs-string">&quot;user&quot;</span>, goal));<br>    <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">turn</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; turn &lt; <span class="hljs-number">10</span>; turn++) &#123;<br>        <span class="hljs-type">LlmResponse</span> <span class="hljs-variable">response</span> <span class="hljs-operator">=</span> llm.chat(history, tools.getDefinitions());<br>        <span class="hljs-keyword">if</span> (response.isDone()) <span class="hljs-keyword">return</span> response.text();<br>        <span class="hljs-keyword">if</span> (response.isToolCall()) &#123;<br>            <span class="hljs-type">String</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> tools.execute(response.toolName(), response.toolInput());<br>            history.add(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Message</span>(<span class="hljs-string">&quot;assistant&quot;</span>, <span class="hljs-string">&quot;[调用工具]&quot;</span>));<br>            history.add(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Message</span>(<span class="hljs-string">&quot;tool&quot;</span>, result));<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;超时&quot;</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>Spring AI——循环被藏在了框架里：</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> String <span class="hljs-title function_">run</span><span class="hljs-params">(String goal, ToolCallback... tools)</span> &#123;<br>    <span class="hljs-type">Prompt</span> <span class="hljs-variable">prompt</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Prompt</span>(<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">UserMessage</span>(goal),<br>        DefaultToolCallingChatOptions.builder().toolCallbacks(List.of(tools)).build()<br>    );<br>    <span class="hljs-keyword">return</span> chatModel.call(prompt).getResult().getOutput().getText();<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>核心差异一目了然：<strong>自己实现，循环是显式的（你能看到、能改、能打断）；Spring AI，循环是隐式的（<code>ChatModel.call()</code> 内部帮你跑完）</strong>。</p>
+<h2 id="三、工具定义：手写-schema-vs-Tool-注解"><a href="#三、工具定义：手写-schema-vs-Tool-注解" class="headerlink" title="三、工具定义：手写 schema vs @Tool 注解"></a>三、工具定义：手写 schema vs @Tool 注解</h2><p>自己实现要手写 JSON Schema：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">DateTool</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Tool</span> &#123;<br>    <span class="hljs-keyword">public</span> String <span class="hljs-title function_">name</span><span class="hljs-params">()</span> &#123; <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;get_current_time&quot;</span>; &#125;<br>    <span class="hljs-keyword">public</span> String <span class="hljs-title function_">description</span><span class="hljs-params">()</span> &#123; <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;获取当前日期和时间&quot;</span>; &#125;<br>    <span class="hljs-keyword">public</span> Map&lt;String, Object&gt; <span class="hljs-title function_">parameters</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> Map.of(<span class="hljs-string">&quot;type&quot;</span>, <span class="hljs-string">&quot;object&quot;</span>, <span class="hljs-string">&quot;properties&quot;</span>, Map.of());<br>    &#125;<br>    <span class="hljs-keyword">public</span> String <span class="hljs-title function_">execute</span><span class="hljs-params">(Map&lt;String, Object&gt; args)</span> &#123;<br>        <span class="hljs-keyword">return</span> LocalDateTime.now().toString();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>Spring AI 只写业务逻辑，schema 从方法签名自动生成：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">DateTool</span> &#123;<br>    <span class="hljs-meta">@Tool(description = &quot;获取当前日期和时间&quot;)</span><br>    <span class="hljs-keyword">public</span> String <span class="hljs-title function_">getCurrentTime</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> LocalDateTime.now().toString();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>框架把”元数据（schema）”从你的代码里抹掉了</strong>——代价是你不再感知它，好处是开发快一个数量级。</p>
+<h2 id="四、其他维度"><a href="#四、其他维度" class="headerlink" title="四、其他维度"></a>四、其他维度</h2><ul>
+<li><strong>LLM 调用</strong>：自己实现用 JDK HttpClient 手动拼 JSON、自己管 role；Spring AI 用 <code>ChatModel</code> 接口 + 类型安全的 <code>UserMessage</code>&#x2F;<code>AssistantMessage</code>；</li>
+<li><strong>上下文管理</strong>：自己实现手动维护 <code>List&lt;Message&gt; history</code> 并拼进请求；Spring AI 用 <code>ChatMemory</code> 抽象自动维护；</li>
+<li><strong>可移植性</strong>：自己实现绑死一个厂商的 API；Spring AI 换一个 starter 就能切 OpenAI、Ollama、Anthropic；</li>
+<li><strong>生产就绪</strong>：自己实现要自己加日志、监控、重试、限流；Spring AI 有 <code>@Retryable</code>、Observability、Metrics 开箱即用。</li>
+</ul>
+<h2 id="五、学习价值：这是两者最大的差距"><a href="#五、学习价值：这是两者最大的差距" class="headerlink" title="五、学习价值：这是两者最大的差距"></a>五、学习价值：这是两者最大的差距</h2><table>
+<thead>
+<tr>
+<th></th>
+<th>自己实现</th>
+<th>Spring AI</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>理解原理</strong></td>
+<td>高——你能看清每一步</td>
+<td>低——只知道调了个 call()</td>
+</tr>
+<tr>
+<td><strong>快速开发</strong></td>
+<td>低——每个环节自己写</td>
+<td>高——几分钟集成</td>
+</tr>
+<tr>
+<td><strong>适合阶段</strong></td>
+<td><strong>学原理</strong></td>
+<td><strong>做项目</strong></td>
+</tr>
+</tbody></table>
+<p><strong>这个差距才是写两遍的核心意义。</strong> 如果你一上来就用 Spring AI，你只会”调 call()”而不知道循环在哪；如果你一直自己实现，开发效率会被拖垮。</p>
+<h2 id="六、我的结论：两者不冲突，是先后关系"><a href="#六、我的结论：两者不冲突，是先后关系" class="headerlink" title="六、我的结论：两者不冲突，是先后关系"></a>六、我的结论：两者不冲突，是先后关系</h2><p>Agent 的本质就是 3 行伪代码：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-keyword">while</span> (!<span class="hljs-keyword">done</span>) &#123;<br>    think → act → observe<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>Spring AI 只是把这 3 行藏在了 <code>ChatModel.call()</code> 里面。藏得越多，开发越快，但理解越浅。</strong></p>
+<p>正确的路径是：<strong>先用自己实现把 ReAct 循环跑明白（懂原理），再用 Spring AI 加速实际开发（快交付）。</strong> 我在 agent-demo 项目里就是这么做的——两个模块并存，一个负责”懂”，一个负责”用”。</p>
+<p>这也回答了”自己造轮子还是用框架”的老问题：<strong>造轮子的目的不是替代框架，而是理解框架。</strong> 理解了轮子，用框架时才不会踩进去出不来。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>同一功能：自己实现 <strong>~210 行</strong>，Spring AI <strong>~30 行</strong>；</li>
+<li>核心差异：<strong>循环显式 vs 隐式</strong>——自己实现可见可控，框架自动编排；</li>
+<li>工具定义：手写 JSON Schema vs <code>@Tool</code> 注解自动生成；</li>
+<li>学习价值差最大：<strong>理解原理 vs 快速交付</strong>；</li>
+<li>正确路径：<strong>先手写懂原理，再用框架快交付</strong>——两者是先后关系，不冲突。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 1 月 · 标签: Spring AI, Agent, 框架对比, Java</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/AI%E5%BC%80%E5%8F%91/" class="category-chain-item">AI开发</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Java/" class="print-no-link">#Java</a>
+      
+        <a href="/tags/Agent/" class="print-no-link">#Agent</a>
+      
+        <a href="/tags/Spring-AI/" class="print-no-link">#Spring AI</a>
+      
+        <a href="/tags/%E6%A1%86%E6%9E%B6%E5%AF%B9%E6%AF%94/" class="print-no-link">#框架对比</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>自己写 Agent vs Spring AI：210 行和 30 行的取舍</div>
+      <div>https://aster-xu-lab.github.io/2026/01/18/2026-01-18-自己写Agent-vs-SpringAI-取舍/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年1月18日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/02/03/2026-02-03-AgentTeam%E7%94%A8DAG-SyncTask%E5%8D%B4%E6%94%BE%E5%BC%83DAG/" title="Agent Team 用 DAG，SyncTask 却放弃 DAG：两种编排的决策逻辑">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Agent Team 用 DAG，SyncTask 却放弃 DAG：两种编排的决策逻辑</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/01/12/2026-01-12-30%E8%A1%8C%E6%89%8B%E5%86%99ReAct-Agent%E6%A0%B8%E5%BF%83%E5%BE%AA%E7%8E%AF/" title="30 行手写一个 ReAct Agent：每一行都看得懂">
+                        <span class="hidden-mobile">30 行手写一个 ReAct Agent：每一行都看得懂</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

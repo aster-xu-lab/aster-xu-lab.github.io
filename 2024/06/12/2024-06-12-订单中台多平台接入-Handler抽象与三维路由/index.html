@@ -1,0 +1,883 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一、多渠道接入：订单中台最难啃的骨头订单中台（cloud-order，约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是全渠道订单处理中枢——对接多电商平台、多商家异构下游。 “多平台”意味着什么？真实情况是：每个外部系统都有自己的协议、字段、鉴权方式、消息格式、处理时序。聚水潭、金蝶、FMS、抖音、快手……每个系统的销售单据、采购单据、售后单据、开票单据，接入方式都不">
+<meta property="og:type" content="article">
+<meta property="og:title" content="订单中台的多平台接入：Handler抽象与三维路由">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/06/12/2024-06-12-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%9A%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%85%A5-Handler%E6%8A%BD%E8%B1%A1%E4%B8%8E%E4%B8%89%E7%BB%B4%E8%B7%AF%E7%94%B1/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一、多渠道接入：订单中台最难啃的骨头订单中台（cloud-order，约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是全渠道订单处理中枢——对接多电商平台、多商家异构下游。 “多平台”意味着什么？真实情况是：每个外部系统都有自己的协议、字段、鉴权方式、消息格式、处理时序。聚水潭、金蝶、FMS、抖音、快手……每个系统的销售单据、采购单据、售后单据、开票单据，接入方式都不">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-06-12T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.850Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Handler">
+<meta property="article:tag" content="多平台">
+<meta property="article:tag" content="订单中台">
+<meta property="article:tag" content="路由">
+<meta property="article:tag" content="适配器">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>订单中台的多平台接入：Handler抽象与三维路由 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="订单中台的多平台接入：Handler抽象与三维路由"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-06-12 09:00" pubdate>
+          2024年6月12日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          21 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">订单中台的多平台接入：Handler抽象与三维路由</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一、多渠道接入：订单中台最难啃的骨头"><a href="#一、多渠道接入：订单中台最难啃的骨头" class="headerlink" title="一、多渠道接入：订单中台最难啃的骨头"></a>一、多渠道接入：订单中台最难啃的骨头</h2><p>订单中台（cloud-order，约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是<strong>全渠道订单处理中枢</strong>——对接多电商平台、多商家异构下游。</p>
+<p>“多平台”意味着什么？真实情况是：每个外部系统都有自己的<strong>协议、字段、鉴权方式、消息格式、处理时序</strong>。聚水潭、金蝶、FMS、抖音、快手……每个系统的销售单据、采购单据、售后单据、开票单据，接入方式都不同。</p>
+<p>如果不做抽象，最直接的写法是：每个平台一套同步逻辑，一个平台一套代码。<strong>结果是代码爆炸 + 加一个平台就要复制一遍。</strong></p>
+<h2 id="二、Handler-抽象：策略-工厂"><a href="#二、Handler-抽象：策略-工厂" class="headerlink" title="二、Handler 抽象：策略 + 工厂"></a>二、Handler 抽象：策略 + 工厂</h2><p>订单中台的解法是 <strong>Handler 抽象</strong>：把”同步一个外部系统的一类单据”抽象成一个 Handler，用<strong>策略模式 + 工厂模式</strong>组织。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 一个 Handler = 一个外部系统的一类同步任务</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">SyncTaskHandler</span> &#123;<br>    String <span class="hljs-title function_">handlerKey</span><span class="hljs-params">()</span>;        <span class="hljs-comment">// 路由键</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">execute</span><span class="hljs-params">(SyncTaskParam param)</span>;  <span class="hljs-comment">// 执行同步</span><br>&#125;<br><br><span class="hljs-comment">// 工厂：按 handlerKey 从注册表路由到具体实现</span><br><span class="hljs-type">SyncTaskHandler</span> <span class="hljs-variable">handler</span> <span class="hljs-operator">=</span> handlerRegistry.get(handlerKey);<br>handler.execute(param);<br></code></pre></td></tr></table></figure>
+
+<p>核心是<strong>开闭原则</strong>：新接入一个平台 &#x3D; 新增一个 Handler 实现，<strong>不改动既有 Handler</strong>。接入成本从”改一堆代码”变成”加一个类”，从数天降到数小时。</p>
+<blockquote>
+<p>口径说明：订单中台内部有 49 个 Handler（内部数字），对外简历上写”数十种业务同步任务”——这不是藏掖，而是”数十种”本身就是这个量级最准确的表达，避免给面试官一个”49 是不是数出来的”的追问。</p>
+</blockquote>
+<h2 id="三、三维路由：bizType-×-syncTaskType-×-syncSystem"><a href="#三、三维路由：bizType-×-syncTaskType-×-syncSystem" class="headerlink" title="三、三维路由：bizType × syncTaskType × syncSystem"></a>三、三维路由：bizType × syncTaskType × syncSystem</h2><p>Handler 多了，路由就变成关键。我的路由键是三维的：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-attribute">handlerKey</span> <span class="hljs-operator">=</span> bizType - syncTaskType - syncSystem<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><strong>bizType</strong>：业务类型——销售、采购、售后、开票；</li>
+<li><strong>syncTaskType</strong>：同步任务类型——下发、回传、对账；</li>
+<li><strong>syncSystem</strong>：目标系统——聚水潭、金蝶、FMS……</li>
+</ul>
+<p>三维组合出一个唯一的 handlerKey，<strong>每个 Handler 只处理命中自己维度的任务</strong>。这跟分库分表的分区键路由是同一思想——<strong>用唯一标识把任务精准路由到处理者，避免广播</strong>。</p>
+<p>新增一种任务，只要三维里有新组合，就注册新 Handler；没有新组合，复用已有 Handler。<strong>扩展靠注册，不靠改判断分支。</strong></p>
+<h2 id="四、适配器：多平台异构的最后一块"><a href="#四、适配器：多平台异构的最后一块" class="headerlink" title="四、适配器：多平台异构的最后一块"></a>四、适配器：多平台异构的最后一块</h2><p>Handler 解决”每个平台一套逻辑”，适配器解决”<strong>同一能力不同平台实现不同</strong>“——比如”下发订单”这个动作，聚水潭的协议和金蝶完全不一样。</p>
+<p>订单中台的适配层是<strong>三层 SPI 适配</strong>：</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm"><span class="hljs-keyword">SyncTask </span>引擎（通用编排） → 适配器（协议转换） → 外部系统<br></code></pre></td></tr></table></figure>
+
+<p>引擎只依赖抽象的 SPI（调度、存储、锁、通知……），具体实现由适配器按平台提供。换平台 &#x3D; 换适配器，引擎不动。</p>
+<p>这其实是”依赖倒置 + SPI”的实践：<strong>高层不依赖低层实现，依赖抽象</strong>。我在 SyncTask 引擎里做了 10 个 SPI 扩展点，都是这个思想的延伸。</p>
+<h2 id="五、为什么抽离出-SyncTask-引擎"><a href="#五、为什么抽离出-SyncTask-引擎" class="headerlink" title="五、为什么抽离出 SyncTask 引擎"></a>五、为什么抽离出 SyncTask 引擎</h2><p>订单中台有 49 个 Handler，另一个仓储系统有 44 个 Handler，<strong>两套业务同步逻辑 80%+ 重复</strong>——都是”取参 → 拉数 → 加锁 → 执行业务 → 更新状态”这套固定流程，只是业务不同。</p>
+<p>所以我把重复的执行逻辑抽离成独立的 <strong>SyncTask Engine</strong>（5 个 Maven 模块、10 个 SPI 扩展点）：</p>
+<ul>
+<li>引擎核心零框架依赖，只定义”编排骨架 + 扩展点”；</li>
+<li>接入方式：引入 Starter → 实现 Handler → 配置参数 → 建表，<strong>零 @Configuration 代码</strong>；</li>
+<li>cloud-order 是第一个接入方（孵化地），cloud-wms 是第二个接入方（验证跨项目复用）。</li>
+</ul>
+<p>这是”架构减法”的思路：<strong>识别 80% 重复 → 抽公共骨架 → 让重复的业务代码消失</strong>。订单中台的多平台接入，最后长出来的不是一个”越来越大”的系统，而是一个被抽干的瘦中台 + 一个可复用的引擎。</p>
+<h2 id="六、演进：渠道垂直分表-→-分库分表"><a href="#六、演进：渠道垂直分表-→-分库分表" class="headerlink" title="六、演进：渠道垂直分表 → 分库分表"></a>六、演进：渠道垂直分表 → 分库分表</h2><p>订单中台的数据存储也经历了演进：早期按渠道垂直分表（拼多多一张表、京东一张表），后来演进到 <strong>ShardingSphere 单号主分片</strong>（这是另一篇的主题）。</p>
+<p>多平台接入和分库分表在这里交汇：<strong>接入的平台越多，数据量越大，分片需求越迫切</strong>——所以”多渠道”和”分库分表”在订单中台是同一条增长曲线上的两个产物。</p>
+<h2 id="七、Design-Review-的自我审视"><a href="#七、Design-Review-的自我审视" class="headerlink" title="七、Design Review 的自我审视"></a>七、Design Review 的自我审视</h2><p>多平台接入做久了容易自我感觉良好，我给自己做过一次系统的 Design Review（8 份系统分析文档），承认了 10 个设计不足，最典型的几个：</p>
+<ul>
+<li><strong>xxl-job 耦合</strong>：早期直接依赖调度框架，后来通过 SchedulerAdapter SPI 解耦；</li>
+<li><strong>配置膨胀</strong>：Handler 参数配置越加越多，需要规范；</li>
+<li><strong>V1&#x2F;V2 继承</strong>：老版本用继承扩展，演进后统一用组合&#x2F;策略；</li>
+<li><strong>ThreadLocal 泄漏</strong>：早期有泄漏问题，后来修复（这也是内存泄漏排查的经典案例）。</li>
+</ul>
+<p><strong>承认设计不足不是自我否定，是让系统持续演进的前提。</strong> 这 10 个不足后来成了 SyncTask 引擎设计的直接输入。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>多平台接入的核心是 <strong>Handler 抽象</strong>：策略 + 工厂，新平台 &#x3D; 新 Handler，开闭原则；</li>
+<li><strong>三维路由</strong>（bizType × syncTaskType × syncSystem）把任务精准路由到处理者，扩展靠注册不靠改分支；</li>
+<li><strong>适配器 + SPI</strong> 处理异构协议，高层依赖抽象不依赖实现；</li>
+<li>80% 重复抽离成 <strong>SyncTask 引擎</strong>，订单中台从”越做越大”变成”瘦中台 + 可复用引擎”；</li>
+<li>多平台接入和分库分表是同一条增长曲线上的两个产物；</li>
+<li>Design Review 承认 10 个不足，成为引擎设计的输入。</li>
+</ul>
+<hr>
+<p><em>发表于 2024 年 6 月 · 标签: 订单中台, Handler, 路由, 适配器, 多平台</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" class="category-chain-item">中台架构</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E9%80%82%E9%85%8D%E5%99%A8/" class="print-no-link">#适配器</a>
+      
+        <a href="/tags/%E8%B7%AF%E7%94%B1/" class="print-no-link">#路由</a>
+      
+        <a href="/tags/%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0/" class="print-no-link">#订单中台</a>
+      
+        <a href="/tags/Handler/" class="print-no-link">#Handler</a>
+      
+        <a href="/tags/%E5%A4%9A%E5%B9%B3%E5%8F%B0/" class="print-no-link">#多平台</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>订单中台的多平台接入：Handler抽象与三维路由</div>
+      <div>https://aster-xu-lab.github.io/2024/06/12/2024-06-12-订单中台多平台接入-Handler抽象与三维路由/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年6月12日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/06/20/2024-06-20-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" title="DDIA-09-分布式系统故障排查：你没见过不代表没发生过">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-09-分布式系统故障排查：你没见过不代表没发生过</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/06/10/2024-06-10-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/" title="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效">
+                        <span class="hidden-mobile">DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

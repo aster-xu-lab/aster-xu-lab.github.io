@@ -1,0 +1,914 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一条消息从发出到消费，要过三个关口生产端 → Broker → 消费端。任何一个环节都可能丢消息、重消息。所以”消息可靠性”从来不是一个单点问题，而是三端各自的职责：    环节 主要风险 保障手段    生产端 发出去，Broker 没收（网络抖动&#x2F;超时） 同步发送 + Confirm 确认 + 重试；本地消息表 &#x2F; 事务消息   Broker 端 存了但宕机丢（内存没落盘">
+<meta property="og:type" content="article">
+<meta property="og:title" content="消息不丢的三端保障与消费幂等：分布式系统的最后一公里">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/08/2024-04-08-%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E4%B8%89%E7%AB%AF%E4%BF%9D%E9%9A%9C%E4%B8%8E%E6%B6%88%E8%B4%B9%E5%B9%82%E7%AD%89/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一条消息从发出到消费，要过三个关口生产端 → Broker → 消费端。任何一个环节都可能丢消息、重消息。所以”消息可靠性”从来不是一个单点问题，而是三端各自的职责：    环节 主要风险 保障手段    生产端 发出去，Broker 没收（网络抖动&#x2F;超时） 同步发送 + Confirm 确认 + 重试；本地消息表 &#x2F; 事务消息   Broker 端 存了但宕机丢（内存没落盘">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-04-08T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.853Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="幂等">
+<meta property="article:tag" content="死信队列">
+<meta property="article:tag" content="消息可靠性">
+<meta property="article:tag" content="消息队列">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>消息不丢的三端保障与消费幂等：分布式系统的最后一公里 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="消息不丢的三端保障与消费幂等：分布式系统的最后一公里"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-04-08 09:00" pubdate>
+          2024年4月8日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          23 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">消息不丢的三端保障与消费幂等：分布式系统的最后一公里</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一条消息从发出到消费，要过三个关口"><a href="#一条消息从发出到消费，要过三个关口" class="headerlink" title="一条消息从发出到消费，要过三个关口"></a>一条消息从发出到消费，要过三个关口</h2><p>生产端 → Broker → 消费端。任何一个环节都可能丢消息、重消息。所以”消息可靠性”从来不是一个单点问题，而是<strong>三端各自的职责</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>环节</th>
+<th>主要风险</th>
+<th>保障手段</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>生产端</strong></td>
+<td>发出去，Broker 没收（网络抖动&#x2F;超时）</td>
+<td>同步发送 + <strong>Confirm 确认</strong> + 重试；本地消息表 &#x2F; 事务消息</td>
+</tr>
+<tr>
+<td><strong>Broker 端</strong></td>
+<td>存了但宕机丢（内存没落盘&#x2F;单副本）</td>
+<td><strong>同步刷盘</strong> + <strong>集群多副本</strong>（主从）</td>
+</tr>
+<tr>
+<td><strong>消费端</strong></td>
+<td>消费了没处理完就挂</td>
+<td><strong>手动 ack</strong> + 失败重试（处理成功才 ack）</td>
+</tr>
+</tbody></table>
+<p>三端合起来，才构成”不丢”。只靠任何一端都是空谈。</p>
+<h2 id="一、生产端：消息发出去，怎么确认真到了"><a href="#一、生产端：消息发出去，怎么确认真到了" class="headerlink" title="一、生产端：消息发出去，怎么确认真到了"></a>一、生产端：消息发出去，怎么确认真到了</h2><p>最简单的确认机制是 <strong>Confirm 确认</strong>：Producer 发消息后，Broker 落盘成功会回一个确认（ack）；没收到确认就重试。</p>
+<p>但 Confirm + 重试还有一个经典缺口：<strong>业务提交了，消息却没发出去</strong>。这不是网络问题，是”本地事务和发消息”的原子性问题——我在 RocketMQ 事务消息那篇里详细讲过：先发消息再提交有幽灵消息，先提交再发消息会漏消息。</p>
+<p>所以生产端真正的强保证是两个方案：</p>
+<ul>
+<li><strong>本地消息表</strong>：把”要发的消息”和业务操作放在<strong>同一个本地事务</strong>里落库，再靠一个定时任务扫描消息表去发、发成功标记已发送。业务提交成功 ⟹ 消息一定在表里，最终一定发得出去；</li>
+<li><strong>事务消息</strong>（RocketMQ）：半消息 + 回查，把”本地事务成功”和”消息可见”绑定成原子操作。</li>
+</ul>
+<p>两个方案的本质都一样：<strong>把”发消息”这件事纳入一个可回滚、可重试的持久化上下文，而不是依赖一次网络调用成功。</strong></p>
+<h2 id="二、Broker-端：存下来，还要扛得住宕机"><a href="#二、Broker-端：存下来，还要扛得住宕机" class="headerlink" title="二、Broker 端：存下来，还要扛得住宕机"></a>二、Broker 端：存下来，还要扛得住宕机</h2><p>消息到了 Broker，要保证”存下来且不丢”，两道防线：</p>
+<ol>
+<li><strong>同步刷盘</strong>：消息写入后同步落盘，而不是攒一批再刷（异步刷盘丢窗口小但存在）。写入确认必须建立在”真的落盘了”之上；</li>
+<li><strong>多副本</strong>：单机存了盘，机器坏了磁盘也带走了。要有主从副本，主挂了从能顶上（RocketMQ 主从、Kafka 分区副本 + ISR）。</li>
+</ol>
+<p>这两个分别防”进程&#x2F;系统崩溃丢内存”和”机器故障丢磁盘”。</p>
+<h2 id="三、消费端：处理成功才-ack，是最后的防线"><a href="#三、消费端：处理成功才-ack，是最后的防线" class="headerlink" title="三、消费端：处理成功才 ack，是最后的防线"></a>三、消费端：处理成功才 ack，是最后的防线</h2><p>消费端最容易”看似消费了，其实没处理完”：</p>
+<ul>
+<li><strong>自动 ack</strong>：消费端收到消息就自动确认，万一处理逻辑抛异常，消息已经确认了——<strong>丢了</strong>；</li>
+<li><strong>手动 ack</strong>：处理成功才确认，失败就不确认，Broker 会重新投递。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 手动 ack 的正确姿势：处理成功才确认</span><br>consumer.registerMessageListener((List&lt;MessageExt&gt; msgs, ConsumeConcurrentlyContext ctx) -&gt; &#123;<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-keyword">for</span> (MessageExt msg : msgs) &#123;<br>            handle(msg);                 <span class="hljs-comment">// 业务处理</span><br>        &#125;<br>        <span class="hljs-keyword">return</span> ConsumeConcurrentlyStatus.CONSUME_SUCCESS;   <span class="hljs-comment">// 处理成功 → ack</span><br>    &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>        <span class="hljs-keyword">return</span> ConsumeConcurrentlyStatus.RECONSUME_LATER;   <span class="hljs-comment">// 失败 → 重投</span><br>    &#125;<br>&#125;);<br></code></pre></td></tr></table></figure>
+
+<p>但手动 ack + 重试，带来了下一个问题：<strong>消息会重复</strong>。</p>
+<h2 id="四、重复消费：可靠投递的必然代价"><a href="#四、重复消费：可靠投递的必然代价" class="headerlink" title="四、重复消费：可靠投递的必然代价"></a>四、重复消费：可靠投递的必然代价</h2><p>为什么消息会重复？三个源头：</p>
+<ol>
+<li><strong>生产端重试</strong>：发消息超时重试，其实第一条 Broker 已经收到了，重复；</li>
+<li><strong>消费端 ack 失败重投</strong>：处理成功了，但 ack 在网络里丢了，Broker 以为没成功，重新投递；</li>
+<li><strong>消费端崩溃</strong>：处理到一半挂了，没 ack，恢复后重新投。</li>
+</ol>
+<p>所以<strong>重复消费是分布式投递的常态</strong>，不是异常。指望”消息不重复”是错的方向，正确的方向是：<strong>让消费端对重复无害——幂等。</strong></p>
+<h2 id="五、幂等：消费端的必备能力"><a href="#五、幂等：消费端的必备能力" class="headerlink" title="五、幂等：消费端的必备能力"></a>五、幂等：消费端的必备能力</h2><p>幂等的定义：同一个操作执行一次和执行多次，结果一样。实现手段按强度递增：</p>
+<p><strong>① 唯一业务 key + 数据库唯一约束</strong></p>
+<p>消息带唯一业务 key（订单号&#x2F;单据号），消费端先查再插，配合 DB 唯一索引兜底：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 最稳的幂等：唯一约束兜底，重复插入直接报唯一键冲突</span><br><span class="hljs-keyword">try</span> &#123;<br>    insertSyncRecord(record);   <span class="hljs-comment">// sync_record 表有业务单号唯一索引</span><br>&#125; <span class="hljs-keyword">catch</span> (DuplicateKeyException e) &#123;<br>    <span class="hljs-comment">// 已处理过，跳过</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>② Redis setnx</strong>：key 不存在才执行，<code>SET key value NX</code> 原子占位。</p>
+<p><strong>③ 状态机防重</strong>：业务本身有状态流转，重复消息来的时候检查”当前状态是否已经处理过这一步”，是则跳过。这比上面两种更贴合业务——<strong>状态本身就是幂等键</strong>。</p>
+<p>我的 SyncTask 引擎里用的是”<strong>分布式锁 + 二次查库</strong>“的双重防重：先拿分布式锁保证同一任务不被并发执行，执行前再查一次库确认状态没变。这套设计本质上就是状态机防重 + 锁兜底的组合，和消息消费幂等是同一个思想。</p>
+<h2 id="六、死信队列：毒消息的隔离区"><a href="#六、死信队列：毒消息的隔离区" class="headerlink" title="六、死信队列：毒消息的隔离区"></a>六、死信队列：毒消息的隔离区</h2><p>重试也救不回来的消息（业务逻辑永远失败、消息格式损坏），不能无限重投卡死队列。达到重试上限后，消息进<strong>死信队列（DLQ）</strong>：</p>
+<ul>
+<li><strong>隔离毒消息</strong>：坏消息挪走，不阻塞正常消息消费；</li>
+<li><strong>做延迟&#x2F;补偿</strong>：我做过”到期任务进死信队列触发处理”——把到期还没完成的任务通过死信机制捞出来做补偿，其实就是拿死信当延迟队列用。</li>
+</ul>
+<p>RabbitMQ 用 <code>x-dead-letter-exchange</code> 配置死信路由，RocketMQ 有重试队列 + 死信 Topic。</p>
+<h2 id="七、从-At-Least-Once-到-Exactly-Once"><a href="#七、从-At-Least-Once-到-Exactly-Once" class="headerlink" title="七、从 At-Least-Once 到 Exactly-Once"></a>七、从 At-Least-Once 到 Exactly-Once</h2><p>聊到可靠性，绕不开三个投递语义：</p>
+<ul>
+<li><strong>At-Most-Once（至多一次）</strong>：可能丢，不可能重复——最省事，但业务不可接受；</li>
+<li><strong>At-Least-Once（至少一次）</strong>：可能重复，不可能丢——<strong>这是 MQ 的默认保证</strong>，靠生产端确认 + 消费端手动 ack 实现；</li>
+<li><strong>Exactly-Once（精确一次）</strong>：不丢不重——分布式下没有银弹，实际是 <strong>At-Least-Once + 消费端幂等</strong> 拼出来的。</li>
+</ul>
+<p>结论：<strong>不要幻想 MQ 帮你做到精确一次，接受 At-Least-Once，然后消费端自己把幂等做扎实。</strong> 幂等是分布式系统的最后一公里。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>三端不丢：生产端 <strong>Confirm + 重试 &#x2F; 本地消息表 &#x2F; 事务消息</strong>、Broker <strong>刷盘 + 多副本</strong>、消费端<strong>手动 ack + 重试</strong>；</li>
+<li>重复消费是可靠投递的必然产物，<strong>正确方向是消费端幂等</strong>；</li>
+<li>幂等：唯一 key + DB 唯一约束 &#x2F; Redis setnx &#x2F; <strong>状态机防重</strong>（我 SyncTask 用的双重防重就是这个思想）；</li>
+<li>死信队列隔离毒消息，还能当延迟队列做补偿；</li>
+<li>分布式下没有 Exactly-Once，实际是 <strong>At-Least-Once + 幂等</strong>。</li>
+</ul>
+<hr>
+<p><em>发表于 2024 年 4 月 · 标签: 消息可靠性, 幂等, 死信队列, 消息队列, 分布式</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" class="print-no-link">#分布式</a>
+      
+        <a href="/tags/%E5%B9%82%E7%AD%89/" class="print-no-link">#幂等</a>
+      
+        <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="print-no-link">#消息队列</a>
+      
+        <a href="/tags/%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E6%80%A7/" class="print-no-link">#消息可靠性</a>
+      
+        <a href="/tags/%E6%AD%BB%E4%BF%A1%E9%98%9F%E5%88%97/" class="print-no-link">#死信队列</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>消息不丢的三端保障与消费幂等：分布式系统的最后一公里</div>
+      <div>https://aster-xu-lab.github.io/2024/04/08/2024-04-08-消息不丢三端保障与消费幂等/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年4月8日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/04/09/2024-04-09-synctask-local-message-table/" title="SyncTaskJob 就是一张本地消息表——只是你自己没意识到">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">SyncTaskJob 就是一张本地消息表——只是你自己没意识到</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/04/06/2024-04-06-DDIA-08-2PC%E5%88%B0TCC/" title="DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路">
+                        <span class="hidden-mobile">DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

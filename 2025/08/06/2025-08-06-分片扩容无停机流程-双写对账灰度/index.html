@@ -1,0 +1,893 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一、为什么 hash 分片扩容要 rehash单号哈希分片的落片公式是： 1落片 &#x3D; hash(order_no) % 片数  片数从 8 扩到 16，% 16 的结果和 % 8 不一样了——原来落在 0 号片的数据，现在可能该落 2 号片。所以扩一倍的片数，意味着大约一半的数据要换物理分片。这就是 rehash。 这也是”单号 hash 分片”对比”时间&#x2F;区间分片”的一个代价：时间分">
+<meta property="og:type" content="article">
+<meta property="og:title" content="分片扩容的无停机流程：存量回填、binlog增量追平与对账兜底">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2025/08/06/2025-08-06-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E6%97%A0%E5%81%9C%E6%9C%BA%E6%B5%81%E7%A8%8B-%E5%8F%8C%E5%86%99%E5%AF%B9%E8%B4%A6%E7%81%B0%E5%BA%A6/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一、为什么 hash 分片扩容要 rehash单号哈希分片的落片公式是： 1落片 &#x3D; hash(order_no) % 片数  片数从 8 扩到 16，% 16 的结果和 % 8 不一样了——原来落在 0 号片的数据，现在可能该落 2 号片。所以扩一倍的片数，意味着大约一半的数据要换物理分片。这就是 rehash。 这也是”单号 hash 分片”对比”时间&#x2F;区间分片”的一个代价：时间分">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2025-08-06T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.847Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="ShardingSphere">
+<meta property="article:tag" content="分库分表">
+<meta property="article:tag" content="双写">
+<meta property="article:tag" content="对账">
+<meta property="article:tag" content="扩容">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>分片扩容的无停机流程：存量回填、binlog增量追平与对账兜底 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="分片扩容的无停机流程：存量回填、binlog增量追平与对账兜底"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2025-08-06 09:00" pubdate>
+          2025年8月6日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          19 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">分片扩容的无停机流程：存量回填、binlog增量追平与对账兜底</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一、为什么-hash-分片扩容要-rehash"><a href="#一、为什么-hash-分片扩容要-rehash" class="headerlink" title="一、为什么 hash 分片扩容要 rehash"></a>一、为什么 hash 分片扩容要 rehash</h2><p>单号哈希分片的落片公式是：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf">落片 <span class="hljs-operator">=</span> hash(order_no) % 片数<br></code></pre></td></tr></table></figure>
+
+<p>片数从 8 扩到 16，<strong><code>% 16</code> 的结果和 <code>% 8</code> 不一样了</strong>——原来落在 0 号片的数据，现在可能该落 2 号片。所以扩一倍的片数，意味着<strong>大约一半的数据要换物理分片</strong>。这就是 rehash。</p>
+<p>这也是”单号 hash 分片”对比”时间&#x2F;区间分片”的一个代价：时间分片扩容无感（新数据进新区间），但 hash 分片扩容必须迁移。</p>
+<p>那怎么迁？<strong>一次对外无感的迁移</strong>，是分库分表最见功力的地方。</p>
+<h2 id="二、无停机迁移的五步流程"><a href="#二、无停机迁移的五步流程" class="headerlink" title="二、无停机迁移的五步流程"></a>二、无停机迁移的五步流程</h2><p>迁移的核心不是”把数据搬过去”，而是”<strong>搬的过程中业务不能停、不能丢、不能重</strong>“。我的流程是五步：</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">存量回填 → <span class="hljs-keyword">binlog/Canal </span>增量追平 → 对账兜底 → 灰度切流 → 删旧表<br></code></pre></td></tr></table></figure>
+
+<p>逐段解释：</p>
+<p><strong>① 存量回填</strong>：历史数据（累计约 6000 万行）分批从旧分片迁到新分片。分批 + 夜间低峰跑批，日均约 800 万行，<strong>每批小步提交、last_id 位点记进度、断点续跑</strong>——这是典型的迁库批处理范式。</p>
+<p><strong>② binlog&#x2F;Canal 增量追平</strong>：回填期间业务还在写，存量回填的速度追不上新增写入，所以要靠 <strong>binlog 增量</strong>把新写入同步到新分片。这里的关键是<strong>位点对齐</strong>：记录切流点严格对齐 binlog 位点，作为对账基准。</p>
+<p><strong>③ 对账兜底</strong>：增量同步不是绝对可信的，<strong>按业务主键遍历两侧比对</strong>，差异按最新状态重写目标分片。<strong>连续两轮差异为 0 才允许切流</strong>——对账不过，绝不推进。</p>
+<p><strong>④ 灰度切流</strong>：先切一小部分（比如 1&#x2F;16）验证稳定，再按渠道逐个切，约两周完成全量。灰度期间随时可回滚。</p>
+<p><strong>⑤ 删旧表</strong>：全量对账通过、稳定运行一段时间后，才清理旧表。</p>
+<h2 id="三、澄清”双写”：零侵入的-binlog-增量双写"><a href="#三、澄清”双写”：零侵入的-binlog-增量双写" class="headerlink" title="三、澄清”双写”：零侵入的 binlog 增量双写"></a>三、澄清”双写”：零侵入的 binlog 增量双写</h2><p>“双写”这个词在面试里极易被误解，我在这里明确口径：</p>
+<blockquote>
+<p><strong>这里的”双写”&#x3D; 新老分片并存期间，由 binlog&#x2F;Canal 异步增量把新写补到新表的零侵入增量双写。业务只写老表，不在应用层改代码做双向写。</strong></p>
+</blockquote>
+<p>也就是说，”双写”不是应用层每个写操作写两遍，而是<strong>数据库层面的 binlog 捕获 + 异步增量</strong>。业务代码完全无感知，这是它”零侵入”的含义。</p>
+<h2 id="四、增量一致性：为什么不会”死漏”"><a href="#四、增量一致性：为什么不会”死漏”" class="headerlink" title="四、增量一致性：为什么不会”死漏”"></a>四、增量一致性：为什么不会”死漏”</h2><p>双写期间，增量同步理论上存在两类不一致：</p>
+<ol>
+<li><strong>新建单</strong>：切换时点没对齐的单子；</li>
+<li><strong>中途变更单</strong>：同一单先更旧表、后更新表，顺序竞态。</li>
+</ol>
+<p>这两类靠什么收敛？</p>
+<ul>
+<li><strong>① 位点对齐</strong>：切流点严格对齐 binlog 位点，记对账基准位点；</li>
+<li><strong>② at-least-once + 幂等</strong>：增量消费至少一次、不缺失，消费端幂等去重；</li>
+<li><strong>③ 对账兜底</strong>：<strong>连续两轮差异为 0 才切流</strong>，差异按最新业务时间戳&#x2F;版本号重写目标分片。</li>
+</ul>
+<p>这里要诚实：<strong>瞬时不一致是存在的</strong>（”暂时”不是”死漏”），靠对账收敛成最终一致。对外承诺的是”<strong>最终一致 + 对账收敛 + 对外无感</strong>“，不是”零瞬时不一致”——那种承诺做不到，也不该做。</p>
+<h2 id="五、零停机切换：Nacos-配置热更"><a href="#五、零停机切换：Nacos-配置热更" class="headerlink" title="五、零停机切换：Nacos 配置热更"></a>五、零停机切换：Nacos 配置热更</h2><p>迁移里最容易翻车的环节是”<strong>切换路由那一刻</strong>“——如果切路由要改代码、重启应用，就是停机。</p>
+<p>我的做法是<strong>配置驱动路由</strong>：</p>
+<ul>
+<li>业务代码<strong>只写逻辑表</strong>（<code>or_sales_info</code>）；</li>
+<li>ShardingSphere 路由层把逻辑表映射到物理表（版本号前缀 <code>t_sales_v8</code>&#x2F;<code>t_sales_v16</code>）；</li>
+<li><strong>换表名&#x2F;换数据源 &#x3D; 改路由配置，不是改 SQL</strong>；</li>
+<li>数据源 + 分片规则放 <strong>Nacos</strong> 下发，应用不重启、连接不断。</li>
+</ul>
+<p>这样”切流”本质上是<strong>改一个路由配置</strong>，配合 @RefreshScope 让配置生效。切流顺序：先灰度切读（按渠道&#x2F;比例验证）→ 全量对账通过后 100% 切走 → 老表保留可回滚。</p>
+<blockquote>
+<p>技术坑提醒：ShardingSphere 的 DataSource 默认不会自动 @RefreshScope 热置换，需要显式挂刷新逻辑，否则配置改了也不生效——这是”零停机”能否真正成立的细节。</p>
+</blockquote>
+<h2 id="六、真实口径"><a href="#六、真实口径" class="headerlink" title="六、真实口径"></a>六、真实口径</h2><p>这是 2025 年下半年真实上线的项目，几个关键数字我固定下来，避免各渠道口径打架：</p>
+<ul>
+<li>当前 <strong>8 片</strong>，每片约 <strong>750 万</strong>行（6000 万 ÷ 8）；</li>
+<li><strong>2025 下半年</strong>灰度上线；</li>
+<li><strong>切流约两周</strong>（按渠道逐个切）；</li>
+<li><strong>历史迁移约一周</strong>（存量回填 + binlog&#x2F;Canal 增量追平，无停机）；</li>
+<li>扩容规划 8→16 片，同一套 rehash 流程。</li>
+</ul>
+<h2 id="七、为什么”对账不过不切流”是铁律"><a href="#七、为什么”对账不过不切流”是铁律" class="headerlink" title="七、为什么”对账不过不切流”是铁律"></a>七、为什么”对账不过不切流”是铁律</h2><p>整个流程里，最容易被低估的是对账。回填快慢可以赶、增量追平可以等，但<strong>对账是唯一的”正确性证明”</strong>。没有对账兜底，回填和增量的任何一次失误都会变成静默的数据错误，而且<strong>在 Doris 里根本看不出来</strong>——查询照常返回，只是结果悄悄不对。</p>
+<p>所以我把对账当成迁移的”关卡”而不是”可选项”：<strong>连续两轮差异 0，才允许切流；任何一轮不过，停下来查，而不是带着差异继续走。</strong></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>hash 分片扩容必然 <strong>rehash</strong>，落片会变，必须迁移；</li>
+<li>无停机流程五步：<strong>存量回填 → binlog 增量追平 → 对账兜底 → 灰度切流 → 删旧表</strong>；</li>
+<li>“双写” &#x3D; <strong>binlog&#x2F;Canal 零侵入增量双写</strong>，不是应用层双向写；</li>
+<li>增量一致性靠 <strong>位点对齐 + at-least-once 幂等 + 对账兜底</strong>，瞬时不一致靠对账收敛成最终一致；</li>
+<li>零停机切换 &#x3D; <strong>Nacos 配置热更</strong>（逻辑表 → 物理表映射，改配置不改 SQL）；</li>
+<li><strong>对账不过不切流</strong>，是迁移的铁律。</li>
+</ul>
+<hr>
+<p><em>发表于 2025 年 8 月 · 标签: 分库分表, ShardingSphere, 扩容, 双写, 对账</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
+      
+        <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" class="print-no-link">#分库分表</a>
+      
+        <a href="/tags/%E5%8F%8C%E5%86%99/" class="print-no-link">#双写</a>
+      
+        <a href="/tags/%E6%89%A9%E5%AE%B9/" class="print-no-link">#扩容</a>
+      
+        <a href="/tags/%E5%AF%B9%E8%B4%A6/" class="print-no-link">#对账</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>分片扩容的无停机流程：存量回填、binlog增量追平与对账兜底</div>
+      <div>https://aster-xu-lab.github.io/2025/08/06/2025-08-06-分片扩容无停机流程-双写对账灰度/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2025年8月6日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2025/08/11/2025-08-11-%E9%9D%9E%E5%88%86%E7%89%87%E9%94%AE%E6%9F%A5%E8%AF%A2-id-mapping%E4%B8%8EDoris%E7%9A%84%E8%BE%B9%E7%95%8C/" title="非分片键查询怎么办：id-mapping索引表、Doris与ES的边界">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">非分片键查询怎么办：id-mapping索引表、Doris与ES的边界</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2025/08/01/2025-08-01-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E5%9E%8B%E7%AE%97%E8%B4%A6-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E5%8F%B7%E4%B8%BB%E5%88%86%E7%89%87/" title="分片键选型的算账：为什么单号主分片，而不是时间主分片">
+                        <span class="hidden-mobile">分片键选型的算账：为什么单号主分片，而不是时间主分片</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

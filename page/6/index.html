@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/02/02/2024-02-02-DDIA-06-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%AE%9E%E6%88%98/" target="_self">
-          DDIA-06-实战：订单中心读写分离——主库扛写从库扛读的正确姿势
+        <a href="/2024/07/12/2024-07-12-DDIA-09-%E8%B6%85%E6%97%B6%E4%B8%8E%E9%87%8D%E8%AF%95/" target="_self">
+          DDIA-09-超时与重试：如何设计一个不会雪崩的重试策略
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/02/02/2024-02-02-DDIA-06-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%AE%9E%E6%88%98/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/07/12/2024-07-12-DDIA-09-%E8%B6%85%E6%97%B6%E4%B8%8E%E9%87%8D%E8%AF%95/" target="_self">
         <div>
-          订单中心读写分离实战：从慢SQL拖垮主库到ShardingSphere-JDBC落地的完整记录，包含路由设计、延迟监控、迁移流程。
+          引言2024年双十一大促，凌晨刚过零点，我们团队接到告警：订单创建接口RT从80ms飙升至12秒，大量超时。令人意外的是，下游核心服务CPU其实只有40%，数据库连接池也远未打满——真正的原因是某个不设防的重试逻辑快速放大了流量，把系统推下了悬崖。 这个问题把我拉回了DDIA第9章的开篇句，Martin Kleppmann用一句话点破了真相：  “分布式系统的很多问题，根本原因都是不可靠的网络”
         </div>
       </a>
 
@@ -352,44 +352,27 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-02 09:00" pubdate>
-              2024-02-02
+            <time datetime="2024-07-12 09:00" pubdate>
+              2024-07-12
             </time>
           </div>
         
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/DDIA%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97/" class="category-chain-item">DDIA实战系列</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
         
         
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/MySQL/">#MySQL</a>
+              <a href="/tags/SyncTask/">#SyncTask</a>
             
               <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
+              <a href="/tags/%E8%B6%85%E6%97%B6/">#超时</a>
             
-              <a href="/tags/%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/">#读写分离</a>
+              <a href="/tags/%E5%B9%82%E7%AD%89/">#幂等</a>
+            
+              <a href="/tags/%E9%87%8D%E8%AF%95/">#重试</a>
+            
+              <a href="/tags/%E6%96%AD%E8%B7%AF%E5%99%A8/">#断路器</a>
             
           </div>
         
@@ -403,15 +386,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/01/22/2024-01-22-DDIA-06-%E5%A4%9A%E4%B8%BB%E5%A4%8D%E5%88%B6%E4%B8%8ECAP/" target="_self">
-          DDIA-06-多主复制与无主复制：CAP定理的博弈现场
+        <a href="/2024/07/01/2024-07-01-DDIA-09-%E8%84%91%E8%A3%82%E4%B8%8E%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA/" target="_self">
+          DDIA-09-脑裂与网络分区：CAP定理中P的残酷真相
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/22/2024-01-22-DDIA-06-%E5%A4%9A%E4%B8%BB%E5%A4%8D%E5%88%B6%E4%B8%8ECAP/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/07/01/2024-07-01-DDIA-09-%E8%84%91%E8%A3%82%E4%B8%8E%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA/" target="_self">
         <div>
-          前言上一篇文章我们聊了单主复制的实现细节——一个 Leader 负责所有写入，若干 Follower 异步追赶日志。这是绝大多数关系型数据库的默认模式，简单、可靠、符合直觉。 但现实世界的需求远比”一主多从”复杂。如果你的用户分布在全球，纽约和东京的同事需要同时编辑同一份文档怎么办？如果你不想承受主从切换的中断时间怎么办？如果你的数据库挂了一台节点，另几台还在跑，但数据不完整，该不该让它继续对外
+          网络分区是分布式系统中最容易被忽视的故障模式。本文从脑裂的底层逻辑出发，结合订单中心的真实事故，讲清楚Fencing Token、共识算法多数派的原理，以及在xxl-job等调度系统里"不靠谱的网络"该如何兜底。
         </div>
       </a>
 
@@ -419,8 +402,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-01-22 09:00" pubdate>
-              2024-01-22
+            <time datetime="2024-07-01 09:00" pubdate>
+              2024-07-01
             </time>
           </div>
         
@@ -435,15 +418,8 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
   
-  
-    <span>></span>
-    
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/DDIA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA读书笔记</a>
-  
-  
-
   
 
       </span>
@@ -461,89 +437,17 @@
             
               <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
             
-              <a href="/tags/%E5%A4%8D%E5%88%B6/">#复制</a>
-            
               <a href="/tags/CAP/">#CAP</a>
             
-              <a href="/tags/%E5%A4%9A%E4%B8%BB%E5%A4%8D%E5%88%B6/">#多主复制</a>
+              <a href="/tags/%E8%84%91%E8%A3%82/">#脑裂</a>
             
-              <a href="/tags/%E6%97%A0%E4%B8%BB%E5%A4%8D%E5%88%B6/">#无主复制</a>
+              <a href="/tags/Split-Brain/">#Split-Brain</a>
             
-              <a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7/">#一致性</a>
+              <a href="/tags/Fencing/">#Fencing</a>
             
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2024/01/12/2024-01-12-DDIA-06-%E5%A4%8D%E5%88%B6%E5%BB%B6%E8%BF%9F%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/" target="_self">
-          DDIA-06-复制延迟与最终一致性：你看到的库存可能不是真实库存
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/12/2024-01-12-DDIA-06-%E5%A4%8D%E5%88%B6%E5%BB%B6%E8%BF%9F%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/" target="_self">
-        <div>
-          引言：一个让人血压飙升的线上事故2024年双11，凌晨0点15分，值班群里炸了——  “用户反馈：明明付了钱，订单页面显示’未支付’，用户连付了三笔。”  这是我职业生涯中遇到的最诡异的一次线上问题。用户端看到的是”未支付”，但支付宝扣款成功的通知已经到了我们的callback接口。数据库里也确实有这笔支付流水。那为什么订单状态还是”未支付”？ 排查了半小时，根因找到了：MySQL主从复制延迟。
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2024-01-12 09:00" pubdate>
-              2024-01-12
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
+              <a href="/tags/Raft/">#Raft</a>
             
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/DDIA/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
-  
-  
-
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/">#读写分离</a>
-            
-              <a href="/tags/%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/">#最终一致性</a>
-            
-              <a href="/tags/%E5%A4%8D%E5%88%B6%E5%BB%B6%E8%BF%9F/">#复制延迟</a>
+              <a href="/tags/%E7%BD%91%E7%BB%9C%E5%88%86%E5%8C%BA/">#网络分区</a>
             
           </div>
         
@@ -557,15 +461,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/01/01/2024-01-01-DDIA-06-%E5%90%8C%E6%AD%A5vs%E5%BC%82%E6%AD%A5%E5%A4%8D%E5%88%B6/" target="_self">
-          DDIA-06同步vs异步复制：99.99%可用性要求下的复制策略选择
+        <a href="/2024/06/20/2024-06-20-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" target="_self">
+          DDIA-09-分布式系统故障排查：你没见过不代表没发生过
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/01/2024-01-01-DDIA-06-%E5%90%8C%E6%AD%A5vs%E5%BC%82%E6%AD%A5%E5%A4%8D%E5%88%B6/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/06/20/2024-06-20-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" target="_self">
         <div>
-          一、一个故障复盘去年双十一大促前的一次压测，订单中心一个从库的磁盘满了。由于我们当时用的是异步复制，主库照常写入，从库复制延迟从30ms飙升到60秒，主从数据差距超过200万行。促销开始时，读请求被路由到这个延迟的从库，用户看到下单后几分钟才出现的订单状态，客服电话被打爆。 那次事故之后，我们开始重新审视复制策略。当时日订单量刚突破130万，可用性目标从99.9%提升到99.99%——这意味着全
+          引言：故障是必然的，不是偶然的 “在分布式系统中，部分失效是常态，而不是例外。”  DDIA第9章用整整一章来讲述这个问题。Martin Kleppmann反复强调一个观点：单机系统要么全好，要么全坏——你写一个函数，要么返回正确结果，要么抛出异常。但分布式系统不是这样，它可能部分正常、部分故障，就像一艘漏水的船，你永远在舀水。 我职业生涯中处理过的生产事故不下几十次。每一次复盘，都会发现一个共
         </div>
       </a>
 
@@ -573,277 +477,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-01-01 09:00" pubdate>
-              2024-01-01
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/MySQL/">#MySQL</a>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E5%8D%8A%E5%90%8C%E6%AD%A5%E5%A4%8D%E5%88%B6/">#半同步复制</a>
-            
-              <a href="/tags/MGR/">#MGR</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2023/12/21/2023-12-21-DDIA-06-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6Binlog/" target="_self">
-          DDIA-06-主从复制：MySQL Binlog复制到底做了什么
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/12/21/2023-12-21-DDIA-06-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6Binlog/" target="_self">
-        <div>
-          一、为什么需要主从复制？先看一个真实数据。 我们的订单中心，日订单130万，峰值QPS约8000。MySQL单机扛读还行，但问题是：(1) 机器总会挂，(2) 读写都在一台机器上互相抢资源，(3) 备份不好做。主从复制就是解决这些问题的标准答案。 DDIA第六章的主题就是Replication（复制）。Martin Kleppmann说得很直白：复制的核心动机有三——  高可用：主库挂了从库顶上
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-12-21 09:00" pubdate>
-              2023-12-21
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/MySQL/">#MySQL</a>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">#主从复制</a>
-            
-              <a href="/tags/%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/">#读写分离</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2023/12/11/2023-12-11-DDIA-05-%E7%BC%96%E7%A0%81%E4%B8%8E%E6%BC%94%E5%8C%96/" target="_self">
-          DDIA-05-编码与演化的艺术：JSON/Protobuf/Avro在电商系统中的真实选择
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/12/11/2023-12-11-DDIA-05-%E7%BC%96%E7%A0%81%E4%B8%8E%E6%BC%94%E5%8C%96/" target="_self">
-        <div>
-          前言不知道你有没有注意过这样一件事：在分布式系统中，数据只有两种状态——在内存里，或者在传输中。 当你写下一行 orderService.createOrder(orderDTO) ，数据在JVM堆内，这是内存状态。当你把这个订单通过HTTP发给下游、通过MQ推给消费者、通过RPC调用远程服务——数据就进入了传输状态。而传输的前提，是编码（Encoding），也就是我们常说的序列化。 DDIA第
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-12-11 09:00" pubdate>
-              2023-12-11
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/DDIA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA读书笔记</a>
-  
-  
-
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">#架构设计</a>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E7%BC%96%E7%A0%81/">#编码</a>
-            
-              <a href="/tags/Schema%E6%BC%94%E5%8C%96/">#Schema演化</a>
-            
-              <a href="/tags/%E5%BA%8F%E5%88%97%E5%8C%96/">#序列化</a>
-            
-              <a href="/tags/JSON/">#JSON</a>
-            
-              <a href="/tags/Protobuf/">#Protobuf</a>
-            
-              <a href="/tags/Avro/">#Avro</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2023/11/30/2023-11-30-DDIA-05-SyncTask%E6%B6%88%E6%81%AF%E6%A0%BC%E5%BC%8F%E6%BC%94%E5%8C%96/" target="_self">
-          DDIA-05-实战：93个Handler的SyncTask引擎如何应对消息格式演化
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/11/30/2023-11-30-DDIA-05-SyncTask%E6%B6%88%E6%81%AF%E6%A0%BC%E5%BC%8F%E6%BC%94%E5%8C%96/" target="_self">
-        <div>
-          一、一个被忽略的事实：消息格式不是一份契约，是九十三份读DDIA第五章”复制”的时候，大多数人第一反应是主从、多主、无主——在CAP的取舍间做架构决策。很少有人注意到，那一章花了整整一节讨论”格式演化”（Format Evolution），里面有一句很容易被翻过去的话： “Assume that the data is going to change over time, and design
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-11-30 09:00" pubdate>
-              2023-11-30
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/DDIA%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97/" class="category-chain-item">DDIA实战系列</a>
-  
-  
-    <span>></span>
-    
-  <a href="/categories/DDIA%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97/%E6%9E%B6%E6%9E%84/" class="category-chain-item">架构</a>
-  
-  
-
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/SyncTask/">#SyncTask</a>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
-            
-              <a href="/tags/%E7%BC%96%E7%A0%81/">#编码</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2023/11/19/2023-11-19-DDIA-05-Schema%E6%BC%94%E5%8C%96/" target="_self">
-          DDIA-05-前后兼容与Schema演化：API版本管理的技术债务
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/11/19/2023-11-19-DDIA-05-Schema%E6%BC%94%E5%8C%96/" target="_self">
-        <div>
-          API升级是所有系统的噩梦——上游改字段，下游没升级，线上报错一片。本文从向前兼容、向后兼容、Schema Registry到三种API版本策略，结合订单中心线上回滚的真实踩坑经历，总结Schema管理的工程纪律。
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2023-11-19 09:00" pubdate>
-              2023-11-19
+            <time datetime="2024-06-20 09:00" pubdate>
+              2024-06-20
             </time>
           </div>
         
@@ -875,13 +510,11 @@
             
               <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/%E6%9E%B6%E6%9E%84/">#架构</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
             
-              <a href="/tags/API/">#API</a>
+              <a href="/tags/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">#故障排查</a>
             
-              <a href="/tags/%E5%85%BC%E5%AE%B9%E6%80%A7/">#兼容性</a>
-            
-              <a href="/tags/Schema%E6%BC%94%E5%8C%96/">#Schema演化</a>
+              <a href="/tags/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/">#可观测性</a>
             
           </div>
         
@@ -895,15 +528,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/11/09/2023-11-09-DDIA-04-%E6%85%A2SQL%E4%BC%98%E5%8C%96%E5%8E%9F%E7%90%86/" target="_self">
-          DDIA-04-实战：1124→6，慢SQL优化背后的存储引擎原理
+        <a href="/2024/06/12/2024-06-12-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%9A%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%85%A5-Handler%E6%8A%BD%E8%B1%A1%E4%B8%8E%E4%B8%89%E7%BB%B4%E8%B7%AF%E7%94%B1/" target="_self">
+          订单中台的多平台接入：Handler抽象与三维路由
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/11/09/2023-11-09-DDIA-04-%E6%85%A2SQL%E4%BC%98%E5%8C%96%E5%8E%9F%E7%90%86/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/06/12/2024-06-12-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%9A%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%85%A5-Handler%E6%8A%BD%E8%B1%A1%E4%B8%8E%E4%B8%89%E7%BB%B4%E8%B7%AF%E7%94%B1/" target="_self">
         <div>
-          日均慢SQL从1124条降到6条，降幅99.4%。不是靠堆硬件，不是靠改SQL语法糖，而是把存储引擎原理吃透之后，让每一条SQL都走在最短路径上。
+          一、多渠道接入：订单中台最难啃的骨头订单中台（cloud-order，约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是全渠道订单处理中枢——对接多电商平台、多商家异构下游。 “多平台”意味着什么？真实情况是：每个外部系统都有自己的协议、字段、鉴权方式、消息格式、处理时序。聚水潭、金蝶、FMS、抖音、快手……每个系统的销售单据、采购单据、售后单据、开票单据，接入方式都不
         </div>
       </a>
 
@@ -911,8 +544,332 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-11-09 09:00" pubdate>
-              2023-11-09
+            <time datetime="2024-06-12 09:00" pubdate>
+              2024-06-12
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" class="category-chain-item">中台架构</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E9%80%82%E9%85%8D%E5%99%A8/">#适配器</a>
+            
+              <a href="/tags/%E8%B7%AF%E7%94%B1/">#路由</a>
+            
+              <a href="/tags/%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0/">#订单中台</a>
+            
+              <a href="/tags/Handler/">#Handler</a>
+            
+              <a href="/tags/%E5%A4%9A%E5%B9%B3%E5%8F%B0/">#多平台</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/06/10/2024-06-10-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/" target="_self">
+          DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/06/10/2024-06-10-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/" target="_self">
+        <div>
+          DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效 《Designing Data-Intensive Applications》第 9 章「一致性与共识」是全书最硬核的章节之一。但在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：分布式系统为什么会出错？ 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时钟、部分失效。理解这三者，是理解
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-06-10 09:00" pubdate>
+              2024-06-10
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
+            
+              <a href="/tags/%E8%B6%85%E6%97%B6/">#超时</a>
+            
+              <a href="/tags/%E5%B9%82%E7%AD%89/">#幂等</a>
+            
+              <a href="/tags/%E6%95%85%E9%9A%9C%E5%A4%84%E7%90%86/">#故障处理</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/06/05/2024-06-05-%E5%B7%A5%E5%8D%95%E4%B8%AD%E5%8F%B0%E6%A8%A1%E6%9D%BF%E5%BF%AB%E7%85%A7%E9%9A%94%E7%A6%BB-%E9%85%8D%E7%BD%AE%E7%89%88%E6%9C%AC%E5%8C%96/" target="_self">
+          工单中台模板快照隔离：配置版本化，一个从0到1项目最该做的决策
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/06/05/2024-06-05-%E5%B7%A5%E5%8D%95%E4%B8%AD%E5%8F%B0%E6%A8%A1%E6%9D%BF%E5%BF%AB%E7%85%A7%E9%9A%94%E7%A6%BB-%E9%85%8D%E7%BD%AE%E7%89%88%E6%9C%AC%E5%8C%96/" target="_self">
+        <div>
+          一、一个经典的配置版本问题工单中台的核心实体是”工单模板”：定义了工单的字段、流程节点、处理人规则、SLA 时限等一套配置。业务方会频繁调整模板——加一个字段、改一道审批、换一个处理人。 问题来了：模板改了，已创建的工单怎么办？ 两种极端：  工单实例直接引用模板：模板一改，所有历史工单的行为跟着变——昨天创建的工单，今天处理流程变了，字段也变了。历史工单被”新规则”污染，对账、审计全乱； 工单
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-06-05 09:00" pubdate>
+              2024-06-05
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" class="category-chain-item">中台架构</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Spec-Coding/">#Spec Coding</a>
+            
+              <a href="/tags/%E5%B7%A5%E5%8D%95%E4%B8%AD%E5%8F%B0/">#工单中台</a>
+            
+              <a href="/tags/%E6%A8%A1%E6%9D%BF%E5%BF%AB%E7%85%A7/">#模板快照</a>
+            
+              <a href="/tags/%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA/">#双状态机</a>
+            
+              <a href="/tags/%E9%85%8D%E7%BD%AE%E7%89%88%E6%9C%AC/">#配置版本</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/06/01/2024-06-01-%E9%87%87%E8%B4%AD%E4%B8%AD%E5%8F%B0%E5%8F%8C%E5%BC%95%E6%93%8E-%E8%A1%A5%E8%B4%A7%E9%93%BA%E8%B4%A7%E4%B8%8EAI%E9%A2%84%E6%B5%8B/" target="_self">
+          采购中台的双引擎设计：补货、铺货与AI预测的工程化
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/06/01/2024-06-01-%E9%87%87%E8%B4%AD%E4%B8%AD%E5%8F%B0%E5%8F%8C%E5%BC%95%E6%93%8E-%E8%A1%A5%E8%B4%A7%E9%93%BA%E8%B4%A7%E4%B8%8EAI%E9%A2%84%E6%B5%8B/" target="_self">
+        <div>
+          一、采购中台在供应链里的位置订单中台解决”订单怎么流转”，采购中台解决的是更上游的问题：货从哪里来、往哪里去、每个环节补多少、铺多少。 它处在供应链的”决策层”——不直接操作仓储实物，而是输出补货计划、铺货计划，指导仓储和门店执行。决策链路长，是它最大的难点。 二、双引擎：补货 vs 铺货采购中台的核心是两个引擎，容易混淆，先分清：     补货引擎 铺货引擎    方向 内采向 外销向   解
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-06-01 09:00" pubdate>
+              2024-06-01
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" class="category-chain-item">中台架构</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E9%87%87%E8%B4%AD%E4%B8%AD%E5%8F%B0/">#采购中台</a>
+            
+              <a href="/tags/%E4%BE%9B%E5%BA%94%E9%93%BE/">#供应链</a>
+            
+              <a href="/tags/%E8%A1%A5%E8%B4%A7/">#补货</a>
+            
+              <a href="/tags/%E9%93%BA%E8%B4%A7/">#铺货</a>
+            
+              <a href="/tags/AI%E9%A2%84%E6%B5%8B/">#AI预测</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/05/30/2024-05-30-DDIA-09-SyncTask%E8%B6%85%E6%97%B6%E5%B9%82%E7%AD%89/" target="_self">
+          DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/05/30/2024-05-30-DDIA-09-SyncTask%E8%B6%85%E6%97%B6%E5%B9%82%E7%AD%89/" target="_self">
+        <div>
+          开篇：一个线程池耗尽引发的血案2023年秋天，凌晨三点，手机警报响了。 告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。 登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handl
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-05-30 09:00" pubdate>
+              2024-05-30
+            </time>
+          </div>
+        
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/SyncTask/">#SyncTask</a>
+            
+              <a href="/tags/DDIA/">#DDIA</a>
+            
+              <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
+            
+              <a href="/tags/%E8%B6%85%E6%97%B6/">#超时</a>
+            
+              <a href="/tags/%E5%B9%82%E7%AD%89/">#幂等</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/05/19/2024-05-19-DDIA-08-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%BA%8B%E5%8A%A1%E4%B8%96%E7%95%8C/" target="_self">
+          DDIA-08-隔离级别的事务世界：从读未提交到可序列化
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/05/19/2024-05-19-DDIA-08-%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB%E4%BA%8B%E5%8A%A1%E4%B8%96%E7%95%8C/" target="_self">
+        <div>
+          引言当两个用户同时抢最后一瓶茅台，你的数据库在做减法的时候，看到的到底是哪个数字？这是一个看似简单，实则暗藏杀机的问题。 DDIA第8章用了整整一章讨论一致性和共识，而事务隔离级别正是”单机一致性”的基石。理解它，是你理解分布式一致性的必要前提。 一、四种隔离级别全景Read Uncommitted（读未提交）可以读到其他事务尚未提交的修改。 并发问题：脏读——T2读到了T1还没提交的数据，T1
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-05-19 09:00" pubdate>
+              2024-05-19
             </time>
           </div>
         
@@ -944,19 +901,13 @@
             
               <a href="/tags/MySQL/">#MySQL</a>
             
-              <a href="/tags/%E6%85%A2SQL/">#慢SQL</a>
-            
-              <a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">#性能优化</a>
-            
               <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/InnoDB/">#InnoDB</a>
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/">#事务</a>
             
-              <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
+              <a href="/tags/%E9%9A%94%E7%A6%BB%E7%BA%A7%E5%88%AB/">#隔离级别</a>
             
-              <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">#存储引擎</a>
-            
-              <a href="/tags/B-Tree/">#B+Tree</a>
+              <a href="/tags/PostgreSQL/">#PostgreSQL</a>
             
           </div>
         
@@ -970,15 +921,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/10/29/2023-10-29-DDIA-04-%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E9%80%89%E5%9E%8B/" target="_self">
-          DDIA-04-从RocksDB到MySQL InnoDB：不同场景的存储引擎选型
+        <a href="/2024/05/08/2024-05-08-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/" target="_self">
+          DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/10/29/2023-10-29-DDIA-04-%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E9%80%89%E5%9E%8B/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/05/08/2024-05-08-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/" target="_self">
         <div>
-          前言上一篇文章我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊存储引擎。 坦白说，2019年我第一次读DDIA这部分时，只觉得是”数据库内部的机械结构”，跟我的日常工作有什么关系？我又不写数据库。 2026年回头看，这个想法错得离谱。 过去七年，我经历了三种典型的存储场景：订单核心的读写混合（InnoDB
+          长事务是怎么一步步把系统拖垮的？死锁到底怎么排查？乐观锁和悲观锁分别在什么场景下用？本文结合130万日订单实战，从订单批量处理锁表事故，到扣库存用版本号+CAS，再到SyncTask引擎事务边界设计的V1→V2修复，完整还原事务踩坑与自救的全过程。
         </div>
       </a>
 
@@ -986,8 +937,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-10-29 09:00" pubdate>
-              2023-10-29
+            <time datetime="2024-05-08 09:00" pubdate>
+              2024-05-08
             </time>
           </div>
         
@@ -1002,15 +953,8 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
   
-  
-    <span>></span>
-    
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/DDIA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA读书笔记</a>
-  
-  
-
   
 
       </span>
@@ -1024,21 +968,21 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
+              <a href="/tags/%E6%AD%BB%E9%94%81/">#死锁</a>
+            
+              <a href="/tags/MySQL/">#MySQL</a>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
+            
               <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/InnoDB/">#InnoDB</a>
+              <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
             
-              <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">#存储引擎</a>
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/">#事务</a>
             
-              <a href="/tags/%E9%80%89%E5%9E%8B/">#选型</a>
+              <a href="/tags/%E4%B9%90%E8%A7%82%E9%94%81/">#乐观锁</a>
             
-              <a href="/tags/RocksDB/">#RocksDB</a>
-            
-              <a href="/tags/MyRocks/">#MyRocks</a>
-            
-              <a href="/tags/LSM-Tree/">#LSM-Tree</a>
-            
-              <a href="/tags/B-Tree/">#B+Tree</a>
+              <a href="/tags/%E9%94%81/">#锁</a>
             
           </div>
         
@@ -1050,7 +994,7 @@
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <a class="extend prev" rel="prev" href="/page/5/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/#board">4</a><a class="page-number" href="/page/5/#board">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/#board">7</a><a class="page-number" href="/page/8/#board">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/17/#board">17</a><a class="extend next" rel="next" href="/page/7/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/5/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/4/#board">4</a><a class="page-number" href="/page/5/#board">5</a><span class="page-number current">6</span><a class="page-number" href="/page/7/#board">7</a><a class="page-number" href="/page/8/#board">8</a><span class="space">&hellip;</span><a class="page-number" href="/page/22/#board">22</a><a class="extend next" rel="next" href="/page/7/#board"><i class="iconfont icon-arrowright"></i></a>
     </span>
   </nav>
 

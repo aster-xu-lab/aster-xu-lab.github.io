@@ -1,0 +1,870 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但网络是不可靠的——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。 坑 1：空回滚场景：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。 后果：直接回滚会报错&#x2F;误删——“没 Try">
+<meta property="og:type" content="article">
+<meta property="og:title" content="TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2023/01/11/2023-01-11-TCC%E6%B7%B1%E6%B0%B4%E5%8C%BA-%E7%A9%BA%E5%9B%9E%E6%BB%9A%E6%82%AC%E6%8C%82%E5%B9%82%E7%AD%89%E4%B8%8ESeata-AT%E5%9B%9E%E6%BB%9A%E6%9C%BA%E5%88%B6/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但网络是不可靠的——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。 坑 1：空回滚场景：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。 后果：直接回滚会报错&#x2F;误删——“没 Try">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2023-01-11T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.853Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Seata">
+<meta property="article:tag" content="TCC">
+<meta property="article:tag" content="undo_log">
+<meta property="article:tag" content="分布式事务">
+<meta property="article:tag" content="幂等">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-01-11 09:00" pubdate>
+          2023年1月11日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一、TCC-的三个坑：都在解决”网络不可靠下的状态错乱”"><a href="#一、TCC-的三个坑：都在解决”网络不可靠下的状态错乱”" class="headerlink" title="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”"></a>一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”</h2><p>TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但<strong>网络是不可靠的</strong>——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。</p>
+<h3 id="坑-1：空回滚"><a href="#坑-1：空回滚" class="headerlink" title="坑 1：空回滚"></a>坑 1：空回滚</h3><p><strong>场景</strong>：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。</p>
+<p><strong>后果</strong>：直接回滚会报错&#x2F;误删——“没 Try 过，怎么 Cancel”。</p>
+<p><strong>解决</strong>：Try 前<strong>幂等判断 + 记录”是否有预留记录”</strong>；Cancel 时先查有没有 Try 成功的预留，<strong>没有就直接成功返回（不做实际回滚）</strong>——防止”没有 Try 却回滚”。</p>
+<h3 id="坑-2：悬挂"><a href="#坑-2：悬挂" class="headerlink" title="坑 2：悬挂"></a>坑 2：悬挂</h3><p><strong>场景</strong>：Cancel 先执行成功回滚了，<strong>Try 才后到</strong>（网络延迟）——预留了一个”已回滚”的资源，产生悬挂。</p>
+<p><strong>解决</strong>：Cancel 会记录”已回滚”标记，<strong>Try 执行前先查该标记，若已 Cancel 则拒绝 Try</strong>（丢弃这次 Try），避免预留悬空。</p>
+<h3 id="坑-3：幂等"><a href="#坑-3：幂等" class="headerlink" title="坑 3：幂等"></a>坑 3：幂等</h3><p><strong>场景</strong>：网络重试导致 Confirm&#x2F;Cancel 重复执行。</p>
+<p><strong>解决</strong>：Confirm&#x2F;Cancel <strong>按业务主键做幂等</strong>（预留记录上打状态&#x2F;版本号），重复执行只生效一次。</p>
+<p><strong>本质</strong>：TCC 三个坑都在解决”<strong>网络不可靠下的状态错乱</strong>“——用<strong>预留记录 + 状态标记 + 幂等</strong>兜住空回滚、悬挂、重复。</p>
+<h2 id="二、Seata-AT-模式的-undo-log-到底怎么回滚"><a href="#二、Seata-AT-模式的-undo-log-到底怎么回滚" class="headerlink" title="二、Seata AT 模式的 undo_log 到底怎么回滚"></a>二、Seata AT 模式的 undo_log 到底怎么回滚</h2><p>我在工单系统用 Seata AT，被问”AT 怎么自动回滚”要能讲机制：</p>
+<p><strong>一阶段</strong>：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">① 拦截器先记录该行的 <span class="hljs-keyword">before</span>-image（查一次）<br>② 执行业务 <span class="hljs-keyword">SQL</span><br>③ 再查 <span class="hljs-keyword">after</span>-image<br>④ 把前后镜像 + 业务 <span class="hljs-keyword">SQL</span> 写进 undo_log 表（和业务同库、同一本地事务）<br>⑤ 业务 <span class="hljs-keyword">SQL</span> 正常提交<br>⑥ 全局锁记在锁表<br></code></pre></td></tr></table></figure>
+
+<p><strong>二阶段</strong>：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">Commit</span> → 删 undo_log（不用回滚）<br><span class="hljs-keyword">Rollback</span> → 用 undo_log 里的 <span class="hljs-keyword">before</span>-image 做反向补偿<br>        → 生成反向 <span class="hljs-keyword">SQL</span> 把行改回旧值 → 删 undo_log<br></code></pre></td></tr></table></figure>
+
+<p><strong>核心</strong>：AT 是<strong>反向 SQL 补偿</strong>实现回滚，不重放事务——所以比 2PC 的锁轻，但一阶段是乐观的（先提交业务、靠 undo 兜底）。</p>
+<p><strong>为什么 AT 全局锁 → 并发低</strong>：一阶段提交时拿全局锁保证多库间串行，回滚也持锁，冲突多的写操作被串行化——这就是我 2PC → TCC 的动机。</p>
+<h2 id="三、TCC-是强一致吗？准确定位"><a href="#三、TCC-是强一致吗？准确定位" class="headerlink" title="三、TCC 是强一致吗？准确定位"></a>三、TCC 是强一致吗？准确定位</h2><p>被问”TCC 是强一致吗”要答准：</p>
+<blockquote>
+<p>TCC 是<strong>应用层多段提交、近似强一致但本质靠幂等 + 最终一致兜底</strong>——Try 预留是宽松隔离，不是真锁住；它比 2PC 快因为把长事务串行化换成”预留 + 确认”的短临界。<strong>别吹成”和 2PC 一样强同步”</strong>。</p>
+</blockquote>
+<p>这个诚实定位很重要——面试官专抓这种”讲过头的点”。</p>
+<h2 id="四、事务-vs-幂等的边界"><a href="#四、事务-vs-幂等的边界" class="headerlink" title="四、事务 vs 幂等的边界"></a>四、事务 vs 幂等的边界</h2><p>一个高频混淆：<strong>“用了分布式事务，是不是就不用幂等了？”</strong></p>
+<ul>
+<li><strong>事务</strong>管”跨库原子”——保证一次操作要么全成要么全不成；</li>
+<li><strong>幂等</strong>管”重试别重复”——即使事务保证了原子，<strong>网络仍可能重试</strong>，Confirm&#x2F;Cancel 被重复执行依然会错。</li>
+</ul>
+<p>所以<strong>用了事务也必须并行做幂等</strong>。事务和幂等是两个维度，不是替代关系。</p>
+<h2 id="五、结合我的项目"><a href="#五、结合我的项目" class="headerlink" title="五、结合我的项目"></a>五、结合我的项目</h2><p>订单中心把发货确认、库存扣减这类核心链路从 AT 改 <strong>TCC</strong>：AT 的全局锁本质是把可串行化隔离强加在所有事务上，把所有并发串行化了；TCC 在 Try 阶段用宽松隔离、只在 Confirm 做串行化，性能提升 <strong>40%+</strong>。</p>
+<p>同时订单同步这种最终一致场景用<strong>本地消息表 + 幂等</strong>（那套和 SAGA 的”最终一致 + 补偿”是一路）。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>TCC 三坑：<strong>空回滚（没 Try 却 Cancel）、悬挂（Cancel 后 Try 才到）、幂等（重试重复）</strong>——用预留记录 + 状态标记 + 幂等解决；</li>
+<li>Seata AT 回滚：<strong>一阶段记前后镜像到 undo_log，二阶段 Rollback 用 before-image 反向 SQL 补偿</strong>；</li>
+<li>AT 全局锁 → 串行化 → 并发低，是 2PC → TCC 的动机；</li>
+<li>TCC 准确定位：<strong>应用层多段提交、近似强一致、本质靠幂等兜底</strong>，别吹过头；</li>
+<li>事务管原子、幂等管重试，<strong>两个维度都要做</strong>；</li>
+<li>我的实战：核心链路 TCC（40%+ 提升）、同步场景本地消息表 + 幂等。</li>
+</ul>
+<hr>
+<p><em>发表于 2023 年 1 月 · 标签: 分布式事务, TCC, Seata, 幂等, undo_log</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="print-no-link">#分布式事务</a>
+      
+        <a href="/tags/Seata/" class="print-no-link">#Seata</a>
+      
+        <a href="/tags/TCC/" class="print-no-link">#TCC</a>
+      
+        <a href="/tags/%E5%B9%82%E7%AD%89/" class="print-no-link">#幂等</a>
+      
+        <a href="/tags/undo-log/" class="print-no-link">#undo_log</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚</div>
+      <div>https://aster-xu-lab.github.io/2023/01/11/2023-01-11-TCC深水区-空回滚悬挂幂等与Seata-AT回滚机制/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年1月11日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/01/26/2023-01-26-%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA%E5%8D%8F%E5%90%8C%E8%AE%BE%E8%AE%A1/" title="双状态机协同设计：工单状态机与任务状态机">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">双状态机协同设计：工单状态机与任务状态机</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/01/06/2023-01-06-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E5%85%A8%E6%99%AF-%E5%BC%BA%E4%B8%80%E8%87%B4%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E9%80%89%E5%9E%8B/" title="分布式事务全景：强一致 vs 最终一致，怎么选">
+                        <span class="hidden-mobile">分布式事务全景：强一致 vs 最终一致，怎么选</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

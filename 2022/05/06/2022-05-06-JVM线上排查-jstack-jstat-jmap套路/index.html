@@ -1,0 +1,898 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="定位：结合真实线上经验（ThreadLocal 泄漏、慢 SQL、连接池隔离）讲 JVM 排查套路。  一、四个 JVM 工具，别搞混   工具 看什么    jstack 线程状态（死锁&#x2F;阻塞&#x2F;高 CPU 定位）   jstat GC、类加载统计   jmap 堆 dump   jinfo JVM 参数   一句话记忆：jstack 看线程、jstat 看 GC、jmap">
+<meta property="og:type" content="article">
+<meta property="og:title" content="JVM 线上排查：高 CPU、内存溢出、GC 频繁的完整套路">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/05/06/2022-05-06-JVM%E7%BA%BF%E4%B8%8A%E6%8E%92%E6%9F%A5-jstack-jstat-jmap%E5%A5%97%E8%B7%AF/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="定位：结合真实线上经验（ThreadLocal 泄漏、慢 SQL、连接池隔离）讲 JVM 排查套路。  一、四个 JVM 工具，别搞混   工具 看什么    jstack 线程状态（死锁&#x2F;阻塞&#x2F;高 CPU 定位）   jstat GC、类加载统计   jmap 堆 dump   jinfo JVM 参数   一句话记忆：jstack 看线程、jstat 看 GC、jmap">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-05-06T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.845Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="JVM">
+<meta property="article:tag" content="OOM">
+<meta property="article:tag" content="jmap">
+<meta property="article:tag" content="jstack">
+<meta property="article:tag" content="jstat">
+<meta property="article:tag" content="排查">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>JVM 线上排查：高 CPU、内存溢出、GC 频繁的完整套路 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="JVM 线上排查：高 CPU、内存溢出、GC 频繁的完整套路"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-05-06 09:00" pubdate>
+          2022年5月6日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          13 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">JVM 线上排查：高 CPU、内存溢出、GC 频繁的完整套路</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>定位：结合真实线上经验（ThreadLocal 泄漏、慢 SQL、连接池隔离）讲 JVM 排查套路。</p>
+</blockquote>
+<h2 id="一、四个-JVM-工具，别搞混"><a href="#一、四个-JVM-工具，别搞混" class="headerlink" title="一、四个 JVM 工具，别搞混"></a>一、四个 JVM 工具，别搞混</h2><table>
+<thead>
+<tr>
+<th>工具</th>
+<th>看什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>jstack</strong></td>
+<td>线程状态（死锁&#x2F;阻塞&#x2F;高 CPU 定位）</td>
+</tr>
+<tr>
+<td><strong>jstat</strong></td>
+<td>GC、类加载统计</td>
+</tr>
+<tr>
+<td><strong>jmap</strong></td>
+<td>堆 dump</td>
+</tr>
+<tr>
+<td><strong>jinfo</strong></td>
+<td>JVM 参数</td>
+</tr>
+</tbody></table>
+<p>一句话记忆：<strong>jstack 看线程、jstat 看 GC、jmap 看堆、jinfo 看参数</strong>。</p>
+<h2 id="二、场景-1：高-CPU"><a href="#二、场景-1：高-CPU" class="headerlink" title="二、场景 1：高 CPU"></a>二、场景 1：高 CPU</h2><p>这是最高频的线上问题，完整套路一条链：</p>
+<figure class="highlight coq"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs coq">① <span class="hljs-built_in">top</span> 找进程：哪个 PID 占 CPU 高<br>② <span class="hljs-built_in">top</span> -Hp PID 找线程：哪个线程占 CPU 高（拿到线程 PID）<br>③ 线程 PID 转十六进制：printf <span class="hljs-string">&quot;%x&quot;</span> 线程PID<br>④ jstack PID 看线程栈：搜那个十六进制线程号<br>⑤ 定位代码：看栈里的业务方法 → 反查代码<br></code></pre></td></tr></table></figure>
+
+<p>关键点：<strong>jstack 里的线程号是十六进制</strong>，要把 top -Hp 拿到的十进制线程号转 hex 才能对上。</p>
+<h2 id="三、场景-2：内存溢出（OOM）"><a href="#三、场景-2：内存溢出（OOM）" class="headerlink" title="三、场景 2：内存溢出（OOM）"></a>三、场景 2：内存溢出（OOM）</h2><figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs ruby">① 启动加参数保现场：-<span class="hljs-variable constant_">XX</span><span class="hljs-symbol">:+HeapDumpOnOutOfMemoryError</span> -<span class="hljs-variable constant_">XX</span><span class="hljs-symbol">:HeapDumpPath=</span>...<br>② 触发 <span class="hljs-variable constant_">OOM</span> 时自动 dump 堆<br>③ 用 <span class="hljs-variable constant_">MAT</span> / <span class="hljs-title class_">Visual</span>VM 分析 dump：<br>   - <span class="hljs-title class_">Dominator</span> <span class="hljs-title class_">Tree</span>（支配树）找大对象<br>   - 找强引用泄漏嫌疑<br>④ 按内存峰值时间点 → 对应线程/请求 → 反查代码<br></code></pre></td></tr></table></figure>
+
+<p><strong>常见泄漏源</strong>（我踩过的）：</p>
+<ul>
+<li><strong>ThreadLocal value 未清</strong>：key 是弱引用、value 强引用，线程池线程常驻 → 泄漏。解法：用完 <code>remove()</code>；</li>
+<li>静态集合无限 add；</li>
+<li>连接&#x2F;流未关；</li>
+<li>大 List 常驻。</li>
+</ul>
+<h2 id="四、场景-3：GC-频繁-Full-GC-卡顿"><a href="#四、场景-3：GC-频繁-Full-GC-卡顿" class="headerlink" title="四、场景 3：GC 频繁 &#x2F; Full GC 卡顿"></a>四、场景 3：GC 频繁 &#x2F; Full GC 卡顿</h2><figure class="highlight powershell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs powershell">① jstat <span class="hljs-literal">-gcutil</span> PID 看 <span class="hljs-built_in">GC</span> 频率和耗时<br>② 老年代持续增长 → 内存泄漏嫌疑<br>③ 新生代频繁 Minor <span class="hljs-built_in">GC</span> → 对象存活率高/分配过大<br>④ 调堆参数或定位泄漏<br></code></pre></td></tr></table></figure>
+
+<p>Full GC 频繁通常意味着<strong>老年代快满</strong>——要么对象晋升过多（泄漏），要么堆太小。jstat 看 <code>FGC</code> 次数和 <code>FGCT</code> 耗时，趋势比单值重要。</p>
+<h2 id="五、一个真实案例：ThreadLocal-泄漏"><a href="#五、一个真实案例：ThreadLocal-泄漏" class="headerlink" title="五、一个真实案例：ThreadLocal 泄漏"></a>五、一个真实案例：ThreadLocal 泄漏</h2><p>我在订单系统排查过一次内存问题，根因是 <strong>ThreadLocal 的 value 没清</strong>：</p>
+<ul>
+<li>ThreadLocal 的 key 是弱引用，value 是强引用；</li>
+<li>线程池线程常驻，value 一直强留在 map 里清不掉；</li>
+<li>用久了，value 累积 → 内存缓慢上涨 → 触发 Full GC 频繁。</li>
+</ul>
+<p>解法：<strong>用完必须 <code>remove()</code></strong>，并且代码审查时重点盯”线程池 + ThreadLocal”的组合。这是 JVM 排查 + 并发知识结合的真实案例。</p>
+<h2 id="六、排查方法论"><a href="#六、排查方法论" class="headerlink" title="六、排查方法论"></a>六、排查方法论</h2><p>JVM 排查不是背命令，是<strong>方法论</strong>：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs gradle">保现场（<span class="hljs-keyword">dump</span> 参数）→ 看监控（GC 日志<span class="hljs-regexp">/堆曲线）→ 分析（MAT/</span>线程栈）→ 定位代码 → 修复验证<br></code></pre></td></tr></table></figure>
+
+<p><strong>先保现场再动手</strong>——线上问题最怕”看一眼就重启”，现场没了就永远定位不到。</p>
+<h2 id="七、和我的项目"><a href="#七、和我的项目" class="headerlink" title="七、和我的项目"></a>七、和我的项目</h2><p>订单系统可用性 99.9%，这些排查能力是关键支撑。除了 JVM，我做过**连接池隔离（舱壁）**防一个下游拖垮全局、<strong>慢 SQL</strong> 从千条降到个位数——线上排查是”运维能力”的完整拼图。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>四工具：<strong>jstack 线程、jstat GC、jmap 堆、jinfo 参数</strong>；</li>
+<li>高 CPU：top → top -Hp → 线程转 hex → jstack → 定位代码；</li>
+<li>OOM：<strong>先加 dump 参数保现场</strong> → MAT 分析支配树 → 按时间点反查代码；</li>
+<li>GC 频繁：jstat 看趋势，老年代增长 &#x3D; 泄漏嫌疑；</li>
+<li>常见泄漏：<strong>ThreadLocal value 未清</strong>（线程池 + ThreadLocal 组合）、静态集合、连接未关；</li>
+<li>方法论：保现场 → 看监控 → 分析 → 定位 → 修复验证。</li>
+</ul>
+<hr>
+<p><em>发表于 2022 年 5 月 · 标签: JVM, 排查, jstack, jstat, jmap, OOM</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Linux%E8%BF%90%E7%BB%B4/" class="category-chain-item">Linux运维</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/JVM/" class="print-no-link">#JVM</a>
+      
+        <a href="/tags/%E6%8E%92%E6%9F%A5/" class="print-no-link">#排查</a>
+      
+        <a href="/tags/jstack/" class="print-no-link">#jstack</a>
+      
+        <a href="/tags/jstat/" class="print-no-link">#jstat</a>
+      
+        <a href="/tags/jmap/" class="print-no-link">#jmap</a>
+      
+        <a href="/tags/OOM/" class="print-no-link">#OOM</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>JVM 线上排查：高 CPU、内存溢出、GC 频繁的完整套路</div>
+      <div>https://aster-xu-lab.github.io/2022/05/06/2022-05-06-JVM线上排查-jstack-jstat-jmap套路/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年5月6日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/11/22/2022-11-22-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1Seata-AT%E5%88%B0TCC/" title="分布式事务实战：从Seata AT到TCC的性能提升之路">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">分布式事务实战：从Seata AT到TCC的性能提升之路</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/05/01/2022-05-01-Linux%E6%8E%92%E6%9F%A5%E4%B8%89%E6%9D%BF%E6%96%A7-CPU%E5%86%85%E5%AD%98%E7%A3%81%E7%9B%98%E7%AB%AF%E5%8F%A3%E6%97%A5%E5%BF%97/" title="Linux 排查三板斧：CPU、内存、磁盘、端口、日志">
+                        <span class="hidden-mobile">Linux 排查三板斧：CPU、内存、磁盘、端口、日志</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,892 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一个经典问题：Redis 做 RDB 快照时，还在源源不断写数据，怎么保证快照的一致性？答案的关键，是操作系统里的一个机制：fork 写时复制（Copy-On-Write, COW）。 它不只在 Redis 里出现——Java 的 Runtime.exec()、HashMap 的 CopyOnWriteArrayList 变体、Linux 守护进程 fork 子进程……底层都是同一套思路。这篇文">
+<meta property="og:type" content="article">
+<meta property="og:title" content="fork写时复制COW：从进程克隆到Redis RDB快照">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/10/2022-03-10-fork%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6COW-%E4%BB%8E%E8%BF%9B%E7%A8%8B%E5%85%8B%E9%9A%86%E5%88%B0Redis%E5%BF%AB%E7%85%A7/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一个经典问题：Redis 做 RDB 快照时，还在源源不断写数据，怎么保证快照的一致性？答案的关键，是操作系统里的一个机制：fork 写时复制（Copy-On-Write, COW）。 它不只在 Redis 里出现——Java 的 Runtime.exec()、HashMap 的 CopyOnWriteArrayList 变体、Linux 守护进程 fork 子进程……底层都是同一套思路。这篇文">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-03-10T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.835Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="COW">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="fork">
+<meta property="article:tag" content="写时复制">
+<meta property="article:tag" content="操作系统">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>fork写时复制COW：从进程克隆到Redis RDB快照 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="fork写时复制COW：从进程克隆到Redis RDB快照"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-03-10 09:00" pubdate>
+          2022年3月10日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          21 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">fork写时复制COW：从进程克隆到Redis RDB快照</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一个经典问题：Redis-做-RDB-快照时，还在源源不断写数据，怎么保证快照的一致性？"><a href="#一个经典问题：Redis-做-RDB-快照时，还在源源不断写数据，怎么保证快照的一致性？" class="headerlink" title="一个经典问题：Redis 做 RDB 快照时，还在源源不断写数据，怎么保证快照的一致性？"></a>一个经典问题：Redis 做 RDB 快照时，还在源源不断写数据，怎么保证快照的一致性？</h2><p>答案的关键，是操作系统里的一个机制：<strong>fork 写时复制（Copy-On-Write, COW）</strong>。</p>
+<p>它不只在 Redis 里出现——Java 的 <code>Runtime.exec()</code>、<code>HashMap</code> 的 CopyOnWriteArrayList 变体、Linux 守护进程 fork 子进程……底层都是同一套思路。这篇文章把它的原理讲透。</p>
+<h2 id="一、fork：创建子进程"><a href="#一、fork：创建子进程" class="headerlink" title="一、fork：创建子进程"></a>一、fork：创建子进程</h2><p><code>fork()</code> 是 Linux 创建子进程的唯一方式（Java 里 <code>Runtime.exec()</code> 底层就是 fork + exec）。</p>
+<p>直觉上，子进程是父进程的复制品，所以 fork 要<strong>复制父进程的整个地址空间</strong>。但完整复制是灾难：</p>
+<ul>
+<li>父进程如果有 2GB 堆，fork 就要复制 2GB 数据——慢，而且大概率白复制；</li>
+<li>子进程通常马上 <code>exec</code> 加载一个全新的程序，之前复制的数据立刻作废（fork 完直接 exec 是典型用法）。</li>
+</ul>
+<p><strong>朴素 fork 的问题是：为大概率用不到的东西，付了全量的拷贝成本。</strong></p>
+<h2 id="二、虚拟内存：fork-便宜的物理基础"><a href="#二、虚拟内存：fork-便宜的物理基础" class="headerlink" title="二、虚拟内存：fork 便宜的物理基础"></a>二、虚拟内存：fork 便宜的物理基础</h2><p>要理解 COW，先回顾一下虚拟内存（复习卡 09 第 7 节）：</p>
+<ul>
+<li>每个进程有<strong>独立的虚拟地址空间</strong>，看起来都从 0 到很大、很连续；</li>
+<li>物理内存是<strong>分页</strong>的（4KB&#x2F;页），两者靠**页表（Page Table）**映射；</li>
+<li>CPU 每次访存，由 <strong>MMU</strong> 查页表把虚拟页号换成物理页号，TLB 缓存最近映射避免反复查表。</li>
+</ul>
+<p>这里的关键是：<strong>页表是”虚拟 → 物理”的映射关系，是独立于数据的元数据。</strong></p>
+<p>所以 fork 时，其实<strong>不需要复制物理内存数据，只需要复制页表</strong>——父子进程的页表指向同一批物理页。</p>
+<h2 id="三、写时复制：先共享，要改才复制"><a href="#三、写时复制：先共享，要改才复制" class="headerlink" title="三、写时复制：先共享，要改才复制"></a>三、写时复制：先共享，要改才复制</h2><p>COW 的做法，是把”复制”这件事<strong>推迟到不得不做的时候</strong>：</p>
+<ol>
+<li><strong>fork 时</strong>：复制页表，但把父子进程的所有页都标记为<strong>只读</strong>（页表项里清掉写权限位）；</li>
+<li><strong>读</strong>：父子和子进程共享同一批物理页，随便读，零成本；</li>
+<li><strong>第一次写</strong>：进程要改某个页 → CPU 发现该页只读 → 触发<strong>缺页异常（Page Fault）</strong> → 内核<strong>复制这一页</strong> → 给写者换成新的可写物理页 → 重新执行写指令。</li>
+</ol>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// 伪代码：fork 后子进程第一次写 x</span><br>fork();<br>x = <span class="hljs-number">42</span>;      <span class="hljs-comment">// 触发 COW：内核复制 x 所在页，子进程改到副本上</span><br>             <span class="hljs-comment">// 父进程的 x 仍是原值，两者互不影响</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs css">fork 后：父、子  ──页表──▶  同一批物理页（全部只读）<br>父进程写页 <span class="hljs-selector-tag">P</span>：复制 <span class="hljs-selector-tag">P</span> 到新物理页 → 父指向新页（可写）；子仍指向旧页（只读）<br></code></pre></td></tr></table></figure>
+
+<p><strong>收益</strong>：</p>
+<ul>
+<li>fork 本身几乎零成本——只复制页表，不复制数据；</li>
+<li>只读场景（比如父进程 exec 前的配置区、共享代码段）父子共用一份内存；</li>
+<li><strong>真正要写多少，才复制多少</strong>——写 1 页复制 1 页，绝不整块拷贝。</li>
+</ul>
+<p>代价：<strong>缺页异常的处理有开销</strong>（进内核、分配物理页、复制），频繁写会放大开销。所以 COW 适合”读多写少”的场景——这正好是快照场景的特征。</p>
+<h2 id="四、回到-Redis-RDB：COW-怎么保证快照一致"><a href="#四、回到-Redis-RDB：COW-怎么保证快照一致" class="headerlink" title="四、回到 Redis RDB：COW 怎么保证快照一致"></a>四、回到 Redis RDB：COW 怎么保证快照一致</h2><p>Redis 做 RDB 快照的经典做法是 <code>BGSAVE</code>：</p>
+<ol>
+<li>主进程 <code>fork()</code> 出一个<strong>子进程</strong>；</li>
+<li><strong>子进程把当前内存写进 RDB 文件</strong>——它看到的是 fork 瞬间的内存快照；</li>
+<li>主进程<strong>继续正常处理写命令</strong>，毫不停顿。</li>
+</ol>
+<p>这里有个矛盾：子进程写 RDB 文件可能要好几秒，而这期间主进程在<strong>疯狂改内存</strong>。如果没有 COW，子进程写出来的 RDB 会是一份”写了一半”的脏数据。</p>
+<p>COW 解决了它：</p>
+<ul>
+<li><strong>fork 时</strong>，主进程和子进程共享所有物理页（只读）；</li>
+<li>子进程读内存 → 看到的是 fork 那一刻的值；</li>
+<li>主进程写某个页 → <strong>COW 触发，主进程复制该页再写副本</strong>，子进程看到的旧页不受影响。</li>
+</ul>
+<p>结果：<strong>子进程永远在写一份”fork 瞬间的、完整一致的快照”</strong>，主进程在副本上继续演进，两边互不干扰。这就是”快照一致性”和”服务不停机”同时成立的底层原因。</p>
+<p>代价也讲清楚：主进程写越猛，COW 复制的页越多，内存峰值越高（可能到常驻内存的数倍），这也是为什么 Redis 大实例做 BGSAVE 时要关注内存。</p>
+<h2 id="五、COW-思想在-Java-里：CopyOnWriteArrayList"><a href="#五、COW-思想在-Java-里：CopyOnWriteArrayList" class="headerlink" title="五、COW 思想在 Java 里：CopyOnWriteArrayList"></a>五、COW 思想在 Java 里：CopyOnWriteArrayList</h2><p>Java 并发包里有个名字直接叫”写时复制”的容器：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 读：不加锁，直接读数组</span><br><span class="hljs-keyword">public</span> E <span class="hljs-title function_">get</span><span class="hljs-params">(<span class="hljs-type">int</span> index)</span> &#123; <span class="hljs-keyword">return</span> elementData[index]; &#125;<br><br><span class="hljs-comment">// 写：加锁，复制整个数组，改完替换引用</span><br><span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">add</span><span class="hljs-params">(E e)</span> &#123;<br>    <span class="hljs-keyword">synchronized</span> (lock) &#123;<br>        Object[] elements = getArray();<br>        <span class="hljs-type">int</span> <span class="hljs-variable">len</span> <span class="hljs-operator">=</span> elements.length;<br>        Object[] newElements = Arrays.copyOf(elements, len + <span class="hljs-number">1</span>); <span class="hljs-comment">// 全量复制</span><br>        newElements[len] = e;<br>        setArray(newElements); <span class="hljs-comment">// 替换整个数组引用</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>跟 OS 的 COW 是<strong>同一思路</strong>：读不走锁、永远读到一致快照；写时复制一份再改。只是 Java 这个”写时复制”是全量复制数组（因为数组没法按页共享），所以它适合<strong>读多写极少</strong>的场景，写频繁就是灾难。</p>
+<h2 id="六、和业务系统的连接"><a href="#六、和业务系统的连接" class="headerlink" title="六、和业务系统的连接"></a>六、和业务系统的连接</h2><p>我在做订单系统的时候，遇到过”<strong>大对象复制耗时</strong>“的排查：某段代码把一个大 List 深拷贝传给异步线程，高峰期复制占了不少 CPU。本质和朴素 fork 是同一个病——<strong>复制了可能没人看的数据</strong>。后来改成”只传只读引用 + 需要变更时才复制”，思路就是 COW：<strong>把复制推迟到真要改的那一刻。</strong></p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>fork 默认只复制页表，物理页父子共享、全部标记只读；</li>
+<li>第一次写某页触发<strong>缺页异常</strong> → 内核复制该页 → 写者改副本，父子从此分离；</li>
+<li>COW &#x3D; <strong>先共享、要改才复制</strong>，读多写少场景几乎零成本；</li>
+<li>Redis RDB 靠 fork + COW 做到”快照一致 + 服务不停机”；</li>
+<li>CopyOnWriteArrayList 是同思路的 Java 落地，适合读多写极少。</li>
+</ul>
+<hr>
+<p><em>发表于 2022 年 3 月 · 标签: fork, 写时复制, COW, Redis, 操作系统</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="category-chain-item">网络与操作系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Redis/" class="print-no-link">#Redis</a>
+      
+        <a href="/tags/fork/" class="print-no-link">#fork</a>
+      
+        <a href="/tags/%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/" class="print-no-link">#写时复制</a>
+      
+        <a href="/tags/COW/" class="print-no-link">#COW</a>
+      
+        <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="print-no-link">#操作系统</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>fork写时复制COW：从进程克隆到Redis RDB快照</div>
+      <div>https://aster-xu-lab.github.io/2022/03/10/2022-03-10-fork写时复制COW-从进程克隆到Redis快照/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年3月10日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/03/14/2022-03-14-Netty%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B-Reactor%E4%B8%BB%E4%BB%8E%E4%B8%8EEventLoop%E5%85%8D%E9%94%81%E5%93%B2%E5%AD%A6/" title="Netty线程模型：Reactor主从与&#34;一连接一EventLoop&#34;的免锁哲学">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Netty线程模型：Reactor主从与&#34;一连接一EventLoop&#34;的免锁哲学</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/03/06/2022-03-06-%E9%9B%B6%E6%8B%B7%E8%B4%9D-4%E6%AC%A1%E6%8B%B7%E8%B4%9D%E5%8F%982%E6%AC%A1/" title="零拷贝：4次拷贝变2次，Kafka和Netty的&#34;零&#34;其实是两回事">
+                        <span class="hidden-mobile">零拷贝：4次拷贝变2次，Kafka和Netty的&#34;零&#34;其实是两回事</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

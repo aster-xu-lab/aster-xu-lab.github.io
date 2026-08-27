@@ -1,0 +1,925 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="从一个真实的瓶颈说起刚做订单系统的时候，同步任务的调用链上有一个老服务，用的是最朴素的 BIO 写法：一个客户端连接来了就 new 一个线程去处理。QPS 一上来，先是线程数暴涨，然后线程栈把内存吃满，最后干脆拒绝新连接。 这个问题的本质，是阻塞等待——线程花大量时间睡在 read() 上，什么事都不干，却占着一个宝贵的线程资源。 IO 模型演进的全部历史，就是在回答一个问题：怎么让有限的线程，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/02/2022-03-02-IO%E6%A8%A1%E5%9E%8B%E6%BC%94%E8%BF%9B-%E4%BB%8EBIO%E5%88%B0epoll/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="从一个真实的瓶颈说起刚做订单系统的时候，同步任务的调用链上有一个老服务，用的是最朴素的 BIO 写法：一个客户端连接来了就 new 一个线程去处理。QPS 一上来，先是线程数暴涨，然后线程栈把内存吃满，最后干脆拒绝新连接。 这个问题的本质，是阻塞等待——线程花大量时间睡在 read() 上，什么事都不干，却占着一个宝贵的线程资源。 IO 模型演进的全部历史，就是在回答一个问题：怎么让有限的线程，">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2022-03-02T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.824Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="IO模型">
+<meta property="article:tag" content="NIO">
+<meta property="article:tag" content="Redis">
+<meta property="article:tag" content="epoll">
+<meta property="article:tag" content="网络编程">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-03-02 09:00" pubdate>
+          2022年3月2日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          23 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="从一个真实的瓶颈说起"><a href="#从一个真实的瓶颈说起" class="headerlink" title="从一个真实的瓶颈说起"></a>从一个真实的瓶颈说起</h2><p>刚做订单系统的时候，同步任务的调用链上有一个老服务，用的是最朴素的 BIO 写法：一个客户端连接来了就 new 一个线程去处理。QPS 一上来，先是线程数暴涨，然后线程栈把内存吃满，最后干脆拒绝新连接。</p>
+<p>这个问题的本质，是<strong>阻塞等待</strong>——线程花大量时间睡在 <code>read()</code> 上，什么事都不干，却占着一个宝贵的线程资源。</p>
+<p>IO 模型演进的全部历史，就是在回答一个问题：<strong>怎么让有限的线程，服务尽可能多的连接？</strong></p>
+<h2 id="一、BIO：一连接一线程"><a href="#一、BIO：一连接一线程" class="headerlink" title="一、BIO：一连接一线程"></a>一、BIO：一连接一线程</h2><p>阻塞 IO 的工作方式：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">ServerSocket</span> <span class="hljs-variable">server</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ServerSocket</span>(<span class="hljs-number">8080</span>);<br><span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>    <span class="hljs-type">Socket</span> <span class="hljs-variable">socket</span> <span class="hljs-operator">=</span> server.accept();          <span class="hljs-comment">// 阻塞等连接</span><br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; handle(socket)).start(); <span class="hljs-comment">// 一个连接一个线程</span><br>&#125;<br><br><span class="hljs-keyword">void</span> <span class="hljs-title function_">handle</span><span class="hljs-params">(Socket socket)</span> <span class="hljs-keyword">throws</span> IOException &#123;<br>    <span class="hljs-type">InputStream</span> <span class="hljs-variable">in</span> <span class="hljs-operator">=</span> socket.getInputStream();<br>    <span class="hljs-type">byte</span>[] buf = <span class="hljs-keyword">new</span> <span class="hljs-title class_">byte</span>[<span class="hljs-number">1024</span>];<br>    <span class="hljs-keyword">while</span> (in.read(buf) &gt; <span class="hljs-number">0</span>) &#123;                <span class="hljs-comment">// 阻塞等数据</span><br>        <span class="hljs-comment">// 处理业务</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>两个阻塞点：<code>accept()</code> 等新连接、<code>read()</code> 等数据。线程在阻塞期间什么也不干，白白占用内存（默认线程栈 1MB）。</p>
+<p>连接数 N → 线程数 N → 上下文切换成本 O(N²)。几千连接就能把一台机器拖垮。</p>
+<h2 id="二、NIO：同步非阻塞，还是不行"><a href="#二、NIO：同步非阻塞，还是不行" class="headerlink" title="二、NIO：同步非阻塞，还是不行"></a>二、NIO：同步非阻塞，还是不行</h2><p>非阻塞 IO 把 <code>read()</code> 改成”没数据就立刻返回”：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java">socket.configureBlocking(<span class="hljs-literal">false</span>);<br><span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>    <span class="hljs-type">byte</span>[] data = read(socket);   <span class="hljs-comment">// 没数据立刻返回</span><br>    <span class="hljs-keyword">if</span> (data != <span class="hljs-literal">null</span>) &#123;<br>        handle(data);<br>    &#125;<br>    <span class="hljs-comment">// 没数据？干等，然后再试</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>问题在于：<strong>非阻塞但不知道”什么时候有数据”</strong>。你得一个线程自己轮询所有连接，挨个问”你有数据吗”——这种忙轮询浪费 CPU，而且连接多了线程还是不够分。</p>
+<p>所以非阻塞 IO 单独用没啥意义。它需要配合下一个东西：<strong>IO 多路复用</strong>。</p>
+<h2 id="三、IO-多路复用：select-poll-epoll"><a href="#三、IO-多路复用：select-poll-epoll" class="headerlink" title="三、IO 多路复用：select &#x2F; poll &#x2F; epoll"></a>三、IO 多路复用：select &#x2F; poll &#x2F; epoll</h2><p>多路复用的核心思想：<strong>一个线程通过一个”监视器”同时盯住 N 个连接，谁有数据就处理谁</strong>。</p>
+<p>Java NIO 的 <code>Selector</code> 就是对它的一层封装。底层三种实现，进化了三次：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>select</th>
+<th>poll</th>
+<th>epoll</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据结构</td>
+<td>fd 数组</td>
+<td>链表</td>
+<td>红黑树 + 就绪链表</td>
+</tr>
+<tr>
+<td>连接上限</td>
+<td><strong>1024</strong>（FD_SETSIZE）</td>
+<td>无上限</td>
+<td>无上限</td>
+</tr>
+<tr>
+<td>检查方式</td>
+<td>每次<strong>遍历全部</strong> fd</td>
+<td>每次<strong>遍历全部</strong> fd</td>
+<td><strong>事件驱动</strong>，只遍历就绪的</td>
+</tr>
+<tr>
+<td>复杂度</td>
+<td>O(n)</td>
+<td>O(n)</td>
+<td><strong>O(1)</strong></td>
+</tr>
+<tr>
+<td>触发方式</td>
+<td>水平</td>
+<td>水平</td>
+<td>水平 + <strong>边沿</strong></td>
+</tr>
+</tbody></table>
+<p>关键差异在最后一行：</p>
+<ul>
+<li><strong>select&#x2F;poll 是”主动问”</strong>：每次调用都要把全部 fd 传给内核，内核挨个扫一遍看谁就绪。连接一多，哪怕只有 1 个连接有数据，也要扫 N 个 fd。这就是 O(n)。</li>
+<li><strong>epoll 是”被通知”</strong>：注册 fd 时内核维护一棵红黑树，数据到达时由<strong>中断&#x2F;回调机制</strong>把就绪的 fd 丢进一个就绪链表。<code>epoll_wait</code> 直接返回就绪链表——<strong>有几个事件就返回几个，不用全扫</strong>。这就是 O(1) 的来源。</li>
+</ul>
+<p>一个常被忽略的点：select 的 1024 上限不只是”改个宏就行”的问题——它每次调用都要把整个 fd 集合从用户态拷贝到内核态，fd 越多拷贝越贵。epoll 靠 mmap 共享内存，绕开了这个拷贝。</p>
+<h2 id="四、LT-和-ET：水平触发与边沿触发"><a href="#四、LT-和-ET：水平触发与边沿触发" class="headerlink" title="四、LT 和 ET：水平触发与边沿触发"></a>四、LT 和 ET：水平触发与边沿触发</h2><p>epoll 有两种事件通知模式：</p>
+<p><strong>LT（水平触发，默认）</strong>：只要缓冲区<strong>还有数据</strong>，每次 <code>epoll_wait</code> 都会再次通知。</p>
+<ul>
+<li>简单、不易漏事件——这次没读完，下次还提醒你。</li>
+<li>代价：可能重复唤醒。</li>
+</ul>
+<p><strong>ET（边沿触发）</strong>：只在<strong>状态变化</strong>时通知一次——从”没数据”变到”有数据”的那一刻。</p>
+<ul>
+<li>高效：一次事件驱动，减少重复唤醒。</li>
+<li>代价：<strong>必须一次把数据读完</strong>，没读完它也不会再提醒，丢数据就是你自己的锅。所以 ET 要求 socket 设为<strong>非阻塞</strong>，配合循环读直到 <code>EAGAIN</code>。</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-comment">// ET 模式的标准写法：循环读到 EAGAIN 为止</span><br><span class="hljs-keyword">while</span> (<span class="hljs-number">1</span>) &#123;<br>    <span class="hljs-type">int</span> n = recv(fd, buf, <span class="hljs-keyword">sizeof</span>(buf), <span class="hljs-number">0</span>);<br>    <span class="hljs-keyword">if</span> (n == <span class="hljs-number">-1</span>) &#123;<br>        <span class="hljs-keyword">if</span> (errno == EAGAIN) <span class="hljs-keyword">break</span>;  <span class="hljs-comment">// 读干净了</span><br>        <span class="hljs-keyword">break</span>;<br>    &#125;<br>    <span class="hljs-comment">// 处理 buf</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>一句话选型：<strong>追求高并发低唤醒用 ET，求稳求简单用 LT</strong>。Redis 用的是 ET。</p>
+<h2 id="五、Redis-单线程的秘密"><a href="#五、Redis-单线程的秘密" class="headerlink" title="五、Redis 单线程的秘密"></a>五、Redis 单线程的秘密</h2><p>Redis 快，常被归因于”内存存储”。但同样是内存存储，为什么一个单线程能扛 10 万+ QPS？</p>
+<p>真正的答案在 IO 模型：Redis 主线程用 <strong>epoll 多路复用</strong>一个线程监听大量客户端连接，<strong>只处理有数据就绪的连接</strong>，没有就绪就阻塞在 <code>epoll_wait</code> 上，不占 CPU。这个模型同时解决了三个问题：</p>
+<ol>
+<li><strong>无阻塞</strong>——事件驱动，没有线程睡在 read 上；</li>
+<li><strong>无锁</strong>——单线程执行命令，根本不需要加锁，天然无竞争；</li>
+<li><strong>无上下文切换</strong>——一个线程从头跑到尾。</li>
+</ol>
+<p>一句话：<strong>单线程避免竞争，多路复用扛并发</strong>。这跟我后面在 Netty 里看到的 EventLoop 是同一套思想。</p>
+<blockquote>
+<p>补一句诚实的细节：Redis 6.0 引入了多线程 IO，但只用于<strong>网络读写</strong>（把数据从 socket 搬进内存），<strong>命令执行仍然是单线程</strong>。多线程 IO 解决的瓶颈是”网络报文搬运占 CPU”，不是”命令执行有竞争”。</p>
+</blockquote>
+<h2 id="六、跟我的项目的连接"><a href="#六、跟我的项目的连接" class="headerlink" title="六、跟我的项目的连接"></a>六、跟我的项目的连接</h2><ul>
+<li>订单系统里，我控制线程池大小而不是”一连接一线程”，本质就是<strong>用有限的线程池复用代替线程爆炸</strong>——上下文切换有真实成本，这是我在并发卡里反复强调的。</li>
+<li>内部 RPC（Dubbo）的传输层是 Netty，而 Netty 在 Linux 上默认就是 epoll。所以这条 IO 模型的链路，其实每天都在我的系统里跑。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>IO 模型演进的脉络：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">BIO（一连接一线程，线程爆炸）<br>  → NIO（非阻塞，但不会通知<span class="hljs-string">&quot;何时有数据&quot;</span>）<br>  → <span class="hljs-keyword">select</span>/poll（多路复用，但全量遍历 O(n)）<br>  → epoll（事件驱动 O(1)，LT/ET）<br>  → 单线程 + epoll = 无锁 + 多路复用（Redis / Netty EventLoop）<br></code></pre></td></tr></table></figure>
+
+<p><strong>判断标准就一条：线程在”等待数据”这件事上花了多少成本。</strong> BIO 花一整个线程，select&#x2F;poll 花一次全量遍历，epoll 把等待成本降到接近零——剩下的就是”来了数据就去处理”。</p>
+<hr>
+<p><em>发表于 2022 年 3 月 · 标签: IO模型, NIO, epoll, Redis, 网络编程</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="category-chain-item">网络与操作系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Redis/" class="print-no-link">#Redis</a>
+      
+        <a href="/tags/IO%E6%A8%A1%E5%9E%8B/" class="print-no-link">#IO模型</a>
+      
+        <a href="/tags/NIO/" class="print-no-link">#NIO</a>
+      
+        <a href="/tags/epoll/" class="print-no-link">#epoll</a>
+      
+        <a href="/tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/" class="print-no-link">#网络编程</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密</div>
+      <div>https://aster-xu-lab.github.io/2022/03/02/2022-03-02-IO模型演进-从BIO到epoll/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年3月2日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2022/03/06/2022-03-06-%E9%9B%B6%E6%8B%B7%E8%B4%9D-4%E6%AC%A1%E6%8B%B7%E8%B4%9D%E5%8F%982%E6%AC%A1/" title="零拷贝：4次拷贝变2次，Kafka和Netty的&#34;零&#34;其实是两回事">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">零拷贝：4次拷贝变2次，Kafka和Netty的&#34;零&#34;其实是两回事</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2022/02/13/2022-02-13-Redis%E6%8C%81%E4%B9%85%E5%8C%96-RDB%E4%B8%8EAOF%E7%9A%84%E5%8F%96%E8%88%8D/" title="Redis 持久化：RDB 与 AOF 的取舍，fork+COW 为什么不停顿">
+                        <span class="hidden-mobile">Redis 持久化：RDB 与 AOF 的取舍，fork+COW 为什么不停顿</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

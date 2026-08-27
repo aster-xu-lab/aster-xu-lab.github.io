@@ -1,0 +1,882 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一、一个经典的配置版本问题工单中台的核心实体是”工单模板”：定义了工单的字段、流程节点、处理人规则、SLA 时限等一套配置。业务方会频繁调整模板——加一个字段、改一道审批、换一个处理人。 问题来了：模板改了，已创建的工单怎么办？ 两种极端：  工单实例直接引用模板：模板一改，所有历史工单的行为跟着变——昨天创建的工单，今天处理流程变了，字段也变了。历史工单被”新规则”污染，对账、审计全乱； 工单">
+<meta property="og:type" content="article">
+<meta property="og:title" content="工单中台模板快照隔离：配置版本化，一个从0到1项目最该做的决策">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/06/05/2024-06-05-%E5%B7%A5%E5%8D%95%E4%B8%AD%E5%8F%B0%E6%A8%A1%E6%9D%BF%E5%BF%AB%E7%85%A7%E9%9A%94%E7%A6%BB-%E9%85%8D%E7%BD%AE%E7%89%88%E6%9C%AC%E5%8C%96/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一、一个经典的配置版本问题工单中台的核心实体是”工单模板”：定义了工单的字段、流程节点、处理人规则、SLA 时限等一套配置。业务方会频繁调整模板——加一个字段、改一道审批、换一个处理人。 问题来了：模板改了，已创建的工单怎么办？ 两种极端：  工单实例直接引用模板：模板一改，所有历史工单的行为跟着变——昨天创建的工单，今天处理流程变了，字段也变了。历史工单被”新规则”污染，对账、审计全乱； 工单">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2024-06-05T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.843Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Spec Coding">
+<meta property="article:tag" content="双状态机">
+<meta property="article:tag" content="工单中台">
+<meta property="article:tag" content="模板快照">
+<meta property="article:tag" content="配置版本">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>工单中台模板快照隔离：配置版本化，一个从0到1项目最该做的决策 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="工单中台模板快照隔离：配置版本化，一个从0到1项目最该做的决策"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-06-05 09:00" pubdate>
+          2024年6月5日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          22 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">工单中台模板快照隔离：配置版本化，一个从0到1项目最该做的决策</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="一、一个经典的配置版本问题"><a href="#一、一个经典的配置版本问题" class="headerlink" title="一、一个经典的配置版本问题"></a>一、一个经典的配置版本问题</h2><p>工单中台的核心实体是”工单模板”：定义了工单的字段、流程节点、处理人规则、SLA 时限等一套配置。业务方会频繁调整模板——加一个字段、改一道审批、换一个处理人。</p>
+<p>问题来了：<strong>模板改了，已创建的工单怎么办？</strong></p>
+<p>两种极端：</p>
+<ul>
+<li><strong>工单实例直接引用模板</strong>：模板一改，所有历史工单的行为跟着变——昨天创建的工单，今天处理流程变了，字段也变了。历史工单被”新规则”污染，对账、审计全乱；</li>
+<li><strong>工单实例完全复制模板</strong>：每次创建都全量复制配置，简单粗暴但数据冗余、模板演进成本高。</li>
+</ul>
+<p>正确的做法是<strong>模板快照隔离</strong>：<strong>创建工单实例的那一刻，把当时生效的模板配置打一份快照，固化到工单实例上。</strong> 之后模板怎么改，都不影响已创建的工单。</p>
+<h2 id="二、模板快照：把”当时生效”的配置固化"><a href="#二、模板快照：把”当时生效”的配置固化" class="headerlink" title="二、模板快照：把”当时生效”的配置固化"></a>二、模板快照：把”当时生效”的配置固化</h2><p>实现上，模板表和快照表分开：</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs 1c">工单模板表：业务方持续编辑的<span class="hljs-string">&quot;活配置&quot;</span>（唯一最新版）<br>工单快照表：创建工单时，从模板复制一份配置，关联到工单实例<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 创建工单：模板 → 快照 → 工单</span><br><span class="hljs-type">WorkOrderTemplate</span> <span class="hljs-variable">template</span> <span class="hljs-operator">=</span> loadTemplate(templateId);          <span class="hljs-comment">// 当前生效配置</span><br><span class="hljs-type">WorkOrderSnapshot</span> <span class="hljs-variable">snapshot</span> <span class="hljs-operator">=</span> snapshotService.create(template);  <span class="hljs-comment">// 打快照，固化</span><br><span class="hljs-type">WorkOrder</span> <span class="hljs-variable">order</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">WorkOrder</span>();<br>order.setSnapshotId(snapshot.getId());                          <span class="hljs-comment">// 工单绑定快照</span><br>order.setTemplateVersion(template.getVersion());                <span class="hljs-comment">// 记录当时版本</span><br></code></pre></td></tr></table></figure>
+
+<p>这样做的三个好处：</p>
+<ol>
+<li><strong>历史工单行为稳定</strong>：模板怎么演进，已创建的工单按创建时的规则走，审计可追溯；</li>
+<li><strong>模板可以放心改</strong>：业务方调整模板不影响存量工单，改错还能回滚到快照查当时上下文；</li>
+<li><strong>容量可控</strong>：快照按”创建即复制”生成，不是实时引用，避免运行时依赖活配置。</li>
+</ol>
+<p>这和电商”<strong>下单时锁定商品价格&#x2F;优惠快照</strong>“是同一个思想——<strong>涉及”实例一旦产生就要长期负责”的场景，配置必须在实例化那一刻被固化。</strong> 工单、合同、订单、表单，都是这个模式。</p>
+<h2 id="三、双状态机协同：工单的灵魂设计"><a href="#三、双状态机协同：工单的灵魂设计" class="headerlink" title="三、双状态机协同：工单的灵魂设计"></a>三、双状态机协同：工单的灵魂设计</h2><p>工单中台的核心不是模板，是<strong>双状态机协同</strong>——工单表和任务实例两套状态机配合：</p>
+<ul>
+<li><strong>工单状态机</strong>（工单表驱动）：工单的整体生命周期——待处理、处理中、已完成、已关闭；</li>
+<li><strong>任务状态机</strong>（任务实例化）：工单拆出的每个任务实例自己的状态——待执行、执行中、成功、失败。</li>
+</ul>
+<p>为什么要拆成两套：工单是”聚合视角”，任务实例是”执行视角”。一个工单可能拆成多个任务（比如一次维修工单 → 派单、上门、回访三个任务），任务各有各的状态流转；而工单的整体状态要等所有任务推进到一定程度才收敛。</p>
+<p><strong>两套状态机用事件联动</strong>：任务状态变化 → 触发工单状态机的推进判断。这比”一个工单一个状态字段”优雅得多——它把”整体进展”和”局部执行”解耦，各自演进、事件驱动。</p>
+<h2 id="四、Spec-Coding：从0到1项目为什么先写规格"><a href="#四、Spec-Coding：从0到1项目为什么先写规格" class="headerlink" title="四、Spec Coding：从0到1项目为什么先写规格"></a>四、Spec Coding：从0到1项目为什么先写规格</h2><p>工单中台是<strong>从 0 到 1</strong>（182 文件 &#x2F; 约 1.2 万行），我完整实践了一遍 <strong>Spec Coding（规格驱动开发）</strong>，四步：</p>
+<p><strong>① 先写 Spec，不直接写代码</strong>：产品分析 → 领域建模 → API 契约设计 → ADR 架构决策记录。这一步把”要做什么、为什么这么做”定清楚，作为后续所有工作的依据；</p>
+<p><strong>② AI 加速设计评审与框架生成</strong>：拿写好的 Spec 让 AI 做设计评审（挑设计漏洞）、生成骨架代码和文档初稿；</p>
+<p><strong>③ 人工编码核心逻辑</strong>：关键链路——<strong>双状态机、Seata 事务边界、模板快照</strong>——这些我自己写并逐行审，AI 只搭边角（Controller&#x2F;Entity&#x2F;Mapper 样板）；</p>
+<p><strong>④ 交付”决策上下文 + 代码”</strong>：不是只交代码，把 Spec、ADR 一起交付，让别人能看懂”当时为什么这么设计”。决策上下文和代码同等重要，都可传承。</p>
+<p>这套流程的价值，在于<strong>决策可追溯</strong>：后来的人能顺着 Spec&#x2F;ADR 继续维护，不是黑盒。这也是工单中台从 0 到 1 之后能被团队接住的关键——代码会变，但”为什么这么做”留在了文档里。</p>
+<h2 id="五、API-失败重试：全链路日志-双触发"><a href="#五、API-失败重试：全链路日志-双触发" class="headerlink" title="五、API 失败重试：全链路日志 + 双触发"></a>五、API 失败重试：全链路日志 + 双触发</h2><p>工单要调外部系统（订单中心回写服务人字段、下游状态回传），外部调用失败是常态。我的重试设计是<strong>全链路日志 + XXL-Job 定时 + MQ 事件双重触发</strong>：</p>
+<ul>
+<li><strong>全链路日志</strong>：每次调用记录请求&#x2F;响应&#x2F;异常，失败原因可查；</li>
+<li><strong>XXL-Job 定时</strong>：兜底扫描失败记录重试，低峰执行；</li>
+<li><strong>MQ 事件触发</strong>：失败立即发事件，MQ 消费重试，比定时快。</li>
+</ul>
+<p><strong>定时 + 事件双触发</strong>的思路：事件触发保证”失败立即重试”（快路径），定时扫描保证”事件丢了也能兜底”（稳路径）。两条腿走路，互不信任。</p>
+<h2 id="六、分布式事务：工单为什么用-Seata-AT"><a href="#六、分布式事务：工单为什么用-Seata-AT" class="headerlink" title="六、分布式事务：工单为什么用 Seata AT"></a>六、分布式事务：工单为什么用 Seata AT</h2><p>工单场景有跨库写：<strong>师傅变更回写订单中心</strong>——工单库改一条工单、订单中心库改一条服务人字段，两个都是 MySQL 本地写操作。</p>
+<p>我选了 <strong>Seata AT</strong> 而不是 TCC，原因：AT 靠 <strong>undo_log 快照自动回滚</strong>，纯本地写 + 跨库同步回滚的场景，<strong>零侵入、不用写任何补偿逻辑</strong>。为这么简单的跨库写套 TCC 的 Try&#x2F;Confirm&#x2F;Cancel 三套方法，是过度设计。</p>
+<p>对比传统 OMS 项目用 TCC 的原因：那个项目的分布式事务动作<strong>不只是本地写，还涉及外部系统&#x2F;平台库存这种不可回滚的副作用</strong>——undo_log 快照回滚不了外部系统状态，必须 TCC 业务侧显式补偿。</p>
+<p><strong>选型的判断标准</strong>：TCC 和 AT 的差别不在谁更新，而在<strong>跨服务的那个动作能不能靠框架自动回滚</strong>。能 → AT 零侵入；不能（外部副作用不可逆）→ TCC 自定义补偿。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>工单实例化时<strong>打模板快照</strong>固化配置，模板演进不影响存量工单——“实例一旦产生就要长期负责”的场景都适用；</li>
+<li><strong>双状态机协同</strong>：工单聚合状态 + 任务执行状态，事件联动，解耦整体与局部；</li>
+<li><strong>Spec Coding</strong>：先写 Spec（含 ADR）→ AI 加速 → 人工写核心 → 交付决策上下文，决策可追溯；</li>
+<li>失败重试<strong>定时 + 事件双触发</strong>，快路径与稳路径互补；</li>
+<li>分布式事务<strong>AT vs TCC</strong> 的判断标准：跨服务动作能否靠框架自动回滚。</li>
+</ul>
+<hr>
+<p><em>发表于 2024 年 6 月 · 标签: 工单中台, 模板快照, Spec Coding, 双状态机, 配置版本</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" class="category-chain-item">中台架构</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Spec-Coding/" class="print-no-link">#Spec Coding</a>
+      
+        <a href="/tags/%E5%B7%A5%E5%8D%95%E4%B8%AD%E5%8F%B0/" class="print-no-link">#工单中台</a>
+      
+        <a href="/tags/%E6%A8%A1%E6%9D%BF%E5%BF%AB%E7%85%A7/" class="print-no-link">#模板快照</a>
+      
+        <a href="/tags/%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA/" class="print-no-link">#双状态机</a>
+      
+        <a href="/tags/%E9%85%8D%E7%BD%AE%E7%89%88%E6%9C%AC/" class="print-no-link">#配置版本</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>工单中台模板快照隔离：配置版本化，一个从0到1项目最该做的决策</div>
+      <div>https://aster-xu-lab.github.io/2024/06/05/2024-06-05-工单中台模板快照隔离-配置版本化/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年6月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2024/06/10/2024-06-10-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/" title="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2024/06/01/2024-06-01-%E9%87%87%E8%B4%AD%E4%B8%AD%E5%8F%B0%E5%8F%8C%E5%BC%95%E6%93%8E-%E8%A1%A5%E8%B4%A7%E9%93%BA%E8%B4%A7%E4%B8%8EAI%E9%A2%84%E6%B5%8B/" title="采购中台的双引擎设计：补货、铺货与AI预测的工程化">
+                        <span class="hidden-mobile">采购中台的双引擎设计：补货、铺货与AI预测的工程化</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -27,7 +27,7 @@
 <meta property="og:description" content="订单中心读写分离实战：从慢SQL拖垮主库到ShardingSphere-JDBC落地的完整记录，包含路由设计、延迟监控、迁移流程。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-02-02T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.749Z">
+<meta property="article:modified_time" content="2026-08-27T09:54:18.739Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="MySQL">
@@ -388,7 +388,7 @@
 <h2 id="一、事故：一条慢SQL引发的血案"><a href="#一、事故：一条慢SQL引发的血案" class="headerlink" title="一、事故：一条慢SQL引发的血案"></a>一、事故：一条慢SQL引发的血案</h2><p>那天凌晨两点，我接到了告警电话。</p>
 <p>订单中心的接口响应时间从正常的 30ms 飙升到 8s，主库 CPU 负载直接打满 100%。排查后发现，运营同事白天在 BI 后台跑了一个报表查询——一个关联了 6 张表的 <code>LEFT JOIN</code>，扫描 1200 万行数据。这条 SQL 没有被限流，直接跑在主库上，把连接池和 CPU 全部吃光。</p>
 <p>更让我后背发凉的是，这居然不是个例。翻了一下慢查询日志，前一天<strong>一天之内出现了 1124 条慢 SQL</strong>。它们大部分长这样：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 后台导出一个月的订单明细，关联订单、订单项、退款单、物流单</span><br><span class="hljs-keyword">SELECT</span> o.<span class="hljs-operator">*</span>, oi.<span class="hljs-operator">*</span>, r.<span class="hljs-operator">*</span>, l.<span class="hljs-operator">*</span><br><span class="hljs-keyword">FROM</span> t_order o<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_order_item oi <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> oi.order_id<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_refund r <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> r.order_id<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_logistics l <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> l.order_id<br><span class="hljs-keyword">WHERE</span> o.create_time <span class="hljs-keyword">BETWEEN</span> <span class="hljs-string">&#x27;2026-06-01&#x27;</span> <span class="hljs-keyword">AND</span> <span class="hljs-string">&#x27;2026-06-30&#x27;</span><br>  <span class="hljs-keyword">AND</span> o.status <span class="hljs-keyword">IN</span> (<span class="hljs-number">10</span>, <span class="hljs-number">20</span>, <span class="hljs-number">30</span>, <span class="hljs-number">40</span>, <span class="hljs-number">50</span>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> o.create_time <span class="hljs-keyword">DESC</span>;<br></code></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 后台导出一个月的订单明细，关联订单、订单项、退款单、物流单</span><br><span class="hljs-keyword">SELECT</span> o.<span class="hljs-operator">*</span>, oi.<span class="hljs-operator">*</span>, r.<span class="hljs-operator">*</span>, l.<span class="hljs-operator">*</span><br><span class="hljs-keyword">FROM</span> t_order o<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_order_item oi <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> oi.order_id<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_refund r <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> r.order_id<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_logistics l <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> l.order_id<br><span class="hljs-keyword">WHERE</span> o.create_time <span class="hljs-keyword">BETWEEN</span> <span class="hljs-string">&#x27;2024-06-01&#x27;</span> <span class="hljs-keyword">AND</span> <span class="hljs-string">&#x27;2024-06-30&#x27;</span><br>  <span class="hljs-keyword">AND</span> o.status <span class="hljs-keyword">IN</span> (<span class="hljs-number">10</span>, <span class="hljs-number">20</span>, <span class="hljs-number">30</span>, <span class="hljs-number">40</span>, <span class="hljs-number">50</span>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> o.create_time <span class="hljs-keyword">DESC</span>;<br></code></pre></td></tr></table></figure>
 
 <p>这条 SQL 在主库上一执行，直接锁住大量行，导致后面的写入操作全部排队。下单接口变得不可用，用户看到的是：点击提交订单，转圈 10 秒，要么超时，要么”库存不足”的假报错。</p>
 <p>问题的本质很清晰：<strong>我们只有一个主库，所有的读和写都在同一个 MySQL 实例上</strong>。虽然日常写入 QPS 只有 500 左右（日订单 130 万，高峰期也才 ~1000 write QPS），主库本身的写入能力绰绰有余。但那些慢 SQL、报表查询、后台对账任务，都会直接跑在主库上，跟写入抢 CPU、抢 IO、抢连接池。写得再快，被一条慢查询堵住了也是白搭。</p>
@@ -684,9 +684,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2024/02/13/2024-02-13-DDIA-07-%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C/" title="DDIA-07-一致性哈希：当分片不再是2的幂次">
+                      <a href="/2024/02/05/2024-02-05-Redis%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E4%B8%8E%E9%AB%98%E5%8F%AF%E7%94%A8-%E4%B8%89%E5%A4%A7%E5%9D%91%E4%B8%8E%E9%9B%86%E7%BE%A4%E6%BC%94%E8%BF%9B/" title="Redis 分布式锁与高可用：三大坑、Redisson、主从哨兵 Cluster">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">DDIA-07-一致性哈希：当分片不再是2的幂次</span>
+                        <span class="hidden-mobile">Redis 分布式锁与高可用：三大坑、Redisson、主从哨兵 Cluster</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -694,8 +694,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2024/01/22/2024-01-22-DDIA-06-%E5%A4%9A%E4%B8%BB%E5%A4%8D%E5%88%B6%E4%B8%8ECAP/" title="DDIA-06-多主复制与无主复制：CAP定理的博弈现场">
-                        <span class="hidden-mobile">DDIA-06-多主复制与无主复制：CAP定理的博弈现场</span>
+                      <a href="/2024/02/01/2024-02-01-%E7%BC%93%E5%AD%98%E4%B8%89%E5%85%84%E5%BC%9F%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7-%E7%A9%BF%E9%80%8F%E5%87%BB%E7%A9%BF%E9%9B%AA%E5%B4%A9/" title="缓存三兄弟与缓存一致性：穿透、击穿、雪崩和延迟双删">
+                        <span class="hidden-mobile">缓存三兄弟与缓存一致性：穿透、击穿、雪崩和延迟双删</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

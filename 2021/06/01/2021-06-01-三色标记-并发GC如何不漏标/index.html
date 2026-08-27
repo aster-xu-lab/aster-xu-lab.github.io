@@ -1,0 +1,910 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="可达性分析，要面对一个残酷的现实JVM 判定对象能否回收，靠可达性分析：从 GC Roots（栈帧局部变量、静态变量、常量引用、native 引用、活跃线程&#x2F;锁对象等）沿着引用往下走，从根可达的存活，其余回收。 这个过程要遍历整个对象图，很慢。最早的收集器选择”全停顿”来做——STW 期间业务线程全停，图不会变，标记很安全，代价是停顿时间长。 于是有了 CMS、G1 这样的并发收集器：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="三色标记：并发GC如何做到不漏标不误回收">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2021/06/01/2021-06-01-%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0-%E5%B9%B6%E5%8F%91GC%E5%A6%82%E4%BD%95%E4%B8%8D%E6%BC%8F%E6%A0%87/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="可达性分析，要面对一个残酷的现实JVM 判定对象能否回收，靠可达性分析：从 GC Roots（栈帧局部变量、静态变量、常量引用、native 引用、活跃线程&#x2F;锁对象等）沿着引用往下走，从根可达的存活，其余回收。 这个过程要遍历整个对象图，很慢。最早的收集器选择”全停顿”来做——STW 期间业务线程全停，图不会变，标记很安全，代价是停顿时间长。 于是有了 CMS、G1 这样的并发收集器：">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2021-06-01T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-27T09:53:40.822Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="CMS">
+<meta property="article:tag" content="G1">
+<meta property="article:tag" content="GC">
+<meta property="article:tag" content="三色标记">
+<meta property="article:tag" content="写屏障">
+<meta property="article:tag" content="并发标记">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>三色标记：并发GC如何做到不漏标不误回收 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="三色标记：并发GC如何做到不漏标不误回收"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2021-06-01 09:00" pubdate>
+          2021年6月1日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          17 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">三色标记：并发GC如何做到不漏标不误回收</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<h2 id="可达性分析，要面对一个残酷的现实"><a href="#可达性分析，要面对一个残酷的现实" class="headerlink" title="可达性分析，要面对一个残酷的现实"></a>可达性分析，要面对一个残酷的现实</h2><p>JVM 判定对象能否回收，靠<strong>可达性分析</strong>：从 GC Roots（栈帧局部变量、静态变量、常量引用、native 引用、活跃线程&#x2F;锁对象等）沿着引用往下走，从根可达的存活，其余回收。</p>
+<p>这个过程要<strong>遍历整个对象图</strong>，很慢。最早的收集器选择”全停顿”来做——STW 期间业务线程全停，图不会变，标记很安全，代价是停顿时间长。</p>
+<p>于是有了 CMS、G1 这样的<strong>并发收集器</strong>：大部分标记阶段和业务线程<strong>并发执行</strong>，不停顿。</p>
+<p>但并发立刻带来一个难题：<strong>你标记的同时，业务线程在改对象图</strong>——引用被删了、被加了、对象被换引用了。怎么保证”该标的不漏、该回收的不误收”？</p>
+<p>这就是三色标记法要解决的问题。</p>
+<h2 id="一、三色：白、灰、黑"><a href="#一、三色：白、灰、黑" class="headerlink" title="一、三色：白、灰、黑"></a>一、三色：白、灰、黑</h2><p>把标记过程中对象的状态分成三种颜色：</p>
+<table>
+<thead>
+<tr>
+<th>颜色</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>白</strong></td>
+<td>还没被访问到。标记结束时仍是白 &#x3D; 垃圾，回收</td>
+</tr>
+<tr>
+<td><strong>灰</strong></td>
+<td>自己已访问（存活），但<strong>孩子还没全部访问完</strong></td>
+</tr>
+<tr>
+<td><strong>黑</strong></td>
+<td>自己和所有孩子都访问完了，确定存活</td>
+</tr>
+</tbody></table>
+<p>标记流程就是<strong>灰 → 黑 + 把白的变灰</strong>的循环：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs abnf">初始：Roots 变灰<br>循环：取一个灰对象 → 把它引用的白色孩子标灰 → 自己变黑<br>结束：没有灰对象了 → 全黑 <span class="hljs-operator">=</span> 存活，全白 <span class="hljs-operator">=</span> 垃圾<br></code></pre></td></tr></table></figure>
+
+<p>这个流程本身很朴素，问题出在<strong>并发</strong>——标到一半，对象图变了。</p>
+<h2 id="二、漏标：一个看似正确却致命的-bug"><a href="#二、漏标：一个看似正确却致命的-bug" class="headerlink" title="二、漏标：一个看似正确却致命的 bug"></a>二、漏标：一个看似正确却致命的 bug</h2><p>经典的漏标场景：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-tag">A</span>（黑）  ──引用──▶  C（白）     ← ① <span class="hljs-selector-tag">A</span> 是黑（已标完），C 是白（未访问）<br><span class="hljs-selector-tag">B</span>（灰）  ──引用──▶  D（白）     ← <span class="hljs-selector-tag">B</span> 还在灰，孩子没标完<br></code></pre></td></tr></table></figure>
+
+<p>并发过程中发生两次修改：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs css">①  <span class="hljs-selector-tag">A</span> 新增了指向 D 的引用   （黑色对象新增了指向白色对象的引用）<br>②  <span class="hljs-selector-tag">B</span> 删掉了指向 D 的引用   （白色对象原来的引用被删掉了）<br></code></pre></td></tr></table></figure>
+
+<p>结果：标记继续扫，B 标完变黑，但 <strong>B 已经不引用 D 了</strong>，所以 D 再也不会被扫到——<strong>D 保持白色</strong>。可 D 实际还被 A 引用着，是可达的存活对象。</p>
+<p><strong>白色 + 可达 &#x3D; 被误回收。</strong> 这是最严重的 bug——存活对象被当成垃圾清掉了。</p>
+<p><strong>漏标必须同时满足两个条件</strong>：</p>
+<ol>
+<li>已访问的<strong>黑色</strong>对象，<strong>新增</strong>了指向白色对象的引用；</li>
+<li>这个白色对象，<strong>删掉了</strong>原本指向它的引用。</li>
+</ol>
+<p>（缺任何一个都不行：只有 ① 没有 ②，D 还连着 B，B 标完孩子时还能扫到 D；只有 ② 没有 ①，D 断了 B 但也没人引它，本来就是垃圾。）</p>
+<h2 id="三、两个解法：增量更新与原始快照"><a href="#三、两个解法：增量更新与原始快照" class="headerlink" title="三、两个解法：增量更新与原始快照"></a>三、两个解法：增量更新与原始快照</h2><p>要防漏标，打破上面任意一条即可。</p>
+<h3 id="解法一：增量更新（Incremental-Update，CMS-用）"><a href="#解法一：增量更新（Incremental-Update，CMS-用）" class="headerlink" title="解法一：增量更新（Incremental Update，CMS 用）"></a>解法一：增量更新（Incremental Update，CMS 用）</h3><p><strong>针对条件 ①</strong>：黑色对象新增了指向白色的引用时，把黑色对象<strong>重新标灰</strong>，丢回队列再扫一遍它的孩子。</p>
+<p>相当于说：你”黑”了也不许新增指向白的引用，一旦新增，我就把你打回灰重新标记，保证新增引用指向的对象能被扫到。</p>
+<h3 id="解法二：原始快照（SATB，G1-用）"><a href="#解法二：原始快照（SATB，G1-用）" class="headerlink" title="解法二：原始快照（SATB，G1 用）"></a>解法二：原始快照（SATB，G1 用）</h3><p><strong>针对条件 ②</strong>：记录<strong>并发开始那一刻</strong>的对象引用快照，以当时的图为准。即使 B 删掉了指向 D 的引用，SATB 仍然把 D 当作”并发开始时就存在”的引用保留下来。</p>
+<p>代价：<strong>可能有更多本来可回收的垃圾被保留</strong>——这些”本该回收但被快照救活”的对象叫<strong>浮动垃圾</strong>，留给下一轮 GC 处理。SATB 的哲学是”宁可多留垃圾，绝不误回收活对象”。</p>
+<h2 id="四、写屏障：解法的实现载体"><a href="#四、写屏障：解法的实现载体" class="headerlink" title="四、写屏障：解法的实现载体"></a>四、写屏障：解法的实现载体</h2><p>增量更新和 SATB 都要求”对象引用被修改时”能感知到——靠的是<strong>写屏障（Write Barrier）</strong>：JIT 编译器在<strong>字段赋值处</strong>插入一段钩子逻辑，每次引用被改就执行。</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs 1c"><span class="hljs-comment">// 源码</span><br>obj.field <span class="hljs-punctuation">=</span> newValue<span class="hljs-punctuation">;</span><br><br><span class="hljs-comment">// JIT 编译后（示意）</span><br>write_barrier<span class="hljs-punctuation">(</span>obj<span class="hljs-punctuation">,</span> newValue<span class="hljs-punctuation">)</span><span class="hljs-punctuation">;</span>   <span class="hljs-comment">// 钩子：更新卡表/记录快照</span><br>obj.field <span class="hljs-punctuation">=</span> newValue<span class="hljs-punctuation">;</span><br></code></pre></td></tr></table></figure>
+
+<p>这里有一个非常容易搞混的点，复习卡里我专门标过：</p>
+<blockquote>
+<p><strong>GC 写屏障 ≠ volatile 内存屏障。</strong></p>
+<ul>
+<li>volatile 的<strong>内存屏障</strong>是 CPU 指令级别的，保证可见性&#x2F;有序性；</li>
+<li>GC 的<strong>写屏障</strong>是 JVM 在字段赋值处插的钩子，用于维护<strong>卡表 &#x2F; 标记快照</strong>，服务的是垃圾回收。</li>
+</ul>
+</blockquote>
+<p>两个都叫”屏障”，一个管并发可见性，一个管 GC 标记，完全两码事。</p>
+<h2 id="五、和-G1-的整体关系"><a href="#五、和-G1-的整体关系" class="headerlink" title="五、和 G1 的整体关系"></a>五、和 G1 的整体关系</h2><p>G1 是三色标记 + SATB 的典型落地，整套机制放在一起看：</p>
+<ul>
+<li>堆分成等大小 <strong>Region</strong>，回收时只挑”垃圾多的 Region”（CSet）；</li>
+<li>一个 Region 里的对象被别的 Region 引用，靠 **RSet（Remembered Set）**记录，回收某个 Region 时只扫它的 RSet，不用遍历全堆；</li>
+<li>并发标记用<strong>三色标记 + SATB</strong>，防止并发改图漏标活对象；</li>
+<li>RSet 和 SATB 的维护，都靠字段赋值时的<strong>写屏障</strong>。</li>
+</ul>
+<p>所以”G1 为什么停顿可预测、为什么能并发标记”这串问题，最终都会落到写屏障和三色标记上。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>三色标记：<strong>白</strong>（未访问）→ <strong>灰</strong>（自己存活、孩子没标完）→ <strong>黑</strong>（全部标完），结束剩白即垃圾；</li>
+<li>并发标记的致命 bug 是<strong>漏标</strong>，两个条件：黑对象新增指向白的引用 + 白对象原引用被删；</li>
+<li><strong>增量更新</strong>（CMS）：黑对象新增指向白的引用时打回灰重扫；</li>
+<li><strong>原始快照 SATB</strong>（G1）：按并发开始时的图为准，宁可留浮动垃圾，不误回收活对象；</li>
+<li>实现载体是 <strong>GC 写屏障</strong>，跟 volatile 的 CPU 内存屏障不是一回事。</li>
+</ul>
+<hr>
+<p><em>发表于 2021 年 6 月 · 标签: GC, 三色标记, 并发标记, CMS, G1, 写屏障</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/JVM/" class="category-chain-item">JVM</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/GC/" class="print-no-link">#GC</a>
+      
+        <a href="/tags/%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0/" class="print-no-link">#三色标记</a>
+      
+        <a href="/tags/%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0/" class="print-no-link">#并发标记</a>
+      
+        <a href="/tags/CMS/" class="print-no-link">#CMS</a>
+      
+        <a href="/tags/G1/" class="print-no-link">#G1</a>
+      
+        <a href="/tags/%E5%86%99%E5%B1%8F%E9%9A%9C/" class="print-no-link">#写屏障</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>三色标记：并发GC如何做到不漏标不误回收</div>
+      <div>https://aster-xu-lab.github.io/2021/06/01/2021-06-01-三色标记-并发GC如何不漏标/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2021年6月1日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2021/07/01/2021-07-01-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/" title="1、进程与线程">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">1、进程与线程</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2021/05/31/2021-05-31-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8/" title="垃圾回收器">
+                        <span class="hidden-mobile">垃圾回收器</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
