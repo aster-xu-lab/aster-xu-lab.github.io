@@ -19,25 +19,25 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="工作 8 年，我发现最能提升技术水平的不是”看更多资料”，而是一套可复用的学习体系。这篇讲我是怎么把”感觉都会”变成”能讲原理”的。  一、第一步：摸底，暴露硬伤学习最怕”感觉都会，一问就露馅”。我做的第一件事是摸底——把六大模块（Java 并发&#x2F;JVM&#x2F;MySQL&#x2F;Redis&#x2F;Spring&#x2F;MQ）过一遍，把答错的、说反的、混淆的全部记下来。">
+    <meta name="description" content="分布式锁三大坑之一是”锁续期”——业务执行超过锁过期时间，锁提前释放。Redisson 用”看门狗”（watchdog）解决。这篇从源码层看它到底怎么实现续期。  一、问题：锁会提前过期最基础的分布式锁 SET key value NX EX 30：锁过期时间 30 秒。但如果业务执行超过 30 秒，锁提前释放，另一个线程拿到锁——两个线程同时执行临界区，锁形同虚设。 解法是”续期”：业务没结">
 <meta property="og:type" content="article">
-<meta property="og:title" content="我的技术学习体系：从&quot;硬伤清单&quot;到&quot;原理手册&quot;">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2026/07/10/2026-07-10-%E6%88%91%E7%9A%84%E6%8A%80%E6%9C%AF%E5%AD%A6%E4%B9%A0%E4%BD%93%E7%B3%BB-%E4%BB%8E%E7%A1%AC%E4%BC%A4%E6%B8%85%E5%8D%95%E5%88%B0%E5%8E%9F%E7%90%86%E6%89%8B%E5%86%8C/index.html">
+<meta property="og:title" content="Redisson 看门狗源码分析：分布式锁的续期是怎么实现的">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/07/10/2026-07-10-Redisson%E7%9C%8B%E9%97%A8%E7%8B%97%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%BB%AD%E6%9C%9F%E5%8E%9F%E7%90%86/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="工作 8 年，我发现最能提升技术水平的不是”看更多资料”，而是一套可复用的学习体系。这篇讲我是怎么把”感觉都会”变成”能讲原理”的。  一、第一步：摸底，暴露硬伤学习最怕”感觉都会，一问就露馅”。我做的第一件事是摸底——把六大模块（Java 并发&#x2F;JVM&#x2F;MySQL&#x2F;Redis&#x2F;Spring&#x2F;MQ）过一遍，把答错的、说反的、混淆的全部记下来。">
+<meta property="og:description" content="分布式锁三大坑之一是”锁续期”——业务执行超过锁过期时间，锁提前释放。Redisson 用”看门狗”（watchdog）解决。这篇从源码层看它到底怎么实现续期。  一、问题：锁会提前过期最基础的分布式锁 SET key value NX EX 30：锁过期时间 30 秒。但如果业务执行超过 30 秒，锁提前释放，另一个线程拿到锁——两个线程同时执行临界区，锁形同虚设。 解法是”续期”：业务没结">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-07-10T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-28T05:05:06.003Z">
+<meta property="article:modified_time" content="2026-08-28T05:43:46.868Z">
 <meta property="article:author" content="AsterXu">
-<meta property="article:tag" content="原理">
-<meta property="article:tag" content="学习方法">
-<meta property="article:tag" content="技术成长">
-<meta property="article:tag" content="方法论">
+<meta property="article:tag" content="Redisson">
+<meta property="article:tag" content="分布式锁">
+<meta property="article:tag" content="源码分析">
+<meta property="article:tag" content="看门狗">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>我的技术学习体系：从&#34;硬伤清单&#34;到&#34;原理手册&#34; - AsterXu Lab</title>
+  <title>Redisson 看门狗源码分析：分布式锁的续期是怎么实现的 - AsterXu Lab</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -306,7 +306,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="我的技术学习体系：从&#34;硬伤清单&#34;到&#34;原理手册&#34;"></span>
+            <span id="subtitle" data-typed-text="Redisson 看门狗源码分析：分布式锁的续期是怎么实现的"></span>
           
         </div>
 
@@ -329,7 +329,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.6k 字
+          2.5k 字
         
       </span>
     
@@ -340,7 +340,7 @@
         
         
         
-          13 分钟
+          21 分钟
         
       </span>
     
@@ -379,66 +379,63 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">我的技术学习体系：从&#34;硬伤清单&#34;到&#34;原理手册&#34;</h1>
+            <h1 id="seo-header">Redisson 看门狗源码分析：分布式锁的续期是怎么实现的</h1>
             
             
               <div class="markdown-body">
                 
                 <hr>
 <blockquote>
-<p>工作 8 年，我发现最能提升技术水平的不是”看更多资料”，而是一套<strong>可复用的学习体系</strong>。这篇讲我是怎么把”感觉都会”变成”能讲原理”的。</p>
+<p>分布式锁三大坑之一是”锁续期”——业务执行超过锁过期时间，锁提前释放。Redisson 用”看门狗”（watchdog）解决。这篇从源码层看它到底怎么实现续期。</p>
 </blockquote>
-<h2 id="一、第一步：摸底，暴露硬伤"><a href="#一、第一步：摸底，暴露硬伤" class="headerlink" title="一、第一步：摸底，暴露硬伤"></a>一、第一步：摸底，暴露硬伤</h2><p>学习最怕”感觉都会，一问就露馅”。我做的第一件事是<strong>摸底</strong>——把六大模块（Java 并发&#x2F;JVM&#x2F;MySQL&#x2F;Redis&#x2F;Spring&#x2F;MQ）过一遍，把答错的、说反的、混淆的全部记下来。</p>
-<p>摸底暴露了一批真实硬伤，比如：</p>
-<ul>
-<li>HashMap 树化阈值 &#x3D; 8（不是 16）；</li>
-<li>ThreadLocal 的 key 是弱引用、value 是强引用（容易说反）；</li>
-<li>Java 线程是 6 态（不是 4 态）；</li>
-<li>缓存穿透&#x2F;击穿&#x2F;雪崩的定义（容易混）；</li>
-<li>Raft 是强一致（不是最终一致）。</li>
-</ul>
-<p><strong>为什么要先摸底</strong>：盲目学习是浪费时间。摸底后把硬伤整理成一页”<strong>速查单页</strong>“，定期扫一遍，目标从”说反”变成”单口讲对”。</p>
-<h2 id="二、第二步：分层，按优先级分配时间"><a href="#二、第二步：分层，按优先级分配时间" class="headerlink" title="二、第二步：分层，按优先级分配时间"></a>二、第二步：分层，按优先级分配时间</h2><p>学习不是平均用力，我按”<strong>高频 × 掌握度</strong>“排优先级：</p>
-<figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs julia">🔴 高优先级（核心/高频）：分布式锁、缓存三兄弟、Bean生命周期、事务、Raft<br>🟠 中：Redis 数据结构、MQ 可靠性、JVM GC、网络 <span class="hljs-built_in">IO</span> 模型<br>🟡 低：了解即可<br></code></pre></td></tr></table></figure>
+<h2 id="一、问题：锁会提前过期"><a href="#一、问题：锁会提前过期" class="headerlink" title="一、问题：锁会提前过期"></a>一、问题：锁会提前过期</h2><p>最基础的分布式锁 <code>SET key value NX EX 30</code>：锁过期时间 30 秒。但如果业务执行超过 30 秒，锁提前释放，另一个线程拿到锁——<strong>两个线程同时执行临界区</strong>，锁形同虚设。</p>
+<p>解法是”续期”：业务没结束，锁就一直续。Redisson 的看门狗就是干这个的。</p>
+<h2 id="二、看门狗的核心机制"><a href="#二、看门狗的核心机制" class="headerlink" title="二、看门狗的核心机制"></a>二、看门狗的核心机制</h2><p>一句话：<strong>默认锁 30 秒，每 10 秒自动续期 30 秒，业务结束释放锁</strong>。</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs tap">加锁成功（30秒过期）<br>→ 启动看门狗线程<br>→ 每<span class="hljs-number"> 10 </span>秒检查：锁还在吗？在 → 续期<span class="hljs-number"> 30 </span>秒<br>→ 业务结束 → 释放锁 → 停掉看门狗<br></code></pre></td></tr></table></figure>
 
-<p><strong>硬伤优先</strong>：摸底答错的，就算本身不是最高频也要提到最高优先级对待——因为那是真实失分点。</p>
-<h2 id="三、第三步：从”背结论”到”讲原理”"><a href="#三、第三步：从”背结论”到”讲原理”" class="headerlink" title="三、第三步：从”背结论”到”讲原理”"></a>三、第三步：从”背结论”到”讲原理”</h2><p>学习最容易停在”背结论”。我的关键动作是<strong>把结论升级成原理</strong>：</p>
+<p><strong>关键点</strong>：</p>
 <ul>
-<li>不只背”Redis 快是三件事”，要能讲 <strong>epoll 为什么是 O(K) 不是 O(N)</strong>（红黑树注册 fd、就绪链表、只遍历就绪事件）；</li>
-<li>不只背”三级缓存三个 Map”，要能讲 <strong>为什么必须三级</strong>（存 ObjectFactory，等实例化完再决定是否 AOP 代理）；</li>
-<li>不只背”RDB fork 子进程”，要能讲 <strong>写时复制 COW 的底层</strong>（fork 只拷页表，主线程改页才复制，子进程读 fork 时刻的页）。</li>
+<li>续期是<strong>自动</strong>的，业务代码无感知；</li>
+<li>看门狗线程在锁释放后自动停止，不泄漏；</li>
+<li>如果进程挂了，看门狗线程也跟着挂，锁最多 30 秒后过期——<strong>不会死锁</strong>。</li>
 </ul>
-<p><strong>判断标准</strong>：能不能”口述 30 秒讲清机制”，而不是”背出定义”。深问一层就卡住的，都是只会背的。</p>
-<h2 id="四、第四步：复习卡-高频追问补遗"><a href="#四、第四步：复习卡-高频追问补遗" class="headerlink" title="四、第四步：复习卡 + 高频追问补遗"></a>四、第四步：复习卡 + 高频追问补遗</h2><p>我把每个模块做成一张<strong>复习卡</strong>，结构：</p>
-<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ada">① 核心知识点（高优先级，带口述版）<br>② 硬伤清单（摸底答错的，重点标）<br>③ 高频追问补遗（容易深挖的：如 Seata <span class="hljs-keyword">AT</span> 的 undo_log 机制）<br></code></pre></td></tr></table></figure>
+<h2 id="三、源码：续期是怎么实现的"><a href="#三、源码：续期是怎么实现的" class="headerlink" title="三、源码：续期是怎么实现的"></a>三、源码：续期是怎么实现的</h2><p>Redisson 的核心类是 <code>RedissonLock</code>。看门狗逻辑在 <code>tryAcquireAsync</code> 和 <code>renewExpiration</code>：</p>
+<p><strong>① 加锁时，如果没指定过期时间，用默认值 + 启动看门狗</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// RedissonLock.tryLockInnerAsync 的核心</span><br><span class="hljs-keyword">if</span> (leaseTime != -<span class="hljs-number">1</span>) &#123;<br>    <span class="hljs-comment">// 指定了过期时间 → 不启动看门狗（业务自己负责）</span><br>    <span class="hljs-keyword">return</span> tryLockInnerAsync(leaseTime, unit, ...);<br>&#125;<br><span class="hljs-comment">// 没指定 → 用默认 30 秒 + 启动看门狗续期</span><br><span class="hljs-keyword">return</span> scheduleLockRenewal(threadId, ...);<br></code></pre></td></tr></table></figure>
 
-<p>每张卡最后都有”<strong>30 秒口述版</strong>“——逼自己把答案压缩成能脱口而出的版本。</p>
-<h2 id="五、第五步：模拟验证-复盘"><a href="#五、第五步：模拟验证-复盘" class="headerlink" title="五、第五步：模拟验证 + 复盘"></a>五、第五步：模拟验证 + 复盘</h2><p>学到一定程度，要<strong>模拟验证</strong>：让 AI 当提问者，随机抽知识点问，答完让 AI 点评”哪里含糊、哪里可以更深”。</p>
-<p>模拟暴露的问题比看书更有价值——比如我发现”Redis 分布式锁三大坑”能背，但被问”主从切换锁会丢吗”就卡住，于是专门补了 RedLock 的深水区。</p>
-<h2 id="六、诚实评估：学到什么程度算够"><a href="#六、诚实评估：学到什么程度算够" class="headerlink" title="六、诚实评估：学到什么程度算够"></a>六、诚实评估：学到什么程度算够</h2><p>我的原则：</p>
-<ul>
-<li><strong>硬伤清零</strong>：摸底答错的，全部能”单口讲对”；</li>
-<li><strong>核心能讲原理</strong>：高优先级知识点不只会背，能讲机制和取舍；</li>
-<li><strong>诚实边界</strong>：没实际做过的（如 K8s 实操、Netty 实战）如实说”了解原理、实操在补”，<strong>不装懂</strong>——装懂被深挖更扣分。</li>
-</ul>
-<h2 id="七、这套体系的通用性"><a href="#七、这套体系的通用性" class="headerlink" title="七、这套体系的通用性"></a>七、这套体系的通用性</h2><p>这套方法不止用于”八股”——它适用于任何技术学习：</p>
-<ul>
-<li>学新框架：先摸底（哪些概念不清楚）→ 分层 → 讲原理 → 做笔记 → 模拟验证；</li>
-<li>学分布式理论：DDIA 重读时，用同样的”对照自己的项目讲原理”方法；</li>
-<li>学 AI：agent-demo 从零实现 + Spring AI 实战，就是用”硬伤清单 → 原理手册”的思路。</li>
-</ul>
-<p><strong>学习体系比学习内容更重要</strong>——内容会过时，方法可以复用。</p>
+<p><strong>关键：只有 <code>leaseTime = -1</code>（没指定过期时间）才启动看门狗</strong>。如果业务自己指定了过期时间，Redisson 不续期——这是容易踩的坑。</p>
+<p><strong>② 续期本质是 Lua 脚本：原子地”检查还在 + 重置过期”</strong></p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs lua"><span class="hljs-comment">-- renewExpiration 执行的 Lua（核心就是这条）</span><br><span class="hljs-keyword">if</span> (redis.call(<span class="hljs-string">&#x27;hexists&#x27;</span>, KEYS[<span class="hljs-number">1</span>], ARGV[<span class="hljs-number">2</span>]) == <span class="hljs-number">1</span>) <span class="hljs-keyword">then</span><br>    redis.call(<span class="hljs-string">&#x27;pexpire&#x27;</span>, KEYS[<span class="hljs-number">1</span>], ARGV[<span class="hljs-number">1</span>]);<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">end</span>;<br><span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br></code></pre></td></tr></table></figure>
+
+<p><code>hexists</code> 检查<strong>这把锁还是不是我的</strong>（用线程 ID 作 field），是才 <code>pexpire</code> 续期——<strong>防止续了别人的锁</strong>。这个检查和续期是原子的，避免了”误续别人锁”的并发问题。</p>
+<p><strong>③ 看门狗是定时任务，不是死循环</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">renewExpiration</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-comment">// 每 internalLockLeaseTime / 3（默认 30/3 = 10 秒）执行一次续期</span><br>    <span class="hljs-type">Timeout</span> <span class="hljs-variable">task</span> <span class="hljs-operator">=</span> commandExecutor.getConnectionManager().newTimeout(<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">TimerTask</span>() &#123;<br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(Timeout timeout)</span> &#123;<br>                <span class="hljs-comment">// 续期成功 → 继续调度下一次；失败 → 停</span><br>                renewExpirationAsync(threadId).whenComplete(...);<br>            &#125;<br>        &#125;,<br>        internalLockLeaseTime / <span class="hljs-number">3</span>, TimeUnit.MILLISECONDS);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>默认锁 30 秒，每 <strong>10 秒</strong>续一次——即使某次续期失败，还有 20 秒缓冲。</p>
+<p><strong>④ 释放锁时停掉看门狗</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">unlock</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-comment">// 释放锁（Lua：校验是自己的再删）</span><br>    unlockInnerAsync(threadId);<br>    <span class="hljs-comment">// 取消看门狗续期</span><br>    cancelExpirationRenewal(threadId);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>业务结束 <code>unlock()</code> → 删锁 + 停看门狗，不会无限续期。</p>
+<h2 id="四、三个容易踩的坑"><a href="#四、三个容易踩的坑" class="headerlink" title="四、三个容易踩的坑"></a>四、三个容易踩的坑</h2><h3 id="1-自己指定了-leaseTime，看门狗就不工作了"><a href="#1-自己指定了-leaseTime，看门狗就不工作了" class="headerlink" title="1. 自己指定了 leaseTime，看门狗就不工作了"></a>1. 自己指定了 leaseTime，看门狗就不工作了</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java">lock.lock(<span class="hljs-number">30</span>, TimeUnit.SECONDS);   <span class="hljs-comment">// 指定过期时间 → 不续期</span><br>lock.lock();                        <span class="hljs-comment">// 不指定 → 看门狗续期</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>如果业务可能超过 30 秒，就不要自己指定 leaseTime</strong>，让它走看门狗。</p>
+<h3 id="2-看门狗续期的是”锁的过期时间”，不是”业务时间”"><a href="#2-看门狗续期的是”锁的过期时间”，不是”业务时间”" class="headerlink" title="2. 看门狗续期的是”锁的过期时间”，不是”业务时间”"></a>2. 看门狗续期的是”锁的过期时间”，不是”业务时间”</h3><p>看门狗不知道业务要跑多久，它只是”锁还在就续”。<strong>如果业务是长事务&#x2F;长任务，锁一直续，其他线程一直等</strong>——要配合业务超时设计。</p>
+<h3 id="3-进程挂了的兜底"><a href="#3-进程挂了的兜底" class="headerlink" title="3. 进程挂了的兜底"></a>3. 进程挂了的兜底</h3><p>看门狗线程随进程消失，锁在过期时间后自动释放——<strong>不会死锁</strong>。但如果业务进程假死（GC 停顿等），锁可能短暂存在，这是分布式锁的固有局限（RedLock 的争议点）。</p>
+<h2 id="五、和”误删别人的锁”的关系"><a href="#五、和”误删别人的锁”的关系" class="headerlink" title="五、和”误删别人的锁”的关系"></a>五、和”误删别人的锁”的关系</h2><p>看门狗解决”续期”，另一个坑”误删别人的锁”靠的是<strong>唯一 value + Lua 原子删除</strong>：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs lua"><span class="hljs-keyword">if</span> (redis.call(<span class="hljs-string">&#x27;get&#x27;</span>, KEYS[<span class="hljs-number">1</span>]) == ARGV[<span class="hljs-number">1</span>]) <span class="hljs-keyword">then</span><br>    <span class="hljs-keyword">return</span> redis.call(<span class="hljs-string">&#x27;del&#x27;</span>, KEYS[<span class="hljs-number">1</span>])<br><span class="hljs-keyword">else</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span><br><span class="hljs-keyword">end</span><br></code></pre></td></tr></table></figure>
+
+<p>Redisson 用<strong>同一个线程 ID</strong>贯穿加锁、续期、删除——<strong>续期只续自己的锁、删除只删自己的锁</strong>，三者通过 Lua 原子性保证一致。</p>
+<h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><p>看门狗解决的是”单机&#x2F;主从 Redis 上，业务超时锁提前释放”的问题。它<strong>解决不了</strong>“主从切换锁丢失”（锁写在主节点，主挂了没同步，新主没这把锁）——那是另一个层面的问题，靠 RedLock 或业务幂等兜底，不在看门狗的职责内。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li><strong>摸底暴露硬伤</strong>，整理成速查单页；</li>
-<li><strong>按优先级分层</strong>，硬伤优先；</li>
-<li><strong>从背结论到讲原理</strong>：能口述 30 秒机制才算会；</li>
-<li>复习卡 + 高频追问补遗，每卡带口述版；</li>
-<li><strong>模拟验证暴露问题</strong>，针对性补深水区；</li>
-<li>诚实边界：不懂的如实说，不装懂；</li>
-<li>学习体系可复用，比学习内容更重要。</li>
+<li>问题：业务超过锁过期时间，锁提前释放；</li>
+<li>看门狗：<strong>默认 30 秒锁 + 每 10 秒续期 + 业务结束释放</strong>；</li>
+<li>续期本质：Lua 原子地”<code>hexists</code> 检查是自己的 + <code>pexpire</code> 续期”——不误续别人的锁；</li>
+<li>只有 <code>lock()</code> 不指定 leaseTime 才启动看门狗，<strong>指定了就不续</strong>（坑）；</li>
+<li>释放时停看门狗，进程挂时锁自动过期，<strong>不死锁</strong>；</li>
+<li>看门狗解决”续期”，不解决”主从切换锁丢失”——那是 RedLock&#x2F;幂等的职责。</li>
 </ul>
 <hr>
-<p><em>发表于 2026 年 7 月 · 标签: 学习方法, 技术成长, 原理, 方法论</em></p>
+<p><em>发表于 2026 年 7 月 · 标签: Redisson, 分布式锁, 看门狗, 源码分析</em></p>
 
                 
               </div>
@@ -457,7 +454,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E5%AD%A6%E4%B9%A0%E6%96%B9%E6%B3%95/" class="category-chain-item">学习方法</a>
+  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
   
   
 
@@ -472,13 +469,13 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E5%AD%A6%E4%B9%A0%E6%96%B9%E6%B3%95/" class="print-no-link">#学习方法</a>
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" class="print-no-link">#分布式锁</a>
       
-        <a href="/tags/%E6%8A%80%E6%9C%AF%E6%88%90%E9%95%BF/" class="print-no-link">#技术成长</a>
+        <a href="/tags/Redisson/" class="print-no-link">#Redisson</a>
       
-        <a href="/tags/%E5%8E%9F%E7%90%86/" class="print-no-link">#原理</a>
+        <a href="/tags/%E7%9C%8B%E9%97%A8%E7%8B%97/" class="print-no-link">#看门狗</a>
       
-        <a href="/tags/%E6%96%B9%E6%B3%95%E8%AE%BA/" class="print-no-link">#方法论</a>
+        <a href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="print-no-link">#源码分析</a>
       
     </div>
   
@@ -490,8 +487,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>我的技术学习体系：从&#34;硬伤清单&#34;到&#34;原理手册&#34;</div>
-      <div>https://aster-xu-lab.github.io/2026/07/10/2026-07-10-我的技术学习体系-从硬伤清单到原理手册/</div>
+      <div>Redisson 看门狗源码分析：分布式锁的续期是怎么实现的</div>
+      <div>https://aster-xu-lab.github.io/2026/07/10/2026-07-10-Redisson看门狗源码分析-分布式锁续期原理/</div>
     </div>
     <div class="license-meta">
       
