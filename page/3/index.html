@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2025/06/10/2025-06-10-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/" target="_self">
-          ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）
+        <a href="/2025/11/12/2025-11-12-%E4%BB%8E%E5%8D%95%E4%BD%93%E5%88%B0%E4%B8%AD%E5%8F%B0-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/" target="_self">
+          从传统 OMS 到订单中台：一条架构演进的完整路径
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/06/10/2025-06-10-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/11/12/2025-11-12-%E4%BB%8E%E5%8D%95%E4%BD%93%E5%88%B0%E4%B8%AD%E5%8F%B0-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/" target="_self">
         <div>
-          分片落地最痛的往往不是分片本身，而是与现有 ORM 的兼容性。我在把 ShardingSphere 接入 cloud-order（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。 坑1：分页 —— PageHelper 与 ShardingSphere 二选一现象：cloud-dal 的 PageUtils.startPage(
+          传统 OMS → 订单中台，不是换个名字，是架构范式的一次升级。这篇复盘订单中台的演进路径——从单体到多平台接入、从垂直分表到水平分片、从手工同步到编排引擎。  一、传统 OMS 的痛点传统 OMS（订单管理系统）的核心问题是**”一个系统管全部”**：  所有渠道的订单都进一个系统，业务逻辑耦合； 对接新渠道 &#x3D; 改主流程代码，牵一发动全身； 数据量大了，单库单表扛不住； 平台规则
         </div>
       </a>
 
@@ -352,8 +352,75 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2025-06-10 09:00" pubdate>
-              2025-06-10
+            <time datetime="2025-11-12 09:00" pubdate>
+              2025-11-12
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" class="category-chain-item">中台架构</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/">#架构演进</a>
+            
+              <a href="/tags/%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0/">#订单中台</a>
+            
+              <a href="/tags/OMS/">#OMS</a>
+            
+              <a href="/tags/%E4%B8%AD%E5%8F%B0%E5%8C%96/">#中台化</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/" target="_self">
+          慢 SQL 治理一年复盘：从日均千条级到个位数
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/" target="_self">
+        <div>
+          订单中心慢 SQL 从日均千条级（峰值 1124 条）降到个位数（6 条），DB 单次负载降 30-50%。这篇复盘一年治理的完整路径——不是一次优化，是持续体系。  一、现状：慢 SQL 是”慢性病”订单中心日均处理几十万订单，慢 SQL 日志峰值日均 1124 条，系统可用性在 99.9% 附近徘徊，每次大促都心跳加速。 慢 SQL 的危害不只是”慢”——它占用连接、拖慢事务、引发雪崩。一
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-10-10 09:00" pubdate>
+              2025-10-10
             </time>
           </div>
         
@@ -383,17 +450,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E8%B8%A9%E5%9D%91/">#踩坑</a>
+              <a href="/tags/%E6%85%A2SQL/">#慢SQL</a>
             
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+              <a href="/tags/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/">#性能调优</a>
             
-              <a href="/tags/%E5%85%BC%E5%AE%B9%E6%80%A7/">#兼容性</a>
+              <a href="/tags/%E7%B4%A2%E5%BC%95/">#索引</a>
             
-              <a href="/tags/MyBatis-Plus/">#MyBatis-Plus</a>
-            
-              <a href="/tags/PageHelper/">#PageHelper</a>
-            
-              <a href="/tags/%E5%85%83%E6%95%B0%E6%8D%AE/">#元数据</a>
+              <a href="/tags/%E5%A4%8D%E7%9B%98/">#复盘</a>
             
           </div>
         
@@ -407,15 +470,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/" target="_self">
-          SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战
+        <a href="/2025/09/10/2025-09-10-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%A7%E4%BF%83%E5%A4%8D%E7%9B%98-%E5%8F%AF%E7%94%A8%E6%80%A7%E4%BB%8E999%E5%88%B09999/" target="_self">
+          订单中台大促复盘：可用性从 99.9% 到 99.99%，我做了四件事
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/09/10/2025-09-10-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%A7%E4%BF%83%E5%A4%8D%E7%9B%98-%E5%8F%AF%E7%94%A8%E6%80%A7%E4%BB%8E999%E5%88%B09999/" target="_self">
         <div>
-          真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承 cloud-parentcloud-order
+          订单中台日均 15 万单（大促峰值 50 万），可用性从 99.9% 提到 99.99%。99.9% 到 99.99%，看似只差 0.09%，意味着全年停机时间从 8.7 小时降到 52 分钟——靠的是四件事。  一、先看问题：99.9% 差在哪99.9% 意味着全年 8.7 小时不可用。这 8.7 小时花在哪？我的复盘发现三类主要问题：  大促峰值打崩：瞬时流量超过系统承载，DB 被打爆、接
         </div>
       </a>
 
@@ -423,8 +486,217 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2025-05-28 09:00" pubdate>
-              2025-05-28
+            <time datetime="2025-09-10 09:00" pubdate>
+              2025-09-10
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/" class="category-chain-item">中台架构</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E7%BC%93%E5%AD%98/">#缓存</a>
+            
+              <a href="/tags/%E5%8F%AF%E7%94%A8%E6%80%A7/">#可用性</a>
+            
+              <a href="/tags/Sentinel/">#Sentinel</a>
+            
+              <a href="/tags/%E5%A4%A7%E4%BF%83/">#大促</a>
+            
+              <a href="/tags/%E5%A4%8D%E7%9B%98/">#复盘</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/" target="_self">
+          订单中心慢SQL治理：从日均1124条到6条的实战总结
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/" target="_self">
+        <div>
+          订单中心慢SQL治理：从日均1124条到6条背景我们订单中心日均处理100万+订单，高峰期慢SQL日志日均达到 1124条，Doris慢查询日均 8735条。系统可用性在 99.9% 附近徘徊，每次大促都是一次心跳加速的考验。 这篇文章记录了我们如何通过系统性治理，将慢SQL从 1124 降到 6 条（↓99.4%），系统可用性提升到 99.99%。 一、先看问题：慢SQL从哪里来？1.1 缺失索
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-09-01 09:00" pubdate>
+              2025-09-01
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="category-chain-item">性能优化</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/MySQL/">#MySQL</a>
+            
+              <a href="/tags/%E6%85%A2SQL/">#慢SQL</a>
+            
+              <a href="/tags/%E7%B4%A2%E5%BC%95%E4%BC%98%E5%8C%96/">#索引优化</a>
+            
+              <a href="/tags/%E6%80%A7%E8%83%BD%E8%B0%83%E4%BC%98/">#性能调优</a>
+            
+              <a href="/tags/%E8%BF%9E%E6%8E%A5%E6%B1%A0/">#连接池</a>
+            
+              <a href="/tags/Doris/">#Doris</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2025/08/13/2025-08-13-Kafka%E5%9C%A8Canal%E5%88%B0Doris%E9%93%BE%E8%B7%AF%E4%B8%AD%E7%9A%84%E5%89%8A%E5%B3%B0%E8%A7%92%E8%89%B2/" target="_self">
+          Kafka在Canal→Doris链路中的削峰角色：一次分库分表的真实配套工程
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/08/13/2025-08-13-Kafka%E5%9C%A8Canal%E5%88%B0Doris%E9%93%BE%E8%B7%AF%E4%B8%AD%E7%9A%84%E5%89%8A%E5%B3%B0%E8%A7%92%E8%89%B2/" target="_self">
+        <div>
+          背景：分库分表后，复杂查询去哪儿订单中台的销售信息表做了分库分表（单号主分片，8 片，每片约 750 万行），WHERE order_no = ? 这种主路径查询零广播，很舒服。 但分库分表有个必然的代价：按单号分片后，跨分片的复杂统计查询做不了——比如按用户、按时间段的聚合分析，散落在 8 个分片里，没法在 MySQL 层高效完成。 业界的标准解法是读写分离 + 异构存储：把 MySQL 的数
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-08-13 09:00" pubdate>
+              2025-08-13
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Doris/">#Doris</a>
+            
+              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">#分库分表</a>
+            
+              <a href="/tags/Kafka/">#Kafka</a>
+            
+              <a href="/tags/Canal/">#Canal</a>
+            
+              <a href="/tags/%E5%89%8A%E5%B3%B0/">#削峰</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2025/08/11/2025-08-11-%E9%9D%9E%E5%88%86%E7%89%87%E9%94%AE%E6%9F%A5%E8%AF%A2-id-mapping%E4%B8%8EDoris%E7%9A%84%E8%BE%B9%E7%95%8C/" target="_self">
+          非分片键查询怎么办：id-mapping索引表、Doris与ES的边界
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/08/11/2025-08-11-%E9%9D%9E%E5%88%86%E7%89%87%E9%94%AE%E6%9F%A5%E8%AF%A2-id-mapping%E4%B8%8EDoris%E7%9A%84%E8%BE%B9%E7%95%8C/" target="_self">
+        <div>
+          分片键定了单号，那”按用户查订单”怎么办？这是分库分表面试的经典深水区：你的分片键是 order_no，那按 user_id 拉某个用户的所有订单，怎么办？ 很多人第一反应是”上 ES”或”上索引”，但这是方案先行的坏习惯。我踩过的坑告诉我，正确顺序是：先问业务要不要这个查询。 一、先立原则：分片后只支持业务真实需要的查询分库分表的前提是：只支持业务真实需要的查询，不是所有”可能发生的查询”。
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-08-11 09:00" pubdate>
+              2025-08-11
             </time>
           </div>
         
@@ -454,84 +726,15 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/SpringBoot/">#SpringBoot</a>
+              <a href="/tags/Doris/">#Doris</a>
             
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">#分库分表</a>
             
-              <a href="/tags/%E5%88%86%E9%A1%B5/">#分页</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
             
-              <a href="/tags/MyBatis-Plus/">#MyBatis-Plus</a>
+              <a href="/tags/ES/">#ES</a>
             
-              <a href="/tags/BaseMapper/">#BaseMapper</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2025/05/15/2025-05-15-ShardingSphere%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-SQL%E5%A6%82%E4%BD%95%E8%A2%AB%E6%94%B9%E5%86%99%E8%B7%AF%E7%94%B1/" target="_self">
-          ShardingSphere 源码解析：一条 SQL 是如何被改写路由的
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/05/15/2025-05-15-ShardingSphere%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-SQL%E5%A6%82%E4%BD%95%E8%A2%AB%E6%94%B9%E5%86%99%E8%B7%AF%E7%94%B1/" target="_self">
-        <div>
-          知其然也要知其所以然。前面用 ShardingSphere 把分片跑通了，我进一步读了源码，搞清楚一条 SQL 在 ShardingSphere 内部到底经历了什么。本文基于 5.4.1 源码，拆解调用链。 总入口：ShardingSQLRouter所有分片路由的门口是 ShardingSQLRouter.createRouteContext()： 1234567891011@org.apach
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2025-05-15 09:00" pubdate>
-              2025-05-15
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
-            
-              <a href="/tags/%E8%B7%AF%E7%94%B1/">#路由</a>
-            
-              <a href="/tags/SQL%E6%94%B9%E5%86%99/">#SQL改写</a>
-            
-              <a href="/tags/%E6%BA%90%E7%A0%81/">#源码</a>
-            
-              <a href="/tags/ShardingSQLRouter/">#ShardingSQLRouter</a>
+              <a href="/tags/%E7%B4%A2%E5%BC%95%E8%A1%A8/">#索引表</a>
             
           </div>
         
@@ -545,15 +748,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2025/05/02/2025-05-02-6000%E4%B8%87%E8%AE%A2%E5%8D%95%E8%A1%A8%E8%BF%81%E7%A7%BB%E5%88%86%E7%89%87-%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E5%9B%9E%E8%A1%A5/" target="_self">
-          6000万订单表迁移到分片：双写 + 灰度 + 回补 + 回滚全流程
+        <a href="/2025/08/06/2025-08-06-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E6%97%A0%E5%81%9C%E6%9C%BA%E6%B5%81%E7%A8%8B-%E5%8F%8C%E5%86%99%E5%AF%B9%E8%B4%A6%E7%81%B0%E5%BA%A6/" target="_self">
+          分片扩容的无停机流程：存量回填、binlog增量追平与对账兜底
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/05/02/2025-05-02-6000%E4%B8%87%E8%AE%A2%E5%8D%95%E8%A1%A8%E8%BF%81%E7%A7%BB%E5%88%86%E7%89%87-%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E5%9B%9E%E8%A1%A5/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/08/06/2025-08-06-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E6%97%A0%E5%81%9C%E6%9C%BA%E6%B5%81%E7%A8%8B-%E5%8F%8C%E5%86%99%E5%AF%B9%E8%B4%A6%E7%81%B0%E5%BA%A6/" target="_self">
         <div>
-          迁移的难点：不能停服or_sales_info 有 6000 万存量数据，要从单表改成分片表。最难的不是写分片代码，而是存量数据怎么在业务不停服的情况下迁移过去。 我写了一个综合演练，模拟完整迁移流程（造数 → 双写 → 回补 → 灰度 → 校验 → 性能 → 回滚），下面拆解每一步。 整体流程123456789老单表 or_sales_legacy (6000万)        │ 双写
+          一、为什么 hash 分片扩容要 rehash单号哈希分片的落片公式是： 1落片 = hash(order_no) % 片数  片数从 8 扩到 16，% 16 的结果和 % 8 不一样了——原来落在 0 号片的数据，现在可能该落 2 号片。所以扩一倍的片数，意味着大约一半的数据要换物理分片。这就是 rehash。 这也是”单号 hash 分片”对比”时间&#x2F;区间分片”的一个代价：时间分
         </div>
       </a>
 
@@ -561,359 +764,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2025-05-02 09:00" pubdate>
-              2025-05-02
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E8%BF%81%E7%A7%BB/">#数据迁移</a>
-            
-              <a href="/tags/%E5%8F%8C%E5%86%99/">#双写</a>
-            
-              <a href="/tags/%E7%81%B0%E5%BA%A6%E5%88%87%E6%8D%A2/">#灰度切换</a>
-            
-              <a href="/tags/%E5%8E%86%E5%8F%B2%E5%9B%9E%E8%A1%A5/">#历史回补</a>
-            
-              <a href="/tags/%E5%9B%9E%E6%BB%9A/">#回滚</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2025/04/19/2025-04-19-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/" target="_self">
-          分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/04/19/2025-04-19-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/" target="_self">
-        <div>
-          本文记录一个分片键选型的重要修正：一开始基于”数据按时间查询”选择了时间主分片，但业务确认所有事件都按单号处理后，修正为单号主分片。这个修正过程本身就是分片键选型的最好案例。  一、初始思考：按时间查 + 按单号查，一个分片键不够or_sales_info 有 6000 万数据，最初看到两个查询入口：  按时间查：WHERE trade_time BETWEEN ... 按平台单号查：WHER
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2025-04-19 09:00" pubdate>
-              2025-04-19
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
-            
-              <a href="/tags/%E9%80%89%E5%9E%8B/">#选型</a>
-            
-              <a href="/tags/%E5%88%86%E7%89%87%E9%94%AE/">#分片键</a>
-            
-              <a href="/tags/%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8/">#反向索引表</a>
-            
-              <a href="/tags/or-sales-info/">#or_sales_info</a>
-            
-              <a href="/tags/%E8%AE%A2%E5%8D%95%E5%8F%B7/">#订单号</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2025/04/06/2025-04-06-ShardingSphere%E8%BF%9B%E9%98%B6%E7%89%B9%E6%80%A7-%E5%8A%A0%E5%AF%86%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%BD%B1%E5%AD%90%E5%BA%93/" target="_self">
-          ShardingSphere 进阶特性实战：数据加密 / 读写分离 / 影子库
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/04/06/2025-04-06-ShardingSphere%E8%BF%9B%E9%98%B6%E7%89%B9%E6%80%A7-%E5%8A%A0%E5%AF%86%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%BD%B1%E5%AD%90%E5%BA%93/" target="_self">
-        <div>
-          分片只是 ShardingSphere 的基础，生产真正要落地，还得配合三个进阶特性：数据加密、读写分离、影子库。本文逐一实战验证。 1. 数据加密（Encrypt）：敏感字段落库即密文or_sales_info 里有手机号、身份证等敏感字段。需求：落库必须是密文（防泄露），但应用读到的还是明文。 ShardingSphere 的 Encrypt 特性：  INSERT 时自动用 AES 加密
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2025-04-06 09:00" pubdate>
-              2025-04-06
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
-            
-              <a href="/tags/%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/">#读写分离</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%8A%A0%E5%AF%86/">#数据加密</a>
-            
-              <a href="/tags/%E5%BD%B1%E5%AD%90%E5%BA%93/">#影子库</a>
-            
-              <a href="/tags/AES/">#AES</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2025/03/24/2025-03-24-ShardingSphere%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87%E5%AE%9E%E6%88%98/" target="_self">
-          ShardingSphere 时间分片实战：INTERVAL vs AUTO_INTERVAL 与跨年处理
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/03/24/2025-03-24-ShardingSphere%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87%E5%AE%9E%E6%88%98/" target="_self">
-        <div>
-          时间分片为什么要单独讲订单、流水、日志这类数据天然按时间查询，而且数据量随时间只增不减。时间分片（月表&#x2F;日表）是处理这类数据最自然的方式——但实际做起来有几个坑，尤其是跨年。 INTERVAL：真自然月分片INTERVAL 算法按时间区间自动路由到对应月表： 1234567Properties props = new Properties();props.setProperty(&qu
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2025-03-24 09:00" pubdate>
-              2025-03-24
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
-            
-              <a href="/tags/INTERVAL/">#INTERVAL</a>
-            
-              <a href="/tags/AUTO-INTERVAL/">#AUTO_INTERVAL</a>
-            
-              <a href="/tags/%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87/">#时间分片</a>
-            
-              <a href="/tags/%E5%8A%A8%E6%80%81%E8%A1%A8%E7%BB%B4%E6%8A%A4/">#动态表维护</a>
-            
-              <a href="/tags/%E8%B7%A8%E5%B9%B4/">#跨年</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2025/03/12/2025-03-12-ShardingSphere%E7%BB%91%E5%AE%9A%E8%A1%A8%E4%B8%8E%E5%B9%BF%E6%92%AD%E8%A1%A8/" target="_self">
-          ShardingSphere 绑定表与广播表：JOIN 与配置表的两大解法
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/03/12/2025-03-12-ShardingSphere%E7%BB%91%E5%AE%9A%E8%A1%A8%E4%B8%8E%E5%B9%BF%E6%92%AD%E8%A1%A8/" target="_self">
-        <div>
-          JOIN 在分片下的尴尬分库分表后，JOIN 是个老大难。以订单为例：or_sales_info 和 or_sales_item 都在分片，按 order_id 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生笛卡尔积——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。 绑定表：解决分片表 JOIN绑定表的本质是
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2025-03-12 09:00" pubdate>
-              2025-03-12
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
-            
-              <a href="/tags/%E7%BB%91%E5%AE%9A%E8%A1%A8/">#绑定表</a>
-            
-              <a href="/tags/%E5%B9%BF%E6%92%AD%E8%A1%A8/">#广播表</a>
-            
-              <a href="/tags/JOIN/">#JOIN</a>
-            
-              <a href="/tags/%E7%AC%9B%E5%8D%A1%E5%B0%94%E7%A7%AF/">#笛卡尔积</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2025/02/27/2025-02-27-ShardingSphere%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8%E4%B8%8E%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/" target="_self">
-          ShardingSphere-JDBC 快速入门与核心概念
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/02/27/2025-02-27-ShardingSphere%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8%E4%B8%8E%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/" target="_self">
-        <div>
-          问题的起点cloud-order 的 or_sales_info 表已经逼近 6000 万条，单表查询越来越慢，DBA 天天催着拆分。但分库分表一直是个”听起来很厉害，做起来很痛”的事——手写路由、改所有 DAO、跨分片聚合…… 直到引入了 ShardingSphere-JDBC。 本文记录我对 ShardingSphere-JDBC 的学习笔记，从最核心的概念讲起。 核心概念：逻辑表 vs 物
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2025-02-27 09:00" pubdate>
-              2025-02-27
+            <time datetime="2025-08-06 09:00" pubdate>
+              2025-08-06
             </time>
           </div>
         
@@ -947,11 +799,11 @@
             
               <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">#分库分表</a>
             
-              <a href="/tags/JDBC/">#JDBC</a>
+              <a href="/tags/%E5%8F%8C%E5%86%99/">#双写</a>
             
-              <a href="/tags/%E8%B7%AF%E7%94%B1/">#路由</a>
+              <a href="/tags/%E6%89%A9%E5%AE%B9/">#扩容</a>
             
-              <a href="/tags/SQL%E6%94%B9%E5%86%99/">#SQL改写</a>
+              <a href="/tags/%E5%AF%B9%E8%B4%A6/">#对账</a>
             
           </div>
         
@@ -965,15 +817,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2025/02/14/2025-02-14-ShardingSphere%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5%E5%AE%9E%E6%88%98-5%E7%A7%8D%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E9%80%89/" target="_self">
-          ShardingSphere 分片策略实战：5 种算法怎么选
+        <a href="/2025/08/01/2025-08-01-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E5%9E%8B%E7%AE%97%E8%B4%A6-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E5%8F%B7%E4%B8%BB%E5%88%86%E7%89%87/" target="_self">
+          分片键选型的算账：为什么单号主分片，而不是时间主分片
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2025/02/14/2025-02-14-ShardingSphere%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5%E5%AE%9E%E6%88%98-5%E7%A7%8D%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E9%80%89/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/08/01/2025-08-01-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E5%9E%8B%E7%AE%97%E8%B4%A6-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E5%8F%B7%E4%B8%BB%E5%88%86%E7%89%87/" target="_self">
         <div>
-          先看分布需求分片策略本质是回答一个问题：这条数据该存到哪张物理表？ 选择哪种算法，取决于数据特征和查询模式。本文用 5 种内置算法逐一验证，并给出选型建议。 1. INLINE —— 最灵活，Groovy 表达式1表达式: t_order_$&#123;order_id % 4&#125;  123Properties props = new Properties();props.setProp
+          一、先回答”什么时候该分”分库分表最容易被问倒的第一题是：为什么分？ 我的判断信号有三个，缺一不可：  单表数据量逼近千万级：订单销售信息表累计接近 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级； 写入成为瓶颈：单库单库的写入能力到了上限； 目标是横向扩容，不是优化单点查询。  在到达这个信号之前，我们经历过一段”假分片”：早期是渠道垂直分表——拼多多一张表、京
         </div>
       </a>
 
@@ -981,8 +833,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2025-02-14 09:00" pubdate>
-              2025-02-14
+            <time datetime="2025-08-01 09:00" pubdate>
+              2025-08-01
             </time>
           </div>
         
@@ -1014,15 +866,153 @@
             
               <a href="/tags/ShardingSphere/">#ShardingSphere</a>
             
-              <a href="/tags/%E5%88%86%E7%89%87/">#分片</a>
+              <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">#分库分表</a>
             
-              <a href="/tags/INLINE/">#INLINE</a>
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
             
-              <a href="/tags/HASH-MOD/">#HASH_MOD</a>
+              <a href="/tags/%E5%88%86%E7%89%87%E9%94%AE/">#分片键</a>
             
-              <a href="/tags/INTERVAL/">#INTERVAL</a>
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2025/07/31/2025-07-31-%E8%AE%A2%E5%8D%95%E8%A1%A8%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E5%8F%96%E8%88%8D-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E8%A1%A8%E5%A4%AA%E5%A4%9A%E5%86%99%E5%86%97%E4%BD%99/" target="_self">
+          订单表反向索引的取舍：会不会表太多、写逻辑太冗余？
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/07/31/2025-07-31-%E8%AE%A2%E5%8D%95%E8%A1%A8%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E5%8F%96%E8%88%8D-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E8%A1%A8%E5%A4%AA%E5%A4%9A%E5%86%99%E5%86%97%E4%BD%99/" target="_self">
+        <div>
+          分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是有取舍。 冗余的本质：为查询性能牺牲写复杂度每张反向索引表 &#x3D; 一条订单要多写一份数据。如果建 3 张索引表，写一条订单就要写 4 处（主表 + 3 索引）。这份冗余是真实成本，所以必须克制。 业界取舍：不是”每维度建表”，而是这三招招1：只在”最高频”维
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-07-31 09:00" pubdate>
+              2025-07-31
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
             
-              <a href="/tags/COMPLEX/">#COMPLEX</a>
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+            
+              <a href="/tags/JDBC/">#JDBC</a>
+            
+              <a href="/tags/OLAP/">#OLAP</a>
+            
+              <a href="/tags/%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95/">#反向索引</a>
+            
+              <a href="/tags/user-id/">#user_id</a>
+            
+              <a href="/tags/C%E7%AB%AFB%E7%AB%AF/">#C端B端</a>
+            
+              <a href="/tags/OLTP/">#OLTP</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2025/07/20/2025-07-20-Doris%E5%90%8C%E6%AD%A5%E9%93%BE%E8%B7%AF%E7%9A%84%E5%AF%B9%E8%B4%A6%E4%B8%8E%E6%BC%8F%E5%8D%95%E5%85%9C%E5%BA%95/" target="_self">
+          Doris 同步链路的对账与漏单兜底：增量 + 对账的完整闭环
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2025/07/20/2025-07-20-Doris%E5%90%8C%E6%AD%A5%E9%93%BE%E8%B7%AF%E7%9A%84%E5%AF%B9%E8%B4%A6%E4%B8%8E%E6%BC%8F%E5%8D%95%E5%85%9C%E5%BA%95/" target="_self">
+        <div>
+          分库分表后，复杂查询下沉 Doris（MySQL → Canal → Kafka → Doris）。增量同步是主路径，但增量本身有兜不住的概率——这篇讲”增量 + 对账”怎么组成完整闭环。  一、链路与”为什么不能只靠增量”同步链路： 1MySQL（8片） → binlog → Canal → Kafka → Doris（宽表）  增量同步（Canal 抓 binlog）是主路径，但它有兜不住
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2025-07-20 09:00" pubdate>
+              2025-07-20
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="category-chain-item">数据库</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Doris/">#Doris</a>
+            
+              <a href="/tags/Kafka/">#Kafka</a>
+            
+              <a href="/tags/Canal/">#Canal</a>
+            
+              <a href="/tags/%E5%AF%B9%E8%B4%A6/">#对账</a>
+            
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5/">#数据同步</a>
             
           </div>
         
@@ -1034,7 +1024,7 @@
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <a class="extend prev" rel="prev" href="/page/2/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/#board">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/#board">4</a><a class="page-number" href="/page/5/#board">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/22/#board">22</a><a class="extend next" rel="next" href="/page/4/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/2/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/#board">2</a><span class="page-number current">3</span><a class="page-number" href="/page/4/#board">4</a><a class="page-number" href="/page/5/#board">5</a><span class="space">&hellip;</span><a class="page-number" href="/page/23/#board">23</a><a class="extend next" rel="next" href="/page/4/#board"><i class="iconfont icon-arrowright"></i></a>
     </span>
   </nav>
 

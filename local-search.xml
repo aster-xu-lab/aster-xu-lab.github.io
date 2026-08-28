@@ -4,6 +4,266 @@
   
   
   <entry>
+    <title>线上故障排查实战：从告警到定位，一次完整的高 CPU 排查</title>
+    <link href="/2026/08/18/2026-08-18-%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98-%E4%BB%8E%E5%91%8A%E8%AD%A6%E5%88%B0%E5%AE%9A%E4%BD%8D/"/>
+    <url>/2026/08/18/2026-08-18-%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98-%E4%BB%8E%E5%91%8A%E8%AD%A6%E5%88%B0%E5%AE%9A%E4%BD%8D/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>线上出问题，最考验功底的不是”会背命令”，而是<strong>从告警到定位的完整排查思路</strong>。这篇用一次真实的高 CPU 排查，讲透我的排查方法论。</p></blockquote><h2 id="一、告警来了，先别慌"><a href="#一、告警来了，先别慌" class="headerlink" title="一、告警来了，先别慌"></a>一、告警来了，先别慌</h2><p>凌晨两点，告警群响了：<strong>订单服务 CPU 持续 90%+</strong>。</p><p>我处理线上问题的第一步永远是”<strong>保现场 + 看整体</strong>“，而不是一头扎进代码：</p><figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs x86asm">① 保现场：先不重启（重启 = 现场没了）<br>② 看整体：top 看进程 → load average 是 <span class="hljs-meta">CPU</span> 还是 IO 爆<br>③ 定位进程：哪个 Java 进程占 <span class="hljs-meta">CPU</span><br>④ 定位线程：进程里哪个线程在烧 <span class="hljs-meta">CPU</span><br>⑤ 定位代码：线程栈里的业务方法 → 反查代码<br></code></pre></td></tr></table></figure><h2 id="二、一步步定位"><a href="#二、一步步定位" class="headerlink" title="二、一步步定位"></a>二、一步步定位</h2><p><strong>① top 看进程</strong></p><figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">top</span>  → 看到 java 进程 PID <span class="hljs-number">12345</span> 占 CPU <span class="hljs-number">120</span>%+<br></code></pre></td></tr></table></figure><p>确认是 Java 应用的问题（不是数据库、不是 IO）。</p><p><strong>② 定位线程</strong></p><figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">top</span> -Hp <span class="hljs-number">12345</span>  → 看到线程 PID <span class="hljs-number">22345</span> 占 CPU <span class="hljs-number">90</span>%+<br></code></pre></td></tr></table></figure><p>拿到烧 CPU 的线程号 22345。</p><p><strong>③ 转十六进制</strong></p><p>jstack 里线程号是十六进制：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">printf</span> <span class="hljs-string">&quot;%x&quot;</span> 22345   <span class="hljs-comment"># 5759</span><br></code></pre></td></tr></table></figure><p><strong>④ 看线程栈</strong></p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">jstack 12345 | grep -A 20 <span class="hljs-string">&quot;5759&quot;</span><br></code></pre></td></tr></table></figure><p>线程栈里出现了一段<strong>业务代码的循环</strong>——<code>OrderService.processOrder()</code> 里有一个 <code>while</code> 循环。</p><p><strong>⑤ 反查代码</strong></p><p>定位到代码：订单处理里有一个<strong>重试循环没有上限</strong>——某个订单状态异常时，代码会无限重试，把 CPU 烧满。</p><h2 id="三、根因与修复"><a href="#三、根因与修复" class="headerlink" title="三、根因与修复"></a>三、根因与修复</h2><p>根因是：<strong>对某个一直失败的订单，重试逻辑没有设置最大次数和退避</strong>，导致 <code>while(true)</code> 空转。</p><p>修复：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 修复前：无限重试，异常订单烧 CPU</span><br><span class="hljs-keyword">while</span> (!order.isProcessed()) &#123;<br>    process(order);<br>&#125;<br><br><span class="hljs-comment">// 修复后：最大重试次数 + 指数退避</span><br><span class="hljs-type">int</span> <span class="hljs-variable">retries</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br><span class="hljs-keyword">while</span> (!order.isProcessed() &amp;&amp; retries++ &lt; <span class="hljs-number">5</span>) &#123;<br>    process(order);<br>    <span class="hljs-keyword">if</span> (!order.isProcessed()) &#123;<br>        Thread.sleep(<span class="hljs-number">500</span> * (<span class="hljs-number">1L</span> &lt;&lt; retries));   <span class="hljs-comment">// 指数退避</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure><p><strong>修复 + 验证 + 复盘</strong>：修复后观察 CPU 回落，然后复盘——这种”无限循环”类 bug 通常出现在<strong>异常处理不完整</strong>的地方，代码审查要重点盯。</p><h2 id="四、排查方法论：四个场景的通用套路"><a href="#四、排查方法论：四个场景的通用套路" class="headerlink" title="四、排查方法论：四个场景的通用套路"></a>四、排查方法论：四个场景的通用套路</h2><p>高 CPU 只是线上问题的一种。我把常见场景整理成套路：</p><h3 id="场景-1：高-CPU"><a href="#场景-1：高-CPU" class="headerlink" title="场景 1：高 CPU"></a>场景 1：高 CPU</h3><figure class="highlight coq"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs coq"><span class="hljs-built_in">top</span> → <span class="hljs-built_in">top</span> -Hp → 线程转 hex → jstack → 定位代码<br></code></pre></td></tr></table></figure><h3 id="场景-2：内存溢出（OOM）"><a href="#场景-2：内存溢出（OOM）" class="headerlink" title="场景 2：内存溢出（OOM）"></a>场景 2：内存溢出（OOM）</h3><figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ruby">启动参数 -<span class="hljs-variable constant_">XX</span><span class="hljs-symbol">:+HeapDumpOnOutOfMemoryError</span>（保现场）<br>→ 触发 <span class="hljs-variable constant_">OOM</span> 自动 dump<br>→ <span class="hljs-variable constant_">MAT</span> 分析支配树找大对象<br>→ 按内存峰值时间点反查代码<br></code></pre></td></tr></table></figure><h3 id="场景-3：GC-频繁-停顿"><a href="#场景-3：GC-频繁-停顿" class="headerlink" title="场景 3：GC 频繁 &#x2F; 停顿"></a>场景 3：GC 频繁 &#x2F; 停顿</h3><figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs abnf">jstat -gcutil 看 GC 频率和耗时<br>→ 老年代持续增长 <span class="hljs-operator">=</span> 泄漏嫌疑<br>→ 调堆参数或定位泄漏<br></code></pre></td></tr></table></figure><h3 id="场景-4：慢-SQL"><a href="#场景-4：慢-SQL" class="headerlink" title="场景 4：慢 SQL"></a>场景 4：慢 SQL</h3><figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">慢日志 + <span class="hljs-keyword">EXPLAIN</span><br>→ 看是否走索引、扫描行数<br>→ 索引/改写 <span class="hljs-keyword">SQL</span><br></code></pre></td></tr></table></figure><h2 id="五、最值钱的一句话"><a href="#五、最值钱的一句话" class="headerlink" title="五、最值钱的一句话"></a>五、最值钱的一句话</h2><p>线上排查最值钱的经验是：<strong>先保现场再动手，先整体后聚焦</strong>。</p><ul><li>一上来就翻代码 &#x3D; 大海捞针；</li><li>一上来就重启 &#x3D; 现场没了，永远定位不到根因；</li><li>正确顺序是”资源 → 进程 → 线程 → 栈 → 代码”，层层缩小范围。</li></ul><h2 id="六、诚实的复盘"><a href="#六、诚实的复盘" class="headerlink" title="六、诚实的复盘"></a>六、诚实的复盘</h2><p>这次排查能快速定位，是因为<strong>平时做了三件事</strong>：</p><ol><li>启动参数加了 dump 和 GC 日志（保现场能力）；</li><li>熟悉 jstack&#x2F;jstat&#x2F;jmap 的用途（工具熟练度）；</li><li>对订单处理链路熟（业务理解）。</li></ol><p><strong>排查能力不是背命令，是”工具 + 现场 + 业务”三者的结合</strong>——这也是我 99.99% 可用性背后的真实支撑。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>排查顺序：<strong>保现场 → 看整体 → 定位进程 → 定位线程 → 定位代码</strong>；</li><li>高 CPU：top → top -Hp → 线程转 hex → jstack；</li><li>OOM：<strong>先加 dump 参数保现场</strong> → MAT 分析；</li><li>GC 频繁：jstat 看趋势，老年代增长 &#x3D; 泄漏；</li><li>慢 SQL：EXPLAIN 看索引；</li><li>核心心法：<strong>先保现场再动手，先整体后聚焦</strong>。</li></ul><hr><p><em>发表于 2026 年 8 月 · 标签: 故障排查, 高CPU, jstack, 内存泄漏, 实战</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>运维实战</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>实战</tag>
+      
+      <tag>故障排查</tag>
+      
+      <tag>jstack</tag>
+      
+      <tag>高CPU</tag>
+      
+      <tag>内存泄漏</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>SyncTask Starter 的工程细节：零配置接入是怎么做到的</title>
+    <link href="/2026/08/10/2026-08-10-SyncTask-Starter%E7%9A%84%E5%B7%A5%E7%A8%8B%E7%BB%86%E8%8A%82-%E9%9B%B6%E9%85%8D%E7%BD%AE%E6%8E%A5%E5%85%A5/"/>
+    <url>/2026/08/10/2026-08-10-SyncTask-Starter%E7%9A%84%E5%B7%A5%E7%A8%8B%E7%BB%86%E8%8A%82-%E9%9B%B6%E9%85%8D%E7%BD%AE%E6%8E%A5%E5%85%A5/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>SyncTask 引擎的核心卖点是”接入一个业务任务从数天降到数小时”。这个目标靠的不是引擎本身，而是 <strong>Starter 的零配置接入</strong>。这篇讲 Starter 背后的工程细节。</p></blockquote><h2 id="一、接入方要做什么"><a href="#一、接入方要做什么" class="headerlink" title="一、接入方要做什么"></a>一、接入方要做什么</h2><p>业务方接入 SyncTask，只需要三件事：</p><figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs dart">① 引入 <span class="hljs-keyword">sync</span>-task-engine-spring-boot-starter<br>② 实现一个业务 Handler（核心业务逻辑）<br>③ 配置 param-<span class="hljs-class"><span class="hljs-keyword">class</span>、建表</span><br></code></pre></td></tr></table></figure><p><strong>没有一行 @Configuration，没有 XML</strong>。其余（调度、锁、存储、通知、归档）全部用 Starter 默认实现。</p><h2 id="二、三个工程机制"><a href="#二、三个工程机制" class="headerlink" title="二、三个工程机制"></a>二、三个工程机制</h2><h3 id="1-自动配置：-EnableAutoConfiguration"><a href="#1-自动配置：-EnableAutoConfiguration" class="headerlink" title="1. 自动配置：@EnableAutoConfiguration"></a>1. 自动配置：@EnableAutoConfiguration</h3><p>Starter 的核心是一个自动配置类：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@AutoConfiguration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">SyncTaskEngineAutoConfiguration</span> &#123;<br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-meta">@ConditionalOnMissingBean</span><br>    <span class="hljs-keyword">public</span> SyncTaskEngine <span class="hljs-title function_">syncTaskEngine</span><span class="hljs-params">(ToolRegistry registry, ...)</span> &#123;<br>        <span class="hljs-keyword">return</span> SyncTaskEngine.builder()<br>                .handlerRegistry(registry)<br>                .build();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure><p>Spring Boot 启动时从 <code>AutoConfiguration.imports</code> 读到这个配置类，自动装配引擎。<strong>接入方零配置</strong>。</p><h3 id="2-默认实现可覆盖：-ConditionalOnMissingBean"><a href="#2-默认实现可覆盖：-ConditionalOnMissingBean" class="headerlink" title="2. 默认实现可覆盖：@ConditionalOnMissingBean"></a>2. 默认实现可覆盖：@ConditionalOnMissingBean</h3><p>引擎有 10 个 SPI 扩展点（TaskStore &#x2F; LockService &#x2F; NotifyChannel …），Starter 给每个 SPI 提供了<strong>默认实现</strong>（adapter-xxljob &#x2F; adapter-mybatis &#x2F; adapter-redisson）。</p><p>默认实现都标了 <code>@ConditionalOnMissingBean</code>——<strong>容器里已经有同类型 Bean 时，默认实现自动不装</strong>：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// Starter 里的默认实现</span><br><span class="hljs-meta">@Bean</span><br><span class="hljs-meta">@ConditionalOnMissingBean</span><br><span class="hljs-keyword">public</span> TaskStore <span class="hljs-title function_">defaultTaskStore</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">MyBatisTaskStore</span>();<br>&#125;<br><br><span class="hljs-comment">// 业务方：想换自定义实现，只需自己 @Bean 一个</span><br><span class="hljs-meta">@Bean</span><br><span class="hljs-keyword">public</span> TaskStore <span class="hljs-title function_">myCustomTaskStore</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">MyCustomTaskStore</span>();<br>&#125;<br></code></pre></td></tr></table></figure><p><strong>接入方零配置覆盖</strong>：不用写 @Primary、不用排除、不用改配置——只要 <code>@Bean</code> 一个同类型实现，Spring 发现已有就自动不装默认的。这就是”<strong>约定优于配置</strong>“的落地。</p><h3 id="3-参数驱动：param-class-配置"><a href="#3-参数驱动：param-class-配置" class="headerlink" title="3. 参数驱动：param-class 配置"></a>3. 参数驱动：param-class 配置</h3><p>业务 Handler 怎么被路由？靠<strong>参数配置</strong>：</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">sync-task:</span><br>  <span class="hljs-attr">tasks:</span><br>    <span class="hljs-bullet">-</span> <span class="hljs-attr">handler-key:</span> <span class="hljs-string">order-sync-logistics</span><br>      <span class="hljs-attr">param-class:</span> <span class="hljs-string">com.xxx.OrderLogisticsParam</span><br></code></pre></td></tr></table></figure><p>Starter 根据 param-class 自动选择参数解析器（默认 Jackson），把调度参数反序列化成业务 Handler 需要的类型。<strong>新增任务 &#x3D; 新增配置，不用改代码</strong>。</p><h2 id="三、为什么这样设计"><a href="#三、为什么这样设计" class="headerlink" title="三、为什么这样设计"></a>三、为什么这样设计</h2><p>这套设计的核心目标：<strong>把”接入成本”压到最低</strong>。</p><figure class="highlight fix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs fix"><span class="hljs-attr">接入一个业务任务：</span><br><span class="hljs-attr">  传统方式：写 Controller + Service + Mapper + 配置 + 建表 + 联调 </span>=<span class="hljs-string"> 数天</span><br><span class="hljs-string">  SyncTask：实现 Handler + 配一行 + 建表 = 数小时</span><br></code></pre></td></tr></table></figure><p>差距来自三件事：</p><ol><li><strong>自动装配</strong>——引擎该有的 Bean 全部自动建好；</li><li><strong>约定优于配置</strong>——默认实现 + @ConditionalOnMissingBean，业务方只在”要换”时才写代码；</li><li><strong>参数驱动</strong>——任务通过配置声明，不通过代码注册。</li></ol><h2 id="四、和-ShardingSphere-SPI-的交叉"><a href="#四、和-ShardingSphere-SPI-的交叉" class="headerlink" title="四、和 ShardingSphere SPI 的交叉"></a>四、和 ShardingSphere SPI 的交叉</h2><p>我在复习时发现：<strong>ShardingSphere 也有一套 SPI（配置文件声明 + 反射加载），和 Spring 的 @ConditionalOnMissingBean 是同一思想的两个实现</strong>——“核心不动、扩展可插拔”。</p><table><thead><tr><th></th><th>Spring 自动装配</th><th>ShardingSphere SPI</th></tr></thead><tbody><tr><td>默认实现</td><td>@Bean + @ConditionalOnMissingBean</td><td>配置文件声明 + 反射加载</td></tr><tr><td>覆盖方式</td><td>业务方 @Bean</td><td>提供新实现 + 改配置</td></tr><tr><td>思想</td><td>约定优于配置</td><td>依赖倒置 + 扩展点</td></tr></tbody></table><p>理解了一个，另一个就通了——<strong>框架的”可插拔”都是这套路</strong>。</p><h2 id="五、踩过的坑"><a href="#五、踩过的坑" class="headerlink" title="五、踩过的坑"></a>五、踩过的坑</h2><h3 id="1-ConditionalOnMissingBean-的覆盖时序"><a href="#1-ConditionalOnMissingBean-的覆盖时序" class="headerlink" title="1. @ConditionalOnMissingBean 的覆盖时序"></a>1. @ConditionalOnMissingBean 的覆盖时序</h3><p>如果业务方的自定义 Bean 和 Starter 的默认 Bean <strong>同一批注册</strong>，顺序可能导致默认实现先注册、自定义的反而被跳过。</p><p><strong>解法</strong>：默认实现放自动配置类（@AutoConfiguration，后于业务 @Bean 注册），保证自定义 Bean 先注册、默认的检测到后跳过。</p><h3 id="2-自动配置类的加载顺序"><a href="#2-自动配置类的加载顺序" class="headerlink" title="2. 自动配置类的加载顺序"></a>2. 自动配置类的加载顺序</h3><p>多个自动配置类之间可能有依赖。用 <code>@AutoConfigureAfter/Before</code> 控制顺序，避免”引擎要用的 Bean 还没建好”。</p><h3 id="3-参数解析器的扩展"><a href="#3-参数解析器的扩展" class="headerlink" title="3. 参数解析器的扩展"></a>3. 参数解析器的扩展</h3><p>默认 Jackson 解析器不满足时，业务方实现 <code>SyncTaskParamParser</code> SPI，通过 @ConditionalOnMissingBean 覆盖——<strong>解析器也能插拔</strong>。</p><h2 id="六、复盘：Starter-的价值"><a href="#六、复盘：Starter-的价值" class="headerlink" title="六、复盘：Starter 的价值"></a>六、复盘：Starter 的价值</h2><p>Starter 不是”多一个 Maven 模块”那么简单，它是<strong>引擎从”库”变成”产品”的关键</strong>：</p><ul><li>库：你 import 依赖、自己 new、自己组装——引擎还是”你的代码”；</li><li>Starter：你只写业务——引擎是”开箱即用的产品”。</li></ul><p><strong>“接入成本从数天降到数小时”不是靠引擎的算法，是靠 Starter 的工程化</strong>——自动装配 + 约定优于配置 + 参数驱动。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>接入方只做三件事：<strong>引 Starter、实现 Handler、配一行参数</strong>；</li><li>三个机制：<strong>@EnableAutoConfiguration 自动装配、@ConditionalOnMissingBean 默认可覆盖、param-class 参数驱动</strong>；</li><li>目标：接入成本从数天降到数小时，零配置、零代码；</li><li>与 ShardingSphere SPI 同一思想：<strong>核心不动、扩展可插拔</strong>；</li><li>坑：@ConditionalOnMissingBean 覆盖时序、自动配置顺序、解析器扩展；</li><li>Starter 让引擎从”库”变”产品”。</li></ul><hr><p><em>发表于 2026 年 8 月 · 标签: SyncTask, Spring Boot, Starter, 自动装配, 工程实践</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>任务编排</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>SyncTask</tag>
+      
+      <tag>Spring Boot</tag>
+      
+      <tag>自动装配</tag>
+      
+      <tag>Starter</tag>
+      
+      <tag>工程实践</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>系统设计方法论：从需求澄清到方案取舍，一套可复用的打法</title>
+    <link href="/2026/08/03/2026-08-03-%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95%E8%AE%BA-%E4%BB%8E%E9%9C%80%E6%B1%82%E6%BE%84%E6%B8%85%E5%88%B0%E6%96%B9%E6%A1%88%E5%8F%96%E8%88%8D/"/>
+    <url>/2026/08/03/2026-08-03-%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95%E8%AE%BA-%E4%BB%8E%E9%9C%80%E6%B1%82%E6%BE%84%E6%B8%85%E5%88%B0%E6%96%B9%E6%A1%88%E5%8F%96%E8%88%8D/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>做过订单中台、分库分表、任务编排引擎之后，我发现系统设计有一套可复用的打法。这套方法论从”需求澄清”到”方案取舍”，每一步都有明确的目的——尤其是每个关键选择都要有 trade-off 依据。</p></blockquote><h2 id="一、系统设计看四件事"><a href="#一、系统设计看四件事" class="headerlink" title="一、系统设计看四件事"></a>一、系统设计看四件事</h2><p>设计一个系统，本质上是在回答四件事：</p><ol><li><strong>需求是什么</strong>（最重要的第一步：先问清楚再动手）；</li><li><strong>规模多大</strong>（量级感：QPS、数据量、带宽）；</li><li><strong>架构怎么分</strong>（分层、组件）；</li><li><strong>每个关键选择为什么</strong>（trade-off：这是”深”和”浅”的分水岭）。</li></ol><h2 id="二、五步法：从澄清到扩展"><a href="#二、五步法：从澄清到扩展" class="headerlink" title="二、五步法：从澄清到扩展"></a>二、五步法：从澄清到扩展</h2><figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nix">① 澄清需求：QPS <span class="hljs-symbol">/</span> 数据量 <span class="hljs-symbol">/</span> 一致性 <span class="hljs-symbol">/</span> 可用性要求<br>② 估算规模：QPS、存储量、带宽<br>③ 核心架构：分层 <span class="hljs-operator">+</span> 关键组件<br>④ 关键设计：每个选择的 trade-off<br>⑤ 扩展与优化：瓶颈、扩容、保障<br></code></pre></td></tr></table></figure><p><strong>第①步最容易被忽略但最重要</strong>——不澄清就动手，等于在错误的前提下做设计。我的习惯是开口先问：”这个系统的 QPS 量级？数据量多大？一致性要求？可用性要求？”</p><h2 id="三、一个完整示例：设计一个图片资源中心"><a href="#三、一个完整示例：设计一个图片资源中心" class="headerlink" title="三、一个完整示例：设计一个图片资源中心"></a>三、一个完整示例：设计一个图片资源中心</h2><p>用”图片资源中心”完整走一遍五步法：</p><p><strong>① 澄清需求</strong></p><ul><li>上传量：日增图片 1000 万张，单张 0.5~5MB；</li><li>访问量：峰值 QPS 5 万（大促）；</li><li>一致性：图片不可变（上传后不修改），删除可延迟；</li><li>可用性：99.9%。</li></ul><p><strong>② 估算规模</strong></p><ul><li>日存储增量：1000 万 × 2MB ≈ <strong>20TB&#x2F;天</strong>；</li><li>访问带宽：5 万 QPS × 500KB ≈ <strong>25GB&#x2F;s</strong>——这个数字立刻说明：不能全走业务服务器，必须 CDN。</li></ul><p><strong>③ 核心架构</strong></p><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs">上传端 → 上传服务（分片上传）→ 对象存储 → CDN → 访问端<br>                                    ↓<br>                              图片处理（压缩/多尺寸）<br></code></pre></td></tr></table></figure><p><strong>④ 关键设计（trade-off 在这里）</strong></p><ul><li><strong>分片上传 + 断点续传</strong>：大图拆 5MB 分片并发上传，失败重传分片而不是整张重传；</li><li><strong>存储选型：OSS 还是自建 MinIO？</strong> 选 OSS——因为图片量大、20TB&#x2F;天，<strong>自建对象存储的运维成本（机架、副本、扩容）远超 OSS 的费用</strong>，且 OSS 天然多副本高可用。自建只在”数据合规&#x2F;私有化”时才值得；</li><li><strong>图片处理：实时处理 vs 预生成</strong>？预生成多尺寸（大促前批量生成缩略图）——因为<strong>实时处理（每次请求压缩）会打爆 CPU 且 CDN 缓存命中率低</strong>；预生成后 CDN 缓存每个尺寸，回源率极低；</li><li><strong>CDN 缓存</strong>：图片不可变 → <strong>永久缓存 + 版本化文件名</strong>（改图 &#x3D; 新文件名），回源率从 30% 降到 1% 以下。</li></ul><p><strong>⑤ 扩展与优化</strong></p><ul><li>瓶颈：CDN 回源 → 对象存储带宽 → 上传服务；</li><li>扩容：上传服务无状态水平扩；对象存储按分区扩展；</li><li>大促：提前预热热点图片到 CDN，上传链路限流。</li></ul><h2 id="四、深-vs-浅：关键差异"><a href="#四、深-vs-浅：关键差异" class="headerlink" title="四、深 vs 浅：关键差异"></a>四、深 vs 浅：关键差异</h2><p>同样这道题，”浅”的方案是：分层架构 + 分片上传 + CDN。<strong>“深”的方案是给每个选择 trade-off</strong>：</p><table><thead><tr><th>选择</th><th>浅</th><th>深</th></tr></thead><tbody><tr><td>存储</td><td>“用 OSS”</td><td>“用 OSS，因为 20TB&#x2F;天自建运维成本远超 OSS 费用，且天然高可用”</td></tr><tr><td>图片处理</td><td>“做压缩”</td><td>“预生成多尺寸，因为实时压缩打爆 CPU 且 CDN 缓存命中率低”</td></tr><tr><td>CDN</td><td>“上 CDN”</td><td>“图片不可变 → 永久缓存 + 版本化文件名，回源率降一个数量级”</td></tr></tbody></table><p><strong>架构评审要的是”为什么选这个”</strong>，不是”选了什么”。</p><h2 id="五、真实案例：高并发订单系统"><a href="#五、真实案例：高并发订单系统" class="headerlink" title="五、真实案例：高并发订单系统"></a>五、真实案例：高并发订单系统</h2><p>方法论最稳的用法是<strong>落到自己做的真实系统</strong>。设计高并发订单系统，直接拿订单中台讲：</p><blockquote><p>订单中台日均 15 万单（峰值 50 万），支撑体系是：Caffeine+Redis 二级缓存扛读、MQ 解耦异步、Sentinel 限流熔断降级、慢 SQL 从千条级降到个位数、分库分表（单号主分片、6000 万行）、复杂查询下沉 Doris。</p></blockquote><p><strong>真实案例 + 具体数字 + 完整链路</strong>，比任何虚拟设计都更有说服力——因为每个选择都有真实依据。</p><h2 id="六、trade-off-的三条底层原则"><a href="#六、trade-off-的三条底层原则" class="headerlink" title="六、trade-off 的三条底层原则"></a>六、trade-off 的三条底层原则</h2><p>复盘大量设计，trade-off 的底层就三条：</p><ol><li><strong>先便宜后贵</strong>：缓存能解决的不上分库分表，索引能解决的不换架构——成本递增；</li><li><strong>隔离防雪崩</strong>：一个下游慢要能隔离（连接池&#x2F;线程池舱壁），不拖垮全局；</li><li><strong>可回滚优先</strong>：任何大变更（迁移、扩容、切换）要能灰度、能回滚——“对外无感”靠的是可控。</li></ol><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>五步法：<strong>澄清需求 → 估规模 → 画架构 → 讲 trade-off → 谈扩展</strong>，第一步最关键；</li><li><strong>深 vs 浅的分水岭是 trade-off</strong>：每个选择讲”为什么选这个不选那个”；</li><li>完整示例：图片资源中心的存储&#x2F;图片处理&#x2F;CDN 三个 trade-off；</li><li>真实案例：订单中台（15万&#x2F;50万&#x2F;分库分表&#x2F;Doris）是方法论的最好验证；</li><li>底层原则：<strong>先便宜后贵、隔离防雪崩、可回滚优先</strong>。</li></ul><hr><p><em>发表于 2026 年 8 月 · 标签: 系统设计, 方法论, 架构, 高并发</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>系统设计</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>架构</tag>
+      
+      <tag>系统设计</tag>
+      
+      <tag>高并发</tag>
+      
+      <tag>方法论</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>全链路追踪在订单中心的落地：traceId 贯穿每一次调用</title>
+    <link href="/2026/07/18/2026-07-18-%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E5%9C%A8%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E7%9A%84%E8%90%BD%E5%9C%B0-traceId%E8%B4%AF%E7%A9%BF/"/>
+    <url>/2026/07/18/2026-07-18-%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E5%9C%A8%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E7%9A%84%E8%90%BD%E5%9C%B0-traceId%E8%B4%AF%E7%A9%BF/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。</p></blockquote><h2 id="一、问题：分布式调用链怎么定位瓶颈"><a href="#一、问题：分布式调用链怎么定位瓶颈" class="headerlink" title="一、问题：分布式调用链怎么定位瓶颈"></a>一、问题：分布式调用链怎么定位瓶颈</h2><p>单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务：</p><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs">网关 → 订单服务 → 库存服务<br>            ↘ 仓储服务<br>            ↘ 财务服务<br></code></pre></td></tr></table></figure><p>接口慢了，是订单服务慢？还是某个下游慢？<strong>没有全链路追踪，只能一个个服务翻日志</strong>——大海捞针。</p><h2 id="二、核心机制：traceId-spanId"><a href="#二、核心机制：traceId-spanId" class="headerlink" title="二、核心机制：traceId + spanId"></a>二、核心机制：traceId + spanId</h2><p>全链路追踪的两个核心概念：</p><ul><li><strong>traceId</strong>：一次请求的全局唯一 ID，<strong>贯穿整个调用链</strong>（所有服务共享同一个）；</li><li><strong>spanId</strong>：每一段调用的 ID（一个服务处理 &#x3D; 一个 span），记录<strong>耗时</strong>。</li></ul><figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">请求 A → 生成 traceId=abc123</span><br><span class="hljs-attribute"></span><br><span class="hljs-attribute">订单服务（span</span><span class="hljs-punctuation">:</span> <span class="hljs-string">5ms）</span><br>  <span class="hljs-attribute">→ 调库存（span</span><span class="hljs-punctuation">:</span> <span class="hljs-string">3ms）</span><br>  <span class="hljs-attribute">→ 调仓储（span</span><span class="hljs-punctuation">:</span> <span class="hljs-string">15ms）← 瓶颈在这</span><br>  <span class="hljs-attribute">→ 调财务（span</span><span class="hljs-punctuation">:</span> <span class="hljs-string">2ms）</span><br></code></pre></td></tr></table></figure><p>Sleuth 做的：<strong>在请求进入时生成 traceId，通过 HTTP&#x2F;RPC 头传递，让每个服务都用同一个 traceId</strong>。这样所有服务的日志都能按 traceId 串起来。</p><h2 id="三、落地：Sleuth-Zipkin"><a href="#三、落地：Sleuth-Zipkin" class="headerlink" title="三、落地：Sleuth + Zipkin"></a>三、落地：Sleuth + Zipkin</h2><p>Spring Cloud 生态用 <strong>Sleuth（链路追踪）+ Zipkin（聚合展示）</strong>：</p><p><strong>① 依赖 + 配置</strong>：</p><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span><br>  <span class="hljs-attr">sleuth:</span><br>    <span class="hljs-attr">sampler:</span><br>      <span class="hljs-attr">probability:</span> <span class="hljs-number">1.0</span>   <span class="hljs-comment"># 采样率：生产可以低一点（如 0.1），排查时调高</span><br>  <span class="hljs-attr">zipkin:</span><br>    <span class="hljs-attr">base-url:</span> <span class="hljs-string">http://zipkin:9411</span><br></code></pre></td></tr></table></figure><p><strong>② traceId 自动贯穿</strong>：Sleuth 自动在日志里加 traceId&#x2F;spanId，并通过 Feign&#x2F;Dubbo 的调用头传递。</p><figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs subunit"># 日志自动带 traceId，所有服务按它串联<br>2026<span class="hljs-string">-07</span><span class="hljs-string">-18</span> [order-service,abc123,def456] 处理订单下单<br>2026<span class="hljs-string">-07</span><span class="hljs-string">-18</span> [stock-service,abc123,ghi789] 扣减库存<br></code></pre></td></tr></table></figure><p><strong>③ Zipkin 看瀑布</strong>：Zipkin 聚合所有服务的 span，展示整条链路的<strong>耗时瀑布</strong>：</p><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs">订单服务    ████████████ 5ms<br>  库存      ██ 3ms<br>  仓储      ████████████████████ 15ms   ← 一眼看到瓶颈<br>  财务      █ 2ms<br></code></pre></td></tr></table></figure><p><strong>一眼看到”瓶颈在哪一段&#x2F;哪个服务慢”</strong>——这就是全链路追踪的价值。</p><h2 id="四、实践要点"><a href="#四、实践要点" class="headerlink" title="四、实践要点"></a>四、实践要点</h2><h3 id="1-采样率要权衡"><a href="#1-采样率要权衡" class="headerlink" title="1. 采样率要权衡"></a>1. 采样率要权衡</h3><ul><li>采样率 1.0（全采样）：定位问题最准，但存储开销大；</li><li>生产默认 0.1（10%）：够用且便宜；</li><li><strong>排查问题时临时调高到 1.0</strong>，定位完降回来。</li></ul><h3 id="2-traceId-要透传到日志"><a href="#2-traceId-要透传到日志" class="headerlink" title="2. traceId 要透传到日志"></a>2. traceId 要透传到日志</h3><p>配合 <strong>MDC（Mapped Diagnostic Context）</strong>，把 traceId 放进日志上下文：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 日志里就能按 traceId 过滤出整条链路的日志</span><br>MDC.put(<span class="hljs-string">&quot;traceId&quot;</span>, TraceContext.getTraceId());<br></code></pre></td></tr></table></figure><p>排查问题时：<strong>拿一个 traceId，去所有服务的日志里 grep 它</strong>，就能还原整条链路。</p><h3 id="3-全链路不止追踪，还有监控"><a href="#3-全链路不止追踪，还有监控" class="headerlink" title="3. 全链路不止追踪，还有监控"></a>3. 全链路不止追踪，还有监控</h3><ul><li>追踪（Zipkin）：定位”哪段慢”；</li><li>指标（Prometheus + Grafana）：看”服务整体健康度”；</li><li>日志（ELK）：看”具体错误”。</li></ul><p><strong>三者结合才是完整可观测性</strong>——追踪负责”一次请求的内部”,指标负责”系统的整体”,日志负责”细节”。</p><h2 id="五、一个真实案例"><a href="#五、一个真实案例" class="headerlink" title="五、一个真实案例"></a>五、一个真实案例</h2><p>订单中心大促时，有用户反馈”下单慢”。用 Zipkin 拉了一条 traceId 的瀑布：</p><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">订单服务 30ms → 库存 8ms → 仓储 1200ms ← 就是它<br></code></pre></td></tr></table></figure><p>定位到仓储服务的”库存预占”接口慢。再看仓储服务的日志（按 traceId grep），发现是<strong>仓储服务在等一个外部物流接口超时</strong>（超时设了 5 秒，实际等满）。</p><p><strong>修复</strong>：给外部调用设合理超时 + 熔断，避免一个慢外部依赖拖慢下单链路。这就是”超时是雪崩打断的第一道底线”的实战印证。</p><h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><p>全链路追踪能定位”哪段慢”，但<strong>定位不了”为什么慢”</strong>——那是要靠日志和代码分析。它解决的问题是”<strong>把问题范围从全链路缩小到一个服务</strong>“，剩下的要靠其他手段。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>问题：微服务调用链长，定位瓶颈难；</li><li>核心：<strong>traceId 贯穿全链路 + spanId 记录每段耗时</strong>；</li><li>落地：Sleuth（自动生成&#x2F;传递 traceId）+ Zipkin（聚合瀑布图）；</li><li>要点：<strong>采样率权衡、traceId 进 MDC、追踪+指标+日志才是完整可观测性</strong>；</li><li>真实案例：Zipkin 一眼定位仓储服务慢，超时 + 熔断修复；</li><li>边界：追踪缩小范围，不定位根因。</li></ul><hr><p><em>发表于 2026 年 7 月 · 标签: 全链路追踪, Sleuth, Zipkin, traceId, 可观测性</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>微服务</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>可观测性</tag>
+      
+      <tag>全链路追踪</tag>
+      
+      <tag>Sleuth</tag>
+      
+      <tag>Zipkin</tag>
+      
+      <tag>traceId</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>我的技术学习体系：从&quot;硬伤清单&quot;到&quot;原理手册&quot;</title>
+    <link href="/2026/07/10/2026-07-10-%E6%88%91%E7%9A%84%E6%8A%80%E6%9C%AF%E5%AD%A6%E4%B9%A0%E4%BD%93%E7%B3%BB-%E4%BB%8E%E7%A1%AC%E4%BC%A4%E6%B8%85%E5%8D%95%E5%88%B0%E5%8E%9F%E7%90%86%E6%89%8B%E5%86%8C/"/>
+    <url>/2026/07/10/2026-07-10-%E6%88%91%E7%9A%84%E6%8A%80%E6%9C%AF%E5%AD%A6%E4%B9%A0%E4%BD%93%E7%B3%BB-%E4%BB%8E%E7%A1%AC%E4%BC%A4%E6%B8%85%E5%8D%95%E5%88%B0%E5%8E%9F%E7%90%86%E6%89%8B%E5%86%8C/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>工作 8 年，我发现最能提升技术水平的不是”看更多资料”，而是一套<strong>可复用的学习体系</strong>。这篇讲我是怎么把”感觉都会”变成”能讲原理”的。</p></blockquote><h2 id="一、第一步：摸底，暴露硬伤"><a href="#一、第一步：摸底，暴露硬伤" class="headerlink" title="一、第一步：摸底，暴露硬伤"></a>一、第一步：摸底，暴露硬伤</h2><p>学习最怕”感觉都会，一问就露馅”。我做的第一件事是<strong>摸底</strong>——把六大模块（Java 并发&#x2F;JVM&#x2F;MySQL&#x2F;Redis&#x2F;Spring&#x2F;MQ）过一遍，把答错的、说反的、混淆的全部记下来。</p><p>摸底暴露了一批真实硬伤，比如：</p><ul><li>HashMap 树化阈值 &#x3D; 8（不是 16）；</li><li>ThreadLocal 的 key 是弱引用、value 是强引用（容易说反）；</li><li>Java 线程是 6 态（不是 4 态）；</li><li>缓存穿透&#x2F;击穿&#x2F;雪崩的定义（容易混）；</li><li>Raft 是强一致（不是最终一致）。</li></ul><p><strong>为什么要先摸底</strong>：盲目学习是浪费时间。摸底后把硬伤整理成一页”<strong>速查单页</strong>“，定期扫一遍，目标从”说反”变成”单口讲对”。</p><h2 id="二、第二步：分层，按优先级分配时间"><a href="#二、第二步：分层，按优先级分配时间" class="headerlink" title="二、第二步：分层，按优先级分配时间"></a>二、第二步：分层，按优先级分配时间</h2><p>学习不是平均用力，我按”<strong>高频 × 掌握度</strong>“排优先级：</p><figure class="highlight julia"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs julia">🔴 高优先级（核心/高频）：分布式锁、缓存三兄弟、Bean生命周期、事务、Raft<br>🟠 中：Redis 数据结构、MQ 可靠性、JVM GC、网络 <span class="hljs-built_in">IO</span> 模型<br>🟡 低：了解即可<br></code></pre></td></tr></table></figure><p><strong>硬伤优先</strong>：摸底答错的，就算本身不是最高频也要提到最高优先级对待——因为那是真实失分点。</p><h2 id="三、第三步：从”背结论”到”讲原理”"><a href="#三、第三步：从”背结论”到”讲原理”" class="headerlink" title="三、第三步：从”背结论”到”讲原理”"></a>三、第三步：从”背结论”到”讲原理”</h2><p>学习最容易停在”背结论”。我的关键动作是<strong>把结论升级成原理</strong>：</p><ul><li>不只背”Redis 快是三件事”，要能讲 <strong>epoll 为什么是 O(K) 不是 O(N)</strong>（红黑树注册 fd、就绪链表、只遍历就绪事件）；</li><li>不只背”三级缓存三个 Map”，要能讲 <strong>为什么必须三级</strong>（存 ObjectFactory，等实例化完再决定是否 AOP 代理）；</li><li>不只背”RDB fork 子进程”，要能讲 <strong>写时复制 COW 的底层</strong>（fork 只拷页表，主线程改页才复制，子进程读 fork 时刻的页）。</li></ul><p><strong>判断标准</strong>：能不能”口述 30 秒讲清机制”，而不是”背出定义”。深问一层就卡住的，都是只会背的。</p><h2 id="四、第四步：复习卡-高频追问补遗"><a href="#四、第四步：复习卡-高频追问补遗" class="headerlink" title="四、第四步：复习卡 + 高频追问补遗"></a>四、第四步：复习卡 + 高频追问补遗</h2><p>我把每个模块做成一张<strong>复习卡</strong>，结构：</p><figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ada">① 核心知识点（高优先级，带口述版）<br>② 硬伤清单（摸底答错的，重点标）<br>③ 高频追问补遗（容易深挖的：如 Seata <span class="hljs-keyword">AT</span> 的 undo_log 机制）<br></code></pre></td></tr></table></figure><p>每张卡最后都有”<strong>30 秒口述版</strong>“——逼自己把答案压缩成能脱口而出的版本。</p><h2 id="五、第五步：模拟验证-复盘"><a href="#五、第五步：模拟验证-复盘" class="headerlink" title="五、第五步：模拟验证 + 复盘"></a>五、第五步：模拟验证 + 复盘</h2><p>学到一定程度，要<strong>模拟验证</strong>：让 AI 当提问者，随机抽知识点问，答完让 AI 点评”哪里含糊、哪里可以更深”。</p><p>模拟暴露的问题比看书更有价值——比如我发现”Redis 分布式锁三大坑”能背，但被问”主从切换锁会丢吗”就卡住，于是专门补了 RedLock 的深水区。</p><h2 id="六、诚实评估：学到什么程度算够"><a href="#六、诚实评估：学到什么程度算够" class="headerlink" title="六、诚实评估：学到什么程度算够"></a>六、诚实评估：学到什么程度算够</h2><p>我的原则：</p><ul><li><strong>硬伤清零</strong>：摸底答错的，全部能”单口讲对”；</li><li><strong>核心能讲原理</strong>：高优先级知识点不只会背，能讲机制和取舍；</li><li><strong>诚实边界</strong>：没实际做过的（如 K8s 实操、Netty 实战）如实说”了解原理、实操在补”，<strong>不装懂</strong>——装懂被深挖更扣分。</li></ul><h2 id="七、这套体系的通用性"><a href="#七、这套体系的通用性" class="headerlink" title="七、这套体系的通用性"></a>七、这套体系的通用性</h2><p>这套方法不止用于”八股”——它适用于任何技术学习：</p><ul><li>学新框架：先摸底（哪些概念不清楚）→ 分层 → 讲原理 → 做笔记 → 模拟验证；</li><li>学分布式理论：DDIA 重读时，用同样的”对照自己的项目讲原理”方法；</li><li>学 AI：agent-demo 从零实现 + Spring AI 实战，就是用”硬伤清单 → 原理手册”的思路。</li></ul><p><strong>学习体系比学习内容更重要</strong>——内容会过时，方法可以复用。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li><strong>摸底暴露硬伤</strong>，整理成速查单页；</li><li><strong>按优先级分层</strong>，硬伤优先；</li><li><strong>从背结论到讲原理</strong>：能口述 30 秒机制才算会；</li><li>复习卡 + 高频追问补遗，每卡带口述版；</li><li><strong>模拟验证暴露问题</strong>，针对性补深水区；</li><li>诚实边界：不懂的如实说，不装懂；</li><li>学习体系可复用，比学习内容更重要。</li></ul><hr><p><em>发表于 2026 年 7 月 · 标签: 学习方法, 技术成长, 原理, 方法论</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>学习方法</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>学习方法</tag>
+      
+      <tag>技术成长</tag>
+      
+      <tag>原理</tag>
+      
+      <tag>方法论</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Agent 从 Demo 到生产：还差什么？我的可靠性清单</title>
+    <link href="/2026/07/02/2026-07-02-Agent%E4%BB%8EDemo%E5%88%B0%E7%94%9F%E4%BA%A7-%E8%BF%98%E7%BC%BA%E4%BB%80%E4%B9%88/"/>
+    <url>/2026/07/02/2026-07-02-Agent%E4%BB%8EDemo%E5%88%B0%E7%94%9F%E4%BA%A7-%E8%BF%98%E7%BC%BA%E4%BB%80%E4%B9%88/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>写完 30 行手写 ReAct、对比完 Spring AI 之后，最大的问题是：<strong>Demo 能跑，生产怎么上？</strong> 这篇从可靠性工程视角，梳理 Agent 从 Demo 到生产要补的东西。</p></blockquote><h2 id="一、Demo-能跑-≠-能上生产"><a href="#一、Demo-能跑-≠-能上生产" class="headerlink" title="一、Demo 能跑 ≠ 能上生产"></a>一、Demo 能跑 ≠ 能上生产</h2><p>我的 30 行 ReAct 循环（<code>think → act → observe</code>）在本地跑得很好，但拿到生产环境，问题立刻暴露：</p><ul><li>LLM 接口卡了，整个 Agent 卡死（没有超时）；</li><li>某轮工具调用失败，直接断（没有重试）；</li><li>多用户同时跑，状态全乱（没有隔离）；</li><li>进程一重启，对话历史全丢（没有持久化）；</li><li>Agent 干了什么完全不可见（没有日志）。</li></ul><p>这些<strong>不是”智能”问题，是工程问题</strong>——而工程问题恰好是我做任务编排引擎的老本行。</p><h2 id="二、我的可靠性清单"><a href="#二、我的可靠性清单" class="headerlink" title="二、我的可靠性清单"></a>二、我的可靠性清单</h2><h3 id="1-超时兜底"><a href="#1-超时兜底" class="headerlink" title="1. 超时兜底"></a>1. 超时兜底</h3><p><strong>LLM 是不确定的</strong>：可能卡住、可能超时。每个 LLM 调用必须有超时，不能让 Agent 无限等。</p><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">调用 LLM → 设置超时（如 30s）→ 超时进入降级/重试 → 绝不无限阻塞<br></code></pre></td></tr></table></figure><h3 id="2-幂等"><a href="#2-幂等" class="headerlink" title="2. 幂等"></a>2. 幂等</h3><p><strong>Agent 的 Tool 调用可能重复</strong>（LLM 重试、网络重试）。Tool 必须是幂等的——用唯一 key 查重。</p><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-meta">@tool</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">create_order</span>(<span class="hljs-params">order_no: <span class="hljs-built_in">str</span>, ...</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;幂等：同一个 order_no 只生效一次&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">if</span> db.exists(order_no):<br>        <span class="hljs-keyword">return</span> &#123;<span class="hljs-string">&quot;status&quot;</span>: <span class="hljs-string">&quot;duplicate&quot;</span>&#125;    <span class="hljs-comment"># 已处理过，直接返回</span><br>    db.create(order_no, ...)<br>    <span class="hljs-keyword">return</span> &#123;<span class="hljs-string">&quot;status&quot;</span>: <span class="hljs-string">&quot;created&quot;</span>&#125;<br></code></pre></td></tr></table></figure><p>这和消息消费幂等同源——<strong>分布式下重复是常态，幂等是兜底</strong>。</p><h3 id="3-状态持久化"><a href="#3-状态持久化" class="headerlink" title="3. 状态持久化"></a>3. 状态持久化</h3><p>Demo 的 history 在内存里，进程一死全丢。生产要<strong>持久化 Agent 的会话状态</strong>（Redis&#x2F;DB），支持断点续传。</p><h3 id="4-可观测性"><a href="#4-可观测性" class="headerlink" title="4. 可观测性"></a>4. 可观测性</h3><p><strong>Agent 的推理是黑盒</strong>——LLM 为什么选这个工具、为什么停在这，不可见。必须记录全链路日志：</p><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">记录：用户目标 → 每轮 Think（模型想法）→ Act（调了哪个工具/参数）→ Observe（工具返回）→ 最终结果<br></code></pre></td></tr></table></figure><p>出问题才能复盘：”Agent 在第 3 轮选错了工具，因为工具描述有歧义”。</p><h3 id="5-人工确认点"><a href="#5-人工确认点" class="headerlink" title="5. 人工确认点"></a>5. 人工确认点</h3><p><strong>涉及钱、库存、下发的关键 Tool 调用，必须有确认点</strong>——不能让模型直接拍板。这是安全底线。</p><h3 id="6-告警与降级"><a href="#6-告警与降级" class="headerlink" title="6. 告警与降级"></a>6. 告警与降级</h3><p>Agent 异常要有告警；LLM 不可用要<strong>降级</strong>（比如降到规则引擎、返回检索原文），而不是报错。</p><h2 id="三、这些能力我有现成的"><a href="#三、这些能力我有现成的" class="headerlink" title="三、这些能力我有现成的"></a>三、这些能力我有现成的</h2><p>列完清单我发现：<strong>这套可靠性设计，我在 SyncTask 引擎里全做过</strong>：</p><table><thead><tr><th>Agent 需要</th><th>SyncTask 已有</th></tr></thead><tbody><tr><td>超时兜底</td><td>任务超时 → 重试队列</td></tr><tr><td>幂等</td><td>分布式锁 + 二次查库双重防重</td></tr><tr><td>状态持久化</td><td>sync_task 表状态机</td></tr><tr><td>可观测性</td><td>全链路日志 + 四级告警</td></tr><tr><td>降级</td><td>失败重试 + 死信兜底</td></tr></tbody></table><p><strong>这解释了为什么我做 Agent 有信心</strong>：我不是从零学一个全新领域，而是把任务编排的可靠性经验迁移过来，补 LLM 这个”不确定的决策者”。</p><h2 id="四、最大的新问题：LLM-的不可控"><a href="#四、最大的新问题：LLM-的不可控" class="headerlink" title="四、最大的新问题：LLM 的不可控"></a>四、最大的新问题：LLM 的不可控</h2><p>Agent 和 SyncTask 最大的区别：<strong>决策者从确定性的代码规则，变成了概率性的 LLM</strong>。</p><ul><li>规则引擎：<code>if status == SUCCESS → next</code>，输出确定；</li><li>LLM：可能输出”看起来合理但实际上是错的”的下一步。</li></ul><p>所以 Agent 生产化多了一项核心工作：<strong>约束 LLM 的自由度</strong>：</p><ol><li><strong>Tool 描述写精确</strong>——描述越清楚，选对率越高；</li><li><strong>结构化输出</strong>——Function Calling &#x2F; JSON Schema，比自由文本可靠；</li><li><strong>关键路径人工确认</strong>——高风险操作不能全自动；</li><li><strong>失败路径设计</strong>——LLM 答错&#x2F;卡住时，有降级和兜底，不是硬撑。</li></ol><h2 id="五、诚实的边界"><a href="#五、诚实的边界" class="headerlink" title="五、诚实的边界"></a>五、诚实的边界</h2><p>我在生产没有跑过 Agent 系统（这是学习阶段的认知）。但<strong>可靠性清单本身是真实工程经验的迁移</strong>——超时、幂等、持久化、可观测性、降级，这些我在 SyncTask 里都验证过，只是决策者从代码换成了 LLM。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>Demo 到生产差的是<strong>工程化</strong>：超时、幂等、持久化、可观测性、人工确认、降级；</li><li><strong>可靠性设计可迁移</strong>：SyncTask 的双重防重、状态机、告警、降级，Agent 全部适用；</li><li>新问题是 <strong>LLM 不可控</strong>：约束工具描述、结构化输出、人工确认点、失败降级；</li><li>我的迁移优势：<strong>懂可靠性工程的 Agent 开发者，是 ML 背景开发者缺的</strong>。</li></ul><hr><p><em>发表于 2026 年 7 月 · 标签: Agent, 生产化, 可靠性, 幂等, 可观测性</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>AI开发</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>可靠性</tag>
+      
+      <tag>Agent</tag>
+      
+      <tag>幂等</tag>
+      
+      <tag>可观测性</tag>
+      
+      <tag>生产化</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>用 Spring AI 搭一个 FAQ 问答系统：RAG 实战全流程</title>
+    <link href="/2026/06/20/2026-06-20-%E7%94%A8Spring-AI%E6%90%ADFAQ%E9%97%AE%E7%AD%94%E7%B3%BB%E7%BB%9F-RAG%E5%AE%9E%E6%88%98/"/>
+    <url>/2026/06/20/2026-06-20-%E7%94%A8Spring-AI%E6%90%ADFAQ%E9%97%AE%E7%AD%94%E7%B3%BB%E7%BB%9F-RAG%E5%AE%9E%E6%88%98/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>上一篇讲了 Spring AI 的基础，这篇做一个完整的小项目：<strong>内部 FAQ 问答系统</strong>。把 RAG 的完整链路（切块 → 向量化 → 检索 → 拼 prompt → 幻觉控制）真正跑起来。这是我自己做过的最小落地场景。</p></blockquote><h2 id="一、场景与架构"><a href="#一、场景与架构" class="headerlink" title="一、场景与架构"></a>一、场景与架构</h2><p>内部有几百条 FAQ（运维问题、业务规则、操作手册），想让员工用自然语言提问，系统基于 FAQ 回答。</p><p>RAG 架构：</p><figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">离线（建库）：<br>  FAQ 文档 → 切块 → Embedding → 存 pgvector<br><br>在线（问答）：<br>  用户问题 → Embedding → 语义检索 TopN → 拼进 Prompt → <span class="hljs-keyword">LLM </span>回答<br></code></pre></td></tr></table></figure><p><strong>为什么用 RAG 而不是把 FAQ 全塞进 prompt</strong>：FAQ 几百条塞不下上下文窗口，而且塞进去是”全量检索”，模型找不到重点。RAG 只喂”和问题最相关的几段”。</p><h2 id="二、选型：为什么-pgvector"><a href="#二、选型：为什么-pgvector" class="headerlink" title="二、选型：为什么 pgvector"></a>二、选型：为什么 pgvector</h2><p>向量库选了 <strong>pgvector</strong>（PostgreSQL 插件），理由：</p><ul><li><strong>不引新组件</strong>：业务库就是 PG，加个插件 + 一张向量表即可；</li><li><strong>体量匹配</strong>：几百条 FAQ，百万级以内的向量检索 pgvector 足够；</li><li><strong>运维成本低</strong>：不用为这个小场景单独运维一套向量库。</li></ul><p>如果数据量到千万级再换 Milvus 这类专用向量库。<strong>选型看体量，不追时髦</strong>。</p><h2 id="三、离线建库：切块-向量化"><a href="#三、离线建库：切块-向量化" class="headerlink" title="三、离线建库：切块 + 向量化"></a>三、离线建库：切块 + 向量化</h2><p><strong>切块</strong>（最关键，直接决定检索质量）：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// FAQ 每一条就是一个天然块：问题 + 答案</span><br><span class="hljs-comment">// 长文档按标题/段落切，别按固定字数硬切（会把语义从中间切断）</span><br>List&lt;FaqChunk&gt; chunks = faqList.stream()<br>    .map(faq -&gt; <span class="hljs-keyword">new</span> <span class="hljs-title class_">FaqChunk</span>(<br>        faq.getQuestion() + <span class="hljs-string">&quot;\n&quot;</span> + faq.getAnswer(),<br>        faq.getCategory()<br>    ))<br>    .toList();<br></code></pre></td></tr></table></figure><p><strong>向量化 + 存储</strong>：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 1. 每条 FAQ 用 Embedding 模型转成向量</span><br><span class="hljs-type">float</span>[] vector = embeddingModel.embed(chunk.getText());<br><br><span class="hljs-comment">// 2. 存进 pgvector</span><br>jdbcTemplate.update(<br>    <span class="hljs-string">&quot;INSERT INTO faq_chunks (content, category, embedding) VALUES (?, ?, ?)&quot;</span>,<br>    chunk.getText(), chunk.getCategory(),<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">Pgvector</span>(vector)<br>);<br></code></pre></td></tr></table></figure><p><strong>关键坑：建库和检索必须用同一个 Embedding 模型</strong>，换模型 &#x3D; 全部重算向量，否则检索结果全乱。</p><h2 id="四、在线问答：检索-拼-prompt"><a href="#四、在线问答：检索-拼-prompt" class="headerlink" title="四、在线问答：检索 + 拼 prompt"></a>四、在线问答：检索 + 拼 prompt</h2><p><strong>语义检索</strong>（向量相似度）：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> content, <span class="hljs-number">1</span> <span class="hljs-operator">-</span> (embedding <span class="hljs-operator">&lt;=&gt;</span> ?) <span class="hljs-keyword">AS</span> similarity<br><span class="hljs-keyword">FROM</span> faq_chunks<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> embedding <span class="hljs-operator">&lt;=&gt;</span> ?    <span class="hljs-comment">-- &lt;=&gt; 是余弦距离</span><br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure><p><strong>拼进 prompt</strong>：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> String <span class="hljs-title function_">answer</span><span class="hljs-params">(String question)</span> &#123;<br>    <span class="hljs-comment">// 1. 问题向量化</span><br>    <span class="hljs-type">float</span>[] qVec = embeddingModel.embed(question);<br><br>    <span class="hljs-comment">// 2. 检索 TopN</span><br>    List&lt;String&gt; candidates = search(qVec);   <span class="hljs-comment">// 上面那条 SQL</span><br><br>    <span class="hljs-comment">// 3. 拼 prompt：要求 LLM 基于检索结果回答</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">prompt</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">        你是内部知识助手。请只根据下面提供的资料回答问题。</span><br><span class="hljs-string">        如果资料里没有相关信息，请明确说&quot;没有找到相关信息&quot;。</span><br><span class="hljs-string"></span><br><span class="hljs-string">        资料：</span><br><span class="hljs-string">        %s</span><br><span class="hljs-string"></span><br><span class="hljs-string">        问题：%s</span><br><span class="hljs-string">        &quot;&quot;&quot;</span>.formatted(String.join(<span class="hljs-string">&quot;\n---\n&quot;</span>, candidates), question);<br><br>    <span class="hljs-keyword">return</span> chatModel.call(prompt);<br>&#125;<br></code></pre></td></tr></table></figure><h2 id="五、幻觉控制：RAG-的生死线"><a href="#五、幻觉控制：RAG-的生死线" class="headerlink" title="五、幻觉控制：RAG 的生死线"></a>五、幻觉控制：RAG 的生死线</h2><p>这是整个系统最重要的部分，三个手段：</p><p><strong>① 检索不到就明说</strong>：TopN 的相似度低于阈值时，不硬答，直接返回”没有找到相关信息，建议转人工”——<strong>允许说不知道，绝不允许编</strong>。</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java">List&lt;Candidate&gt; hits = search(qVec);<br><span class="hljs-keyword">if</span> (hits.isEmpty() || hits.get(<span class="hljs-number">0</span>).similarity() &lt; THRESHOLD) &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;没有找到相关信息，建议搜索关键词或联系运维。&quot;</span>;<br>&#125;<br></code></pre></td></tr></table></figure><p><strong>② 加引用来源</strong>：要求 LLM 回答带上来源（”根据 FAQ-123”），用户可核验，模型也更不容易瞎编。</p><p><strong>③ 意图识别兜底</strong>：接 LLM 之前先判断问题类型——明显不在 FAQ 覆盖范围的（比如闲聊），直接走兜底，不硬往 LLM 上引。</p><h2 id="六、降级与成本"><a href="#六、降级与成本" class="headerlink" title="六、降级与成本"></a>六、降级与成本</h2><ul><li><strong>LLM 超时&#x2F;不可用</strong>：降级为”直接返回检索到的 TopN 原文”，保证用户至少看到相关内容，而不是报错；</li><li><strong>成本</strong>：TopN 控制在 3-5 条，长 FAQ 答案切短，控制 prompt token。</li></ul><h2 id="七、诚实评估"><a href="#七、诚实评估" class="headerlink" title="七、诚实评估"></a>七、诚实评估</h2><p>这是一个<strong>最小落地场景</strong>，没有大规模生产数据，也没有量化指标（没有”召回率 88%”这种数字）。它的价值在于<strong>把 RAG 完整链路跑通了</strong>：切块、向量化、检索、拼 prompt、幻觉控制、降级——每个环节该踩的坑都踩了一遍。<strong>原理清楚、链路跑通、边界诚实</strong>，是我现在能对 AI 工程化说的最准确的话。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>RAG &#x3D; <strong>离线建库（切块→向量化→存库）+ 在线问答（检索→拼 prompt→回答）</strong>；</li><li>选 pgvector：<strong>不引新组件、体量匹配</strong>，大流量再上 Milvus；</li><li>切块粒度匹配回答粒度，<strong>建库&#x2F;检索用同一 Embedding 模型</strong>；</li><li>幻觉控制三件套：<strong>检索不到就说不知道 + 引用来源 + 意图识别兜底</strong>；</li><li>LLM 不可用要<strong>降级为返回原文</strong>，TopN 控制成本；</li><li>最小落地场景，链路完整、边界诚实。</li></ul><hr><p><em>发表于 2026 年 6 月 · 标签: RAG, Spring AI, pgvector, 问答系统, 幻觉控制</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>AI开发</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Spring AI</tag>
+      
+      <tag>RAG</tag>
+      
+      <tag>幻觉控制</tag>
+      
+      <tag>pgvector</tag>
+      
+      <tag>问答系统</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>SyncTask 引擎设计复盘：为什么主动选择&quot;不做 DAG&quot;</title>
+    <link href="/2026/06/03/2026-06-03-SyncTask%E5%BC%95%E6%93%8E%E8%AE%BE%E8%AE%A1%E5%A4%8D%E7%9B%98-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%81%9ADAG/"/>
+    <url>/2026/06/03/2026-06-03-SyncTask%E5%BC%95%E6%93%8E%E8%AE%BE%E8%AE%A1%E5%A4%8D%E7%9B%98-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%81%9ADAG/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>订单中台 49 个同步 Handler、仓储系统 44 个同步 Handler，两套业务同步逻辑 80%+ 重复。SyncTask 引擎从重复中抽离。这篇复盘它的核心设计决策——尤其是”为什么主动不做三件事”。</p></blockquote><h2 id="一、背景：80-重复的同步逻辑"><a href="#一、背景：80-重复的同步逻辑" class="headerlink" title="一、背景：80% 重复的同步逻辑"></a>一、背景：80% 重复的同步逻辑</h2><p>订单中台和仓储系统都有大量”对异构下游同步”的任务：取参 → 拉数 → 加锁 → 执行业务 → 更新状态，这套流程两套系统完全一样，只是业务不同。</p><p><strong>解法不是”再写一套”，是抽离引擎</strong>：把重复的执行逻辑抽成 SyncTask Engine，业务方只实现 Handler，其余用默认。</p><h2 id="二、评估过的-6-个开源方案"><a href="#二、评估过的-6-个开源方案" class="headerlink" title="二、评估过的 6 个开源方案"></a>二、评估过的 6 个开源方案</h2><p>动手前评估了 6 个方案，各有各的”不适配”：</p><table><thead><tr><th>方案</th><th>不适配的原因</th></tr></thead><tbody><tr><td><strong>Temporal</strong></td><td>需独立 Server + Cluster，运维成本高</td></tr><tr><td><strong>Conductor</strong></td><td>依赖 ES 存储，重</td></tr><tr><td><strong>nFlow</strong></td><td>学习成本高</td></tr><tr><td><strong>Flowable</strong></td><td>BPMN 审批领域，和任务同步场景不同</td></tr><tr><td><strong>DBOS Transact</strong></td><td>要求 Postgres</td></tr><tr><td><strong>xxl-job</strong></td><td>只管调度，不管编排</td></tr></tbody></table><p>结论：<strong>要么重、要么领域不匹配</strong>。于是决定自己做一个”恰好够用”的引擎——并主动选择<strong>不做三件事</strong>。</p><h2 id="三、三个”不做”决策"><a href="#三、三个”不做”决策" class="headerlink" title="三、三个”不做”决策"></a>三、三个”不做”决策</h2><h3 id="1-不引入-DAG-编排引擎"><a href="#1-不引入-DAG-编排引擎" class="headerlink" title="1. 不引入 DAG 编排引擎"></a>1. 不引入 DAG 编排引擎</h3><p><strong>90% 的同步任务之间无依赖关系</strong>——每个任务独立跑就行，DAG 的”依赖编排”能力根本用不上。</p><p>有依赖的少数场景（比如”先同步库存、再同步订单”），用 <strong>afterExecute 埋点</strong>（Choreography 模式）实现：</p><figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs css">Handler <span class="hljs-selector-tag">A</span> 完成 → afterExecute 触发 → 写 sync_task 表（事件载体）<br>→ 下一轮调度发现 → 执行 Handler <span class="hljs-selector-tag">B</span><br></code></pre></td></tr></table></figure><p><strong>为什么 Choreography 而不是 DAG</strong>：</p><ul><li>DAG 适合”流程预先可确定”——但同步任务的执行链是<strong>事件驱动</strong>的，一个任务干完才知道要不要触发下一步；</li><li>Choreography 用 <code>sync_task</code> 表作为事件载体，context.properties 透传上下文，<strong>零引擎、零 DSL、零维护成本</strong>；</li><li>11 个 Handler 覆盖链式同步场景，DAG 在这里是过度设计。</li></ul><h3 id="2-不引入独立调度-Server"><a href="#2-不引入独立调度-Server" class="headerlink" title="2. 不引入独立调度 Server"></a>2. 不引入独立调度 Server</h3><p>引擎寄居在 <strong>xxl-job</strong> 之上（<code>@XxlJob</code> 桥接），通过 <code>SchedulerAdapter</code> SPI 解耦——<strong>可替换为 PowerJob 或手动触发</strong>。</p><p><strong>为什么复用 xxl-job</strong>：公司已有 cron 基础设施，为编排引擎再引入一套调度 Server（Temporal 那样），运维成本不划算。SPI 解耦保证了”今天用 xxl-job，明天想换 PowerJob，只改适配器”。</p><h3 id="3-不引入引擎内部延迟队列-退避算法"><a href="#3-不引入引擎内部延迟队列-退避算法" class="headerlink" title="3. 不引入引擎内部延迟队列&#x2F;退避算法"></a>3. 不引入引擎内部延迟队列&#x2F;退避算法</h3><p>用”<strong>多 Job 分工 + 差异化 cron</strong>“实现每种状态独立的差异化重试心跳：</p><figure class="highlight cos"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs cos">高频 <span class="hljs-keyword">Job</span>（每 <span class="hljs-number">5</span> 秒）：兜底新任务<br>中频 <span class="hljs-keyword">Job</span>（每 <span class="hljs-number">30</span> 秒）：处理重试<br>低频 <span class="hljs-keyword">Job</span>（每 <span class="hljs-number">5</span> 分钟）：扫尾<br></code></pre></td></tr></table></figure><p><strong>本质是用组合现有基础设施替代写代码</strong>——不自己实现延迟队列，而是用多个 Job 的分级频率模拟。</p><h2 id="四、可靠性的两个核心设计"><a href="#四、可靠性的两个核心设计" class="headerlink" title="四、可靠性的两个核心设计"></a>四、可靠性的两个核心设计</h2><h3 id="双重防重"><a href="#双重防重" class="headerlink" title="双重防重"></a>双重防重</h3><p><strong>分布式锁 + 二次查库</strong>：先拿 Redisson 锁保证同一任务不被并发执行，执行前再查一次库确认状态没变。即使锁偶尔异常，重复执行也会被幂等收敛。</p><h3 id="双层权重调度"><a href="#双层权重调度" class="headerlink" title="双层权重调度"></a>双层权重调度</h3><ul><li>第一层：Job 内状态配额（INIT:WAIT:FAIL &#x3D; 4:1:1）；</li><li>第二层：多 XXL-JOB 实例分级（高频&#x2F;中频&#x2F;低频）。</li></ul><p>分层时间轮思想：让每种状态有独立的处理节奏，互不阻塞。</p><h2 id="五、10-个-SPI-扩展点"><a href="#五、10-个-SPI-扩展点" class="headerlink" title="五、10 个 SPI 扩展点"></a>五、10 个 SPI 扩展点</h2><p>引擎核心零框架依赖（仅 SLF4J + Hutool），所有可变点都是 SPI：</p><table><thead><tr><th>SPI</th><th>默认实现</th><th>可替换</th></tr></thead><tbody><tr><td>SchedulerAdapter</td><td>xxl-job</td><td>PowerJob&#x2F;手动</td></tr><tr><td>TaskStore</td><td>MyBatis-Plus</td><td>JPA&#x2F;Mongo</td></tr><tr><td>LockService</td><td>Redisson</td><td>DB 行锁</td></tr><tr><td>NotifyChannel</td><td>企微机器人</td><td>飞书&#x2F;钉钉</td></tr><tr><td>TaskArchiveService</td><td>MyBatis-Plus</td><td>定时物理删除</td></tr><tr><td>…</td><td>…</td><td>…</td></tr></tbody></table><p>接入方通过 <code>@ConditionalOnMissingBean</code> 零配置覆盖默认实现——<strong>引擎核心不动，扩展可插拔</strong>。</p><h2 id="六、复盘：这个设计值不值"><a href="#六、复盘：这个设计值不值" class="headerlink" title="六、复盘：这个设计值不值"></a>六、复盘：这个设计值不值</h2><p><strong>值</strong>：接入一个业务任务从数天降到数小时（只实现 Handler + 配置 + 建表）；两个系统复用同一套引擎，维护成本减半。</p><p><strong>取舍</strong>：SyncTask 是 Temporal 的能力子集——没有持久化工作流、没有内置 DAG。但<strong>场景匹配度更高、运维成本更低</strong>。不做三件事换来了零引擎零维护，比”功能全但没人会用”更符合中台的实际需求。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>背景：80% 同步逻辑重复 → 抽离 SyncTask 引擎；</li><li>评估 6 个方案都不适配 → 自研”恰好够用”的引擎；</li><li><strong>三个”不做”</strong>：不引入 DAG（Choreography 够用）、不引入独立 Server（复用 xxl-job + SPI）、不引入延迟队列（多 Job 分级频率）；</li><li>可靠性：双重防重 + 双层权重调度；</li><li>10 个 SPI 扩展点，@ConditionalOnMissingBean 零配置覆盖；</li><li>取舍：能力子集但场景匹配、运维成本低——<strong>架构减法比堆功能更难也更值钱</strong>。</li></ul><hr><p><em>发表于 2026 年 6 月 · 标签: SyncTask, 任务编排, DAG, Choreography, 架构决策</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>任务编排</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>SyncTask</tag>
+      
+      <tag>Choreography</tag>
+      
+      <tag>DAG</tag>
+      
+      <tag>架构决策</tag>
+      
+      <tag>任务编排</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>七年Java后端之路：我的技术成长与面试方法论</title>
     <link href="/2026/05/01/2026-05-01-%E4%B8%83%E5%B9%B4Java%E5%90%8E%E7%AB%AF%E4%B9%8B%E8%B7%AF/"/>
     <url>/2026/05/01/2026-05-01-%E4%B8%83%E5%B9%B4Java%E5%90%8E%E7%AB%AF%E4%B9%8B%E8%B7%AF/</url>
@@ -367,6 +627,132 @@
   
   
   <entry>
+    <title>2025 年度技术复盘：分库分表、Doris 同步与中台沉淀</title>
+    <link href="/2025/12/20/2025-12-20-2025%E5%B9%B4%E5%BA%A6%E6%8A%80%E6%9C%AF%E5%A4%8D%E7%9B%98/"/>
+    <url>/2025/12/20/2025-12-20-2025%E5%B9%B4%E5%BA%A6%E6%8A%80%E6%9C%AF%E5%A4%8D%E7%9B%98/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>2025 年是很扎实的一年：把分库分表从决策推到上线，把 Doris 同步链路跑稳，把订单中台的架构沉淀成可复用的能力。年末了，认真复盘这一年做了什么、想明白了什么。</p></blockquote><h2 id="一、这一年做成的三件事"><a href="#一、这一年做成的三件事" class="headerlink" title="一、这一年做成的三件事"></a>一、这一年做成的三件事</h2><h3 id="1-分库分表落地（从决策到无停机上线）"><a href="#1-分库分表落地（从决策到无停机上线）" class="headerlink" title="1. 分库分表落地（从决策到无停机上线）"></a>1. 分库分表落地（从决策到无停机上线）</h3><ul><li>订单销售信息表累计 6000 万行，完成了 ShardingSphere 水平分片；</li><li><strong>分片键选型</strong>：单号主分片（写路径零广播），不选时间（写广播）；</li><li><strong>无停机迁移</strong>：存量回填 + binlog 增量追平 + 对账兜底 + 灰度切流 + 删旧表；</li><li>上线后 8 片&#x2F;每片约 750 万，复杂查询下沉 Doris。</li></ul><p><strong>想明白的</strong>：分库分表的核心不是”怎么拆”，是”<strong>分片键匹配访问模式</strong>“——先分析真实 SQL，再定分片键。</p><h3 id="2-Doris-同步链路跑稳（增量-对账闭环）"><a href="#2-Doris-同步链路跑稳（增量-对账闭环）" class="headerlink" title="2. Doris 同步链路跑稳（增量 + 对账闭环）"></a>2. Doris 同步链路跑稳（增量 + 对账闭环）</h3><ul><li>链路：MySQL → Canal → Kafka → Doris；</li><li><strong>对账兜底</strong>：按业务主键定期比对，差异重投，连续两轮差异 0 才一致；</li><li>选型边界：比对用 XXL-JOB、重投走 SyncTask。</li></ul><p><strong>想明白的</strong>：增量同步有兜不住的概率，<strong>增量 + 对账才是完整闭环</strong>；”对账不过不推进”是正确性铁律。</p><h3 id="3-订单中台架构沉淀"><a href="#3-订单中台架构沉淀" class="headerlink" title="3. 订单中台架构沉淀"></a>3. 订单中台架构沉淀</h3><ul><li>多平台 Handler 抽象 + 三维路由；</li><li>SyncTask 引擎抽离（80% 重复同步逻辑沉淀为组件）；</li><li>大促保障体系（限流降级熔断 + 连接池隔离 + 缓存预热）。</li></ul><p><strong>想明白的</strong>：中台的本质是<strong>从”写业务”到”建平台”</strong>——扩展靠加组件，不靠改代码。</p><h2 id="二、数据盘点"><a href="#二、数据盘点" class="headerlink" title="二、数据盘点"></a>二、数据盘点</h2><table><thead><tr><th>指标</th><th>结果</th></tr></thead><tbody><tr><td>慢 SQL</td><td>日均 1124 条 → 6 条</td></tr><tr><td>系统可用性</td><td>99.9% → 99.99%</td></tr><tr><td>分库分表</td><td>8 片 &#x2F; 每片约 750 万 &#x2F; 6000 万行</td></tr><tr><td>同步任务接入</td><td>从数天降到数小时</td></tr><tr><td>DB 单次负载</td><td>降 30-50%</td></tr></tbody></table><p>（数字都有监控&#x2F;日志支撑。）</p><h2 id="三、方法论沉淀"><a href="#三、方法论沉淀" class="headerlink" title="三、方法论沉淀"></a>三、方法论沉淀</h2><p>这一年最大的收获不是做了多少事，是<strong>沉淀了几条可复用方法论</strong>：</p><ol><li><strong>从便宜到贵</strong>：慢 SQL 先索引后架构，分库分表是最后手段；</li><li><strong>对账是正确性证明</strong>：迁移、同步、切换，对账不过不推进；</li><li><strong>隔离防雪崩</strong>：连接池隔离（舱壁）是防”一个下游拖垮全局”最有效的手段；</li><li><strong>演进而非推翻</strong>：垂直分表 → 水平分片、传统 OMS → 中台，都是渐进式；</li><li><strong>选型看场景</strong>：比对用调度器、重投用编排引擎，不是什么都拿 SyncTask。</li></ol><h2 id="四、想明白的（认知升级）"><a href="#四、想明白的（认知升级）" class="headerlink" title="四、想明白的（认知升级）"></a>四、想明白的（认知升级）</h2><ol><li><strong>架构决策没有银弹，只有场景匹配</strong>——单号分片 vs 时间分片、OSS vs 自建、DAG vs Choreography，答案都取决于约束；</li><li><strong>架构减法是高级能力</strong>——识别重复、沉淀组件，比堆功能难得多，也值钱得多；</li><li><strong>诚实是技术人的底线</strong>——数字有据、能力边界清晰，比夸大更能赢得信任。</li></ol><h2 id="五、展望-2026"><a href="#五、展望-2026" class="headerlink" title="五、展望 2026"></a>五、展望 2026</h2><p>2026 年的方向（也在同步准备）：</p><ol><li><strong>AI 工程化落地</strong>：Spring AI &#x2F; RAG &#x2F; Agent，把 LLM 接进业务系统（已在学习实践）；</li><li><strong>分布式深度</strong>：DDIA 重读 + 分库分表演进（8→16 片、TiDB 评估）；</li><li><strong>求职与进阶</strong>：把 8 年经验带向更大规模的平台。</li></ol><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>三件事：<strong>分库分表落地、Doris 同步闭环、中台架构沉淀</strong>；</li><li>数据：慢 SQL 1124→6、可用性 99.99%、8 片分片、任务接入从数天到数小时；</li><li>方法论：从便宜到贵、对账铁律、隔离防雪崩、演进非推翻、选型看场景；</li><li>认知：无银弹只有场景匹配、架构减法、诚实底线；</li><li>2026：AI 工程化 + 分布式深度 + 求职进阶。</li></ul><hr><p><em>发表于 2025 年 12 月 · 标签: 年度复盘, 分库分表, 中台, 成长</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>年度复盘</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>分库分表</tag>
+      
+      <tag>年度复盘</tag>
+      
+      <tag>中台</tag>
+      
+      <tag>成长</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>从传统 OMS 到订单中台：一条架构演进的完整路径</title>
+    <link href="/2025/11/12/2025-11-12-%E4%BB%8E%E5%8D%95%E4%BD%93%E5%88%B0%E4%B8%AD%E5%8F%B0-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/"/>
+    <url>/2025/11/12/2025-11-12-%E4%BB%8E%E5%8D%95%E4%BD%93%E5%88%B0%E4%B8%AD%E5%8F%B0-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>传统 OMS → 订单中台，不是换个名字，是架构范式的一次升级。这篇复盘订单中台的演进路径——从单体到多平台接入、从垂直分表到水平分片、从手工同步到编排引擎。</p></blockquote><h2 id="一、传统-OMS-的痛点"><a href="#一、传统-OMS-的痛点" class="headerlink" title="一、传统 OMS 的痛点"></a>一、传统 OMS 的痛点</h2><p>传统 OMS（订单管理系统）的核心问题是**”一个系统管全部”**：</p><ul><li>所有渠道的订单都进一个系统，业务逻辑耦合；</li><li>对接新渠道 &#x3D; 改主流程代码，牵一发动全身；</li><li>数据量大了，单库单表扛不住；</li><li>平台规则不同（淘宝&#x2F;拼多多&#x2F;抖音），处理逻辑散落各处。</li></ul><p><strong>瓶颈的本质</strong>：传统 OMS 是”<strong>流程系统</strong>“——它管订单怎么流转；订单中台是”<strong>能力平台</strong>“——它把订单处理拆成可复用的能力。</p><h2 id="二、订单中台的核心变化"><a href="#二、订单中台的核心变化" class="headerlink" title="二、订单中台的核心变化"></a>二、订单中台的核心变化</h2><h3 id="1-从”一个系统”到”多平台接入中枢”"><a href="#1-从”一个系统”到”多平台接入中枢”" class="headerlink" title="1. 从”一个系统”到”多平台接入中枢”"></a>1. 从”一个系统”到”多平台接入中枢”</h3><p>订单中台是全渠道订单处理中枢，对接多电商平台、多商家异构下游：</p><figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs awk">渠道（淘宝<span class="hljs-regexp">/拼多多/</span>抖音...）→ 订单中台 → 下游（仓储<span class="hljs-regexp">/财务/</span>物流...）<br></code></pre></td></tr></table></figure><p><strong>多平台接入</strong>是最大难点——每个平台协议、字段、时序都不同。解法是 Handler 抽象：</p><ul><li>每个外部系统的一类单据 &#x3D; 一个 Handler（策略 + 工厂）；</li><li><strong>新接入一个平台 &#x3D; 新增一个 Handler，不改既有逻辑</strong>（开闭原则）；</li><li>三维路由（bizType × syncTaskType × syncSystem）精准路由到 Handler。</li></ul><h3 id="2-从”手工分表”到”真水平分片”"><a href="#2-从”手工分表”到”真水平分片”" class="headerlink" title="2. 从”手工分表”到”真水平分片”"></a>2. 从”手工分表”到”真水平分片”</h3><p>早期按渠道垂直分表（拼多多一张表、京东一张表）——<strong>没有分布式路由，每开渠道建一套表</strong>。这是”假分片”。</p><p>后来演进到 <strong>ShardingSphere 单号主分片</strong>：</p><ul><li>分片键选单号（写路径零广播）；</li><li>8 片、每片约 750 万行、累计 6000 万行；</li><li>复杂统计下沉 Doris。</li></ul><h3 id="3-从”手工同步”到”编排引擎”"><a href="#3-从”手工同步”到”编排引擎”" class="headerlink" title="3. 从”手工同步”到”编排引擎”"></a>3. 从”手工同步”到”编排引擎”</h3><p>传统 OMS 的下游同步靠手工写代码（每个同步任务一个 Job，80% 逻辑重复）。</p><p>订单中台把重复的同步逻辑抽离成 <strong>SyncTask 引擎</strong>：</p><ul><li>引擎核心零框架依赖，10 个 SPI 扩展点；</li><li>接入方式：实现 Handler → 配置 → 建表，零代码装配；</li><li>从”一个同步任务接入数天”降到”数小时”。</li></ul><h2 id="三、演进的核心逻辑"><a href="#三、演进的核心逻辑" class="headerlink" title="三、演进的核心逻辑"></a>三、演进的核心逻辑</h2><p>这条演进路径有一条主线：<strong>从”写业务”到”建平台”</strong>。</p><table><thead><tr><th>维度</th><th>传统 OMS</th><th>订单中台</th></tr></thead><tbody><tr><td>定位</td><td>流程系统</td><td>能力平台</td></tr><tr><td>渠道接入</td><td>改主流程</td><td>加 Handler</td></tr><tr><td>数据存储</td><td>单库单表&#x2F;垂直分表</td><td>水平分片 + OLAP 下沉</td></tr><tr><td>同步任务</td><td>手工写 Job</td><td>编排引擎（SyncTask）</td></tr><tr><td>扩展方式</td><td>改代码</td><td>加组件&#x2F;加配置</td></tr></tbody></table><h2 id="四、复盘：做对了什么"><a href="#四、复盘：做对了什么" class="headerlink" title="四、复盘：做对了什么"></a>四、复盘：做对了什么</h2><ol><li><strong>抽象先行</strong>：Handler 抽象 + 路由，让”新增渠道”从改代码变成加组件——这是中台化的本质；</li><li><strong>演进而非推翻</strong>：垂直分表 → 水平分片是渐进式的，业务没停；</li><li><strong>重复抽离</strong>：80% 重复的同步逻辑抽成引擎，是”架构减法”——不是越做越大，是把公共能力沉淀成组件。</li></ol><h2 id="五、诚实边界"><a href="#五、诚实边界" class="headerlink" title="五、诚实边界"></a>五、诚实边界</h2><p>订单中台不是”完美架构”的产物，它也有设计不足（我在 Design Review 里承认过 10 个）。但它的价值在于<strong>踩出了传统 OMS 到中台的完整路径</strong>——这套经验对同样在做中台化的人有参考意义。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>传统 OMS &#x3D; 流程系统，订单中台 &#x3D; <strong>能力平台</strong>；</li><li>核心变化：<strong>多平台 Handler 抽象 + 真水平分片 + 同步编排引擎</strong>；</li><li>演进主线：从”写业务”到”建平台”——扩展靠加组件，不靠改代码；</li><li>演进而非推翻：垂直分表 → 水平分片渐进式完成；</li><li>架构减法：80% 重复抽成 SyncTask 引擎，沉淀公共能力。</li></ul><hr><p><em>发表于 2025 年 11 月 · 标签: 订单中台, OMS, 架构演进, 中台化</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>中台架构</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>架构演进</tag>
+      
+      <tag>订单中台</tag>
+      
+      <tag>OMS</tag>
+      
+      <tag>中台化</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>慢 SQL 治理一年复盘：从日均千条级到个位数</title>
+    <link href="/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/"/>
+    <url>/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>订单中心慢 SQL 从日均千条级（峰值 1124 条）降到个位数（6 条），DB 单次负载降 30-50%。这篇复盘一年治理的完整路径——不是一次优化，是持续体系。</p></blockquote><h2 id="一、现状：慢-SQL-是”慢性病”"><a href="#一、现状：慢-SQL-是”慢性病”" class="headerlink" title="一、现状：慢 SQL 是”慢性病”"></a>一、现状：慢 SQL 是”慢性病”</h2><p>订单中心日均处理几十万订单，慢 SQL 日志峰值日均 <strong>1124 条</strong>，系统可用性在 99.9% 附近徘徊，每次大促都心跳加速。</p><p>慢 SQL 的危害不只是”慢”——它<strong>占用连接、拖慢事务、引发雪崩</strong>。一条慢 SQL 打满连接池，整个订单链路就瘫了。</p><h2 id="二、治理路径：从上到下，低成本手段优先"><a href="#二、治理路径：从上到下，低成本手段优先" class="headerlink" title="二、治理路径：从上到下，低成本手段优先"></a>二、治理路径：从上到下，低成本手段优先</h2><p>我遵循”<strong>从便宜到贵</strong>“的治理顺序：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">① 索引优化（最便宜）→ ② <span class="hljs-keyword">SQL</span> 改写 → ③ 缓存 → ④ 连接池<span class="hljs-operator">/</span>架构<br></code></pre></td></tr></table></figure><h3 id="①-索引优化（收益最大）"><a href="#①-索引优化（收益最大）" class="headerlink" title="① 索引优化（收益最大）"></a>① 索引优化（收益最大）</h3><p>慢 SQL 里 80% 是索引问题：</p><ul><li><strong>联合索引</strong>：查询条件多字段，建联合索引（注意最左前缀）；</li><li><strong>覆盖索引</strong>：查询的字段都在索引里，<strong>回表变索引扫描</strong>——订单查询高频字段，覆盖索引收益明显；</li><li><strong>区分度</strong>：区分度低的字段（如 status）不适合单独建索引。</li></ul><h3 id="②-SQL-改写"><a href="#②-SQL-改写" class="headerlink" title="② SQL 改写"></a>② SQL 改写</h3><ul><li><strong>大 IN 拆批</strong>：<code>WHERE id IN (上千个)</code> 拆成多批，避免一次查太多；</li><li><strong>去掉 <code>COUNT(*)</code></strong>：大表 count 全表扫描，用缓存计数替代；</li><li><strong>避免 <code>SELECT *</code></strong>：只查需要的字段（配合覆盖索引）；</li><li><strong>LIKE 优化</strong>：前置通配符不走索引。</li></ul><h3 id="③-缓存"><a href="#③-缓存" class="headerlink" title="③ 缓存"></a>③ 缓存</h3><p>读多写少的查询，<strong>加缓存（Redis&#x2F;Caffeine）</strong>，把 DB 压力降下来——这是最直接的降载手段。</p><h3 id="④-连接池-架构"><a href="#④-连接池-架构" class="headerlink" title="④ 连接池&#x2F;架构"></a>④ 连接池&#x2F;架构</h3><ul><li>连接池隔离（舱壁）：慢的查询隔离，不拖垮全局；</li><li>复杂统计下沉 Doris：订单分库分表后，跨分片统计不扛在 MySQL。</li></ul><h2 id="三、体系化：不是一次优化，是持续机制"><a href="#三、体系化：不是一次优化，是持续机制" class="headerlink" title="三、体系化：不是一次优化，是持续机制"></a>三、体系化：不是一次优化，是持续机制</h2><p>治理能持续，靠的不是”优化一次”，是<strong>机制</strong>：</p><ol><li><strong>慢 SQL 监控</strong>：慢日志自动收集，阈值内的都进监控；</li><li><strong>定期扫描</strong>：每周看慢 SQL 列表，新增的立刻分析；</li><li><strong>上线 SQL 评审</strong>：新需求带的 SQL 上线前走评审（看索引、看行数）；</li><li><strong>大促前专项</strong>：大促前做一次慢 SQL 全量清剿 + 热点缓存预热。</li></ol><p><strong>关键认知</strong>：慢 SQL 治理是”存量清理 + 增量拦截”两条腿——只清存量，新的还会冒出来。</p><h2 id="四、结果与数字"><a href="#四、结果与数字" class="headerlink" title="四、结果与数字"></a>四、结果与数字</h2><ul><li>慢 SQL：日均 1124 条 → <strong>6 条</strong>；</li><li>DB 单次负载：降 <strong>30-50%</strong>；</li><li>大促：DB 不再是瓶颈，配合限流降级扛住峰值。</li></ul><p>（数字都有监控日志支撑，不是估的。）</p><h2 id="五、复盘：最值的几个判断"><a href="#五、复盘：最值的几个判断" class="headerlink" title="五、复盘：最值的几个判断"></a>五、复盘：最值的几个判断</h2><ol><li><strong>优先索引而非改架构</strong>：80% 慢 SQL 靠索引就解决了，分库分表是最后手段——先便宜后贵；</li><li><strong>覆盖索引是隐藏王者</strong>：订单查询”只查字段 + 高频”的场景，覆盖索引把回表变索引扫描，收益被低估；</li><li><strong>增量拦截比存量清理重要</strong>：上线 SQL 评审挡住新增慢 SQL，比反复清存量有效得多。</li></ol><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>慢 SQL 是”慢性病”：<strong>占连接、拖事务、引发雪崩</strong>；</li><li>治理顺序：<strong>索引 → SQL 改写 → 缓存 → 连接池&#x2F;架构</strong>，从便宜到贵；</li><li>覆盖索引、大 IN 拆批、去 COUNT(*)、避免 SELECT *，是高频手段；</li><li>体系化：<strong>监控 + 定期扫描 + 上线评审 + 大促专项</strong>，存量清理 + 增量拦截；</li><li>结果：1124 → 6 条、DB 负载降 30-50%，数字有据。</li></ul><hr><p><em>发表于 2025 年 10 月 · 标签: 慢SQL, 索引, 性能调优, 复盘</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>数据库</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>慢SQL</tag>
+      
+      <tag>性能调优</tag>
+      
+      <tag>索引</tag>
+      
+      <tag>复盘</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>订单中台大促复盘：可用性从 99.9% 到 99.99%，我做了四件事</title>
+    <link href="/2025/09/10/2025-09-10-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%A7%E4%BF%83%E5%A4%8D%E7%9B%98-%E5%8F%AF%E7%94%A8%E6%80%A7%E4%BB%8E999%E5%88%B09999/"/>
+    <url>/2025/09/10/2025-09-10-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%A7%E4%BF%83%E5%A4%8D%E7%9B%98-%E5%8F%AF%E7%94%A8%E6%80%A7%E4%BB%8E999%E5%88%B09999/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>订单中台日均 15 万单（大促峰值 50 万），可用性从 99.9% 提到 99.99%。99.9% 到 99.99%，看似只差 0.09%，意味着<strong>全年停机时间从 8.7 小时降到 52 分钟</strong>——靠的是四件事。</p></blockquote><h2 id="一、先看问题：99-9-差在哪"><a href="#一、先看问题：99-9-差在哪" class="headerlink" title="一、先看问题：99.9% 差在哪"></a>一、先看问题：99.9% 差在哪</h2><p>99.9% 意味着全年 8.7 小时不可用。这 8.7 小时花在哪？我的复盘发现三类主要问题：</p><ol><li><strong>大促峰值打崩</strong>：瞬时流量超过系统承载，DB 被打爆、接口超时雪崩；</li><li><strong>单点故障</strong>：某个下游慢&#x2F;挂，拖垮整条调用链；</li><li><strong>变更事故</strong>：发布&#x2F;配置变更引发的事故占比不小。</li></ol><h2 id="二、第一件事：限流-降级-熔断（扛峰值）"><a href="#二、第一件事：限流-降级-熔断（扛峰值）" class="headerlink" title="二、第一件事：限流 + 降级 + 熔断（扛峰值）"></a>二、第一件事：限流 + 降级 + 熔断（扛峰值）</h2><p>大促峰值是可用性的最大杀手。我的做法是 <strong>Sentinel 三件套</strong>：</p><ul><li><strong>限流</strong>：入口控制量，按接口 QPS 限流（订单下单接口限 5w），超出的排队&#x2F;拒绝——防打爆；</li><li><strong>降级</strong>：非核心功能降级（营销&#x2F;推荐只保留基础字段、二级缓存降级走 Redis）——<strong>主动放弃非核心，保核心</strong>；</li><li><strong>熔断</strong>：下游仓储&#x2F;SAP 异常时快速失败，不再占线程——<strong>护自己不拖垮</strong>。</li></ul><p>配套：热点数据<strong>缓存预热</strong>，大促前把爆款商品预热进 Redis，避免瞬间打 DB。</p><h2 id="三、第二件事：连接池隔离（防一个下游拖垮全局）"><a href="#三、第二件事：连接池隔离（防一个下游拖垮全局）" class="headerlink" title="三、第二件事：连接池隔离（防一个下游拖垮全局）"></a>三、第二件事：连接池隔离（防一个下游拖垮全局）</h2><p>大促中踩过的坑：某个下游系统变慢，把连接池占满，导致所有调用这个下游的请求排队，最终拖垮全局。</p><p><strong>解法：连接池隔离（舱壁模式）</strong>——给慢的下游单独隔离连接池：</p><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs">正常下游：共享连接池（容量大）<br>慢下游：独立小连接池（容量小，占满只影响自己）<br></code></pre></td></tr></table></figure><p>一个下游慢，拖垮的是它的隔离池，不是全局。这是”雪崩传导”最有效的打断手段之一。</p><h2 id="四、第三件事：慢-SQL-治理（降-DB-压力）"><a href="#四、第三件事：慢-SQL-治理（降-DB-压力）" class="headerlink" title="四、第三件事：慢 SQL 治理（降 DB 压力）"></a>四、第三件事：慢 SQL 治理（降 DB 压力）</h2><p>DB 是订单系统的心脏，慢 SQL 直接威胁可用性。大促前做了系统治理：</p><ul><li>慢 SQL 从日均千条级降到个位数（1124 → 6）；</li><li>手段：联合索引&#x2F;覆盖索引、大 IN 拆批、去掉 <code>COUNT(*)</code>、连接池调优；</li><li>效果：DB 单次负载降 30-50%，大促 DB 不再是瓶颈。</li></ul><h2 id="五、第四件事：监控告警-变更管控"><a href="#五、第四件事：监控告警-变更管控" class="headerlink" title="五、第四件事：监控告警 + 变更管控"></a>五、第四件事：监控告警 + 变更管控</h2><p><strong>监控告警</strong>：全链路追踪（Sleuth + Zipkin）定位慢接口、指标监控、<strong>告警分级</strong>（不同级别不同告警通道和频率，避免告警疲劳）。</p><p><strong>变更管控</strong>：发布走灰度切流、配置走 Nacos 动态下发、大促前冻结变更。<strong>很多事故是变更引起的</strong>——大促前把变更冻结，是成本最低的可用性保障。</p><h2 id="六、99-99-靠什么"><a href="#六、99-99-靠什么" class="headerlink" title="六、99.99% 靠什么"></a>六、99.99% 靠什么</h2><p>99.9% → 99.99% 不是靠某一个工具，是<strong>体系</strong>：</p><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql">扛峰值：限流 <span class="hljs-operator">+</span> 降级 <span class="hljs-operator">+</span> 熔断 <span class="hljs-operator">+</span> 缓存预热<br>防扩散：连接池隔离（舱壁）<br>降压力：慢 <span class="hljs-keyword">SQL</span> 治理<br>保可控：监控告警分级 <span class="hljs-operator">+</span> 变更管控<br></code></pre></td></tr></table></figure><p>每一环单独看都不复杂，合在一起把停机时间从 8.7 小时压到 52 分钟。</p><h2 id="七、复盘：什么最重要"><a href="#七、复盘：什么最重要" class="headerlink" title="七、复盘：什么最重要"></a>七、复盘：什么最重要</h2><ol><li><strong>主动降级比硬扛重要</strong>：大促时”放弃非核心”是理性的，不是妥协；</li><li><strong>隔离是防雪崩的核心</strong>：一个下游拖垮全局，是最常见的可用性事故；</li><li><strong>变更管控是隐性功臣</strong>：大促前冻结变更，避免了大量”人为事故”；</li><li><strong>数字要能核对</strong>：可用性 99.99% 是有监控数据支撑的，不是估的。</li></ol><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>99.9% → 99.99% &#x3D; 停机从 8.7 小时降到 52 分钟；</li><li>四件事：<strong>限流降级熔断（扛峰值）+ 连接池隔离（防扩散）+ 慢SQL治理（降压力）+ 监控告警与变更管控（保可控）</strong>；</li><li>主动降级、隔离防雪崩、变更管控，是大促可用性的关键；</li><li>订单中台日均 15 万单（峰值 50 万）就是这么扛住的。</li></ul><hr><p><em>发表于 2025 年 9 月 · 标签: 大促, 可用性, 复盘, Sentinel, 缓存</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>中台架构</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>缓存</tag>
+      
+      <tag>可用性</tag>
+      
+      <tag>Sentinel</tag>
+      
+      <tag>大促</tag>
+      
+      <tag>复盘</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>订单中心慢SQL治理：从日均1124条到6条的实战总结</title>
     <link href="/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/"/>
     <url>/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/</url>
@@ -569,6 +955,39 @@
   
   
   <entry>
+    <title>Doris 同步链路的对账与漏单兜底：增量 + 对账的完整闭环</title>
+    <link href="/2025/07/20/2025-07-20-Doris%E5%90%8C%E6%AD%A5%E9%93%BE%E8%B7%AF%E7%9A%84%E5%AF%B9%E8%B4%A6%E4%B8%8E%E6%BC%8F%E5%8D%95%E5%85%9C%E5%BA%95/"/>
+    <url>/2025/07/20/2025-07-20-Doris%E5%90%8C%E6%AD%A5%E9%93%BE%E8%B7%AF%E7%9A%84%E5%AF%B9%E8%B4%A6%E4%B8%8E%E6%BC%8F%E5%8D%95%E5%85%9C%E5%BA%95/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>分库分表后，复杂查询下沉 Doris（MySQL → Canal → Kafka → Doris）。增量同步是主路径，但增量本身有兜不住的概率——这篇讲”增量 + 对账”怎么组成完整闭环。</p></blockquote><h2 id="一、链路与”为什么不能只靠增量”"><a href="#一、链路与”为什么不能只靠增量”" class="headerlink" title="一、链路与”为什么不能只靠增量”"></a>一、链路与”为什么不能只靠增量”</h2><p>同步链路：</p><figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">MySQL</span>（<span class="hljs-number">8</span>片） → binlog → Canal → Kafka → Doris（宽表）<br></code></pre></td></tr></table></figure><p>增量同步（Canal 抓 binlog）是主路径，但它有兜不住的概率：</p><ol><li><strong>Canal 位点异常</strong>：位点丢失或错位，导致一段时间的数据没抓到；</li><li><strong>消费积压超 retention</strong>：Kafka 消息堆积超过 retention（默认 7 天）被清，消费端追不上就丢了；</li><li><strong>程序 bug</strong>：解析&#x2F;写入逻辑有 bug，静默写错或跳过。</li></ol><p><strong>增量同步的问题在于”静默”</strong>——丢了一条消息，Doris 里看不出异常，查询照常返回，只是结果悄悄不对。所以必须有<strong>对账兜底</strong>。</p><h2 id="二、对账：把”正确性证明”做成常态化"><a href="#二、对账：把”正确性证明”做成常态化" class="headerlink" title="二、对账：把”正确性证明”做成常态化"></a>二、对账：把”正确性证明”做成常态化</h2><p>对账的思路：<strong>定期按业务主键比对 MySQL 和 Doris，差异重投</strong>。</p><figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs tap">定时任务（夜间低峰）：<br>① 按业务主键遍历两侧（分批，last_id 断点续跑）<br>② 比对字段是否一致<br>③ 差异记录 → 重投（补发同步事件）<br>④ 连续两轮差异为<span class="hljs-number"> 0 </span>→ 确认一致<br></code></pre></td></tr></table></figure><p><strong>对账的选型边界</strong>（一个容易忽略的点）：</p><ul><li>纯比对（扫描两侧、记录差异）用 <strong>XXL-JOB 单选跑</strong>——它是迁库批处理、无编排需求；</li><li>差异<strong>重投</strong>（补发同步事件到下游）才走 <strong>SyncTask</strong>——因为重投要可靠投递、可能重试，需要编排引擎。</li></ul><p><strong>不是什么都拿 SyncTask</strong>：归档、回填、比对这种”迁库活”用调度器就行；对异构下游可靠重投才上编排引擎。这是”懂选型边界”的体现。</p><h2 id="三、漏单兜底：增量一致性-对账补差"><a href="#三、漏单兜底：增量一致性-对账补差" class="headerlink" title="三、漏单兜底：增量一致性 + 对账补差"></a>三、漏单兜底：增量一致性 + 对账补差</h2><p>增量同步不会”真漏”（至少一次投递），但要防三类：</p><p><strong>① 位点对齐</strong>：切流点严格对齐 binlog 位点，记对账基准位点——保证”从哪个位置开始”是确定的。</p><p><strong>② at-least-once + 幂等</strong>：消费至少一次、不缺失；消费端幂等（按业务主键去重），重复消息只生效一次。</p><p><strong>③ 对账补漏</strong>：对账遍历两侧，差异按最新状态重写目标分片——<strong>增量同步的漏洞，靠对账收敛成最终一致</strong>。</p><p><strong>诚实说明</strong>：瞬时不一致是存在的（”暂时”不是”死漏”），靠对账收敛成最终一致。对外承诺”最终一致 + 对账收敛”，不是”零瞬时不一致”——那种承诺做不到。</p><h2 id="四、事件查不到订单的兜底"><a href="#四、事件查不到订单的兜底" class="headerlink" title="四、事件查不到订单的兜底"></a>四、事件查不到订单的兜底</h2><p>同步链路里还有一个场景：<strong>事件来了，但查不到对应订单</strong>（比如订单还没落库，同步事件先到了）。</p><p>我的兜底设计：</p><ul><li>主兜底：<strong>事件消费幂等可重投</strong>——查不到进重试队列，binlog&#x2F;对账补齐后重投；</li><li>不修改业务读路径（不让业务等同步完成）；</li><li>“先新后旧回落”这种方案只设计评估过、不是主抓——要动读代码，不优先。</li></ul><h2 id="五、复盘：这条链路的设计原则"><a href="#五、复盘：这条链路的设计原则" class="headerlink" title="五、复盘：这条链路的设计原则"></a>五、复盘：这条链路的设计原则</h2><ol><li><strong>增量 + 对账，才是完整闭环</strong>：增量保证”快”，对账保证”对”——两者互补，缺一不可；</li><li><strong>对账的”关卡”性质</strong>：对账不是可选项，是正确性证明，对账不过不推进（切流、发布都等对账）；</li><li><strong>选型边界清晰</strong>：比对用 XXL-JOB、重投用 SyncTask——调度器管迁库活，编排引擎管可靠投递。</li></ol><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>同步链路：MySQL → <strong>Canal → Kafka → Doris</strong>，增量是主路径；</li><li>增量有兜不住的概率（位点异常&#x2F;积压超 retention&#x2F;bug），必须对账兜底；</li><li><strong>对账</strong>：按业务主键定期比对，差异重投，连续两轮差异 0 才一致；</li><li><strong>选型边界</strong>：比对用 XXL-JOB、重投走 SyncTask（可靠投递才需要编排引擎）；</li><li>漏单兜底：<strong>位点对齐 + at-least-once 幂等 + 对账补差</strong>，收敛成最终一致；</li><li>增量 + 对账，才是”不丢”的完整闭环。</li></ul><hr><p><em>发表于 2025 年 7 月 · 标签: Doris, Canal, Kafka, 对账, 数据同步</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>数据库</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Doris</tag>
+      
+      <tag>Kafka</tag>
+      
+      <tag>Canal</tag>
+      
+      <tag>对账</tag>
+      
+      <tag>数据同步</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>大厂订单查询架构对齐：淘宝、京东、拼多多、抖音是怎么处理的</title>
     <link href="/2025/07/18/2025-07-18-%E5%A4%A7%E5%8E%82%E8%AE%A2%E5%8D%95%E6%9F%A5%E8%AF%A2%E6%9E%B6%E6%9E%84%E5%AF%B9%E9%BD%90/"/>
     <url>/2025/07/18/2025-07-18-%E5%A4%A7%E5%8E%82%E8%AE%A2%E5%8D%95%E6%9F%A5%E8%AF%A2%E6%9E%B6%E6%9E%84%E5%AF%B9%E9%BD%90/</url>
@@ -639,6 +1058,37 @@
       <tag>反向索引</tag>
       
       <tag>rehash</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>分库分表迁移复盘：从分片键决策到无停机上线</title>
+    <link href="/2025/07/05/2025-07-05-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E8%BF%81%E7%A7%BB%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%86%B3%E7%AD%96%E5%88%B0%E6%97%A0%E5%81%9C%E6%9C%BA%E4%B8%8A%E7%BA%BF/"/>
+    <url>/2025/07/05/2025-07-05-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E8%BF%81%E7%A7%BB%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%86%B3%E7%AD%96%E5%88%B0%E6%97%A0%E5%81%9C%E6%9C%BA%E4%B8%8A%E7%BA%BF/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>订单销售信息表累计逼近 6000 万行，2025 年上半年完成了分库分表落地。这篇复盘完整过程——从”要不要分”的决策，到分片键选型，到无停机迁移。</p></blockquote><h2 id="一、为什么要分：三个信号"><a href="#一、为什么要分：三个信号" class="headerlink" title="一、为什么要分：三个信号"></a>一、为什么要分：三个信号</h2><p>分库分表不是一上来就分的。我的判断信号是三个：</p><ol><li><strong>单表数据量逼近千万级</strong>：订单销售信息表累计接近 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级；</li><li><strong>写入成为瓶颈</strong>：单库单表写入能力到了上限；</li><li><strong>目标是横向扩容</strong>，不是优化单点查询。</li></ol><p>在到达这个信号之前，我们经历过”假分片”阶段：<strong>渠道垂直分表</strong>（拼多多一张表、京东一张表）——手工拆分、没有分布式路由、每开新渠道要新建一套表。这不是真正的水平分片。</p><h2 id="二、分片键选型：拿真实数据说话"><a href="#二、分片键选型：拿真实数据说话" class="headerlink" title="二、分片键选型：拿真实数据说话"></a>二、分片键选型：拿真实数据说话</h2><p>这是最关键的决策。我的方法不是拍脑袋，而是<strong>拿真实表做 SQL 分析 + 核对慢查询</strong>：</p><ul><li>确认所有业务事件（创建&#x2F;发货&#x2F;取消&#x2F;签收）都按 <code>WHERE order_no = ?</code> 定位；</li><li>所以分片键选<strong>单号（order_no）</strong>，不用时间。</li></ul><p><strong>为什么是单号不是时间</strong>：</p><ul><li>单号唯一、天然均匀 → 每条写入精准路由单物理表 → <strong>写路径零广播</strong>；</li><li>时间主分片对统计友好，但<strong>每条写事件会广播到全部分片</strong>——写广播是分片方案里最严重的问题。</li></ul><p><strong>复杂统计查询怎么办</strong>：不硬扛，下沉 Doris（Canal + Kafka 同步）——OLTP 分片只解决”写入 + 分片键单点查询”，复杂查询给 OLAP。</p><h2 id="三、无停机迁移：五步流程"><a href="#三、无停机迁移：五步流程" class="headerlink" title="三、无停机迁移：五步流程"></a>三、无停机迁移：五步流程</h2><p>迁移的核心不是”把数据搬过去”，而是”<strong>搬的过程中业务不能停、不能丢、不能重</strong>“：</p><figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">存量回填 → <span class="hljs-keyword">binlog/Canal </span>增量追平 → 对账兜底 → 灰度切流 → 删旧表<br></code></pre></td></tr></table></figure><ul><li><strong>存量回填</strong>：历史近 6000 万行分批迁移，夜间低峰跑批，日均约 800 万行，<strong>last_id 位点记进度、断点续跑</strong>；</li><li><strong>binlog 增量追平</strong>：回填期间的新写入靠 binlog 增量同步到新分片，<strong>位点对齐</strong>（切流点严格对齐 binlog 位点）；</li><li><strong>对账兜底</strong>：按业务主键遍历两侧比对，<strong>连续两轮差异为 0 才允许切流</strong>——对账不过不推进；</li><li><strong>灰度切流</strong>：按渠道逐个切，约两周完成，随时可回滚；</li><li><strong>删旧表</strong>：全量对账通过、稳定运行后才清理。</li></ul><p><strong>这里的”双写”&#x3D; binlog&#x2F;Canal 增量双写，零侵入</strong>——业务只写老表，不在应用层改代码双向写。</p><h2 id="四、零停机切换：配置驱动路由"><a href="#四、零停机切换：配置驱动路由" class="headerlink" title="四、零停机切换：配置驱动路由"></a>四、零停机切换：配置驱动路由</h2><p>迁移最怕”切路由那一刻要重启”——我的做法是<strong>配置驱动路由</strong>：</p><ul><li>业务代码只写<strong>逻辑表</strong>（<code>or_sales_info</code>）；</li><li>ShardingSphere 路由层把逻辑表映射到物理表（版本号前缀）；</li><li><strong>换表名&#x2F;数据源 &#x3D; 改路由配置，不是改 SQL</strong>；</li><li>数据源 + 分片规则放 <strong>Nacos</strong> 下发，应用不重启、连接不断。</li></ul><p>切流顺序：先灰度切读（按渠道&#x2F;比例验证）→ 全量对账通过后 100% 切走 → 老表保留可回滚。</p><h2 id="五、上线后的数字"><a href="#五、上线后的数字" class="headerlink" title="五、上线后的数字"></a>五、上线后的数字</h2><ul><li>当前 <strong>8 片</strong>，每片约 <strong>750 万</strong>行（6000 万 ÷ 8）；</li><li>单号主分片写路径<strong>零广播</strong>，主路径查询精准路由；</li><li>复杂统计查询走 Doris，不靠 MySQL 分片扛。</li></ul><h2 id="六、复盘：做对了什么"><a href="#六、复盘：做对了什么" class="headerlink" title="六、复盘：做对了什么"></a>六、复盘：做对了什么</h2><ol><li><strong>分片键匹配访问模式</strong>：先分析真实 SQL，再定分片键——这是 DDIA 分区思想的落地；</li><li><strong>对账是铁律</strong>：连续两轮差异 0 才切流，把”正确性证明”当迁移的关卡而不是可选项；</li><li><strong>零停机靠配置驱动</strong>：路由配置化 + Nacos 热更，切流不重启。</li></ol><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>分库分表信号：<strong>单表千万级 + 写入瓶颈 + 横向扩容目标</strong>；</li><li>分片键选<strong>单号</strong>（写零广播），不选时间（写广播）；</li><li>无停机迁移五步：<strong>回填 → 增量追平 → 对账 → 灰度 → 删旧表</strong>，对账不过不切流；</li><li>零停机切换靠 <strong>Nacos 配置热更</strong>，改配置不改 SQL；</li><li>复杂统计下沉 Doris，OLTP 只解决”写入 + 分片键单点查询”；</li><li>上线后 8 片&#x2F;每片约 750 万，写路径零广播。</li></ul><hr><p><em>发表于 2025 年 7 月 · 标签: 分库分表, 迁移, 复盘, ShardingSphere</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>数据库</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>ShardingSphere</tag>
+      
+      <tag>分库分表</tag>
+      
+      <tag>迁移</tag>
+      
+      <tag>复盘</tag>
       
     </tags>
     
