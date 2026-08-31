@@ -4,6 +4,105 @@
   
   
   <entry>
+    <title>从 SyncTask 到 Agent：编排引擎思想的工程迁移</title>
+    <link href="/2026/08/27/2026-08-27-%E4%BB%8ESyncTask%E5%88%B0Agent-%E7%BC%96%E6%8E%92%E5%BC%95%E6%93%8E%E6%80%9D%E6%83%B3%E7%9A%84%E5%B7%A5%E7%A8%8B%E8%BF%81%E7%A7%BB/"/>
+    <url>/2026/08/27/2026-08-27-%E4%BB%8ESyncTask%E5%88%B0Agent-%E7%BC%96%E6%8E%92%E5%BC%95%E6%93%8E%E6%80%9D%E6%83%B3%E7%9A%84%E5%B7%A5%E7%A8%8B%E8%BF%81%E7%A7%BB/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>学 Agent 时我最大的优势不是 Python、不是 Prompt，而是 <strong>SyncTask 引擎的编排经验</strong>。这篇文章讲怎么把任务编排引擎的工程思想真正迁移到 Agent——不是概念对照（那篇讲过），而是<strong>具体的工程做法</strong>。</p></blockquote><h2 id="一、迁移的前提：Agent-和-SyncTask-是同构的"><a href="#一、迁移的前提：Agent-和-SyncTask-是同构的" class="headerlink" title="一、迁移的前提：Agent 和 SyncTask 是同构的"></a>一、迁移的前提：Agent 和 SyncTask 是同构的</h2><p>Agent 的本质是 <code>think → act → observe</code> 循环，SyncTask 的本质是”调度 → 执行 → 状态机”。剥掉 LLM 这层”思考”，剩下的是同一套编排骨架：</p><table><thead><tr><th>SyncTask</th><th>Agent</th></tr></thead><tbody><tr><td>Handler 注册表（声明可用能力）</td><td>tools 清单（声明可用工具）</td></tr><tr><td>handlerKey 路由到实现</td><td>LLM 推理 → 选 Tool</td></tr><tr><td>参数解析&#x2F;校验（SPI）</td><td>JSON Schema 校验</td></tr><tr><td>executeCore() 执行业务</td><td>Tool 被调用 → 返回结果</td></tr><tr><td>afterExecute 决定下一跳</td><td>LLM 决定下一步</td></tr><tr><td>sync_task 表状态机</td><td>Memory &#x2F; 会话状态</td></tr></tbody></table><p><strong>区别只有一个</strong>：决策者从代码规则变成了 LLM。这个区别带来新问题（LLM 不可控），但<strong>编排的可靠性工程是可以直接迁移的</strong>。</p><h2 id="二、迁移一：工具层，从-Handler-到-Tool"><a href="#二、迁移一：工具层，从-Handler-到-Tool" class="headerlink" title="二、迁移一：工具层，从 Handler 到 Tool"></a>二、迁移一：工具层，从 Handler 到 Tool</h2><p>SyncTask 的 Handler 设计可以平移到 Agent 的 Tool：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// SyncTask Handler（已有）</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">SyncTaskHandler</span> &#123;<br>    String <span class="hljs-title function_">handlerKey</span><span class="hljs-params">()</span>;                 <span class="hljs-comment">// 路由键</span><br>    String <span class="hljs-title function_">description</span><span class="hljs-params">()</span>;                <span class="hljs-comment">// 描述</span><br>    SyncTaskParam <span class="hljs-title function_">validateAndParse</span><span class="hljs-params">(...)</span>; <span class="hljs-comment">// 参数校验</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">execute</span><span class="hljs-params">(SyncTaskParam param)</span>;   <span class="hljs-comment">// 执行</span><br>&#125;<br><br><span class="hljs-comment">// Agent Tool（迁移后）—— 结构一模一样</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">AgentTool</span> &#123;<br>    String <span class="hljs-title function_">name</span><span class="hljs-params">()</span>;                       <span class="hljs-comment">// 工具名（LLM 靠它路由）</span><br>    String <span class="hljs-title function_">description</span><span class="hljs-params">()</span>;                <span class="hljs-comment">// 描述（LLM 靠它选工具）</span><br>    ToolParamSchema <span class="hljs-title function_">schema</span><span class="hljs-params">()</span>;            <span class="hljs-comment">// 参数 schema（LLM 填参）</span><br>    String <span class="hljs-title function_">execute</span><span class="hljs-params">(Map&lt;String, Object&gt; args)</span>;  <span class="hljs-comment">// 执行</span><br>&#125;<br></code></pre></td></tr></table></figure><p><strong>迁移要点</strong>：</p><ol><li><strong>description 要写”给 LLM 看”</strong>：SyncTask 的 description 给代码看（路由用），Agent 的 description 给 LLM 看（决策用）——写得越清楚，LLM 选对率越高；</li><li><strong>参数 schema 用 JSON Schema</strong>：SyncTask 用自定义参数解析器，Agent 统一 JSON Schema（LLM 按 schema 填参）；</li><li><strong>注册表思想保留</strong>：ToolRegistry 就是 HandlerRegistry 的复制，<code>@ConditionalOnMissingBean</code> 那套可插拔设计照搬。</li></ol><h2 id="三、迁移二：可靠性，从任务状态机到会话状态"><a href="#三、迁移二：可靠性，从任务状态机到会话状态" class="headerlink" title="三、迁移二：可靠性，从任务状态机到会话状态"></a>三、迁移二：可靠性，从任务状态机到会话状态</h2><p>SyncTask 最值钱的是可靠性设计，全部可以迁移：</p><p><strong>① 双重防重 → Agent 幂等</strong></p><p>SyncTask 用”分布式锁 + 二次查库”防重复执行。Agent 的 Tool 调用同样可能重复（LLM 重试、网络重试）：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// Tool 必须幂等：同一个 order_no 只生效一次</span><br><span class="hljs-keyword">public</span> String <span class="hljs-title function_">createOrder</span><span class="hljs-params">(Map&lt;String, Object&gt; args)</span> &#123;<br>    <span class="hljs-type">String</span> <span class="hljs-variable">orderNo</span> <span class="hljs-operator">=</span> (String) args.get(<span class="hljs-string">&quot;orderNo&quot;</span>);<br>    <span class="hljs-keyword">if</span> (orderStore.exists(orderNo)) &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;&#123;\&quot;status\&quot;:\&quot;duplicate\&quot;&#125;&quot;</span>;   <span class="hljs-comment">// 已处理过，直接返回</span><br>    &#125;<br>    orderStore.create(orderNo);<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;&#123;\&quot;status\&quot;:\&quot;created\&quot;&#125;&quot;</span>;<br>&#125;<br></code></pre></td></tr></table></figure><p><strong>② 状态机 → 会话&#x2F;记忆</strong></p><p>SyncTask 的 sync_task 表状态机管任务生命周期；Agent 用 Memory 管对话状态：</p><ul><li><strong>短期记忆</strong> &#x3D; 对话历史（上下文）；</li><li><strong>长期记忆</strong> &#x3D; 持久化会话（Redis&#x2F;DB），支持断点续传——进程挂了能恢复，和 SyncTask 任务表一样。</li></ul><p><strong>③ 告警分级 → Agent 可观测性</strong></p><p>SyncTask 的四级告警（SKIP&#x2F;ONE&#x2F;BATCH&#x2F;MIN）迁移到 Agent，就是<strong>分级记录</strong>：</p><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">记录：用户目标 → 每轮 Think → Act（选的工具/参数）→ Observe（工具返回）→ 最终结果<br></code></pre></td></tr></table></figure><p>Agent 推理是黑盒，出问题必须能复盘——和 SyncTask 排查任务失败一个思路。</p><h2 id="四、迁移三：编排，从-afterExecute-到-LLM-决策"><a href="#四、迁移三：编排，从-afterExecute-到-LLM-决策" class="headerlink" title="四、迁移三：编排，从 afterExecute 到 LLM 决策"></a>四、迁移三：编排，从 afterExecute 到 LLM 决策</h2><p>SyncTask 用 afterExecute 埋点做 Choreography（任务完成后触发下一步）。Agent 把这个”决策者”换成了 LLM：</p><figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm"><span class="hljs-keyword">SyncTask: </span> Handler A 完成 → afterExecute → 触发 Handler <span class="hljs-keyword">B（规则决定）</span><br><span class="hljs-keyword"></span><span class="hljs-symbol">Agent:</span>     Tool A 返回 → <span class="hljs-keyword">LLM </span>思考 → 决定调 Tool <span class="hljs-keyword">B（模型决定）</span><br></code></pre></td></tr></table></figure><p><strong>结构一样，决策者不同</strong>。这带来一个必须处理的差异：<strong>LLM 可能选错</strong>。</p><p><strong>约束 LLM 自由度的做法</strong>：</p><ol><li><strong>Tool 描述精确</strong>——描述越清楚，选对率越高；</li><li><strong>结构化输出</strong>——Function Calling &#x2F; JSON Schema，比自由文本可靠；</li><li><strong>关键路径人工确认</strong>——涉及钱&#x2F;库存的 Tool 调用必须确认点；</li><li><strong>失败兜底</strong>——LLM 卡住&#x2F;答错时，有降级路径（超时、重试、返回原文）。</li></ol><h2 id="五、一次真实的”迁移演练”"><a href="#五、一次真实的”迁移演练”" class="headerlink" title="五、一次真实的”迁移演练”"></a>五、一次真实的”迁移演练”</h2><p>我做过一个小实验：把 SyncTask 的一个链式同步（下单 → 通知仓储 → 回传状态）用 Agent 重新实现：</p><ul><li>三个 Tool：<code>createOrder</code>、<code>notifyWarehouse</code>、<code>updateStatus</code>；</li><li>让 LLM 编排三步，而不是 SyncTask 的 afterExecute 链；</li><li><strong>发现</strong>：LLM 在工具选择上基本正确，但<strong>偶发会跳过步骤</strong>（比如直接 updateStatus 忘了 notifyWarehouse）。</li></ul><p><strong>结论</strong>：Agent 适合”探索性”任务（不确定下一步），SyncTask 适合”确定性”任务（流程固定）。<strong>混合方案最优</strong>：确定性的链（下单→通知→回传）用 SyncTask 保证不跳步，不确定的决策（比如”这个订单该走哪个处理流程”）交给 LLM。</p><h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><p>这是学习阶段的迁移思考（SyncTask 是生产实践、Agent 是学习实践）。但<strong>迁移的方法论是真实的</strong>：工具层、可靠性层、编排层的每一块，都是 SyncTask 里验证过的工程做法，只是把决策者从代码换成 LLM。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>Agent 和 SyncTask 同构：Handler↔Tool、状态机↔Memory、afterExecute↔LLM 决策；</li><li><strong>工具层迁移</strong>：Handler → Tool，description 给 LLM 看、schema 用 JSON Schema；</li><li><strong>可靠性迁移</strong>：双重防重 → 幂等、状态机 → 会话记忆、四级告警 → 可观测性；</li><li><strong>编排迁移</strong>：规则决策 → LLM 决策，要约束自由度（描述精确&#x2F;结构化输出&#x2F;人工确认&#x2F;失败兜底）；</li><li>混合最优：确定性链用 SyncTask，不确定决策交给 LLM；</li><li>迁移优势：<strong>懂可靠性工程的 Agent 开发者，是 ML 背景开发者缺的</strong>。</li></ul><hr><p><em>发表于 2026 年 8 月 · 标签: SyncTask, Agent, 编排, 迁移, 工程实践</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>AI开发</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>SyncTask</tag>
+      
+      <tag>Agent</tag>
+      
+      <tag>编排</tag>
+      
+      <tag>迁移</tag>
+      
+      <tag>工程实践</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>分库分表上线一周年复盘：稳态运营、对账与扩容规划</title>
+    <link href="/2026/08/24/2026-08-24-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E4%B8%8A%E7%BA%BF%E4%B8%80%E5%91%A8%E5%B9%B4%E5%A4%8D%E7%9B%98-%E7%A8%B3%E6%80%81%E8%BF%90%E8%90%A5%E4%B8%8E%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%92/"/>
+    <url>/2026/08/24/2026-08-24-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E4%B8%8A%E7%BA%BF%E4%B8%80%E5%91%A8%E5%B9%B4%E5%A4%8D%E7%9B%98-%E7%A8%B3%E6%80%81%E8%BF%90%E8%90%A5%E4%B8%8E%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%92/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>2025 年下半年分库分表上线，到 2026 年 8 月正好一年。这一篇复盘”上线之后”的事——不是迁移怎么做（那篇讲过），而是<strong>稳态运营、对账机制、以及 8→16 扩容的推演</strong>。这才是分库分表真正见功夫的地方。</p></blockquote><h2 id="一、稳态现状"><a href="#一、稳态现状" class="headerlink" title="一、稳态现状"></a>一、稳态现状</h2><ul><li>当前 <strong>8 片</strong>，每片约 <strong>750 万</strong>行，累计 <strong>6000 万</strong>行；</li><li>分片键单号（order_no），写路径<strong>零广播</strong>；</li><li>复杂统计查询下沉 Doris（Canal → Kafka 同步）。</li></ul><p>上线的”那一刻”不难，难的是<strong>一年里每天的对账、监控、扩容规划</strong>。</p><h2 id="二、稳态运营：三件事"><a href="#二、稳态运营：三件事" class="headerlink" title="二、稳态运营：三件事"></a>二、稳态运营：三件事</h2><h3 id="1-对账是常态，不是一次性"><a href="#1-对账是常态，不是一次性" class="headerlink" title="1. 对账是常态，不是一次性"></a>1. 对账是常态，不是一次性</h3><p>分库分表后，正确性不能靠”迁移时对一次账”就完了——<strong>数据每天在变，对账要常态化</strong>。</p><p>我的对账机制：</p><figure class="highlight q"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs q">定期（夜间低峰）：<br>① 按业务主键遍历两侧（分批，last_id 断点续跑）<br>② 比对 MySQL 分片 <span class="hljs-built_in">vs</span> Doris 宽表<br>③ 差异记录 → 重投（补发同步事件）<br>④ 连续两轮差异为 <span class="hljs-number">0</span> → 确认一致<br></code></pre></td></tr></table></figure><p><strong>选型边界</strong>：纯比对用 XXL-JOB 单选跑（迁库批处理、无编排需求）；差异重投才走 SyncTask（要可靠投递、可能重试）。</p><h3 id="2-监控：分片健康度"><a href="#2-监控：分片健康度" class="headerlink" title="2. 监控：分片健康度"></a>2. 监控：分片健康度</h3><p>分库分表后要盯的监控变了：</p><ul><li><strong>分片数据倾斜</strong>：每片行数&#x2F;写入量是否均匀（单号哈希分布，理论上均匀，要验证实际）；</li><li><strong>跨片查询</strong>：是否出现意外广播（应该是 0）；</li><li><strong>慢 SQL 分布</strong>：慢 SQL 落在哪个分片、是否某片热点。</li></ul><h3 id="3-踩坑的持续修复"><a href="#3-踩坑的持续修复" class="headerlink" title="3. 踩坑的持续修复"></a>3. 踩坑的持续修复</h3><p>上线一年遇到的兼容性问题：</p><ul><li><strong>PageHelper 分页冲突</strong>：跨分片分页会内存归并，深分页贵 → 禁大页码、改游标分页；</li><li><strong>非分片键查询</strong>：按用户查订单 → 建 user_id → order_no 索引表，二次路由；</li><li><strong>跨分片 JOIN</strong>：关联表同键分片（订单主表&#x2F;商品表&#x2F;地址表都用 order_no），片内本地 JOIN。</li></ul><h2 id="三、扩容规划：8→16-的推演"><a href="#三、扩容规划：8→16-的推演" class="headerlink" title="三、扩容规划：8→16 的推演"></a>三、扩容规划：8→16 的推演</h2><p>单号哈希分片，扩容必然 <strong>rehash</strong>——<code>hash(order_no) % 8</code> 变成 <code>% 16</code>，落片变化，大约<strong>一半数据要迁移</strong>。</p><p><strong>扩容流程</strong>（和首次迁移同一套，我验证过）：</p><figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">存量回填 → <span class="hljs-keyword">binlog </span>增量追平 → 对账兜底 → 灰度切流 → 删旧表<br></code></pre></td></tr></table></figure><p><strong>关键推演</strong>：</p><ol><li><strong>要动多少数据</strong>：8→16，约一半行数（3000 万行）需要换分片——这是个大工程，不能停机；</li><li><strong>“双写”是零侵入增量双写</strong>：新老分片并存期间，binlog&#x2F;Canal 异步把新写补到新表，<strong>业务只写老表，不应用层改代码双向写</strong>；</li><li><strong>零停机切换靠 Nacos 配置热更</strong>：业务写逻辑表，路由层映射物理表，换表名 &#x3D; 改路由配置（Nacos 下发），应用不重启；</li><li><strong>对账不过不切流</strong>：连续两轮差异 0 才切，灰度按渠道逐个切，随时可回滚。</li></ol><p><strong>为什么现在规划而不是等数据满了再想</strong>：扩容的推演（数据量、流程、工具）提前验证过，真到触发时是按流程走，不是现场发明。</p><h2 id="四、一个诚实的算账"><a href="#四、一个诚实的算账" class="headerlink" title="四、一个诚实的算账"></a>四、一个诚实的算账</h2><p>扩容的代价要算清楚：</p><ul><li>8→16 要迁移约一半数据，<strong>磁盘、网络、时间成本</strong>都高；</li><li><strong>能不能不加片</strong>？比如清理历史数据（终态订单归档）、优化压缩比——先试便宜手段，扩容是最后手段（和”先索引后分库分表”一个原则）。</li></ul><p>所以现在的策略是：<strong>能归档的先归档、能优化的先优化，8→16 作为已推演好的后备方案</strong>，触发条件（单表逼近千万级&#x2F;写入瓶颈）到了才上。</p><h2 id="五、复盘：上线一年最大的收获"><a href="#五、复盘：上线一年最大的收获" class="headerlink" title="五、复盘：上线一年最大的收获"></a>五、复盘：上线一年最大的收获</h2><ol><li><strong>分库分表不是”上线即结束”，是”持续治理的开始”</strong>——对账、监控、兼容性修复是常态；</li><li><strong>扩容的难不在”搬数据”，在”无停机 + 对账 + 可回滚”</strong>——提前推演、按流程走，比现场发明可靠；</li><li><strong>先便宜后贵</strong>：归档、优化能拖后扩容，就不要急着加片。</li></ol><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>稳态：8 片 &#x2F; 750 万每片 &#x2F; 6000 万行，写路径零广播；</li><li><strong>对账常态化</strong>：定期比对 MySQL vs Doris，连续两轮差异 0 才一致；比对用 XXL-JOB、重投用 SyncTask；</li><li>监控：分片倾斜、跨片查询、慢 SQL 分布；</li><li>扩容 8→16：rehash 约一半数据，<strong>回填 + 增量追平 + 对账 + 灰度 + 删旧表</strong>，Nacos 热更零停机；</li><li>先归档&#x2F;优化拖后扩容，扩容是最后手段；</li><li>收获：分库分表是<strong>持续治理</strong>，不是一次性上线。</li></ul><hr><p><em>发表于 2026 年 8 月 · 标签: 分库分表, 扩容, 对账, 复盘, ShardingSphere</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>数据库</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>ShardingSphere</tag>
+      
+      <tag>分库分表</tag>
+      
+      <tag>扩容</tag>
+      
+      <tag>对账</tag>
+      
+      <tag>复盘</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>分布式事务在订单链路的组合实践：TCC 与本地消息表怎么配合</title>
+    <link href="/2026/08/20/2026-08-20-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E5%9C%A8%E8%AE%A2%E5%8D%95%E9%93%BE%E8%B7%AF%E7%9A%84%E7%BB%84%E5%90%88%E5%AE%9E%E8%B7%B5-TCC%E4%B8%8E%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8/"/>
+    <url>/2026/08/20/2026-08-20-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E5%9C%A8%E8%AE%A2%E5%8D%95%E9%93%BE%E8%B7%AF%E7%9A%84%E7%BB%84%E5%90%88%E5%AE%9E%E8%B7%B5-TCC%E4%B8%8E%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>订单链路是分布式事务最典型的战场：扣库存、减积分、记账、下发下游，跨多个服务。踩过坑后的结论是：<strong>没有一套方案能打天下，要在”强一致”和”最终一致”之间按场景分流</strong>。这篇讲我订单中台里的组合实践。</p></blockquote><h2 id="一、先分清楚两类场景"><a href="#一、先分清楚两类场景" class="headerlink" title="一、先分清楚两类场景"></a>一、先分清楚两类场景</h2><p>订单链路里的分布式事务，本质是两类完全不同的诉求：</p><table><thead><tr><th></th><th>强一致场景</th><th>最终一致场景</th></tr></thead><tbody><tr><td>例子</td><td>发货确认、库存扣减、预占</td><td>订单下发下游、状态回传、同步</td></tr><tr><td>要求</td><td>不能错一分，失败必须回滚</td><td>可以延迟，但不能丢</td></tr><tr><td>方案</td><td><strong>TCC</strong></td><td><strong>本地消息表</strong></td></tr></tbody></table><p><strong>错误做法</strong>：整个订单链路用一种方案。要么”强一致场景用了最终一致”（库存扣错没人发现），要么”最终一致场景用了强一致”（把高并发路径拖垮）。</p><h2 id="二、强一致场景：TCC（Try-Confirm-Cancel）"><a href="#二、强一致场景：TCC（Try-Confirm-Cancel）" class="headerlink" title="二、强一致场景：TCC（Try&#x2F;Confirm&#x2F;Cancel）"></a>二、强一致场景：TCC（Try&#x2F;Confirm&#x2F;Cancel）</h2><p>订单核心链路（发货确认、库存扣减）要求强一致，用 <strong>TCC</strong>：</p><ul><li><strong>Try</strong>：资源预留（预扣库存，锁住不真扣）；</li><li><strong>Confirm</strong>：确认执行（真正扣减，把 Try 预留的落实，一定能成功）；</li><li><strong>Cancel</strong>：取消（回滚 Try，释放预留）。</li></ul><p><strong>为什么订单核心用 TCC 而不是 Seata AT</strong>：AT 的全局锁本质是把可串行化隔离强加在所有事务上，把所有并发都串行化了；<strong>TCC 在 Try 用宽松隔离、只在 Confirm 做串行化</strong>——并发度更高。我把订单发货确认从 AT 改 TCC 后，事务吞吐提升 40%+。</p><p><strong>TCC 的三个坑（必须处理）</strong>：</p><ol><li><strong>空回滚</strong>：Cancel 被调用但 Try 没执行（网络丢请求）→ 直接回滚会报错。解决：Cancel 前先查”有没有 Try 成功的预留记录”，没有就直接成功返回；</li><li><strong>悬挂</strong>：Cancel 先执行了，Try 才后到 → 预留了”已回滚”的资源。解决：Try 前查”是否已 Cancel”标记，已取消则丢弃这次 Try；</li><li><strong>幂等</strong>：Confirm&#x2F;Cancel 可能被重试多次。解决：按业务主键打状态&#x2F;版本号，重复执行只生效一次。</li></ol><p>这三个坑的本质都是”<strong>网络不可靠下的状态错乱</strong>“——用预留记录 + 状态标记 + 幂等兜住。</p><h2 id="三、最终一致场景：本地消息表"><a href="#三、最终一致场景：本地消息表" class="headerlink" title="三、最终一致场景：本地消息表"></a>三、最终一致场景：本地消息表</h2><p>订单下发下游、状态回传这类”可以延迟但不能丢”的场景，用<strong>本地消息表</strong>：</p><figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs 1c">① 业务操作 <span class="hljs-punctuation">+</span> 写<span class="hljs-string">&quot;待发消息表&quot;</span>在同一个本地事务（要么都成功要么都失败）<br>② 定时任务扫消息表 → 发 MQ → 发送成功标记<br>③ 消费端幂等 <span class="hljs-punctuation">+</span> ack（处理成功才确认）<br></code></pre></td></tr></table></figure><p><strong>为什么用本地消息表而不是直接发 MQ</strong>：直接发 MQ 有个经典漏洞——“业务提交了但消息没发出去”（本地事务和发消息不原子）。本地消息表把”发消息”纳入本地事务，<strong>业务成功 ⟹ 消息一定在表里</strong>，定时任务保证最终发出去。</p><p><strong>为什么不用 RocketMQ 事务消息</strong>：也能解决，但本地消息表不依赖特定 MQ 特性、更通用，且和 SyncTask 引擎的扫描机制天然配合。选型看场景，两者都是”最终一致 + 幂等”的路子。</p><h2 id="四、组合的关键：按”一致性等级”分流"><a href="#四、组合的关键：按”一致性等级”分流" class="headerlink" title="四、组合的关键：按”一致性等级”分流"></a>四、组合的关键：按”一致性等级”分流</h2><p>订单链路的完整方案：</p><figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs arcade">下单 → 预占库存（TCC <span class="hljs-keyword">Try</span>，宽松）<br>     → 写本地消息表（订单下发下游）<br>     → 发货确认（TCC Confirm，强一致）<br>     → 状态回传（本地消息表 + 幂等）<br></code></pre></td></tr></table></figure><p><strong>分流原则</strong>：</p><ol><li><strong>强一致给核心、最终一致给周边</strong>：扣库存&#x2F;发货确认给 TCC，下发&#x2F;回传给本地消息表；</li><li><strong>幂等是底层铁律</strong>：不管 TCC 还是本地消息表，<strong>Confirm&#x2F;Cancel&#x2F;消费都要幂等</strong>——分布式下重试是常态，幂等是兜底；</li><li><strong>对账收口</strong>：最终一致场景靠对账收敛，强一致场景靠 TCC 保证——两者各有兜底。</li></ol><h2 id="五、Seata-AT-的适用边界"><a href="#五、Seata-AT-的适用边界" class="headerlink" title="五、Seata AT 的适用边界"></a>五、Seata AT 的适用边界</h2><p>被问”那 Seata AT 呢”——它适合<strong>快速落地、非高并发</strong>的跨库场景：</p><ul><li>工单系统用 AT（低侵入、undo_log 自动回滚）；</li><li>订单核心链路用 TCC（AT 全局锁在分片&#x2F;高并发场景开销大）。</li></ul><p><strong>选型判断标准</strong>：跨服务的那个动作能不能靠框架自动回滚？能 → AT（零侵入）；有外部副作用&#x2F;要高并发 → TCC（业务自定义补偿）。</p><h2 id="六、复盘：什么最值钱"><a href="#六、复盘：什么最值钱" class="headerlink" title="六、复盘：什么最值钱"></a>六、复盘：什么最值钱</h2><ol><li><strong>没有银弹，按场景分流</strong>是分布式事务的第一原则——一套方案打天下必踩坑；</li><li><strong>TCC 三个坑的解法是通用的</strong>（空回滚&#x2F;悬挂&#x2F;幂等），换任何 TCC 实现都要处理；</li><li><strong>幂等 + 对账是最终一致的底气</strong>——不靠”消息不重复”（做不到），靠”重复无害”（幂等）+ “对账兜底”。</li></ol><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>订单链路分两类：<strong>强一致（TCC）+ 最终一致（本地消息表）</strong>，按场景分流；</li><li>TCC：Try 预留&#x2F;Confirm 落实&#x2F;Cancel 回滚，订单核心链路用（吞吐 +40%），三坑&#x3D;空回滚&#x2F;悬挂&#x2F;幂等；</li><li>本地消息表：业务+写表同本地事务，定时扫表发 MQ，消费幂等——适合下发&#x2F;回传；</li><li>AT 的边界：快速落地、非高并发；核心链路用 TCC；</li><li>底层铁律：<strong>幂等 + 对账</strong>，分布式事务的正确性靠它们兜底。</li></ul><hr><p><em>发表于 2026 年 8 月 · 标签: 分布式事务, TCC, 本地消息表, 订单中台, 幂等</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>分布式</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>分布式事务</tag>
+      
+      <tag>TCC</tag>
+      
+      <tag>本地消息表</tag>
+      
+      <tag>幂等</tag>
+      
+      <tag>订单中台</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>线上故障排查实战：从告警到定位，一次完整的高 CPU 排查</title>
     <link href="/2026/08/18/2026-08-18-%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98-%E4%BB%8E%E5%91%8A%E8%AD%A6%E5%88%B0%E5%AE%9A%E4%BD%8D/"/>
     <url>/2026/08/18/2026-08-18-%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98-%E4%BB%8E%E5%91%8A%E8%AD%A6%E5%88%B0%E5%AE%9A%E4%BD%8D/</url>
