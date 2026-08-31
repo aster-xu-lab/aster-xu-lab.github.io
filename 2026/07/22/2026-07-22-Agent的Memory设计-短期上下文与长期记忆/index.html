@@ -1,0 +1,935 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="Agent 三层架构里，Memory 是最容易被低估的一层。很多人以为 Memory 就是”把对话历史塞进 prompt”——但上下文窗口有限、历史一长就爆，跨会话更是无从谈起。这篇讲 Memory 的工程实现：短期上下文怎么管理、长期记忆怎么设计。  一、两个 Memory，两个问题Agent 的 Memory 分两层，解决不同问题：     短期上下文 长期记忆    是什么 当前对话历史">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Agent 的 Memory 设计：短期上下文与长期记忆的工程实现">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/07/22/2026-07-22-Agent%E7%9A%84Memory%E8%AE%BE%E8%AE%A1-%E7%9F%AD%E6%9C%9F%E4%B8%8A%E4%B8%8B%E6%96%87%E4%B8%8E%E9%95%BF%E6%9C%9F%E8%AE%B0%E5%BF%86/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="Agent 三层架构里，Memory 是最容易被低估的一层。很多人以为 Memory 就是”把对话历史塞进 prompt”——但上下文窗口有限、历史一长就爆，跨会话更是无从谈起。这篇讲 Memory 的工程实现：短期上下文怎么管理、长期记忆怎么设计。  一、两个 Memory，两个问题Agent 的 Memory 分两层，解决不同问题：     短期上下文 长期记忆    是什么 当前对话历史">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-07-22T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-31T06:01:05.136Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Agent">
+<meta property="article:tag" content="Memory">
+<meta property="article:tag" content="RAG">
+<meta property="article:tag" content="上下文管理">
+<meta property="article:tag" content="工程实现">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>Agent 的 Memory 设计：短期上下文与长期记忆的工程实现 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Agent 的 Memory 设计：短期上下文与长期记忆的工程实现"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-07-22 09:00" pubdate>
+          2026年7月22日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          18 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Agent 的 Memory 设计：短期上下文与长期记忆的工程实现</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>Agent 三层架构里，<strong>Memory 是最容易被低估的一层</strong>。很多人以为 Memory 就是”把对话历史塞进 prompt”——但上下文窗口有限、历史一长就爆，跨会话更是无从谈起。这篇讲 Memory 的工程实现：短期上下文怎么管理、长期记忆怎么设计。</p>
+</blockquote>
+<h2 id="一、两个-Memory，两个问题"><a href="#一、两个-Memory，两个问题" class="headerlink" title="一、两个 Memory，两个问题"></a>一、两个 Memory，两个问题</h2><p>Agent 的 Memory 分两层，解决不同问题：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>短期上下文</th>
+<th>长期记忆</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>是什么</td>
+<td>当前对话历史</td>
+<td>跨会话的持久化信息</td>
+</tr>
+<tr>
+<td>存在哪</td>
+<td>内存 &#x2F; 会话</td>
+<td>Redis &#x2F; 向量库 &#x2F; DB</td>
+</tr>
+<tr>
+<td>生命周期</td>
+<td>一次会话</td>
+<td>永久（可检索）</td>
+</tr>
+<tr>
+<td>核心问题</td>
+<td><strong>上下文窗口装不下</strong></td>
+<td><strong>怎么存、怎么检索</strong></td>
+</tr>
+</tbody></table>
+<p><strong>没有记忆的 Agent 每步都”失忆”</strong>——要么靠塞全量历史（贵且超窗口），要么跨会话完全没记忆。做好分层，Agent 才从”多步调用”变成”会积累的系统”。</p>
+<h2 id="二、短期上下文：窗口管理的四种策略"><a href="#二、短期上下文：窗口管理的四种策略" class="headerlink" title="二、短期上下文：窗口管理的四种策略"></a>二、短期上下文：窗口管理的四种策略</h2><p>LLM 有上下文窗口上限（如 128K token），对话一长就装不下。四种策略：</p>
+<p><strong>① 截断（最粗暴）</strong>：只保留最近 N 轮，丢掉最老的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 只保留最近 10 轮</span><br><span class="hljs-keyword">if</span> (history.size() &gt; <span class="hljs-number">20</span>) &#123;<br>    history = history.subList(history.size() - <span class="hljs-number">20</span>, history.size());<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>缺点：早期关键信息（用户需求、约束）可能被丢。</p>
+<p><strong>② 滑动窗口（基础）</strong>：固定窗口滚动，比裸截断多了”始终保留第一条系统消息&#x2F;用户目标”。</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-attr">[system 消息 + 用户目标]</span> + <span class="hljs-selector-attr">[最近 N 轮对话]</span><br></code></pre></td></tr></table></figure>
+<p><strong>关键：用户目标要一直保留</strong>——它是 Agent 要完成的事，丢了就”跑偏”。</p>
+<p><strong>③ 摘要压缩（进阶）</strong>：把早期历史交给 LLM 生成摘要，用摘要代替原文。</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs tap">早期<span class="hljs-number"> 20 </span>轮 → LLM 总结成<span class="hljs-number"> 3 </span>句摘要 → 拼进上下文<br></code></pre></td></tr></table></figure>
+<p>省 token，但<strong>有损</strong>——摘要可能丢细节。适合”早期信息是背景、不重要细节”的场景。</p>
+<p><strong>④ 检索增强（Memory+RAG）</strong>：把”重要记忆”向量化，需要时检索，而不是全量塞。</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs">每轮结束：把关键结论写入长期记忆（向量库）<br>新对话：检索相关的历史结论，拼进上下文<br></code></pre></td></tr></table></figure>
+
+<p><strong>选型</strong>：简单任务用滑动窗口（保用户目标），长任务用摘要，跨会话用检索增强。<strong>按场景选，不是越复杂越好</strong>。</p>
+<h2 id="三、长期记忆：怎么存、怎么检索"><a href="#三、长期记忆：怎么存、怎么检索" class="headerlink" title="三、长期记忆：怎么存、怎么检索"></a>三、长期记忆：怎么存、怎么检索</h2><p>长期记忆解决”跨会话记住用户&#x2F;任务”。两种实现：</p>
+<p><strong>① 结构化存储（DB&#x2F;Redis）</strong><br>适合<strong>确定性信息</strong>：用户偏好、任务状态、已处理记录。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 用户偏好存 Redis（结构化）</span><br>memoryStore.put(<span class="hljs-string">&quot;user:&quot;</span> + userId + <span class="hljs-string">&quot;:pref&quot;</span>, <br>    Map.of(<span class="hljs-string">&quot;region&quot;</span>, <span class="hljs-string">&quot;华东&quot;</span>, <span class="hljs-string">&quot;prefers&quot;</span>, List.of(<span class="hljs-string">&quot;顺丰&quot;</span>)));<br></code></pre></td></tr></table></figure>
+
+<p><strong>② 向量库（语义记忆）</strong><br>适合<strong>语义化信息</strong>：历史结论、背景知识。和 RAG 同一套基础设施。</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs 1c">每轮结束 → 把<span class="hljs-string">&quot;本轮结论&quot;</span>向量化存入向量库<br>新问题 → 语义检索相关历史 → 拼进上下文<br></code></pre></td></tr></table></figure>
+
+<p><strong>记忆的 TTL 和隔离</strong>：</p>
+<ul>
+<li><strong>TTL</strong>：短期偏好设过期（如 7 天），长期知识不设——记忆也要”遗忘”；</li>
+<li><strong>隔离</strong>：不同用户&#x2F;任务的记忆要隔离（按 key 分），否则串记忆。</li>
+</ul>
+<h2 id="四、Memory-和-RAG-的关系（容易混）"><a href="#四、Memory-和-RAG-的关系（容易混）" class="headerlink" title="四、Memory 和 RAG 的关系（容易混）"></a>四、Memory 和 RAG 的关系（容易混）</h2><p>RAG 和 Memory 都用向量检索，但<strong>来源不同</strong>：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>RAG</th>
+<th>Agent Memory</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据来源</td>
+<td>外部知识库（FAQ&#x2F;文档）</td>
+<td>Agent 自己的历史（结论&#x2F;偏好）</td>
+</tr>
+<tr>
+<td>解决什么</td>
+<td>知识过期、幻觉</td>
+<td>跨会话连贯、个性化</td>
+</tr>
+<tr>
+<td>生命周期</td>
+<td>静态知识</td>
+<td>动态积累</td>
+</tr>
+</tbody></table>
+<p><strong>落地时共用一套向量基础设施</strong>（pgvector&#x2F;Milvus + Embedding），只是写入的是不同内容。</p>
+<h2 id="五、一个工程落地的例子"><a href="#五、一个工程落地的例子" class="headerlink" title="五、一个工程落地的例子"></a>五、一个工程落地的例子</h2><p>给 Agent 加 Memory 的完整设计：</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">用户问题进来<br>→ ① 从长期记忆检索相关历史（向量库，Top3）<br>→ ② 拼接：系统消息 + 检索到的记忆 + 最近对话（滑动窗口）<br>→ ③ <span class="hljs-keyword">LLM </span>处理<br>→ ④ 每轮结束：提取<span class="hljs-string">&quot;本轮结论&quot;</span>写入长期记忆（向量化）<br>→ ⑤ 会话状态存 Redis（支持断点续传）<br></code></pre></td></tr></table></figure>
+
+<p><strong>三个关键</strong>：</p>
+<ol>
+<li><strong>记忆要主动写入</strong>——不是”记了就能用”，是”每轮结束把结论沉淀下来”；</li>
+<li><strong>检索是 gate 不是全塞</strong>——只喂相关的，不把整个记忆库塞进窗口；</li>
+<li><strong>状态可恢复</strong>——进程重启后从 Redis 恢复会话，Agent 不”失忆”。</li>
+</ol>
+<h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><p>Memory 是 Agent 从 Demo 到生产的关键一环（我在《Agent 从 Demo 到生产》里列过”状态持久化”）。这篇是<strong>工程设计的梳理</strong>——生产级 Memory 还要考虑存储成本、检索延迟、记忆污染（写入了错误结论）。原理清楚、边界诚实。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>Memory 分两层：<strong>短期上下文（会话内）+ 长期记忆（跨会话）</strong>；</li>
+<li>短期管理四策略：<strong>截断 &#x2F; 滑动窗口（保用户目标）&#x2F; 摘要压缩 &#x2F; 检索增强</strong>，按场景选；</li>
+<li>长期记忆：<strong>结构化（DB&#x2F;Redis）存确定性信息 + 向量库存语义记忆</strong>，注意 TTL 和隔离；</li>
+<li>Memory 和 RAG 同基础设施，但数据来源不同（历史 vs 知识库）；</li>
+<li>工程三关键：<strong>主动写入、检索 gate、状态可恢复</strong>；</li>
+<li>没记忆的 Agent 每步失忆，做好 Memory 才是”会积累的系统”。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 7 月 · 标签: Agent, Memory, 上下文管理, RAG, 工程实现</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/AI%E5%BC%80%E5%8F%91/" class="category-chain-item">AI开发</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Agent/" class="print-no-link">#Agent</a>
+      
+        <a href="/tags/RAG/" class="print-no-link">#RAG</a>
+      
+        <a href="/tags/Memory/" class="print-no-link">#Memory</a>
+      
+        <a href="/tags/%E4%B8%8A%E4%B8%8B%E6%96%87%E7%AE%A1%E7%90%86/" class="print-no-link">#上下文管理</a>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E7%8E%B0/" class="print-no-link">#工程实现</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Agent 的 Memory 设计：短期上下文与长期记忆的工程实现</div>
+      <div>https://aster-xu-lab.github.io/2026/07/22/2026-07-22-Agent的Memory设计-短期上下文与长期记忆/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年7月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/08/03/2026-08-03-%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95%E8%AE%BA-%E4%BB%8E%E9%9C%80%E6%B1%82%E6%BE%84%E6%B8%85%E5%88%B0%E6%96%B9%E6%A1%88%E5%8F%96%E8%88%8D/" title="系统设计方法论：从需求澄清到方案取舍，一套可复用的打法">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">系统设计方法论：从需求澄清到方案取舍，一套可复用的打法</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/07/15/2026-07-15-%E4%BB%8ECAP%E5%88%B0%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0-%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%9E%B6%E6%9E%84%E7%9A%84%E5%8F%96%E8%88%8D%E4%B8%8E%E5%AE%9E%E8%B7%B5/" title="从 CAP 到订单中台：最终一致架构的取舍与实践">
+                        <span class="hidden-mobile">从 CAP 到订单中台：最终一致架构的取舍与实践</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

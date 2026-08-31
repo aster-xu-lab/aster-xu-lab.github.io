@@ -336,6 +336,75 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
+        <a href="/2024/04/01/2024-04-01-RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF-%E5%8D%8A%E6%B6%88%E6%81%AF%E4%B8%8E%E5%9B%9E%E6%9F%A5/" target="_self">
+          RocketMQ事务消息：半消息与回查，怎么做到&#34;业务成功消息必达&#34;
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/01/2024-04-01-RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF-%E5%8D%8A%E6%B6%88%E6%81%AF%E4%B8%8E%E5%9B%9E%E6%9F%A5/" target="_self">
+        <div>
+          先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：  先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-04-01 09:00" pubdate>
+              2024-04-01
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
+            
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF/">#事务消息</a>
+            
+              <a href="/tags/%E5%8D%8A%E6%B6%88%E6%81%AF/">#半消息</a>
+            
+              <a href="/tags/%E9%A1%BA%E5%BA%8F%E6%B6%88%E6%81%AF/">#顺序消息</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
         <a href="/2024/03/29/2024-03-29-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" target="_self">
           双层权重调度：分层时间轮在业务调度中的应用
         </a>
@@ -924,52 +993,6 @@
               <a href="/tags/DDIA/">#DDIA</a>
             
               <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2024/02/13/2024-02-13-DDIA-07-%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C/" target="_self">
-          DDIA-07-一致性哈希：当分片不再是2的幂次
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/02/13/2024-02-13-DDIA-07-%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C/" target="_self">
-        <div>
-          引言：一次扩容引发的血案凌晨两点，告警群炸了。 Redis 缓存命中率从 98% 直线掉到 12%，MySQL 连接池瞬间打满，订单查询超时，用户端白屏。值班同学紧急回滚扩容操作，15 分钟后恢复。事后复盘，根因只有一句话：缓存 key 用 hash(key) % N 计算分片，加了一台 Redis 后 N 从 10 变成 11，90% 的缓存 key 指向了错误节点，缓存集体失效，DB 被穿透
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-13 09:00" pubdate>
-              2024-02-13
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Redis/">#Redis</a>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C/">#一致性哈希</a>
-            
-              <a href="/tags/%E5%88%86%E7%89%87/">#分片</a>
             
           </div>
         

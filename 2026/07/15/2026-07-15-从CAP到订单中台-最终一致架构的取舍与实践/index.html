@@ -1,0 +1,900 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="学习 CAP 时，理论是清楚的：网络分区时，一致性和可用性二选一。但真正落地到订单中台，”三选二”是错的——应该按操作类型分流，每条链路单独选。这篇讲 CAP 在订单场景的真实取舍。  一、CAP 不是”三选二”，是”分区时的二选一”先纠正一个常见误解。CAP 的正确表述：  当网络分区发生时（P），系统必须在 C（一致性） 和 A（可用性） 之间选择——不能同时满足。  关键：没有分区时，C">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从 CAP 到订单中台：最终一致架构的取舍与实践">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/07/15/2026-07-15-%E4%BB%8ECAP%E5%88%B0%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0-%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%9E%B6%E6%9E%84%E7%9A%84%E5%8F%96%E8%88%8D%E4%B8%8E%E5%AE%9E%E8%B7%B5/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="学习 CAP 时，理论是清楚的：网络分区时，一致性和可用性二选一。但真正落地到订单中台，”三选二”是错的——应该按操作类型分流，每条链路单独选。这篇讲 CAP 在订单场景的真实取舍。  一、CAP 不是”三选二”，是”分区时的二选一”先纠正一个常见误解。CAP 的正确表述：  当网络分区发生时（P），系统必须在 C（一致性） 和 A（可用性） 之间选择——不能同时满足。  关键：没有分区时，C">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-07-15T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-31T06:00:46.480Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="CAP">
+<meta property="article:tag" content="分布式">
+<meta property="article:tag" content="最终一致">
+<meta property="article:tag" content="架构">
+<meta property="article:tag" content="订单中台">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>从 CAP 到订单中台：最终一致架构的取舍与实践 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="从 CAP 到订单中台：最终一致架构的取舍与实践"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-07-15 09:00" pubdate>
+          2026年7月15日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">从 CAP 到订单中台：最终一致架构的取舍与实践</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>学习 CAP 时，理论是清楚的：网络分区时，一致性和可用性二选一。但真正落地到订单中台，”三选二”是错的——<strong>应该按操作类型分流</strong>，每条链路单独选。这篇讲 CAP 在订单场景的真实取舍。</p>
+</blockquote>
+<h2 id="一、CAP-不是”三选二”，是”分区时的二选一”"><a href="#一、CAP-不是”三选二”，是”分区时的二选一”" class="headerlink" title="一、CAP 不是”三选二”，是”分区时的二选一”"></a>一、CAP 不是”三选二”，是”分区时的二选一”</h2><p>先纠正一个常见误解。CAP 的正确表述：</p>
+<blockquote>
+<p>当网络分区发生时（P），系统必须在 <strong>C（一致性）</strong> 和 <strong>A（可用性）</strong> 之间选择——不能同时满足。</p>
+</blockquote>
+<p><strong>关键</strong>：没有分区时，C 和 A 可以同时满足。分区是”故障时刻”的权衡，不是”设计时”的单选题。</p>
+<p>所以落地的方式是：<strong>给每条操作链路单独定义”分区时怎么办”</strong>，而不是整个系统选一个。</p>
+<h2 id="二、订单中台的两类链路，两种选择"><a href="#二、订单中台的两类链路，两种选择" class="headerlink" title="二、订单中台的两类链路，两种选择"></a>二、订单中台的两类链路，两种选择</h2><p>订单中台的操作为两类，分别做了不同取舍：</p>
+<table>
+<thead>
+<tr>
+<th>链路</th>
+<th>例子</th>
+<th>分区时的选择</th>
+<th>方案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>强一致链路</strong></td>
+<td>下单扣库存、发货确认</td>
+<td>宁可用性受损，也要一致性（CP）</td>
+<td>TCC、Seata AT</td>
+</tr>
+<tr>
+<td><strong>最终一致链路</strong></td>
+<td>订单下发下游、状态回传</td>
+<td>保可用，一致性靠最终收敛（AP）</td>
+<td>本地消息表、MQ + 幂等</td>
+</tr>
+</tbody></table>
+<p><strong>核心原则：一致性等级跟着业务语义走，不跟着系统走。</strong></p>
+<h2 id="三、强一致链路：分区时拒绝，也不许错"><a href="#三、强一致链路：分区时拒绝，也不许错" class="headerlink" title="三、强一致链路：分区时拒绝，也不许错"></a>三、强一致链路：分区时拒绝，也不许错</h2><p>下单扣库存、发货确认这类，<strong>错一分都不行</strong>，所以选择 CP：</p>
+<ul>
+<li><strong>下单预占库存</strong>：TCC Try（预扣），分区时宁可下单失败，也不允许”扣了 A 库存却按 B 算”；</li>
+<li><strong>发货确认</strong>：TCC Confirm，强一致，失败必须回滚。</li>
+</ul>
+<p><strong>代价</strong>：极端情况下（分区）这部分功能不可用——但这是正确的代价，因为”扣错库存”比”暂时不能下单”严重得多。</p>
+<h2 id="四、最终一致链路：分区时保可用，靠收敛"><a href="#四、最终一致链路：分区时保可用，靠收敛" class="headerlink" title="四、最终一致链路：分区时保可用，靠收敛"></a>四、最终一致链路：分区时保可用，靠收敛</h2><p>订单下发下游、状态回传这类，<strong>可以延迟但不能丢</strong>，所以选择 AP：</p>
+<ul>
+<li><strong>本地消息表</strong>：业务 + 写表同本地事务，定时扫表发 MQ——业务成功 ⟹ 消息一定在表里；</li>
+<li><strong>消费幂等</strong>：重复消费无害（按业务主键去重）；</li>
+<li><strong>对账兜底</strong>：定期比对 MySQL vs Doris，差异重投。</li>
+</ul>
+<p><strong>关键认知</strong>：AP 不是”放弃一致性”，是**”保证最终一致”**——瞬时不一致允许存在，靠幂等 + 对账收敛到一致。</p>
+<h2 id="五、分区时的具体处理"><a href="#五、分区时的具体处理" class="headerlink" title="五、分区时的具体处理"></a>五、分区时的具体处理</h2><p>订单中台在分区时怎么表现？</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs 1c">网络分区（订单服务与库存服务断开）：<br>① 强一致链路（扣库存）→ 立即失败/拒绝，不返回假成功<br>② 最终一致链路（下发下游）→ 本地先落库（写消息表），分区恢复后补发<br>③ 用户看到<span class="hljs-string">&quot;下单失败&quot;</span>或<span class="hljs-string">&quot;订单处理中&quot;</span>——绝不允许<span class="hljs-string">&quot;下单成功但库存没扣&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>分区时最重要的一条</strong>：<strong>不能让用户看到”部分成功”</strong>。宁可明确失败，也不给模糊的中间态。</p>
+<h2 id="六、最终一致的三个关键实现"><a href="#六、最终一致的三个关键实现" class="headerlink" title="六、最终一致的三个关键实现"></a>六、最终一致的三个关键实现</h2><p>AP 链路要真正收敛，三个机制缺一不可：</p>
+<ol>
+<li><strong>幂等</strong>：重复消费无害（唯一业务 key + DB 唯一约束 &#x2F; 状态机防重）——分布式下重复是常态；</li>
+<li><strong>对账</strong>：定期比对两侧，差异重投——增量同步有兜不住的概率，对账兜底；</li>
+<li><strong>可观测</strong>：同步链路的状态（待发&#x2F;已发&#x2F;失败&#x2F;重试）全程可见——否则”最终一致”成了”永远不一致”。</li>
+</ol>
+<p><strong>没有这三个，AP 就是”不保证一致”，不是”最终一致”。</strong></p>
+<h2 id="七、一条真实的链路复盘"><a href="#七、一条真实的链路复盘" class="headerlink" title="七、一条真实的链路复盘"></a>七、一条真实的链路复盘</h2><p>订单下发下游的完整链路，看它怎么落 AP：</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">下单（本地事务：写订单 + 写待发消息表）<br>→ <span class="hljs-keyword">SyncTask </span>扫表 → 发 MQ → 标记已发<br>→ 下游消费（幂等）→ 回传状态<br>→ 定期对账（比对差异，重投）<br></code></pre></td></tr></table></figure>
+
+<p><strong>每一环都在把”可能不一致”收敛回一致</strong>：本地消息表保证不丢、幂等保证不重、对账保证收敛。这就是”最终一致”的完整闭环。</p>
+<h2 id="八、诚实的边界"><a href="#八、诚实的边界" class="headerlink" title="八、诚实的边界"></a>八、诚实的边界</h2><p>CAP 是理论框架，落地时没有完美答案。我的经验是：<strong>一致性等级按业务语义分流 + 幂等对账兜底 + 分区时不给模糊中间态</strong>——这三条比纠结”选 C 还是选 A”更可落地。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>CAP 不是”三选二”，是<strong>分区时的二选一</strong>，给每条链路单独定；</li>
+<li>订单中台分流：<strong>强一致链路（CP）用 TCC&#x2F;AT，最终一致链路（AP）用本地消息表</strong>；</li>
+<li>分区时：<strong>不给”部分成功”的中间态</strong>，宁可明确失败；</li>
+<li>最终一致的三个关键：<strong>幂等 + 对账 + 可观测</strong>，缺一个就不是”最终一致”；</li>
+<li>落地原则：按业务语义分流，而不是整个系统选一个。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 7 月 · 标签: CAP, 最终一致, 订单中台, 架构, 分布式</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" class="print-no-link">#分布式</a>
+      
+        <a href="/tags/CAP/" class="print-no-link">#CAP</a>
+      
+        <a href="/tags/%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0/" class="print-no-link">#订单中台</a>
+      
+        <a href="/tags/%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4/" class="print-no-link">#最终一致</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>从 CAP 到订单中台：最终一致架构的取舍与实践</div>
+      <div>https://aster-xu-lab.github.io/2026/07/15/2026-07-15-从CAP到订单中台-最终一致架构的取舍与实践/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年7月15日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/07/22/2026-07-22-Agent%E7%9A%84Memory%E8%AE%BE%E8%AE%A1-%E7%9F%AD%E6%9C%9F%E4%B8%8A%E4%B8%8B%E6%96%87%E4%B8%8E%E9%95%BF%E6%9C%9F%E8%AE%B0%E5%BF%86/" title="Agent 的 Memory 设计：短期上下文与长期记忆的工程实现">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Agent 的 Memory 设计：短期上下文与长期记忆的工程实现</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/07/10/2026-07-10-SyncTask%E8%B0%83%E5%BA%A6%E5%BC%95%E6%93%8E%E6%B7%B1%E6%8C%96-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E4%B8%8E%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" title="SyncTask 调度引擎深挖：双层权重调度与分层时间轮">
+                        <span class="hidden-mobile">SyncTask 调度引擎深挖：双层权重调度与分层时间轮</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

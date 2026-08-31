@@ -19,25 +19,26 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="分布式锁三大坑之一是”锁续期”——业务执行超过锁过期时间，锁提前释放。Redisson 用”看门狗”（watchdog）解决。这篇从源码层看它到底怎么实现续期。  一、问题：锁会提前过期最基础的分布式锁 SET key value NX EX 30：锁过期时间 30 秒。但如果业务执行超过 30 秒，锁提前释放，另一个线程拿到锁——两个线程同时执行临界区，锁形同虚设。 解法是”续期”：业务没结">
+    <meta name="description" content="订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。  一、问题：分布式调用链怎么定位瓶颈单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务： 123网关 → 订单服务 → 库存服务            ↘ 仓储服务">
 <meta property="og:type" content="article">
-<meta property="og:title" content="Redisson 看门狗源码分析：分布式锁的续期是怎么实现的">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2026/07/10/2026-07-10-Redisson%E7%9C%8B%E9%97%A8%E7%8B%97%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%BB%AD%E6%9C%9F%E5%8E%9F%E7%90%86/index.html">
+<meta property="og:title" content="全链路追踪在订单中心的落地：traceId 贯穿每一次调用">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2023/02/13/2023-02-13-%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E5%9C%A8%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E7%9A%84%E8%90%BD%E5%9C%B0-traceId%E8%B4%AF%E7%A9%BF/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="分布式锁三大坑之一是”锁续期”——业务执行超过锁过期时间，锁提前释放。Redisson 用”看门狗”（watchdog）解决。这篇从源码层看它到底怎么实现续期。  一、问题：锁会提前过期最基础的分布式锁 SET key value NX EX 30：锁过期时间 30 秒。但如果业务执行超过 30 秒，锁提前释放，另一个线程拿到锁——两个线程同时执行临界区，锁形同虚设。 解法是”续期”：业务没结">
+<meta property="og:description" content="订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。  一、问题：分布式调用链怎么定位瓶颈单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务： 123网关 → 订单服务 → 库存服务            ↘ 仓储服务">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2026-07-10T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-28T05:43:46.868Z">
+<meta property="article:published_time" content="2023-02-13T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-08-31T06:00:27.660Z">
 <meta property="article:author" content="AsterXu">
-<meta property="article:tag" content="Redisson">
-<meta property="article:tag" content="分布式锁">
-<meta property="article:tag" content="源码分析">
-<meta property="article:tag" content="看门狗">
+<meta property="article:tag" content="Sleuth">
+<meta property="article:tag" content="Zipkin">
+<meta property="article:tag" content="traceId">
+<meta property="article:tag" content="全链路追踪">
+<meta property="article:tag" content="可观测性">
 <meta name="twitter:card" content="summary_large_image">
   
   
   
-  <title>Redisson 看门狗源码分析：分布式锁的续期是怎么实现的 - AsterXu Lab</title>
+  <title>全链路追踪在订单中心的落地：traceId 贯穿每一次调用 - AsterXu Lab</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -306,7 +307,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Redisson 看门狗源码分析：分布式锁的续期是怎么实现的"></span>
+            <span id="subtitle" data-typed-text="全链路追踪在订单中心的落地：traceId 贯穿每一次调用"></span>
           
         </div>
 
@@ -317,8 +318,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2026-07-10 09:00" pubdate>
-          2026年7月10日 上午
+        <time datetime="2023-02-13 09:00" pubdate>
+          2023年2月13日 上午
         </time>
       </span>
     
@@ -329,7 +330,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.5k 字
+          1.9k 字
         
       </span>
     
@@ -340,7 +341,7 @@
         
         
         
-          21 分钟
+          16 分钟
         
       </span>
     
@@ -379,63 +380,69 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Redisson 看门狗源码分析：分布式锁的续期是怎么实现的</h1>
+            <h1 id="seo-header">全链路追踪在订单中心的落地：traceId 贯穿每一次调用</h1>
             
             
               <div class="markdown-body">
                 
                 <hr>
 <blockquote>
-<p>分布式锁三大坑之一是”锁续期”——业务执行超过锁过期时间，锁提前释放。Redisson 用”看门狗”（watchdog）解决。这篇从源码层看它到底怎么实现续期。</p>
+<p>订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。</p>
 </blockquote>
-<h2 id="一、问题：锁会提前过期"><a href="#一、问题：锁会提前过期" class="headerlink" title="一、问题：锁会提前过期"></a>一、问题：锁会提前过期</h2><p>最基础的分布式锁 <code>SET key value NX EX 30</code>：锁过期时间 30 秒。但如果业务执行超过 30 秒，锁提前释放，另一个线程拿到锁——<strong>两个线程同时执行临界区</strong>，锁形同虚设。</p>
-<p>解法是”续期”：业务没结束，锁就一直续。Redisson 的看门狗就是干这个的。</p>
-<h2 id="二、看门狗的核心机制"><a href="#二、看门狗的核心机制" class="headerlink" title="二、看门狗的核心机制"></a>二、看门狗的核心机制</h2><p>一句话：<strong>默认锁 30 秒，每 10 秒自动续期 30 秒，业务结束释放锁</strong>。</p>
-<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs tap">加锁成功（30秒过期）<br>→ 启动看门狗线程<br>→ 每<span class="hljs-number"> 10 </span>秒检查：锁还在吗？在 → 续期<span class="hljs-number"> 30 </span>秒<br>→ 业务结束 → 释放锁 → 停掉看门狗<br></code></pre></td></tr></table></figure>
+<h2 id="一、问题：分布式调用链怎么定位瓶颈"><a href="#一、问题：分布式调用链怎么定位瓶颈" class="headerlink" title="一、问题：分布式调用链怎么定位瓶颈"></a>一、问题：分布式调用链怎么定位瓶颈</h2><p>单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs">网关 → 订单服务 → 库存服务<br>            ↘ 仓储服务<br>            ↘ 财务服务<br></code></pre></td></tr></table></figure>
 
-<p><strong>关键点</strong>：</p>
+<p>接口慢了，是订单服务慢？还是某个下游慢？<strong>没有全链路追踪，只能一个个服务翻日志</strong>——大海捞针。</p>
+<h2 id="二、核心机制：traceId-spanId"><a href="#二、核心机制：traceId-spanId" class="headerlink" title="二、核心机制：traceId + spanId"></a>二、核心机制：traceId + spanId</h2><p>全链路追踪的两个核心概念：</p>
 <ul>
-<li>续期是<strong>自动</strong>的，业务代码无感知；</li>
-<li>看门狗线程在锁释放后自动停止，不泄漏；</li>
-<li>如果进程挂了，看门狗线程也跟着挂，锁最多 30 秒后过期——<strong>不会死锁</strong>。</li>
+<li><strong>traceId</strong>：一次请求的全局唯一 ID，<strong>贯穿整个调用链</strong>（所有服务共享同一个）；</li>
+<li><strong>spanId</strong>：每一段调用的 ID（一个服务处理 &#x3D; 一个 span），记录<strong>耗时</strong>。</li>
 </ul>
-<h2 id="三、源码：续期是怎么实现的"><a href="#三、源码：续期是怎么实现的" class="headerlink" title="三、源码：续期是怎么实现的"></a>三、源码：续期是怎么实现的</h2><p>Redisson 的核心类是 <code>RedissonLock</code>。看门狗逻辑在 <code>tryAcquireAsync</code> 和 <code>renewExpiration</code>：</p>
-<p><strong>① 加锁时，如果没指定过期时间，用默认值 + 启动看门狗</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// RedissonLock.tryLockInnerAsync 的核心</span><br><span class="hljs-keyword">if</span> (leaseTime != -<span class="hljs-number">1</span>) &#123;<br>    <span class="hljs-comment">// 指定了过期时间 → 不启动看门狗（业务自己负责）</span><br>    <span class="hljs-keyword">return</span> tryLockInnerAsync(leaseTime, unit, ...);<br>&#125;<br><span class="hljs-comment">// 没指定 → 用默认 30 秒 + 启动看门狗续期</span><br><span class="hljs-keyword">return</span> scheduleLockRenewal(threadId, ...);<br></code></pre></td></tr></table></figure>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">请求 A → 生成 traceId=abc123</span><br><span class="hljs-attribute"></span><br><span class="hljs-attribute">订单服务（span</span><span class="hljs-punctuation">:</span> <span class="hljs-string">5ms）</span><br>  <span class="hljs-attribute">→ 调库存（span</span><span class="hljs-punctuation">:</span> <span class="hljs-string">3ms）</span><br>  <span class="hljs-attribute">→ 调仓储（span</span><span class="hljs-punctuation">:</span> <span class="hljs-string">15ms）← 瓶颈在这</span><br>  <span class="hljs-attribute">→ 调财务（span</span><span class="hljs-punctuation">:</span> <span class="hljs-string">2ms）</span><br></code></pre></td></tr></table></figure>
 
-<p><strong>关键：只有 <code>leaseTime = -1</code>（没指定过期时间）才启动看门狗</strong>。如果业务自己指定了过期时间，Redisson 不续期——这是容易踩的坑。</p>
-<p><strong>② 续期本质是 Lua 脚本：原子地”检查还在 + 重置过期”</strong></p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs lua"><span class="hljs-comment">-- renewExpiration 执行的 Lua（核心就是这条）</span><br><span class="hljs-keyword">if</span> (redis.call(<span class="hljs-string">&#x27;hexists&#x27;</span>, KEYS[<span class="hljs-number">1</span>], ARGV[<span class="hljs-number">2</span>]) == <span class="hljs-number">1</span>) <span class="hljs-keyword">then</span><br>    redis.call(<span class="hljs-string">&#x27;pexpire&#x27;</span>, KEYS[<span class="hljs-number">1</span>], ARGV[<span class="hljs-number">1</span>]);<br>    <span class="hljs-keyword">return</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">end</span>;<br><span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br></code></pre></td></tr></table></figure>
+<p>Sleuth 做的：<strong>在请求进入时生成 traceId，通过 HTTP&#x2F;RPC 头传递，让每个服务都用同一个 traceId</strong>。这样所有服务的日志都能按 traceId 串起来。</p>
+<h2 id="三、落地：Sleuth-Zipkin"><a href="#三、落地：Sleuth-Zipkin" class="headerlink" title="三、落地：Sleuth + Zipkin"></a>三、落地：Sleuth + Zipkin</h2><p>Spring Cloud 生态用 <strong>Sleuth（链路追踪）+ Zipkin（聚合展示）</strong>：</p>
+<p><strong>① 依赖 + 配置</strong>：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span><br>  <span class="hljs-attr">sleuth:</span><br>    <span class="hljs-attr">sampler:</span><br>      <span class="hljs-attr">probability:</span> <span class="hljs-number">1.0</span>   <span class="hljs-comment"># 采样率：生产可以低一点（如 0.1），排查时调高</span><br>  <span class="hljs-attr">zipkin:</span><br>    <span class="hljs-attr">base-url:</span> <span class="hljs-string">http://zipkin:9411</span><br></code></pre></td></tr></table></figure>
 
-<p><code>hexists</code> 检查<strong>这把锁还是不是我的</strong>（用线程 ID 作 field），是才 <code>pexpire</code> 续期——<strong>防止续了别人的锁</strong>。这个检查和续期是原子的，避免了”误续别人锁”的并发问题。</p>
-<p><strong>③ 看门狗是定时任务，不是死循环</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">renewExpiration</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-comment">// 每 internalLockLeaseTime / 3（默认 30/3 = 10 秒）执行一次续期</span><br>    <span class="hljs-type">Timeout</span> <span class="hljs-variable">task</span> <span class="hljs-operator">=</span> commandExecutor.getConnectionManager().newTimeout(<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">TimerTask</span>() &#123;<br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">(Timeout timeout)</span> &#123;<br>                <span class="hljs-comment">// 续期成功 → 继续调度下一次；失败 → 停</span><br>                renewExpirationAsync(threadId).whenComplete(...);<br>            &#125;<br>        &#125;,<br>        internalLockLeaseTime / <span class="hljs-number">3</span>, TimeUnit.MILLISECONDS);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p><strong>② traceId 自动贯穿</strong>：Sleuth 自动在日志里加 traceId&#x2F;spanId，并通过 Feign&#x2F;Dubbo 的调用头传递。</p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs subunit"># 日志自动带 traceId，所有服务按它串联<br>2026<span class="hljs-string">-07</span><span class="hljs-string">-18</span> [order-service,abc123,def456] 处理订单下单<br>2026<span class="hljs-string">-07</span><span class="hljs-string">-18</span> [stock-service,abc123,ghi789] 扣减库存<br></code></pre></td></tr></table></figure>
 
-<p>默认锁 30 秒，每 <strong>10 秒</strong>续一次——即使某次续期失败，还有 20 秒缓冲。</p>
-<p><strong>④ 释放锁时停掉看门狗</strong></p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">unlock</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-comment">// 释放锁（Lua：校验是自己的再删）</span><br>    unlockInnerAsync(threadId);<br>    <span class="hljs-comment">// 取消看门狗续期</span><br>    cancelExpirationRenewal(threadId);<br>&#125;<br></code></pre></td></tr></table></figure>
+<p><strong>③ Zipkin 看瀑布</strong>：Zipkin 聚合所有服务的 span，展示整条链路的<strong>耗时瀑布</strong>：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs">订单服务    ████████████ 5ms<br>  库存      ██ 3ms<br>  仓储      ████████████████████ 15ms   ← 一眼看到瓶颈<br>  财务      █ 2ms<br></code></pre></td></tr></table></figure>
 
-<p>业务结束 <code>unlock()</code> → 删锁 + 停看门狗，不会无限续期。</p>
-<h2 id="四、三个容易踩的坑"><a href="#四、三个容易踩的坑" class="headerlink" title="四、三个容易踩的坑"></a>四、三个容易踩的坑</h2><h3 id="1-自己指定了-leaseTime，看门狗就不工作了"><a href="#1-自己指定了-leaseTime，看门狗就不工作了" class="headerlink" title="1. 自己指定了 leaseTime，看门狗就不工作了"></a>1. 自己指定了 leaseTime，看门狗就不工作了</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java">lock.lock(<span class="hljs-number">30</span>, TimeUnit.SECONDS);   <span class="hljs-comment">// 指定过期时间 → 不续期</span><br>lock.lock();                        <span class="hljs-comment">// 不指定 → 看门狗续期</span><br></code></pre></td></tr></table></figure>
+<p><strong>一眼看到”瓶颈在哪一段&#x2F;哪个服务慢”</strong>——这就是全链路追踪的价值。</p>
+<h2 id="四、实践要点"><a href="#四、实践要点" class="headerlink" title="四、实践要点"></a>四、实践要点</h2><h3 id="1-采样率要权衡"><a href="#1-采样率要权衡" class="headerlink" title="1. 采样率要权衡"></a>1. 采样率要权衡</h3><ul>
+<li>采样率 1.0（全采样）：定位问题最准，但存储开销大；</li>
+<li>生产默认 0.1（10%）：够用且便宜；</li>
+<li><strong>排查问题时临时调高到 1.0</strong>，定位完降回来。</li>
+</ul>
+<h3 id="2-traceId-要透传到日志"><a href="#2-traceId-要透传到日志" class="headerlink" title="2. traceId 要透传到日志"></a>2. traceId 要透传到日志</h3><p>配合 <strong>MDC（Mapped Diagnostic Context）</strong>，把 traceId 放进日志上下文：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 日志里就能按 traceId 过滤出整条链路的日志</span><br>MDC.put(<span class="hljs-string">&quot;traceId&quot;</span>, TraceContext.getTraceId());<br></code></pre></td></tr></table></figure>
 
-<p><strong>如果业务可能超过 30 秒，就不要自己指定 leaseTime</strong>，让它走看门狗。</p>
-<h3 id="2-看门狗续期的是”锁的过期时间”，不是”业务时间”"><a href="#2-看门狗续期的是”锁的过期时间”，不是”业务时间”" class="headerlink" title="2. 看门狗续期的是”锁的过期时间”，不是”业务时间”"></a>2. 看门狗续期的是”锁的过期时间”，不是”业务时间”</h3><p>看门狗不知道业务要跑多久，它只是”锁还在就续”。<strong>如果业务是长事务&#x2F;长任务，锁一直续，其他线程一直等</strong>——要配合业务超时设计。</p>
-<h3 id="3-进程挂了的兜底"><a href="#3-进程挂了的兜底" class="headerlink" title="3. 进程挂了的兜底"></a>3. 进程挂了的兜底</h3><p>看门狗线程随进程消失，锁在过期时间后自动释放——<strong>不会死锁</strong>。但如果业务进程假死（GC 停顿等），锁可能短暂存在，这是分布式锁的固有局限（RedLock 的争议点）。</p>
-<h2 id="五、和”误删别人的锁”的关系"><a href="#五、和”误删别人的锁”的关系" class="headerlink" title="五、和”误删别人的锁”的关系"></a>五、和”误删别人的锁”的关系</h2><p>看门狗解决”续期”，另一个坑”误删别人的锁”靠的是<strong>唯一 value + Lua 原子删除</strong>：</p>
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs lua"><span class="hljs-keyword">if</span> (redis.call(<span class="hljs-string">&#x27;get&#x27;</span>, KEYS[<span class="hljs-number">1</span>]) == ARGV[<span class="hljs-number">1</span>]) <span class="hljs-keyword">then</span><br>    <span class="hljs-keyword">return</span> redis.call(<span class="hljs-string">&#x27;del&#x27;</span>, KEYS[<span class="hljs-number">1</span>])<br><span class="hljs-keyword">else</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span><br><span class="hljs-keyword">end</span><br></code></pre></td></tr></table></figure>
+<p>排查问题时：<strong>拿一个 traceId，去所有服务的日志里 grep 它</strong>，就能还原整条链路。</p>
+<h3 id="3-全链路不止追踪，还有监控"><a href="#3-全链路不止追踪，还有监控" class="headerlink" title="3. 全链路不止追踪，还有监控"></a>3. 全链路不止追踪，还有监控</h3><ul>
+<li>追踪（Zipkin）：定位”哪段慢”；</li>
+<li>指标（Prometheus + Grafana）：看”服务整体健康度”；</li>
+<li>日志（ELK）：看”具体错误”。</li>
+</ul>
+<p><strong>三者结合才是完整可观测性</strong>——追踪负责”一次请求的内部”,指标负责”系统的整体”,日志负责”细节”。</p>
+<h2 id="五、一个真实案例"><a href="#五、一个真实案例" class="headerlink" title="五、一个真实案例"></a>五、一个真实案例</h2><p>订单中心大促时，有用户反馈”下单慢”。用 Zipkin 拉了一条 traceId 的瀑布：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">订单服务 30ms → 库存 8ms → 仓储 1200ms ← 就是它<br></code></pre></td></tr></table></figure>
 
-<p>Redisson 用<strong>同一个线程 ID</strong>贯穿加锁、续期、删除——<strong>续期只续自己的锁、删除只删自己的锁</strong>，三者通过 Lua 原子性保证一致。</p>
-<h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><p>看门狗解决的是”单机&#x2F;主从 Redis 上，业务超时锁提前释放”的问题。它<strong>解决不了</strong>“主从切换锁丢失”（锁写在主节点，主挂了没同步，新主没这把锁）——那是另一个层面的问题，靠 RedLock 或业务幂等兜底，不在看门狗的职责内。</p>
+<p>定位到仓储服务的”库存预占”接口慢。再看仓储服务的日志（按 traceId grep），发现是<strong>仓储服务在等一个外部物流接口超时</strong>（超时设了 5 秒，实际等满）。</p>
+<p><strong>修复</strong>：给外部调用设合理超时 + 熔断，避免一个慢外部依赖拖慢下单链路。这就是”超时是雪崩打断的第一道底线”的实战印证。</p>
+<h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><p>全链路追踪能定位”哪段慢”，但<strong>定位不了”为什么慢”</strong>——那是要靠日志和代码分析。它解决的问题是”<strong>把问题范围从全链路缩小到一个服务</strong>“，剩下的要靠其他手段。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>问题：业务超过锁过期时间，锁提前释放；</li>
-<li>看门狗：<strong>默认 30 秒锁 + 每 10 秒续期 + 业务结束释放</strong>；</li>
-<li>续期本质：Lua 原子地”<code>hexists</code> 检查是自己的 + <code>pexpire</code> 续期”——不误续别人的锁；</li>
-<li>只有 <code>lock()</code> 不指定 leaseTime 才启动看门狗，<strong>指定了就不续</strong>（坑）；</li>
-<li>释放时停看门狗，进程挂时锁自动过期，<strong>不死锁</strong>；</li>
-<li>看门狗解决”续期”，不解决”主从切换锁丢失”——那是 RedLock&#x2F;幂等的职责。</li>
+<li>问题：微服务调用链长，定位瓶颈难；</li>
+<li>核心：<strong>traceId 贯穿全链路 + spanId 记录每段耗时</strong>；</li>
+<li>落地：Sleuth（自动生成&#x2F;传递 traceId）+ Zipkin（聚合瀑布图）；</li>
+<li>要点：<strong>采样率权衡、traceId 进 MDC、追踪+指标+日志才是完整可观测性</strong>；</li>
+<li>真实案例：Zipkin 一眼定位仓储服务慢，超时 + 熔断修复；</li>
+<li>边界：追踪缩小范围，不定位根因。</li>
 </ul>
 <hr>
-<p><em>发表于 2026 年 7 月 · 标签: Redisson, 分布式锁, 看门狗, 源码分析</em></p>
+<p><em>发表于 2023 年 2 月 · 标签: 全链路追踪, Sleuth, Zipkin, traceId, 可观测性</em></p>
 
                 
               </div>
@@ -454,7 +461,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
+  <a href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="category-chain-item">微服务</a>
   
   
 
@@ -469,13 +476,15 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" class="print-no-link">#分布式锁</a>
+        <a href="/tags/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/" class="print-no-link">#可观测性</a>
       
-        <a href="/tags/Redisson/" class="print-no-link">#Redisson</a>
+        <a href="/tags/%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA/" class="print-no-link">#全链路追踪</a>
       
-        <a href="/tags/%E7%9C%8B%E9%97%A8%E7%8B%97/" class="print-no-link">#看门狗</a>
+        <a href="/tags/Sleuth/" class="print-no-link">#Sleuth</a>
       
-        <a href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="print-no-link">#源码分析</a>
+        <a href="/tags/Zipkin/" class="print-no-link">#Zipkin</a>
+      
+        <a href="/tags/traceId/" class="print-no-link">#traceId</a>
       
     </div>
   
@@ -487,8 +496,8 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>Redisson 看门狗源码分析：分布式锁的续期是怎么实现的</div>
-      <div>https://aster-xu-lab.github.io/2026/07/10/2026-07-10-Redisson看门狗源码分析-分布式锁续期原理/</div>
+      <div>全链路追踪在订单中心的落地：traceId 贯穿每一次调用</div>
+      <div>https://aster-xu-lab.github.io/2023/02/13/2023-02-13-全链路追踪在订单中心的落地-traceId贯穿/</div>
     </div>
     <div class="license-meta">
       
@@ -500,7 +509,7 @@
       
         <div class="license-meta-item license-meta-date">
           <div>发布于</div>
-          <div>2026年7月10日</div>
+          <div>2023年2月13日</div>
         </div>
       
       
@@ -532,9 +541,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2026/07/18/2026-07-18-%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E5%9C%A8%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E7%9A%84%E8%90%BD%E5%9C%B0-traceId%E8%B4%AF%E7%A9%BF/" title="全链路追踪在订单中心的落地：traceId 贯穿每一次调用">
+                      <a href="/2023/02/16/2023-02-16-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" title="AI辅助代码审查实战：用Claude审查5.3万行供应链代码">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">全链路追踪在订单中心的落地：traceId 贯穿每一次调用</span>
+                        <span class="hidden-mobile">AI辅助代码审查实战：用Claude审查5.3万行供应链代码</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -542,8 +551,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2026/07/02/2026-07-02-Agent%E4%BB%8EDemo%E5%88%B0%E7%94%9F%E4%BA%A7-%E8%BF%98%E7%BC%BA%E4%BB%80%E4%B9%88/" title="Agent 从 Demo 到生产：还差什么？我的可靠性清单">
-                        <span class="hidden-mobile">Agent 从 Demo 到生产：还差什么？我的可靠性清单</span>
+                      <a href="/2023/02/09/2023-02-09-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86-%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E9%9A%94%E7%A6%BB%E4%B8%8E%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA/" title="微服务治理：超时重试、配置中心、链路追踪与优雅下线">
+                        <span class="hidden-mobile">微服务治理：超时重试、配置中心、链路追踪与优雅下线</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
