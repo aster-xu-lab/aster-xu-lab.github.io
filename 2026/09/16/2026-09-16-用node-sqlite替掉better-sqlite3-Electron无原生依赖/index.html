@@ -1,0 +1,881 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="Electron 里做本地数据库，默认答案通常是 better-sqlite3。我最后用的是 Electron 内置的 node:sqlite。这篇讲为什么——核心不是”性能”，而是”不想让主进程背上原生模块”，以及随之而来的几个 schema 设计取舍。  一、better-sqlite3 的隐性代价better-sqlite3 很好用，但它是原生模块（native addon），这意味着：">
+<meta property="og:type" content="article">
+<meta property="og:title" content="用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="Electron 里做本地数据库，默认答案通常是 better-sqlite3。我最后用的是 Electron 内置的 node:sqlite。这篇讲为什么——核心不是”性能”，而是”不想让主进程背上原生模块”，以及随之而来的几个 schema 设计取舍。  一、better-sqlite3 的隐性代价better-sqlite3 很好用，但它是原生模块（native addon），这意味着：">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-16T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-09T03:19:30.775Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="SQLite">
+<meta property="article:tag" content="node:sqlite">
+<meta property="article:tag" content="原生模块">
+<meta property="article:tag" content="打包">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-09-16 09:00" pubdate>
+          2026年9月16日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          19 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>Electron 里做本地数据库，默认答案通常是 <code>better-sqlite3</code>。我最后用的是 Electron 内置的 <code>node:sqlite</code>。这篇讲为什么——核心不是”性能”，而是”不想让主进程背上原生模块”，以及随之而来的几个 schema 设计取舍。</p>
+</blockquote>
+<h2 id="一、better-sqlite3-的隐性代价"><a href="#一、better-sqlite3-的隐性代价" class="headerlink" title="一、better-sqlite3 的隐性代价"></a>一、better-sqlite3 的隐性代价</h2><p><code>better-sqlite3</code> 很好用，但它是<strong>原生模块</strong>（native addon），这意味着：</p>
+<ul>
+<li>要按 <strong>Electron 的 ABI</strong> 重编译（<code>electron-rebuild</code> 那一套）；</li>
+<li>打包时要处理 <code>.node</code> 二进制、不同平台 &#x2F; 架构各一份；</li>
+<li>Electron 升级小版本，可能要重新编译；</li>
+<li>构建流水线多一步”依赖原生工具链”的环境要求。</li>
+</ul>
+<p>这些代价平时不明显，但一旦进了打包链路，就会变成”换个 Node 版本就构建失败”这类烦人问题。</p>
+<h2 id="二、node-sqlite：内置、零原生依赖"><a href="#二、node-sqlite：内置、零原生依赖" class="headerlink" title="二、node:sqlite：内置、零原生依赖"></a>二、node:sqlite：内置、零原生依赖</h2><p>Electron 内置了自己的 Node 运行时，而较新的 Node 提供了内置的 <code>node:sqlite</code>。于是可以做到：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">主进程：只用 Electron + node:*，不引任何原生 npm 数据库依赖<br>打包：npmRebuild: false<br></code></pre></td></tr></table></figure>
+
+<p>这条取舍我写在工程硬约束里：<strong>主进程不引原生 npm addon</strong>。好处是构建链路干净——不需要原生工具链，不需要 ABI 对齐，Electron 升级不用担心 SQLite 编译不过。</p>
+<p>代价是：API 比 <code>better-sqlite3</code> 朴素，生态工具（迁移框架、ORM）也少。但对”桌面端本地库”这个场景，<strong>这些都不是刚需</strong>——本地库不需要连连接池、不需要分布式、不需要复杂迁移框架。</p>
+<h2 id="三、迁移不能靠版本号"><a href="#三、迁移不能靠版本号" class="headerlink" title="三、迁移不能靠版本号"></a>三、迁移不能靠版本号</h2><p>一个和”上了 ORM 就放心”相反的现实：SQLite 的 schema 演进要<strong>自己管</strong>，而且方式很朴素：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">运行时迁移 = 幂等操作<br>  ensureColumn(...)            -- 没有这列就加<br>  CREATE INDEX IF NOT EXISTS   -- 没有这索引就建<br></code></pre></td></tr></table></figure>
+
+<p>关键点是：<strong>不要用版本号去 gate 迁移</strong>。工程里有个 <code>schema_meta.version</code>，但它只是给人 &#x2F; 运维看的标记，真正的迁移靠的是”每次启动都跑一遍幂等操作”。原因很实际——版本号是单点状态，一旦中间某个版本失败或手动改过库，靠版本号判断就会卡死或漏跑。</p>
+<p>配套一条纪律：<strong>DDL 的真源文档和代码要保持同步</strong>，否则文档就成了过期地图。</p>
+<h2 id="四、存储模型：证据与人工修改分离"><a href="#四、存储模型：证据与人工修改分离" class="headerlink" title="四、存储模型：证据与人工修改分离"></a>四、存储模型：证据与人工修改分离</h2><p>表结构上有一个刻意的设计：<strong>证据和人工复核分开存</strong>。</p>
+<ul>
+<li><code>product_json</code>：<strong>采集到的原始证据</strong>，不伪造、可溯源；</li>
+<li><code>review_json</code>：<strong>人工复核的编辑</strong>。</li>
+</ul>
+<p>两者分开的直接好处是：<strong>人工改字段不会污染原始证据</strong>。这对”可审计”和”可回算”很重要——任何时候你能回答”这个值是人填的，还是抓来的”。</p>
+<p>也有历史债：早期为了让表长得像上游商品的形状，加了一批投影列（商品名、来源标题之类）。后来发现这些列是冗余的——列表和快照都直接解析 JSON 列就行——于是<strong>停止写入投影列</strong>，但<strong>保留列定义</strong>以兼容旧库。这是一个典型的”不删列、只停写”的兼容策略。</p>
+<h2 id="五、反规范化计数器的陷阱"><a href="#五、反规范化计数器的陷阱" class="headerlink" title="五、反规范化计数器的陷阱"></a>五、反规范化计数器的陷阱</h2><p>为了工作台列表快，任务表上放了三个计数列：总 URL 数、完成数、失败数。这是<strong>反规范化</strong>——它们<strong>不保证</strong>等于 URL 行数或商品行数。</p>
+<p>漂移的来源有：</p>
+<ul>
+<li><strong>重试</strong>：重试会重新计数，累计和本轮要分开；</li>
+<li><strong>占位行</strong>：识别中 &#x2F; 失败占位行也会占 key；</li>
+<li><strong>跨任务同商品的 UPSERT</strong>：同一个商品换了任务归属，行会”搬家”。</li>
+</ul>
+<p>所以文档里明确写了一条：<strong>不要拿计数列去”对账”商品行</strong>。它们是给列表排序 &#x2F; 展示用的，不是真相源。这个坑在状态机那篇里还会碰到（”识别环”的分母问题）。</p>
+<h2 id="六、外键的取舍"><a href="#六、外键的取舍" class="headerlink" title="六、外键的取舍"></a>六、外键的取舍</h2><p>schema 里写了一句 <code>PRAGMA foreign_keys = ON</code>，但实际上<strong>没有任何外键约束声明</strong>——所以这条 PRAGMA 目前是个 no-op，孤儿清理全靠应用层 SQL（比如替换任务 URL 时显式删）。</p>
+<p>这是个有意的取舍：加真外键就需要配套的”删任务”设计（级联还是阻止），而我们还没定型删除语义。<strong>先留 PRAGMA、不声明约束</strong>，并在注释里写清楚”这是有意省略，不是忘了”——避免下一个人以为数据库会级联清理。</p>
+<h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul>
+<li>选内置 SQLite 换来的是”构建简单”，代价是”生态简单”——没有成熟的迁移框架和 ORM，schema 演进全靠幂等约定，<strong>需要团队自律</strong>。</li>
+<li>反规范化计数器是<strong>性能换一致性</strong>，一旦有重试 &#x2F; 占位 &#x2F; 迁移这类”非直线”操作，就会和真实行数偏离，必须靠文档约定而不是靠直觉。</li>
+<li>这套存储设计是<strong>按”桌面单机、按商家隔离”的场景</strong>做的（每个商家一个库文件、每库一套捕获目录）。它不适合”多端共享一个库”的场景。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>选 <strong><code>node:sqlite</code>（内置）</strong> 而不是 <code>better-sqlite3</code>：<strong>主进程零原生依赖</strong>、<code>npmRebuild: false</code>，构建链路干净；代价是 API 朴素、生态少；</li>
+<li>schema 演进靠<strong>幂等操作</strong>（<code>ensureColumn</code> &#x2F; <code>CREATE INDEX IF NOT EXISTS</code>），<strong>不靠版本号 gate</strong>；DDL 文档与代码必须同步；</li>
+<li><strong>证据（<code>product_json</code>）与人工复核（<code>review_json</code>）分开存</strong>，人工编辑不污染证据；投影列<strong>停写不删列</strong>做兼容；</li>
+<li>任务计数列是<strong>反规范化</strong>，不保证等于行数（重试 &#x2F; 占位 &#x2F; UPSERT 会漂移），<strong>不要拿来对账</strong>；</li>
+<li>外键<strong>有意不声明</strong>（PRAGMA 是 no-op），孤儿清理走应用 SQL——要在注释里写明”有意省略”。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 9 月 · 标签: Electron, SQLite, node:sqlite, 原生模块, 打包</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%8A%80%E6%9C%AF/" class="category-chain-item">技术</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E6%89%93%E5%8C%85/" class="print-no-link">#打包</a>
+      
+        <a href="/tags/SQLite/" class="print-no-link">#SQLite</a>
+      
+        <a href="/tags/node-sqlite/" class="print-no-link">#node:sqlite</a>
+      
+        <a href="/tags/%E5%8E%9F%E7%94%9F%E6%A8%A1%E5%9D%97/" class="print-no-link">#原生模块</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块</div>
+      <div>https://aster-xu-lab.github.io/2026/09/16/2026-09-16-用node-sqlite替掉better-sqlite3-Electron无原生依赖/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年9月16日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/09/18/2026-09-18-Electron%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%88%AC%E8%99%AB-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89CLI-sidecar%E8%80%8C%E4%B8%8D%E6%98%AFPuppeteer/" title="Electron 桌面端爬虫：为什么我用 CLI sidecar 而不是 Puppeteer">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Electron 桌面端爬虫：为什么我用 CLI sidecar 而不是 Puppeteer</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/" title="Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界">
+                        <span class="hidden-mobile">Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

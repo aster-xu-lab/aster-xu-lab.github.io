@@ -1,0 +1,916 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="反爬最难受的不是”被拦”，而是”不知道被拦了还是代码坏了”。这篇文章讲怎么把采集失败分类、把验证码做成一次人工确认、把会话崩溃做成自愈，而不是无限重试或者静默把失败当成功。  一、第一步：把失败分类，而不是一锅端采集失败的原因很多，但处理方式只有几类。所以第一件事是让每种失败都有独立的错误码，而不是笼统的”采集失败”：    类别 处理方式    验证码 &#x2F; 机器人检查 人工确认（H">
+<meta property="og:type" content="article">
+<meta property="og:title" content="爬虫的人机协同：验证码弹框，而不是硬刚">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/22/2026-09-22-%E7%88%AC%E8%99%AB%E7%9A%84%E4%BA%BA%E6%9C%BA%E5%8D%8F%E5%90%8C-%E9%AA%8C%E8%AF%81%E7%A0%81%E5%BC%B9%E6%A1%86%E4%B8%8E%E7%86%94%E6%96%AD%E8%87%AA%E6%84%88/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="反爬最难受的不是”被拦”，而是”不知道被拦了还是代码坏了”。这篇文章讲怎么把采集失败分类、把验证码做成一次人工确认、把会话崩溃做成自愈，而不是无限重试或者静默把失败当成功。  一、第一步：把失败分类，而不是一锅端采集失败的原因很多，但处理方式只有几类。所以第一件事是让每种失败都有独立的错误码，而不是笼统的”采集失败”：    类别 处理方式    验证码 &#x2F; 机器人检查 人工确认（H">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-22T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-09T03:19:30.776Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="反爬">
+<meta property="article:tag" content="数据采集">
+<meta property="article:tag" content="熔断">
+<meta property="article:tag" content="爬虫">
+<meta property="article:tag" content="稳定性">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>爬虫的人机协同：验证码弹框，而不是硬刚 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="爬虫的人机协同：验证码弹框，而不是硬刚"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-09-22 09:00" pubdate>
+          2026年9月22日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          18 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">爬虫的人机协同：验证码弹框，而不是硬刚</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>反爬最难受的不是”被拦”，而是”不知道被拦了还是代码坏了”。这篇文章讲怎么把采集失败<strong>分类</strong>、把验证码做成一次<strong>人工确认</strong>、把会话崩溃做成<strong>自愈</strong>，而不是无限重试或者静默把失败当成功。</p>
+</blockquote>
+<h2 id="一、第一步：把失败分类，而不是一锅端"><a href="#一、第一步：把失败分类，而不是一锅端" class="headerlink" title="一、第一步：把失败分类，而不是一锅端"></a>一、第一步：把失败分类，而不是一锅端</h2><p>采集失败的原因很多，但处理方式只有几类。所以第一件事是让每种失败都有<strong>独立的错误码</strong>，而不是笼统的”采集失败”：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>处理方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>验证码 &#x2F; 机器人检查</td>
+<td>人工确认（HITL）</td>
+</tr>
+<tr>
+<td>页面错误 &#x2F; 网络异常</td>
+<td>冷却后重试</td>
+</tr>
+<tr>
+<td>商品已下架 &#x2F; 被删除</td>
+<td>标记失败，不重试</td>
+</tr>
+<tr>
+<td>缺标题 &#x2F; 缺商品 ID</td>
+<td>直接报错——<strong>不猜</strong></td>
+</tr>
+<tr>
+<td>布局不认识</td>
+<td>标记失败，等人看一眼选择器</td>
+</tr>
+</tbody></table>
+<p>这里有一条贯穿始终的原则：<strong>绝不把失败伪装成成功</strong>。验证码、下架、页面错误、缺关键字段——一律显式报错，带上中文提示，而不是返回一个字段残缺的”成功”产物，让错误往下游传。</p>
+<p>分类的价值在下一步才显现：只有分对了，才谈得上”哪一类该弹框、哪一类该重试、哪一类该放弃”。</p>
+<h2 id="二、验证码走人机协同（HITL）"><a href="#二、验证码走人机协同（HITL）" class="headerlink" title="二、验证码走人机协同（HITL）"></a>二、验证码走人机协同（HITL）</h2><p>验证码是采集里最尴尬的一类：<strong>程序过不去，但人可以轻松过去一次</strong>。</p>
+<p>所以产品路径不是”硬刚”，而是把控制权交还给用户：</p>
+<ol>
+<li>采集线程检出验证码，发出一个 <code>awaiting_human</code> 事件；</li>
+<li>应用弹出模态框，提示用户去浏览器里过一次验证；</li>
+<li>有个细节很关键——<strong>默认无头的平台，遇到验证码会临时切换到有头窗口</strong>打开那个页面，让用户看得见、点得到；</li>
+<li>用户过完验证，点”已完成验证”（或”跳过”），采集继续。</li>
+</ol>
+<p>这样验证码就不再是”这条采集失败了”，而变成”这条采集等了一下人”。批测里验证码被直接计为失败，但产品里大部分都能救回来——这也是为什么<strong>批测的失败率和产品的实际可用率不能直接等同</strong>。</p>
+<h2 id="三、会话复用：先暖个场"><a href="#三、会话复用：先暖个场" class="headerlink" title="三、会话复用：先暖个场"></a>三、会话复用：先暖个场</h2><p>在验证码之外，更常见的是”同一批请求被识别为异常流量”。应对的核心是<strong>会话复用</strong>：</p>
+<ul>
+<li>每个平台一个持久会话 + 一个持久 profile；</li>
+<li>打开时先访问一次平台首页”暖场”，避免从空白页冷启动；</li>
+<li>之后换商品只做 <code>goto</code> 换地址，<strong>不再反复开新窗口</strong>。</li>
+</ul>
+<p>前面那篇讲过效果的对比：同一条 eBay 链路，每条开新窗口的旧方案 29 条就扩不动；改成暖场 + 复用之后扩到了 1233 条。</p>
+<h2 id="四、限速与熔断"><a href="#四、限速与熔断" class="headerlink" title="四、限速与熔断"></a>四、限速与熔断</h2><p>复用会话还不够，节奏也要控制：</p>
+<ul>
+<li><strong>健康状态下间隔约 1 秒</strong>：不空等，保证吞吐；</li>
+<li><strong>刚出现风控后间隔约 4 秒</strong>：给站点退让一点；</li>
+<li><strong>连续 8 次风控 &#x2F; 页面错误</strong>：判定该平台会话已”脏”，<strong>冷却约 90 秒并重建这个平台的会话</strong>（磁盘上的 profile 保留）。</li>
+</ul>
+<p>熔断的粒度是<strong>按平台</strong>的——Amazon 出问题和 eBay 出问题是两回事，不能一起停。</p>
+<h2 id="五、崩溃自愈：重启，而不是死磕"><a href="#五、崩溃自愈：重启，而不是死磕" class="headerlink" title="五、崩溃自愈：重启，而不是死磕"></a>五、崩溃自愈：重启，而不是死磕</h2><p>引擎和本地服务进程偶尔会崩。我的处理很简单粗暴，但有效：</p>
+<blockquote>
+<p><strong>引擎进程异常退出 &#x2F; 超时 → 直接重启本地服务 → 重试本条一次。</strong></p>
+</blockquote>
+<p>为什么是”重启”而不是”原地重试”？因为实测发现：能修好的崩溃，重启服务就能修好；重启服务都修不好的，原地重试也白搭。重试一次还不行的，就按失败处理，不无限纠缠。</p>
+<p>反过来，我**关掉了”每 N 条主动回收会话”**这个看起来很合理的策略。原因是它非但没消除崩溃，还把崩溃固定在了”回收后第 1～2 条”。这件事值得单独看一眼诊断。</p>
+<h2 id="六、一次崩溃诊断：崩在哪，比崩了几次更重要"><a href="#六、一次崩溃诊断：崩在哪，比崩了几次更重要" class="headerlink" title="六、一次崩溃诊断：崩在哪，比崩了几次更重要"></a>六、一次崩溃诊断：崩在哪，比崩了几次更重要</h2><p>关掉主动回收之后，我盯了三件事：<strong>崩在哪个步骤、崩的周期、进程输出</strong>。</p>
+<p>诊断结果（100 条对照）：</p>
+<ul>
+<li><strong>崩点几乎都在”抽字段”这一步</strong>（<code>failStep = eval</code>），不是打开页面；</li>
+<li>关掉主动回收后，崩溃出现在第 11、22、33、55… 条——<strong>大约每 11 条一次</strong>，这个周期和”每 10 条回收”几乎同量级；</li>
+<li>进程输出（stdout）里反复出现的是 <code>browser_evaluate</code> 的 <strong>HTTP 30 秒超时</strong>，不是验证码。</li>
+</ul>
+<p>结论就清晰了：<strong>主矛盾不是会话太老，而是长会话下”抽字段”这个调用会周期性超时</strong>。主动回收消不掉它，但”重启服务 + 重试”能把永久失败压成可恢复失败。</p>
+<p>这个诊断也直接否定了两个直觉：一，”崩得多肯定是会话太久”（不是）；二，”崩得多肯定是验证码”（不是，是超时）。</p>
+<h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul>
+<li>上面这套是<strong>单机、无代理池</strong>的工程。有代理池时，很多风控问题会前移到代理层，客户端策略的权重会下降。</li>
+<li>HITL 意味着<strong>采集不是完全无人值守</strong>的——一批里出现验证码，得有人在旁边点一下。这是刻意的取舍：宁可要一次人工，也不做绕过。</li>
+<li>“抽字段超时”的根因（为什么长会话下会周期性超时）我们只做到了”缓解 + 可恢复”，<strong>没有根治</strong>——更细的字段抽取、上游排查都还留着。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>采集失败先<strong>分类</strong>：验证码 &#x2F; 页面错误 &#x2F; 已下架 &#x2F; 缺字段 &#x2F; 布局未知，各有各的处理，<strong>绝不把失败当成功</strong>；</li>
+<li>验证码走 <strong>HITL</strong>：发事件 → 弹框 →（无头平台）临时切有头 → 人工过验证 → 继续；</li>
+<li><strong>会话复用 + 暖场</strong>是稳定性的地基，同平台只 <code>goto</code> 换址；</li>
+<li><strong>限速分级 + 按平台熔断</strong>：健康 1s、风控后 4s、连续 8 次冷却 90s 重建会话；</li>
+<li>崩溃处理是<strong>重启 + 重试一次</strong>，不做无限重试；”每 N 条主动回收”实测有害，已关闭；</li>
+<li>诊断的价值在于<strong>定位崩点</strong>（崩在抽字段、周期约每 11 条、根因是 30s 超时），而不是数崩溃次数。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 9 月 · 标签: 爬虫, 反爬, 稳定性, 熔断, 数据采集</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%B8%A9%E5%9D%91/" class="category-chain-item">踩坑</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E7%86%94%E6%96%AD/" class="print-no-link">#熔断</a>
+      
+        <a href="/tags/%E7%88%AC%E8%99%AB/" class="print-no-link">#爬虫</a>
+      
+        <a href="/tags/%E5%8F%8D%E7%88%AC/" class="print-no-link">#反爬</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86/" class="print-no-link">#数据采集</a>
+      
+        <a href="/tags/%E7%A8%B3%E5%AE%9A%E6%80%A7/" class="print-no-link">#稳定性</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>爬虫的人机协同：验证码弹框，而不是硬刚</div>
+      <div>https://aster-xu-lab.github.io/2026/09/22/2026-09-22-爬虫的人机协同-验证码弹框与熔断自愈/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年9月22日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/" title="事件就是状态：用一个事件流驱动 UI 与数据库">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">事件就是状态：用一个事件流驱动 UI 与数据库</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/09/20/2026-09-20-%E5%8F%8D%E7%88%AC%E5%8F%AF%E7%94%A8%E7%8E%87%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C-Amazon%E4%B8%8EeBay%E7%9A%84%E5%8D%81%E5%80%8D%E5%B7%AE%E8%B7%9D/" title="反爬可用率对照实验：同一份代码，Amazon 与 eBay 差十倍">
+                        <span class="hidden-mobile">反爬可用率对照实验：同一份代码，Amazon 与 eBay 差十倍</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

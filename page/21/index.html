@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/03/03/2021-03-03-%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88/" target="_self">
-          虚拟机栈
+        <a href="/2021/07/14/2021-07-14-Monitor%E6%A6%82%E5%BF%B5synchronized%E5%8E%9F%E7%90%86synchronized%E9%94%81%E5%8D%87%E7%BA%A7%E5%8F%8A%E5%AE%9E%E4%BE%8B%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/" target="_self">
+          3.5、Monitor概念、synchronized原理、synchronized锁升级及实例（轻量级锁、重量级锁、自旋锁、偏向锁）
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/03/03/2021-03-03-%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/07/14/2021-07-14-Monitor%E6%A6%82%E5%BF%B5synchronized%E5%8E%9F%E7%90%86synchronized%E9%94%81%E5%8D%87%E7%BA%A7%E5%8F%8A%E5%AE%9E%E4%BE%8B%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/" target="_self">
         <div>
-          虚拟机栈概述出现背景由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。 优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。 初步印象有不少Java开发人员一提到Java内存结构，就会非常粗粒度地将JVM中的内存区理解为仅有Java堆（heap）和Java栈（stack）？为什么？ 内存中的栈与堆首先栈是运行
+          Monitor概念Java对象头以32位虚拟机为例普通对象数组对象其中Mark Word结构为64位虚拟机Mark Word  参考资料https://stackoverflow.com/questions/26357186/what-is-in-java-object-header  原理之Monitor（锁）Monitor被翻译为监视器或管程每个Java对象都可以关联一个Monitor对象，如
         </div>
       </a>
 
@@ -352,8 +352,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-03-03 09:00" pubdate>
-              2021-03-03
+            <time datetime="2021-07-14 09:00" pubdate>
+              2021-07-14
             </time>
           </div>
         
@@ -368,7 +368,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
   
   
 
@@ -383,13 +383,15 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88/">#虚拟机栈</a>
+              <a href="/tags/synchronized/">#synchronized</a>
             
-              <a href="/tags/%E6%A0%88%E5%B8%A7/">#栈帧</a>
+              <a href="/tags/%E9%94%81%E5%8D%87%E7%BA%A7/">#锁升级</a>
+            
+              <a href="/tags/Monitor/">#Monitor</a>
             
           </div>
         
@@ -403,15 +405,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/02/23/2021-02-23-%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8/" target="_self">
-          程序计数器
+        <a href="/2021/07/07/2021-07-07-Java%E7%BA%BF%E7%A8%8B/" target="_self">
+          2、Java线程
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/02/23/2021-02-23-%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/07/07/2021-07-07-Java%E7%BA%BF%E7%A8%8B/" target="_self">
         <div>
-          介绍JVM中的程序计数寄存器（Program Counter Register）中，Register的命名源于CPU的寄存器，寄存器存储指令相关的现场信息。CPU只有把数据装载到寄存器才能够运行。这里，并非是广义上所指的物理寄存器，或许将其翻译为PC计数器（或指令计数器）会更加贴切（也称为程序钩子），并且也不容易引起一些不必要的误会。JVM中的PC寄存器是对物理PC寄存器的一种抽象模拟。  它是一
+          1、创建和运行线程方法一、直接使用Thread12345678// 直接使用Thread（继承/匿名内部类）   Thread t1 = new Thread(&quot;t1&quot;) &#123;       @Override       public void run() &#123;           log.debug(&quot;hello1&quot;);       &#1
         </div>
       </a>
 
@@ -419,8 +421,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-02-23 09:00" pubdate>
-              2021-02-23
+            <time datetime="2021-07-07 09:00" pubdate>
+              2021-07-07
             </time>
           </div>
         
@@ -435,7 +437,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
   
   
 
@@ -450,13 +452,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
             
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
+              <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E7%A8%8B%E5%BA%8F%E8%AE%A1%E6%95%B0%E5%99%A8/">#程序计数器</a>
+              <a href="/tags/Thread/">#Thread</a>
             
-              <a href="/tags/PC%E5%AF%84%E5%AD%98%E5%99%A8/">#PC寄存器</a>
+              <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%88%9B%E5%BB%BA/">#线程创建</a>
             
           </div>
         
@@ -470,15 +472,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/02/16/2021-02-16-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E6%A6%82%E8%BF%B0%E5%8F%8A%E7%BA%BF%E7%A8%8B/" target="_self">
-          运行时数据区概述及线程
+        <a href="/2021/07/01/2021-07-01-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/" target="_self">
+          1、进程与线程
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/02/16/2021-02-16-%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%E6%A6%82%E8%BF%B0%E5%8F%8A%E7%BA%BF%E7%A8%8B/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/07/01/2021-07-01-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/" target="_self">
         <div>
-          概述运行时数据区，也就是下图这部分，它是在类加载完成后的阶段当我们通过前面的：类的加载-&gt; 验证 -&gt; 准备 -&gt; 解析 -&gt; 初始化 这几个阶段完成后，就会用到执行引擎对我们的类进行使用，同时执行引擎将会使用到我们运行时数据区也就是大厨做饭，我们把大厨后面的东西（切好的菜，刀，调料），比作是运行时数据区。而厨师可以类比于执行引擎，将通过准备的东西进行制作成精美的菜品内存是
+          1 进程与线程1.1 进程与线程进程 程序由指令和数据组成，但这些指令要运行，数据要读写，就必须将指令加载至CPU，数据加载至内存。在指令运行的过程中还要用到磁盘、网络等设备。进程就是用来加载指令、管理内存、管理IO的。 当一个程序被运行，从磁盘加载这个程序的代码至内存，这时就开启了一个进程。 进程就可以视为程序的一个实例。大部分程序可以同时运行多个实例进程（例如记事本、画图、浏览器等），也有的程
         </div>
       </a>
 
@@ -486,8 +488,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-02-16 09:00" pubdate>
-              2021-02-16
+            <time datetime="2021-07-01 09:00" pubdate>
+              2021-07-01
             </time>
           </div>
         
@@ -502,7 +504,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
+  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
   
   
 
@@ -516,15 +518,15 @@
         
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/JVM/">#JVM</a>
-            
-              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
-            
-              <a href="/tags/%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/">#运行时数据区</a>
             
               <a href="/tags/%E7%BA%BF%E7%A8%8B/">#线程</a>
             
+              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
+            
+              <a href="/tags/JUC/">#JUC</a>
+            
+              <a href="/tags/%E8%BF%9B%E7%A8%8B/">#进程</a>
+            
           </div>
         
       </div>
@@ -537,15 +539,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/02/08/2021-02-08-%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%AD%90%E7%B3%BB%E7%BB%9F/" target="_self">
-          类加载子系统
+        <a href="/2021/06/01/2021-06-01-%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0-%E5%B9%B6%E5%8F%91GC%E5%A6%82%E4%BD%95%E4%B8%8D%E6%BC%8F%E6%A0%87/" target="_self">
+          三色标记：并发GC如何做到不漏标不误回收
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/02/08/2021-02-08-%E7%B1%BB%E5%8A%A0%E8%BD%BD%E5%AD%90%E7%B3%BB%E7%BB%9F/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/06/01/2021-06-01-%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0-%E5%B9%B6%E5%8F%91GC%E5%A6%82%E4%BD%95%E4%B8%8D%E6%BC%8F%E6%A0%87/" target="_self">
         <div>
-          概述完整流程如果自己想要手写一个Java虚拟机，主要考虑哪些结构  类加载器 执行引擎  类加载器子系统作用  类加载器子系统负责从文件系统或者网络中加载Class文件，class文件在文件开头有特定的文件标识。 ClassLoader只负责class文件的加载，至于它是否可以运行，则由Execution Engine决定。 加载的类信息存放于一块称为方法区的内存空间。除了类的信息外，方法区中还会
+          可达性分析，要面对一个残酷的现实JVM 判定对象能否回收，靠可达性分析：从 GC Roots（栈帧局部变量、静态变量、常量引用、native 引用、活跃线程&#x2F;锁对象等）沿着引用往下走，从根可达的存活，其余回收。 这个过程要遍历整个对象图，很慢。最早的收集器选择”全停顿”来做——STW 期间业务线程全停，图不会变，标记很安全，代价是停顿时间长。 于是有了 CMS、G1 这样的并发收集器：
         </div>
       </a>
 
@@ -553,8 +555,79 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-02-08 09:00" pubdate>
-              2021-02-08
+            <time datetime="2021-06-01 09:00" pubdate>
+              2021-06-01
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/JVM/" class="category-chain-item">JVM</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/GC/">#GC</a>
+            
+              <a href="/tags/%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0/">#三色标记</a>
+            
+              <a href="/tags/%E5%B9%B6%E5%8F%91%E6%A0%87%E8%AE%B0/">#并发标记</a>
+            
+              <a href="/tags/CMS/">#CMS</a>
+            
+              <a href="/tags/G1/">#G1</a>
+            
+              <a href="/tags/%E5%86%99%E5%B1%8F%E9%9A%9C/">#写屏障</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2021/05/31/2021-05-31-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8/" target="_self">
+          垃圾回收器
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/05/31/2021-05-31-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E5%99%A8/" target="_self">
+        <div>
+          GC分类与性能指标垃圾收集器没有在规范中进行过多的规定，可以由不同的厂商、不同版本的JVM来实现。 由于JDK的版本处于高速迭代过程中，因此Java发展至今已经衍生了众多的GC版本。 从不同角度分析垃圾收集器，可以将GC分为不同的类型。  Java不同版本新特性  语法层面：Lambda表达式、switch、自动拆箱装箱、enum API层面：Stream API、新的日期时间、Optional、
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2021-05-31 09:00" pubdate>
+              2021-05-31
             </time>
           </div>
         
@@ -588,9 +661,9 @@
             
               <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
             
-              <a href="/tags/%E7%B1%BB%E5%8A%A0%E8%BD%BD/">#类加载</a>
+              <a href="/tags/GC/">#GC</a>
             
-              <a href="/tags/ClassLoader/">#ClassLoader</a>
+              <a href="/tags/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/">#垃圾回收</a>
             
           </div>
         
@@ -604,15 +677,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/02/01/2021-02-01-JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/" target="_self">
-          JVM与Java体系结构
+        <a href="/2021/05/24/2021-05-24-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E7%AE%97%E6%B3%95/" target="_self">
+          垃圾回收相关算法
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/02/01/2021-02-01-JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/05/24/2021-05-24-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E7%AE%97%E6%B3%95/" target="_self">
         <div>
-          Java及JVM简介Java是跨平台的语言 JVM是跨语言的平台 随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。 Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结
+          标记阶段：引用计数算法在堆里存放着几乎所有的Java对象实例，在GC执行垃圾回收之前，首先需要区分出内存中哪些是存活对象，哪些是已经死亡的对象。只有被标记为己经死亡的对象，GC才会在执行垃圾回收时，释放掉其所占用的内存空间，因此这个过程我们可以称为垃圾标记阶段。 那么在JVM中究竟是如何标记一个死亡对象呢？简单来说，当一个对象已经不再被任何的存活对象继续引用时，就可以宣判为已经死亡。 判断对象存活
         </div>
       </a>
 
@@ -620,8 +693,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-02-01 09:00" pubdate>
-              2021-02-01
+            <time datetime="2021-05-24 09:00" pubdate>
+              2021-05-24
             </time>
           </div>
         
@@ -655,7 +728,9 @@
             
               <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
             
-              <a href="/tags/JVM%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/">#JVM体系结构</a>
+              <a href="/tags/GC/">#GC</a>
+            
+              <a href="/tags/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/">#垃圾回收</a>
             
           </div>
         
@@ -669,15 +744,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2020/12/31/2020-12-31-%E8%81%8C%E8%B4%A3%E9%93%BE%E6%A8%A1%E5%BC%8F/" target="_self">
-          职责链模式
+        <a href="/2021/05/16/2021-05-16-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5/" target="_self">
+          垃圾回收相关概念
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2020/12/31/2020-12-31-%E8%81%8C%E8%B4%A3%E9%93%BE%E6%A8%A1%E5%BC%8F/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/05/16/2021-05-16-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5/" target="_self">
         <div>
-          介绍 职责链模式（Chain of Responsibility Pattern），又叫责任链模式，为请求创建了一个接收对象的链，这种模式对请求的发送者和接收者进行解耦 职责链模式通常每个接收者都包含对另一个接收者的引用。如果一个对象不能处理该请求，那么它会把相同的请求传给下一个接收者，以此类推 这种类型的设计模式属于行为型模式  原理 Handler：抽象的处理者，定义了一个处理请求的接口，同时
+          System.gc()的理解在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。 然而system.gc() 调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效) JVM实现者可以通过system.gc() 调用来决定JVM的GC行为。而一般情况下
         </div>
       </a>
 
@@ -685,8 +760,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2020-12-31 09:00" pubdate>
-              2020-12-31
+            <time datetime="2021-05-16 09:00" pubdate>
+              2021-05-16
             </time>
           </div>
         
@@ -701,7 +776,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="category-chain-item">设计模式</a>
+  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
   
   
 
@@ -716,11 +791,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">#设计模式</a>
+              <a href="/tags/JVM/">#JVM</a>
             
-              <a href="/tags/GOF/">#GOF</a>
+              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
             
-              <a href="/tags/%E8%81%8C%E8%B4%A3%E9%93%BE/">#职责链</a>
+              <a href="/tags/GC/">#GC</a>
+            
+              <a href="/tags/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/">#垃圾回收</a>
             
           </div>
         
@@ -734,15 +811,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2020/12/23/2020-12-23-%E8%BF%AD%E4%BB%A3%E5%99%A8%E6%A8%A1%E5%BC%8F/" target="_self">
-          迭代器模式
+        <a href="/2021/05/09/2021-05-09-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%A6%82%E8%BF%B0/" target="_self">
+          垃圾回收概述
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2020/12/23/2020-12-23-%E8%BF%AD%E4%BB%A3%E5%99%A8%E6%A8%A1%E5%BC%8F/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/05/09/2021-05-09-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%A6%82%E8%BF%B0/" target="_self">
         <div>
-          介绍 迭代器模式（Iterator Pattern）是常用的设计模式，属于行为型模式 如果我们的集合元素是不同的方式实现的，有数组，还有java集合类，或者还有其他方式，当客户端要遍历这些集合元素的时候就要使用多种遍历方式，而且还会暴露元素的内部结构，可以考虑使用迭代器模式解决 迭代器模式，提供一种便利集合元素的统一接口，用已知的当打便利集合元素，不需要知道集合对象的底层表示，即：不暴露内部的结构
+          概念这次我们主要关注的是黄色部分，内存的分配与回收 什么是垃圾在提到什么是垃圾之前，我们先看下面一张图从上图我们可以很明确的知道，Java 和 C++语言的区别，就在于垃圾收集技术和内存动态分配上，C语言没有垃圾收集技术，需要我们手动的收集。 垃圾收集，不是Java语言的伴生产物。早在1960年，第一门开始使用内存动态分配和垃圾收集技术的Lisp语言诞生。 关于垃圾收集有三个经典问题：  哪些内存
         </div>
       </a>
 
@@ -750,8 +827,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2020-12-23 09:00" pubdate>
-              2020-12-23
+            <time datetime="2021-05-09 09:00" pubdate>
+              2021-05-09
             </time>
           </div>
         
@@ -766,7 +843,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="category-chain-item">设计模式</a>
+  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
   
   
 
@@ -781,11 +858,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">#设计模式</a>
+              <a href="/tags/JVM/">#JVM</a>
             
-              <a href="/tags/GOF/">#GOF</a>
+              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
             
-              <a href="/tags/%E8%BF%AD%E4%BB%A3%E5%99%A8/">#迭代器</a>
+              <a href="/tags/GC/">#GC</a>
+            
+              <a href="/tags/%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6/">#垃圾回收</a>
             
           </div>
         
@@ -799,15 +878,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2020/12/14/2020-12-14-%E8%AE%BF%E9%97%AE%E8%80%85%E6%A8%A1%E5%BC%8F/" target="_self">
-          访问者模式
+        <a href="/2021/05/01/2021-05-01-%E6%89%A7%E8%A1%8C%E5%BC%95%E6%93%8E/" target="_self">
+          执行引擎
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2020/12/14/2020-12-14-%E8%AE%BF%E9%97%AE%E8%80%85%E6%A8%A1%E5%BC%8F/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/05/01/2021-05-01-%E6%89%A7%E8%A1%8C%E5%BC%95%E6%93%8E/" target="_self">
         <div>
-          介绍 访问者模式（Visitor Pattern），封装一些作用域某种数据结构的各元素的操作，它可以在不改变数据结构的前提下作用于这些元素的新的操作 主要将数据结构与数据操作分离，解决数据结构和操作耦合性问题 访问者模式的基本工作原理是：在被访问的类里面加一个对外提供接待访问者的接口 访问者模式的主要应用场景：需要对一个对象结构中的对象进行很多不同的操作（操作彼此之间没有关联），同时需要避免让这些
+          执行引擎概述执行引擎属于JVM的下层，里面包括 解释器、及时编译器、垃圾回收器执行引擎是Java虚拟机核心的组成部分之一。“虚拟机”是一个相对于“物理机”的概念，这两种机器都有代码执行能力，其区别是物理机的执行引擎是直接建立在处理器、缓存、指令集和操作系统层面上的，而虚拟机的执行引擎则是由软件自行实现的，因此可以不受物理条件制约地定制指令集与执行引擎的结构体系，能够执行那些不被硬件直接支持的指令集
         </div>
       </a>
 
@@ -815,8 +894,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2020-12-14 09:00" pubdate>
-              2020-12-14
+            <time datetime="2021-05-01 09:00" pubdate>
+              2021-05-01
             </time>
           </div>
         
@@ -831,7 +910,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="category-chain-item">设计模式</a>
+  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
   
   
 
@@ -846,11 +925,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">#设计模式</a>
+              <a href="/tags/JVM/">#JVM</a>
             
-              <a href="/tags/GOF/">#GOF</a>
+              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
             
-              <a href="/tags/%E8%AE%BF%E9%97%AE%E8%80%85/">#访问者</a>
+              <a href="/tags/%E6%89%A7%E8%A1%8C%E5%BC%95%E6%93%8E/">#执行引擎</a>
+            
+              <a href="/tags/JIT/">#JIT</a>
             
           </div>
         
@@ -864,15 +945,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2020/12/06/2020-12-06-%E8%A7%A3%E9%87%8A%E5%99%A8%E6%A8%A1%E5%BC%8F/" target="_self">
-          解释器模式
+        <a href="/2021/04/24/2021-04-24-StringTable/" target="_self">
+          StringTable
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2020/12/06/2020-12-06-%E8%A7%A3%E9%87%8A%E5%99%A8%E6%A8%A1%E5%BC%8F/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/04/24/2021-04-24-StringTable/" target="_self">
         <div>
-          介绍 在编译原理中，一个算术表达式通过词法分析器形成词法单元，而后这些此法再通过语法分析器构建语法分析树，最终形成一棵抽象的语法分析树。这里的词法分析器和语法分析器都可以看作是解释器 解释器模式（Interpreter Pattern）是指给定一个语言（表达式），定义它的文法的一种表示，并定义一个解释器，使用该解释器来解释语言中的句子（表达式） 应用场景 ● 运用可以将一个需要解释执行的语言中的句
+          String的基本特性 String：字符串，使用一对 ”” 引起来表示 String s1 &#x3D; “mogublog” ; &#x2F;&#x2F; 字面量的定义方式 String s2 &#x3D; new String(“moxi”);   String声明为final的，不可被继承 String实现了Serializable接口：表示字符串是支持序列化的。实现了Comparable
         </div>
       </a>
 
@@ -880,8 +961,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2020-12-06 09:00" pubdate>
-              2020-12-06
+            <time datetime="2021-04-24 09:00" pubdate>
+              2021-04-24
             </time>
           </div>
         
@@ -896,7 +977,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="category-chain-item">设计模式</a>
+  <a href="/categories/JVM%E5%AD%A6%E4%B9%A0/" class="category-chain-item">JVM学习</a>
   
   
 
@@ -911,76 +992,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">#设计模式</a>
+              <a href="/tags/JVM/">#JVM</a>
             
-              <a href="/tags/GOF/">#GOF</a>
+              <a href="/tags/Java%E8%99%9A%E6%8B%9F%E6%9C%BA/">#Java虚拟机</a>
             
-              <a href="/tags/%E8%A7%A3%E9%87%8A%E5%99%A8/">#解释器</a>
+              <a href="/tags/StringTable/">#StringTable</a>
             
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2020/11/28/2020-11-28-%E8%A7%82%E5%AF%9F%E8%80%85%E6%A8%A1%E5%BC%8F/" target="_self">
-          观察者模式
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2020/11/28/2020-11-28-%E8%A7%82%E5%AF%9F%E8%80%85%E6%A8%A1%E5%BC%8F/" target="_self">
-        <div>
-          介绍指多个对象间存在一对多的依赖关系，当一个对象的状态发生改变时，所有依赖于它的对象都得到通知并被自动更新。这种模式有时又称作发布-订阅模式、模型-视图模式，它是对象行为型模式。 原理 观察者模式类似订牛奶业务   奶站&#x2F;气象局：Subject  用户&#x2F;第三方网站：Observer   Subject：登记注册、移除和通知   registerObserver 注册  remo
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2020-11-28 09:00" pubdate>
-              2020-11-28
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="category-chain-item">设计模式</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">#设计模式</a>
-            
-              <a href="/tags/GOF/">#GOF</a>
-            
-              <a href="/tags/%E8%A7%82%E5%AF%9F%E8%80%85/">#观察者</a>
+              <a href="/tags/%E5%AD%97%E7%AC%A6%E4%B8%B2%E5%B8%B8%E9%87%8F%E6%B1%A0/">#字符串常量池</a>
             
           </div>
         
@@ -992,7 +1010,7 @@
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <a class="extend prev" rel="prev" href="/page/20/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/19/#board">19</a><a class="page-number" href="/page/20/#board">20</a><span class="page-number current">21</span><a class="page-number" href="/page/22/#board">22</a><a class="page-number" href="/page/23/#board">23</a><a class="page-number" href="/page/24/#board">24</a><a class="extend next" rel="next" href="/page/22/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/20/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/19/#board">19</a><a class="page-number" href="/page/20/#board">20</a><span class="page-number current">21</span><a class="page-number" href="/page/22/#board">22</a><a class="page-number" href="/page/23/#board">23</a><span class="space">&hellip;</span><a class="page-number" href="/page/26/#board">26</a><a class="extend next" rel="next" href="/page/22/#board"><i class="iconfont icon-arrowright"></i></a>
     </span>
   </nav>
 

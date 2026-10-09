@@ -1,0 +1,898 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="桌面应用里接 LLM，绕不开一个问题：API Key 放哪？放渲染进程最方便，也最危险。这篇文章讲 Electron 里的密钥边界怎么划，以及为什么”模型建议”必须和”采集证据”分开。  一、为什么 Key 不能进渲染进程回顾一下上一篇讲过的进程模型：渲染进程不被信任，它是个可能被远程内容污染的浏览器环境。而我们还内嵌了一个远程的商家后台页面。 如果 Key 出现在渲染进程里，就意味着：  任">
+<meta property="og:type" content="article">
+<meta property="og:title" content="LLM Key 不下渲染进程：Electron 里的密钥边界">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/27/2026-09-27-LLM-Key%E4%B8%8D%E4%B8%8B%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B-Electron%E5%AF%86%E9%92%A5%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%BB%BA%E8%AE%AE%E5%B1%82/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="桌面应用里接 LLM，绕不开一个问题：API Key 放哪？放渲染进程最方便，也最危险。这篇文章讲 Electron 里的密钥边界怎么划，以及为什么”模型建议”必须和”采集证据”分开。  一、为什么 Key 不能进渲染进程回顾一下上一篇讲过的进程模型：渲染进程不被信任，它是个可能被远程内容污染的浏览器环境。而我们还内嵌了一个远程的商家后台页面。 如果 Key 出现在渲染进程里，就意味着：  任">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-27T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-09T03:19:30.776Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="安全">
+<meta property="article:tag" content="密钥管理">
+<meta property="article:tag" content="架构">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>LLM Key 不下渲染进程：Electron 里的密钥边界 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="LLM Key 不下渲染进程：Electron 里的密钥边界"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-09-27 09:00" pubdate>
+          2026年9月27日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">LLM Key 不下渲染进程：Electron 里的密钥边界</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>桌面应用里接 LLM，绕不开一个问题：API Key 放哪？放渲染进程最方便，也最危险。这篇文章讲 Electron 里的密钥边界怎么划，以及为什么”模型建议”必须和”采集证据”分开。</p>
+</blockquote>
+<h2 id="一、为什么-Key-不能进渲染进程"><a href="#一、为什么-Key-不能进渲染进程" class="headerlink" title="一、为什么 Key 不能进渲染进程"></a>一、为什么 Key 不能进渲染进程</h2><p>回顾一下上一篇讲过的进程模型：<strong>渲染进程不被信任</strong>，它是个可能被远程内容污染的浏览器环境。而我们还内嵌了一个远程的商家后台页面。</p>
+<p>如果 Key 出现在渲染进程里，就意味着：</p>
+<ul>
+<li>任何运行在渲染页里的脚本（包括被注入的）都能读到它；</li>
+<li>内嵌的远程页面一旦被污染，Key 直接泄露；</li>
+<li>前端代码、日志、错误上报都可能把它带出去。</li>
+</ul>
+<p><strong>Key 是”能力凭证”，不是”界面数据”。</strong> 界面数据可以下放，凭证不行。</p>
+<h2 id="二、Key-只在主进程"><a href="#二、Key-只在主进程" class="headerlink" title="二、Key 只在主进程"></a>二、Key 只在主进程</h2><p>做法是彻底的三段式：</p>
+<table>
+<thead>
+<tr>
+<th>环节</th>
+<th>在哪</th>
+<th>谁能看到</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>存</strong></td>
+<td>主进程的配置，用系统安全存储加密</td>
+<td>只有主进程</td>
+</tr>
+<tr>
+<td><strong>用</strong></td>
+<td>主进程发 HTTP 请求</td>
+<td>只有主进程</td>
+</tr>
+<tr>
+<td><strong>显示</strong></td>
+<td>渲染层只拿到一个布尔 <code>hasApiKey</code></td>
+<td>渲染层</td>
+</tr>
+</tbody></table>
+<p>界面能做的事只有两件：<strong>判断”配没配 Key”</strong>（决定设置页怎么显示），<strong>提交”新 Key”</strong>（转给主进程保存）。它<strong>永远读不到已保存的 Key</strong>——连回显都不给。</p>
+<p>这和”输入密码框不该回显密码”是同一个道理，只不过这里回显的话泄露面更大。</p>
+<h2 id="三、设置项也要校验"><a href="#三、设置项也要校验" class="headerlink" title="三、设置项也要校验"></a>三、设置项也要校验</h2><p>Key 这类设置从渲染层传进来，主进程落库前要<strong>校验</strong>（用 schema 校验库，比如 Zod）。这不只是格式问题——它挡住了”渲染层塞进一个畸形对象”这类输入，等于在主进程侧再设一道边界。</p>
+<p>原则和 IPC 一样：<strong>渲染层的输入不可信，主进程要自己验。</strong></p>
+<h2 id="四、模型输出必须与证据分离"><a href="#四、模型输出必须与证据分离" class="headerlink" title="四、模型输出必须与证据分离"></a>四、模型输出必须与证据分离</h2><p>安全边界之外，还有一个<strong>语义边界</strong>，同样重要。</p>
+<p>采集到的商品数据（<code>SourceProduct</code>）是<strong>证据</strong>：它要可溯源、要持久化、要能回答”这个值是从哪个页面、哪个字段来的”。而 LLM 产出的是<strong>建议</strong>：候选值 + 置信度 + 依据。</p>
+<p>如果把模型输出直接写进证据结构，会同时毁掉三件事：</p>
+<ul>
+<li><strong>可溯源性</strong>——证据里混进了”猜”出来的值，就分不清真假；</li>
+<li><strong>可回退性</strong>——模型输出已经落到持久化结构里，想关掉模型都关不干净；</li>
+<li><strong>可审计性</strong>——审计时无法区分”抓来的”和”模型给的”。</li>
+</ul>
+<p>所以建议必须是<strong>独立结构</strong>，好处是它能<strong>可开关、可缓存、可重算、可拒绝</strong>。这是”建议层”这个词的全部意义：它永远<strong>平行于</strong>证据，从不<strong>并入</strong>证据。</p>
+<h2 id="五、可开关的真正含义：关掉模型-行为不变"><a href="#五、可开关的真正含义：关掉模型-行为不变" class="headerlink" title="五、可开关的真正含义：关掉模型 &#x3D; 行为不变"></a>五、可开关的真正含义：关掉模型 &#x3D; 行为不变</h2><p>“建议层可开关”不是一句场面话，它有具体的验收标准：</p>
+<blockquote>
+<p><strong>关掉模型开关时，系统行为与”完全没接 AI”时</strong>完全一致**。**</p>
+</blockquote>
+<p>怎么验？用一条固定样例跑冒烟，断言<strong>事件流和落库字段一字不变</strong>。这条回归测试的意义在于：它把”AI 能力”钉死成一个<strong>附加项</strong>，而不是<strong>必经之路</strong>——模型出问题、Key 欠费、接口超时，都不影响主链路。</p>
+<p>这也是”确定性链路 + 可选建议层”这个架构的核心价值：<strong>AI 挂了，产品照常能用。</strong></p>
+<h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><ul>
+<li>“用户自配 Key、用户自费”是<strong>产品层面的取舍</strong>（谁承担成本、数据发给谁），不只是技术问题——它需要合规口径落到文档，否则不该在演示里展示。</li>
+<li>Key 的加密依赖<strong>系统的安全存储能力</strong>。一个要警惕的设计陷阱是：<strong>不要把密钥安全的设计，依赖在一条尚未交付的链路上</strong>（比如某个还没做好的登录 &#x2F; 凭证服务）——否则安全边界会跟着它一起延期。</li>
+<li>这套边界解决的是”<strong>Key 不泄露</strong>“和”<strong>模型不污染证据</strong>“，它<strong>不解决</strong>“模型输出对不对”——那要靠人工确认和验证，不是靠边界。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li><strong>Key 是能力凭证，不下渲染进程</strong>：存（主进程 + 系统安全存储）、用（主进程）、显示（只给 <code>hasApiKey</code> 布尔）；</li>
+<li>设置项的输入由<strong>主进程校验</strong>，因为渲染层输入不可信；</li>
+<li><strong>模型输出必须与证据分离</strong>：建议是独立结构，才能可开关、可缓存、可重算、可拒绝，不毁掉证据的可溯源性；</li>
+<li>“可开关”要落到验收：<strong>关掉模型，事件流与落库字段与没接 AI 时完全一致</strong>——AI 是附加项，不是必经路；</li>
+<li>诚实的边界：Key 安全<strong>不要依赖未交付的链路</strong>；合规口径要先落到文档。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 9 月 · 标签: Electron, LLM, 安全, 密钥管理, 架构</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/AI%E8%BE%85%E5%8A%A9%E5%BC%80%E5%8F%91/" class="category-chain-item">AI辅助开发</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
+      
+        <a href="/tags/LLM/" class="print-no-link">#LLM</a>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E5%AE%89%E5%85%A8/" class="print-no-link">#安全</a>
+      
+        <a href="/tags/%E5%AF%86%E9%92%A5%E7%AE%A1%E7%90%86/" class="print-no-link">#密钥管理</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>LLM Key 不下渲染进程：Electron 里的密钥边界</div>
+      <div>https://aster-xu-lab.github.io/2026/09/27/2026-09-27-LLM-Key不下渲染进程-Electron密钥边界与建议层/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年9月27日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/09/28/2026-09-28-Electron%E5%8F%8Cchannel%E5%85%B1%E5%AD%98%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E7%A6%81%E4%BB%A4/" title="Electron 双 channel 共存与跨平台构建禁令">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Electron 双 channel 共存与跨平台构建禁令</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/09/25/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/" title="把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型">
+                        <span class="hidden-mobile">把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

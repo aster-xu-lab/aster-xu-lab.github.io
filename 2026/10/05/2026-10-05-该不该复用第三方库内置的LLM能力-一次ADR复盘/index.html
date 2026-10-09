@@ -1,0 +1,920 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="我们的采集引擎内置了一整套 LLM 能力——能抽取、能总结、能跑 agent。既然它已经在那儿了，为什么不直接用它做字段映射，非要在主进程里自建一套模型接入？这篇文章是一次 ADR 式的决策复盘。  一、问题：复用”现成的 LLM”到底省什么场景是：采集到的商品字段要映射到我们商品库的类目属性上。这件事很难用纯规则写全（跨平台字段不同、跨类目属性不同），所以很自然会想：引擎不是自带 LLM 吗">
+<meta property="og:type" content="article">
+<meta property="og:title" content="该不该复用第三方库内置的 LLM 能力：一次 ADR 复盘">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/05/2026-10-05-%E8%AF%A5%E4%B8%8D%E8%AF%A5%E5%A4%8D%E7%94%A8%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E5%86%85%E7%BD%AE%E7%9A%84LLM%E8%83%BD%E5%8A%9B-%E4%B8%80%E6%AC%A1ADR%E5%A4%8D%E7%9B%98/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="我们的采集引擎内置了一整套 LLM 能力——能抽取、能总结、能跑 agent。既然它已经在那儿了，为什么不直接用它做字段映射，非要在主进程里自建一套模型接入？这篇文章是一次 ADR 式的决策复盘。  一、问题：复用”现成的 LLM”到底省什么场景是：采集到的商品字段要映射到我们商品库的类目属性上。这件事很难用纯规则写全（跨平台字段不同、跨类目属性不同），所以很自然会想：引擎不是自带 LLM 吗">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-05T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-09T03:19:30.778Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="ADR">
+<meta property="article:tag" content="LLM">
+<meta property="article:tag" content="可测试性">
+<meta property="article:tag" content="合规">
+<meta property="article:tag" content="架构决策">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>该不该复用第三方库内置的 LLM 能力：一次 ADR 复盘 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="该不该复用第三方库内置的 LLM 能力：一次 ADR 复盘"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-10-05 09:00" pubdate>
+          2026年10月5日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          20 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">该不该复用第三方库内置的 LLM 能力：一次 ADR 复盘</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>我们的采集引擎内置了一整套 LLM 能力——能抽取、能总结、能跑 agent。既然它已经在那儿了，为什么不直接用它做字段映射，非要在主进程里自建一套模型接入？这篇文章是一次 ADR 式的决策复盘。</p>
+</blockquote>
+<h2 id="一、问题：复用”现成的-LLM”到底省什么"><a href="#一、问题：复用”现成的-LLM”到底省什么" class="headerlink" title="一、问题：复用”现成的 LLM”到底省什么"></a>一、问题：复用”现成的 LLM”到底省什么</h2><p>场景是：采集到的商品字段要映射到我们商品库的类目属性上。这件事很难用纯规则写全（跨平台字段不同、跨类目属性不同），所以很自然会想：<strong>引擎不是自带 LLM 吗？直接用它映射不就行了。</strong></p>
+<p>复用的直觉收益是：省掉模型管道的<strong>胶水代码</strong>——鉴权、HTTP、重试、schema 转换。</p>
+<h2 id="二、但它省的，恰好不是难点"><a href="#二、但它省的，恰好不是难点" class="headerlink" title="二、但它省的，恰好不是难点"></a>二、但它省的，恰好不是难点</h2><p>把引擎的 LLM 能力拆开看，结论很清楚：</p>
+<ul>
+<li>它提供的是<strong>通用页面抽取</strong>的模型调用，里面<strong>没有任何”商品类目 &#x2F; 属性字典”的概念</strong>；</li>
+<li>它随包的”知识”目录是<strong>空的</strong>，随包的技能<strong>没有一个是商业类目相关</strong>的；</li>
+<li>官方文档给的多种抽取方案里，<strong>全篇不提”字段映射”或”类目属性”</strong>。</li>
+</ul>
+<p>也就是说：<strong>复用能省的是胶水，省不了映射逻辑本身——而映射逻辑正是这个问题的难点。</strong></p>
+<p>这个判断是整次决策的转折点：如果复用省的是难点，那值得容忍它的代价；如果省的是胶水，那代价就得单独算。</p>
+<h2 id="三、三条实测的反对事实"><a href="#三、三条实测的反对事实" class="headerlink" title="三、三条实测的反对事实"></a>三、三条实测的反对事实</h2><p>真正让决策落定的，是三条实测发现：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>事实</th>
+<th>为什么致命</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td><strong>Key 归属错配</strong></td>
+<td>Key 必须对<strong>后端进程</strong>可见（CLI 自己不持有 Key）。应用自持服务端时，只能把 Key 注入服务进程的环境变量，于是引擎<strong>全部</strong> AI 能力都能用它，<strong>做不到”用户授权某一次调用”的粒度</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>默认把 prompt 与响应全文落盘</strong></td>
+<td>引擎的日志记录器会把<strong>完整请求与响应</strong>写进日志，而且是<strong>默认行为、不是开关</strong>。商品数据会以明文落在它的日志目录，直接违反”日志不含敏感内容”的验收项</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>依赖开发快照构建</strong></td>
+<td>后端整体是 SNAPSHOT 构建，且我们已在同一链路上遭遇过”静默复用外部后端、端口不可配置、杀不掉外部后端”</td>
+</tr>
+</tbody></table>
+<p>第 2 条尤其关键：<strong>能不能关掉日志落盘，决定的不只是”方不方便”，而是”合不合规”</strong>。默认落盘的库，即使功能再强，也不适合碰商品数据。</p>
+<p>另外两条工程性理由：<strong>可测试性</strong>（自建可以 mock、缓存、回放、按次开关；引擎侧不可控）和<strong>语义隔离</strong>（采集证据是可溯源的，模型候选不该混进去）。</p>
+<h2 id="四、更重要的一步：更正了两个”原本以为成立”的理由"><a href="#四、更重要的一步：更正了两个”原本以为成立”的理由" class="headerlink" title="四、更重要的一步：更正了两个”原本以为成立”的理由"></a>四、更重要的一步：更正了两个”原本以为成立”的理由</h2><p>一次好的决策复盘，不只是列出支持结论的理由，还要<strong>纠错</strong>。初审时我列过两条反对复用的理由，实测<strong>都不成立</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>原判断</th>
+<th>实测</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>“provider 灵活性不足，会被绑死”</td>
+<td><strong>错</strong>。引擎内置 20+ 个 provider（含十来个国内厂商），都支持覆盖 base url，还有通用的 OpenAI 兼容逃生口</td>
+</tr>
+<tr>
+<td>“发送范围不可控，会把整页塞给模型”</td>
+<td><strong>夸大</strong>。有选择器作用域、输入长度上限、显式截断标记、摘要模式等一连串控制</td>
+</tr>
+</tbody></table>
+<p><strong>为什么这个更正很重要？</strong> 因为它改变了决策的<strong>论证结构</strong>：</p>
+<blockquote>
+<p>结论的依据<strong>不是</strong>“引擎做不到”，而是”<strong>它能做到的部分恰好不是难点，而它的代价落在我们最在意的合规与可测性上</strong>“。</p>
+</blockquote>
+<p>前者是”能力之争”（容易被反驳：”明明可以配啊”）；后者是”成本之争”（无法反驳：Key 归属和默认落盘是它的设计事实）。</p>
+<p><strong>把”我错了”的那两条写进决策文档</strong>，比只写支持结论的三条更有价值——它让后来的人不会重复走这条已经证伪的岔路。</p>
+<h2 id="五、自建之后的设计：分层"><a href="#五、自建之后的设计：分层" class="headerlink" title="五、自建之后的设计：分层"></a>五、自建之后的设计：分层</h2><p>决定自建，接下来是<strong>放在哪一层</strong>。最终的分层是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs text">L0 抽取（已有，不改语义）→ 产出可溯源的商品证据<br>L1 目标字典（新增）        → 类目树、必填/选填字段、取值枚举<br>L2 映射建议层（新增，可开关）→ 规则优先，LLM 兜底<br>L3 人工确认（新增，前置）   → 编辑、接受/拒绝建议、裁决冲突<br>L4 草稿（最后）            → 证据 + 已确认建议 → 请求体<br></code></pre></td></tr></table></figure>
+
+<p>三条设计约束值得强调：</p>
+<ol>
+<li><strong>不把模型输出写进证据结构</strong>。因为证据是要持久化、要可溯源的，模型输出必须是一个<strong>独立结构</strong>，才能做到可开关、可缓存、可重算、可审计、可拒绝。</li>
+<li><strong>映射层不碰抽取层</strong>。抽取层是”确定性 + 不伪造”的边界（缺关键字段一律报错），不能混入非确定性逻辑。</li>
+<li><strong>规则优先，LLM 只补未命中的字段</strong>——不是让模型从零做映射。</li>
+</ol>
+<h2 id="六、顺序上的一个反直觉结论"><a href="#六、顺序上的一个反直觉结论" class="headerlink" title="六、顺序上的一个反直觉结论"></a>六、顺序上的一个反直觉结论</h2><p>方案里明确了一件事：<strong>人工确认（L3）必须先于 LLM 建议（L2 的模型部分）</strong>。</p>
+<p>理由很硬：模型输出<strong>必须经人工确认才能用</strong>。而复审这套界面一开始<strong>连字段都不能编辑</strong>——建议做出来了也没地方落地。所以先补”可编辑、可确认”，再谈”建议”。</p>
+<p>这是一个容易搞反的顺序：大家总觉得”上 AI”是最高优先级，但<strong>没有可确认的界面，AI 的建议就是无根之木</strong>。</p>
+<h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul>
+<li><strong>自建要自己扛</strong>：重试、超时、缓存、成本控制都得自己写——这是复用的胶水省下来的那部分，现在得还回去。</li>
+<li>复用的<strong>例外</strong>是允许的：如果目的只是”低成本验证模型能不能提升效果”，可以用引擎做一次性 spike，<strong>验证完就换掉</strong>，不作为长期架构。</li>
+<li><strong>合规是前置条件</strong>：即使口头确认可以外发数据，只要没落到文档，就<strong>不应该在演示里展示</strong>这个能力。</li>
+<li>有一条红线要反复划：<strong>“把已有属性映射到目标字段” ≠ “凭空补造缺失值”</strong>。前者在范围内，后者禁止。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>复用内置 LLM 省的是<strong>胶水</strong>（鉴权 &#x2F; HTTP &#x2F; 重试 &#x2F; schema），<strong>省不了映射逻辑</strong>——而映射逻辑正是难点；</li>
+<li>三条反对事实：<strong>Key 归属错配</strong>（做不到按次授权）、<strong>默认全文落盘</strong>（合规致命）、<strong>SNAPSHOT 依赖</strong>（版本漂移）；</li>
+<li>关键的纠错：<strong>“provider 不灵活””发送范围不可控”两条实测不成立</strong>——所以结论依据是”<strong>它能做的不是难点，代价落在合规与可测性</strong>“，而不是”它做不到”；</li>
+<li>自建分层：抽取 → 字典 → 建议（规则优先，LLM 兜底）→ 人工确认 → 草稿；<strong>模型输出不写进证据结构</strong>；</li>
+<li>顺序反直觉但正确：<strong>先做”可编辑可确认”，再做”AI 建议”</strong>——没有确认界面，建议无处落地；</li>
+<li>红线：<strong>“映射已有字段”在范围内，”凭空补造”禁止</strong>。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 10 月 · 标签: LLM, 架构决策, ADR, 合规, 可测试性</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E5%86%B3%E7%AD%96/" class="category-chain-item">架构决策</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%9E%B6%E6%9E%84%E5%86%B3%E7%AD%96/" class="print-no-link">#架构决策</a>
+      
+        <a href="/tags/ADR/" class="print-no-link">#ADR</a>
+      
+        <a href="/tags/LLM/" class="print-no-link">#LLM</a>
+      
+        <a href="/tags/%E5%90%88%E8%A7%84/" class="print-no-link">#合规</a>
+      
+        <a href="/tags/%E5%8F%AF%E6%B5%8B%E8%AF%95%E6%80%A7/" class="print-no-link">#可测试性</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>该不该复用第三方库内置的 LLM 能力：一次 ADR 复盘</div>
+      <div>https://aster-xu-lab.github.io/2026/10/05/2026-10-05-该不该复用第三方库内置的LLM能力-一次ADR复盘/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年10月5日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/10/06/2026-10-06-ADR%E9%A9%B1%E5%8A%A8%E5%86%B3%E7%AD%96-%E6%8A%8A%E4%B8%8D%E5%81%9A%E4%B9%9F%E5%86%99%E6%88%90%E5%8F%AF%E5%A4%8D%E7%9B%98%E7%9A%84%E5%86%B3%E7%AD%96/" title="ADR 驱动决策：把&#34;不做&#34;也写成可复盘的决策">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">ADR 驱动决策：把&#34;不做&#34;也写成可复盘的决策</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/10/03/2026-10-03-%E8%AE%A9AI-Agent%E5%9C%A8%E7%9C%9F%E5%AE%9E%E5%B7%A5%E7%A8%8B%E9%87%8C%E5%8F%AF%E6%8E%A7-%E5%9B%9B%E5%B1%82%E7%BA%A6%E5%AE%9A%E5%88%86%E5%B7%A5/" title="让 AI Agent 在真实工程里可控：四层约定分工">
+                        <span class="hidden-mobile">让 AI Agent 在真实工程里可控：四层约定分工</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

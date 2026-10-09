@@ -1,0 +1,909 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="桌面端要嵌入一个已有的商家后台网页，还要用它当登录闸门。这篇文章讲 WebContentsView 的用法，以及内嵌远程页面时”怎么判定登录状态”这个看似简单、实则全是坑的问题。  一、为什么是 WebContentsView要在 Electron 里显示一个外部网页，历史上有几种做法：&lt;iframe&gt;（跨域限制多）、&lt;webview&gt; 标签（已不推荐）、以及 WebC">
+<meta property="og:type" content="article">
+<meta property="og:title" content="把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/25/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="桌面端要嵌入一个已有的商家后台网页，还要用它当登录闸门。这篇文章讲 WebContentsView 的用法，以及内嵌远程页面时”怎么判定登录状态”这个看似简单、实则全是坑的问题。  一、为什么是 WebContentsView要在 Electron 里显示一个外部网页，历史上有几种做法：&lt;iframe&gt;（跨域限制多）、&lt;webview&gt; 标签（已不推荐）、以及 WebC">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-25T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-09T03:19:30.776Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="IPC">
+<meta property="article:tag" content="WebContentsView">
+<meta property="article:tag" content="安全">
+<meta property="article:tag" content="登录闸门">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-09-25 09:00" pubdate>
+          2026年9月25日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          21 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>桌面端要嵌入一个已有的商家后台网页，还要用它当登录闸门。这篇文章讲 <code>WebContentsView</code> 的用法，以及内嵌远程页面时”怎么判定登录状态”这个看似简单、实则全是坑的问题。</p>
+</blockquote>
+<h2 id="一、为什么是-WebContentsView"><a href="#一、为什么是-WebContentsView" class="headerlink" title="一、为什么是 WebContentsView"></a>一、为什么是 WebContentsView</h2><p>要在 Electron 里显示一个外部网页，历史上有几种做法：<code>&lt;iframe&gt;</code>（跨域限制多）、<code>&lt;webview&gt;</code> 标签（已不推荐）、以及 <code>WebContentsView</code>。<code>WebContentsView</code> 是独立的一个 <code>WebContents</code>，有自己的进程、自己的会话，是现在推荐的做法。</p>
+<p>这里有个朴素的设计值得记住：<strong>一个 View 身兼两职</strong>。</p>
+<ul>
+<li>未登录时，它铺满内容区，显示的就是登录页——它本身就是”闸门”；</li>
+<li>登录后，同一个 View 变成商家后台页面。</li>
+</ul>
+<p>关键操作是<strong>改 bounds，不重建</strong>。切换登录状态时只调整这个 View 的位置和大小，而不是销毁再创建。重建会丢会话、丢状态、闪屏。</p>
+<h2 id="二、登录判定：只判-token-存在，绝不读值"><a href="#二、登录判定：只判-token-存在，绝不读值" class="headerlink" title="二、登录判定：只判 token 存在，绝不读值"></a>二、登录判定：只判 token 存在，绝不读值</h2><p>“页面到底登录没有”是这个方案里最讲究的地方。我们最终的规则只有一条：</p>
+<blockquote>
+<p><strong>只看 <code>localStorage.ACCESS_TOKEN</code> 是否存在，永不读值。</strong></p>
+</blockquote>
+<p>具体有三层含义：</p>
+<ol>
+<li><strong>不读值</strong>：只判存在性。token 的内容不进内存之外的任何地方，不落日志、不转发、不显示。</li>
+<li><strong>不按 URL 判</strong>：这是最容易犯的错。登录前的商家站是营销站，<code>/home</code>、<code>/about</code> 这类路径在未登录时也存在，按路径判会把”未登录”误判成”已登录”。<strong>路径不是登录凭证。</strong></li>
+<li><strong>探测失败 &#x3D; 未登录（fail closed）</strong>：页面没就绪、加载出错，一律按未登录处理。宁可多要求一次登录，也不放一个未登录的人进去。</li>
+</ol>
+<p>还有一个细节：导航安定之后再补一次校验（延迟几百毫秒，只补一次），因为单页应用登录后可能有一次导航过渡，太早探测会读到中间态。</p>
+<h2 id="三、远程页面的安全姿态"><a href="#三、远程页面的安全姿态" class="headerlink" title="三、远程页面的安全姿态"></a>三、远程页面的安全姿态</h2><p>内嵌的商家页是<strong>远程内容</strong>，所以要按”不可信”对待：</p>
+<ul>
+<li><code>contextIsolation</code> + 无 <code>nodeIntegration</code> + <code>sandbox</code>；</li>
+<li><strong>不挂 preload</strong>——远程页拿不到任何 <code>window.api</code>；</li>
+<li>观察用 <code>webContents</code> 的事件，动作走主进程方法，<strong>不通过注入脚本</strong>。</li>
+</ul>
+<p>这样即使商家后台页面被注入，它也<strong>够不到本地能力</strong>——它只能在自己的沙箱里蹦跶。</p>
+<h2 id="四、导航拦截：两个事件都要挂"><a href="#四、导航拦截：两个事件都要挂" class="headerlink" title="四、导航拦截：两个事件都要挂"></a>四、导航拦截：两个事件都要挂</h2><p>内嵌页面里的链接怎么处理，是一组容易漏的规则：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>内嵌白名单域名内的链接</td>
+<td><strong>就地导航</strong>（留在内嵌视图里）</td>
+</tr>
+<tr>
+<td>主窗口里的链接</td>
+<td><strong>一律 <code>openExternal</code></strong>（交给系统浏览器）</td>
+</tr>
+<tr>
+<td><code>target=&quot;_blank&quot;</code> &#x2F; <code>window.open</code></td>
+<td>一律 <code>openExternal</code></td>
+</tr>
+<tr>
+<td>法律条款页（如服务协议、隐私政策）</td>
+<td>也交给系统浏览器</td>
+</tr>
+</tbody></table>
+<p>注意这里有个<strong>反差</strong>：主窗口的规则是”一律 deny + 外部打开”，而内嵌视图的规则是”白名单内就地导航”。两套规则方向相反，很容易写混。</p>
+<p>技术上的坑是：<code>will-navigate</code> <strong>和</strong> <code>will-redirect</code> 都要挂，重定向可以绕过只挂一个的防护。而且这两个事件的回调首参是 <code>details</code> 对象，用的是 <code>details.url</code> 和 <code>details.preventDefault()</code>——不少老示例里用的是已废弃的第二参数，照抄会踩坑。</p>
+<p><code>target=&quot;_blank&quot;</code> 那条尤其重要：登录页上的”用户协议”链接如果被 <code>loadURL</code> 顶掉了当前文档，用户就<strong>回不到登录页</strong>了。所以这类必须 <code>openExternal</code>。</p>
+<h2 id="五、加载状态的三个事件，一个都不能少"><a href="#五、加载状态的三个事件，一个都不能少" class="headerlink" title="五、加载状态的三个事件，一个都不能少"></a>五、加载状态的三个事件，一个都不能少</h2><p>判断”页面是否加载完成”看起来简单，实际要用三个事件配合，少一个就有坑：</p>
+<ul>
+<li><code>did-start-loading</code>：开始加载；但<strong>页面内导航也会触发它，且不一定有配对的 <code>did-finish-load</code></strong>；</li>
+<li><code>did-fail-load</code>：加载失败；</li>
+<li><code>did-stop-loading</code>：加载停止——用它来判定”就绪”，但要在状态确实是 loading 时才置位。</li>
+</ul>
+<p>最阴的一条是：<strong>加载失败后，Chromium 仍会提交一个错误页面</strong>，于是事件顺序变成”失败 → 完成 → 停止”。如果只看后两个事件，会把一个错误页当成”加载成功”。所以必须让后两个事件先检查”是否已经 <code>loadFailed</code>“。</p>
+<h2 id="六、一个踩过的坑：浅色模式校正不能用-debugger"><a href="#六、一个踩过的坑：浅色模式校正不能用-debugger" class="headerlink" title="六、一个踩过的坑：浅色模式校正不能用 debugger"></a>六、一个踩过的坑：浅色模式校正不能用 debugger</h2><p>商家后台的 SPA 会把深色模式持久化在 <code>localStorage</code> 里。桌面端想强制浅色，光设 Electron 的主题是不够的——得在商家的文档里把那个持久化标记清掉、把 <code>html</code> 上的 <code>dark</code> 类摘掉，必要时还得多一次重载。</p>
+<p>但有个陷阱：<strong>做这件事的时候不要用 <code>webContents.debugger</code></strong>。在同时开着远程调试端口的情况下，<code>debugger</code> 会挂住，把 <code>loadURL</code> 一起阻塞。改成直接执行脚本就好。这是一个”手段选对了，但用错场景”的典型坑。</p>
+<h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul>
+<li>登录判定用”token 存在性”是<strong>基于这个商家后台的实现约定</strong>的，换一个后台未必成立；它的好处是不碰 token 值，坏处是依赖对方把 token 放在那个位置。</li>
+<li>一个 View 同时当闸门和内容，是<strong>为了省一个窗口</strong>的取舍；如果登录页和内容页差异极大，拆成两个 View 会更清晰。</li>
+<li>隔离和沙箱能防”远程页拿到本地能力”，但<strong>防不住商家后台自己的权限模型问题</strong>——那是另一层的事。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>用 <strong><code>WebContentsView</code></strong>，一个 View 身兼登录闸门与商家页，<strong>改 bounds 不重建</strong>；</li>
+<li>登录判定<strong>只判 token 存在性</strong>：不读值、不按 URL 判、探测失败按未登录（fail closed）；</li>
+<li>远程页按不可信处理：<strong>无 preload、无 Node、sandbox</strong>，观察走事件、动作走方法；</li>
+<li>导航规则是<strong>两套相反的</strong>：内嵌白名单就地导航，主窗口一律外部打开；<code>target=&quot;_blank&quot;</code> 与法律页都外部打开；<code>will-navigate</code> 和 <code>will-redirect</code> 都要挂；</li>
+<li>加载状态要<strong>三个事件配合</strong>，且注意”失败后仍会提交错误页”的顺序陷阱；</li>
+<li>浅色校正<strong>不要用 <code>debugger</code></strong>（会在远程调试下挂住）。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 9 月 · 标签: Electron, WebContentsView, 安全, 登录闸门, IPC</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/IPC/" class="print-no-link">#IPC</a>
+      
+        <a href="/tags/%E5%AE%89%E5%85%A8/" class="print-no-link">#安全</a>
+      
+        <a href="/tags/WebContentsView/" class="print-no-link">#WebContentsView</a>
+      
+        <a href="/tags/%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8/" class="print-no-link">#登录闸门</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型</div>
+      <div>https://aster-xu-lab.github.io/2026/09/25/2026-09-25-把商家后台嵌进桌面端-WebContentsView与登录闸门的安全模型/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年9月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/09/27/2026-09-27-LLM-Key%E4%B8%8D%E4%B8%8B%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B-Electron%E5%AF%86%E9%92%A5%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%BB%BA%E8%AE%AE%E5%B1%82/" title="LLM Key 不下渲染进程：Electron 里的密钥边界">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">LLM Key 不下渲染进程：Electron 里的密钥边界</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/" title="事件就是状态：用一个事件流驱动 UI 与数据库">
+                        <span class="hidden-mobile">事件就是状态：用一个事件流驱动 UI 与数据库</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

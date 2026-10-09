@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/10/10/2021-10-10-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8ACAS%E5%8E%9F%E5%AD%90%E7%B1%BB/" target="_self">
-          5、共享模式之无锁(上），CAS，原子类
+        <a href="/2022/01/12/2022-01-12-Spring%E4%BA%8B%E5%8A%A1%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF%E4%B8%8E%E4%BC%A0%E6%92%AD%E8%A1%8C%E4%B8%BA/" target="_self">
+          @Transactional 失效的 6 个场景与事务传播行为
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/10/10/2021-10-10-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8ACAS%E5%8E%9F%E5%AD%90%E7%B1%BB/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/01/12/2022-01-12-Spring%E4%BA%8B%E5%8A%A1%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF%E4%B8%8E%E4%BC%A0%E6%92%AD%E8%A1%8C%E4%B8%BA/" target="_self">
         <div>
-          本章内容 CAS 与 volatile 原子整数 原子引用 原子累加器 Unsafe  1、问题的提出有如下需求，保证accont.withdraw取款方法的线程安全 1234567891011121314151617181920212223242526272829303132333435public interface Account &#123;    // 获取余额    Integer g
+          一、@Transactional 靠什么生效@Transactional 的实现是 AOP 代理：TransactionInterceptor 在方法前后织入 begin / commit / rollback。 这个前提极其重要——一切失效场景，本质都是”代理没生效”或”事务感知不到异常”。 二、6 个失效场景① 非 public 方法@Transactional 只对 public 方法生效
         </div>
       </a>
 
@@ -352,8 +352,215 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-10-10 09:00" pubdate>
-              2021-10-10
+            <time datetime="2022-01-12 09:00" pubdate>
+              2022-01-12
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Spring/" class="category-chain-item">Spring</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1/">#事务</a>
+            
+              <a href="/tags/Spring/">#Spring</a>
+            
+              <a href="/tags/AOP/">#AOP</a>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1%E5%A4%B1%E6%95%88/">#事务失效</a>
+            
+              <a href="/tags/%E4%BA%8B%E5%8A%A1%E4%BC%A0%E6%92%AD/">#事务传播</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2022/01/08/2022-01-08-Spring%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%85%E9%A1%BB%E4%B8%89%E7%BA%A7/" target="_self">
+          Spring 循环依赖的三级缓存：为什么必须三级
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/01/08/2022-01-08-Spring%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%85%E9%A1%BB%E4%B8%89%E7%BA%A7/" target="_self">
+        <div>
+          一、问题：A 依赖 B，B 又依赖 A两个 Bean 互相依赖：A 的构造需要 B，B 的构造需要 A。 12A ──依赖──▶ BA ◀──依赖── B  如果是构造器注入，这直接死锁——创建 A 要先创建 B，创建 B 要先创建 A，谁都创建不了。Spring 直接报错。 但setter&#x2F;字段注入能解决，靠的是三级缓存。 二、三个 MapSpring 解决循环依赖用三个缓存（在 D
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-01-08 09:00" pubdate>
+              2022-01-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Spring/" class="category-chain-item">Spring</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Spring/">#Spring</a>
+            
+              <a href="/tags/%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96/">#循环依赖</a>
+            
+              <a href="/tags/%E4%B8%89%E7%BA%A7%E7%BC%93%E5%AD%98/">#三级缓存</a>
+            
+              <a href="/tags/AOP/">#AOP</a>
+            
+              <a href="/tags/Bean/">#Bean</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2022/01/05/2022-01-05-Spring-IoC%E4%B8%8EBean%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F-AOP%E4%BB%A3%E7%90%86%E5%9C%A8%E5%93%AA%E4%B8%80%E6%AD%A5/" target="_self">
+          Spring IoC 与 Bean 生命周期：AOP 代理到底在哪一步生成
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/01/05/2022-01-05-Spring-IoC%E4%B8%8EBean%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F-AOP%E4%BB%A3%E7%90%86%E5%9C%A8%E5%93%AA%E4%B8%80%E6%AD%A5/" target="_self">
+        <div>
+          用 Spring 8 年，但 IoC 深处（三级缓存、Bean 生命周期、AOP 代理时机）一直是复习时最容易”答不全”的地方。这篇把骨架讲透。  一、IoC：把创建交给容器控制反转（IoC）：对象的创建和管理交给 Spring 容器，用依赖注入（DI）把依赖装配好，而不是到处 new。 几个关键点：  Bean 创建时机：ApplicationContext 的 refresh() 触发——
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2022-01-05 09:00" pubdate>
+              2022-01-05
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Spring/" class="category-chain-item">Spring</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Spring/">#Spring</a>
+            
+              <a href="/tags/AOP/">#AOP</a>
+            
+              <a href="/tags/IoC/">#IoC</a>
+            
+              <a href="/tags/Bean%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/">#Bean生命周期</a>
+            
+              <a href="/tags/%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86/">#动态代理</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2021/12/31/2021-12-31-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%9B%86%E5%90%88%E7%B1%BB%E6%A6%82%E8%BF%B0/" target="_self">
+          线程安全集合类概述
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/12/31/2021-12-31-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%9B%86%E5%90%88%E7%B1%BB%E6%A6%82%E8%BF%B0/" target="_self">
+        <div>
+          线程安全集合类可以分为三大类：  遗留的线程安全集合如Hashtable，vector 使用Collections装饰的线程安全集合 Collections.synchronizedCollection Collections.synchronizedList Collections.synchronizedMap Collections.synchronizedSet Collections.s
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2021-12-31 09:00" pubdate>
+              2021-12-31
             </time>
           </div>
         
@@ -387,11 +594,7 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/CAS/">#CAS</a>
-            
-              <a href="/tags/%E5%8E%9F%E5%AD%90%E7%B1%BB/">#原子类</a>
-            
-              <a href="/tags/%E6%97%A0%E9%94%81%E5%B9%B6%E5%8F%91/">#无锁并发</a>
+              <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">#线程安全</a>
             
           </div>
         
@@ -405,15 +608,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/10/04/2021-10-04-Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8Bvolatile%E5%8E%9F%E7%90%86CPU%E7%BC%93%E5%AD%98%E7%BB%93%E6%9E%84balking%E6%A8%A1%E5%BC%8F%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/" target="_self">
-          4、Java内存模型、volatile原理、CPU缓存结构、balking模式、单例模式
+        <a href="/2021/12/25/2021-12-25-JUC-CyclicBarrier/" target="_self">
+          JUC-CyclicBarrier
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/10/04/2021-10-04-Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8Bvolatile%E5%8E%9F%E7%90%86CPU%E7%BC%93%E5%AD%98%E7%BB%93%E6%9E%84balking%E6%A8%A1%E5%BC%8F%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/12/25/2021-12-25-JUC-CyclicBarrier/" target="_self">
         <div>
-          本章内容上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性 这一张进一步深入学习共享变量在多线程之间的【可见性】问题与多条指令执行时的【有序性】问题 1、Java内存模型JMM即Java Menory Model，它定义了主存，工作内存的抽象概念，底层对应着CPU寄存器、缓存、硬件内存、CPU指令优化等。 JMM 体现在以下几个方面  原子性 - 保证指令不会受到线程上下
+          循环栅栏，用来进行线程协作，等待线程满足某个计数，构造时设置【计数个数】，每个线程执行到某个需要“同步”的时刻调用await()方法等待，当等待的线程数满足【计数个数】时，继续执行 1234567891011121314151617181920CyclicBarrier barrier = new CyclicBarrier(2);        new Thread(() -&gt; &#123
         </div>
       </a>
 
@@ -421,8 +624,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-10-04 09:00" pubdate>
-              2021-10-04
+            <time datetime="2021-12-25 09:00" pubdate>
+              2021-12-25
             </time>
           </div>
         
@@ -456,11 +659,7 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/JMM/">#JMM</a>
-            
-              <a href="/tags/volatile/">#volatile</a>
-            
-              <a href="/tags/%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8B/">#内存模型</a>
+              <a href="/tags/CyclicBarrier/">#CyclicBarrier</a>
             
           </div>
         
@@ -474,15 +673,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/09/27/2021-09-27-%E7%AC%AC%E4%B8%89%E7%AB%A0%E5%B0%8F%E7%BB%93/" target="_self">
-          第三章小结
+        <a href="/2021/12/18/2021-12-18-JUC-CountdownLatch/" target="_self">
+          JUC-CountdownLatch
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/09/27/2021-09-27-%E7%AC%AC%E4%B8%89%E7%AB%A0%E5%B0%8F%E7%BB%93/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/12/18/2021-12-18-JUC-CountdownLatch/" target="_self">
         <div>
-          写在前面 由于本章较长，所以按照小标题发布了 本章小结 分析多线程访问共享片段时，哪些代码片段属于临界区 使用synchronized互斥解决临界区的线程安全问题 掌握synchronized锁对象语法 掌握synchronized加载成员方法和静态方法语法 掌握wait&#x2F;notify同步方法   使用lock互斥解决代码临界区的线程安全问题 掌握lock的使用细节：可打断、锁超时、公平
+          简介用来进行线程同步协作，等待所有线程完成倒计时。 其中构造参数用来初始化等待计数值，await()用来等待计数归零，countDown()用来让计数减一 12345678910111213141516171819202122232425262728293031323334353637public static void main(String[] args) throws Interrupted
         </div>
       </a>
 
@@ -490,8 +689,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-09-27 09:00" pubdate>
-              2021-09-27
+            <time datetime="2021-12-18 09:00" pubdate>
+              2021-12-18
             </time>
           </div>
         
@@ -525,7 +724,7 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E5%90%8C%E6%AD%A5%E6%A8%A1%E5%BC%8F/">#同步模式</a>
+              <a href="/tags/CountDownLatch/">#CountDownLatch</a>
             
           </div>
         
@@ -539,15 +738,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/09/21/2021-09-21-%E5%90%8E%E8%AE%B0-%E5%90%8C%E6%AD%A5%E6%A8%A1%E5%BC%8F%E4%B9%8B%E9%A1%BA%E5%BA%8F%E6%8E%A7%E5%88%B6%E6%8E%A7%E5%88%B6%E7%BA%BF%E7%A8%8B%E6%93%8D%E4%BD%9C%E9%A1%BA%E5%BA%8F/" target="_self">
-          3、后记 - 同步模式之顺序控制 （控制线程操作顺序）
+        <a href="/2021/12/12/2021-12-12-JUC-StampedLock/" target="_self">
+          JUC-StampedLock
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/09/21/2021-09-21-%E5%90%8E%E8%AE%B0-%E5%90%8C%E6%AD%A5%E6%A8%A1%E5%BC%8F%E4%B9%8B%E9%A1%BA%E5%BA%8F%E6%8E%A7%E5%88%B6%E6%8E%A7%E5%88%B6%E7%BA%BF%E7%A8%8B%E6%93%8D%E4%BD%9C%E9%A1%BA%E5%BA%8F/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/12/12/2021-12-12-JUC-StampedLock/" target="_self">
         <div>
-          1、固定运行顺序比如，必须先2后1打印 1.1、wait notify 版本1234567891011121314151617181920212223242526static Object obj = new Object();    static boolean t2runed = false;    public static void main(String[] args) &#123;
+          该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用 加解读锁 12long stamp = lock.readLock();lock.unlockRead(stamp);  加解写锁 12long stamp = lock.writeLock();lock.unlockWrite(stamp);  乐观读，StampedLock支持typeOptimist
         </div>
       </a>
 
@@ -555,8 +754,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-09-21 09:00" pubdate>
-              2021-09-21
+            <time datetime="2021-12-12 09:00" pubdate>
+              2021-12-12
             </time>
           </div>
         
@@ -590,7 +789,7 @@
             
               <a href="/tags/JUC/">#JUC</a>
             
-              <a href="/tags/%E5%90%8C%E6%AD%A5%E6%A8%A1%E5%BC%8F/">#同步模式</a>
+              <a href="/tags/StampedLock/">#StampedLock</a>
             
           </div>
         
@@ -604,15 +803,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2021/09/15/2021-09-15-ReentrantLock/" target="_self">
-          3.11、ReentrantLock
+        <a href="/2021/12/06/2021-12-06-JUC-Semaphore/" target="_self">
+          JUC-Semaphore
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/09/15/2021-09-15-ReentrantLock/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/12/06/2021-12-06-JUC-Semaphore/" target="_self">
         <div>
-          相对于synchronized它具备以下特点  可中断 可以设置超时时间 可以设置为公平锁 支持多个条件变量  与synchronized一样，都支持可重入 基本语法 1234567reentrantLock.lock();try&#123;	// 临界区&#125; finally &#123;	// 释放锁	reentrantLock.unlock();&#125; 可重入可重入是指同一个线程
+          基本使用信号量，用来限制能通知访问共享资源的线程上限 123456789101112131415161718192021public static void main(String[] args) &#123;        Semaphore semaphore = new Semaphore(3);        for (int i = 0; i &lt; 10; i++) &#123;
         </div>
       </a>
 
@@ -620,8 +819,142 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2021-09-15 09:00" pubdate>
-              2021-09-15
+            <time datetime="2021-12-06 09:00" pubdate>
+              2021-12-06
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
+            
+              <a href="/tags/JUC/">#JUC</a>
+            
+              <a href="/tags/Semaphore/">#Semaphore</a>
+            
+              <a href="/tags/%E4%BF%A1%E5%8F%B7%E9%87%8F/">#信号量</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2021/11/29/2021-11-29-JUC-%E8%AF%BB%E5%86%99%E9%94%81ReentrantReadWriteLock/" target="_self">
+          JUC-读写锁ReentrantReadWriteLock
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/11/29/2021-11-29-JUC-%E8%AF%BB%E5%86%99%E9%94%81ReentrantReadWriteLock/" target="_self">
+        <div>
+          1、ReentrantReadWriteLock当读操作远远高于写操作时，这时候使用读写锁让读-读可以并发，提高性能。类似于数据库中的select ... from ... lock in share mode 提供一个数据容器类分别使用读锁保护数据的read()方法，写锁保护数据的write()方法 123456789101112131415161718192021222324252627282
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2021-11-29 09:00" pubdate>
+              2021-11-29
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
+            
+              <a href="/tags/JUC/">#JUC</a>
+            
+              <a href="/tags/%E8%AF%BB%E5%86%99%E9%94%81/">#读写锁</a>
+            
+              <a href="/tags/ReadWriteLock/">#ReadWriteLock</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2021/11/23/2021-11-23-JUC-ReentrantLock%E5%8E%9F%E7%90%86/" target="_self">
+          JUC-ReentrantLock原理
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2021/11/23/2021-11-23-JUC-ReentrantLock%E5%8E%9F%E7%90%86/" target="_self">
+        <div>
+          1、非公平锁实现原理加锁解锁流程先从构造器开始看，默认为非公平锁的实现 123public ReentrantLock() &#123; 	sync = new NonfairSync();&#125; NofairSync 继承自 AQS没有竞争时第一个竞争出现时Thread-1执行了  CAS尝试将state由0改为1，结果失败 进入tryAcquire逻辑，这时state已经是1，结果仍然
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2021-11-23 09:00" pubdate>
+              2021-11-23
             </time>
           </div>
         
@@ -665,338 +998,11 @@
     </article>
   </div>
 
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2021/09/08/2021-09-08-%E9%87%8D%E6%96%B0%E7%90%86%E8%A7%A3%E7%BA%BF%E7%A8%8B%E8%BD%AC%E6%8D%A2%E7%8A%B6%E6%80%81/" target="_self">
-          3.8、重新理解线程转换状态
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/09/08/2021-09-08-%E9%87%8D%E6%96%B0%E7%90%86%E8%A7%A3%E7%BA%BF%E7%A8%8B%E8%BD%AC%E6%8D%A2%E7%8A%B6%E6%80%81/" target="_self">
-        <div>
-          假设有线程 Thread t 情况1 NEW–&gt;RUNNABLE 当调用t.start()方法时，由 NEW --&gt; RUNNABLE  情况2 RUNNABLE &lt;–&gt; WAITINGt线程用synchronized(obj)获取了对象锁后  调用obj.wait() 方法时，t线程从RUNNABLE --&gt; WAITING 调用obj.notify()，obj.n
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-09-08 09:00" pubdate>
-              2021-09-08
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/%E7%BA%BF%E7%A8%8B%E7%8A%B6%E6%80%81/">#线程状态</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2021/09/02/2021-09-02-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E4%B9%A0%E9%A2%98/" target="_self">
-          3.4、线程安全习题
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/09/02/2021-09-02-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E4%B9%A0%E9%A2%98/" target="_self">
-        <div>
-          习题卖票练习测试下面代码是否存在线程安全问题，并尝试改正 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172package sync.test;import lombok.exte
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-09-02 09:00" pubdate>
-              2021-09-02
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">#线程安全</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2021/08/27/2021-08-27-%E6%B4%BB%E8%B7%83%E6%80%A7%E6%AD%BB%E9%94%81%E5%93%B2%E5%AD%A6%E5%AE%B6%E5%B0%B1%E9%A4%90%E6%B4%BB%E9%94%81%E9%A5%A5%E9%A5%BF/" target="_self">
-          3.10、活跃性、死锁、哲学家就餐、活锁、饥饿
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/08/27/2021-08-27-%E6%B4%BB%E8%B7%83%E6%80%A7%E6%AD%BB%E9%94%81%E5%93%B2%E5%AD%A6%E5%AE%B6%E5%B0%B1%E9%A4%90%E6%B4%BB%E9%94%81%E9%A5%A5%E9%A5%BF/" target="_self">
-        <div>
-          死锁有这样的情况：一个线程需要同时获得多把锁，这时就容易发生死锁t1线程获得A对象锁，接下来想获取B对象的锁，t2线程获得B对象锁，接下来想要获取A对象锁 例： 12345678910111213141516171819202122232425262728293031Object A = new Object();      Object B = new Object();      new Th
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-08-27 09:00" pubdate>
-              2021-08-27
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/%E6%AD%BB%E9%94%81/">#死锁</a>
-            
-              <a href="/tags/%E6%B4%BB%E8%B7%83%E6%80%A7%E9%97%AE%E9%A2%98/">#活跃性问题</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2021/08/20/2021-08-20-%E5%A4%9A%E6%8A%8A%E9%94%81/" target="_self">
-          3.9、多把锁
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/08/20/2021-08-20-%E5%A4%9A%E6%8A%8A%E9%94%81/" target="_self">
-        <div>
-          多把不相干的锁一间屋子有两个功能：睡觉、学习，互不相干 现在小南要学习，小女要睡觉，但如果只用一间屋子（一把锁）的话，那么并发度很低 解决方法是准备多个房间（多个对象锁） 例如 12345678910111213141516171819202122232425@Slf4j(topic = &quot;c.BigRoom&quot;)class BigRoom &#123;    public vo
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-08-20 09:00" pubdate>
-              2021-08-20
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/%E9%94%81%E7%B2%92%E5%BA%A6/">#锁粒度</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2021/08/14/2021-08-14-%E5%8F%98%E9%87%8F%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%88%86%E6%9E%90/" target="_self">
-          3.3、变量的线程安全分析
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2021/08/14/2021-08-14-%E5%8F%98%E9%87%8F%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%88%86%E6%9E%90/" target="_self">
-        <div>
-          变量的线程安全分析成员变量和静态变量是否线程安全？ 如果它们没有共享，则线程安全 如果它们被共享了，根据它们的状态是否能够改变，又分两种情况 如果只有读操作，则线程安全 如果有读写操作，则这段代码是临界区，需要考虑线程安全    局部变量是否线程安全 局部变量是线程安全的 单局部变量引用的对象则未必 如果该对象没有逃离方法的作用访问，它是线程安全的 如果该对象逃离方法的作用范围，需要考虑线程安全
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2021-08-14 09:00" pubdate>
-              2021-08-14
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Java%E5%B9%B6%E5%8F%91%E7%BC%96%E7%A8%8B/" class="category-chain-item">Java并发编程</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Java%E5%B9%B6%E5%8F%91/">#Java并发</a>
-            
-              <a href="/tags/JUC/">#JUC</a>
-            
-              <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/">#线程安全</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
 
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <a class="extend prev" rel="prev" href="/page/17/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/16/#board">16</a><a class="page-number" href="/page/17/#board">17</a><span class="page-number current">18</span><a class="page-number" href="/page/19/#board">19</a><a class="page-number" href="/page/20/#board">20</a><span class="space">&hellip;</span><a class="page-number" href="/page/24/#board">24</a><a class="extend next" rel="next" href="/page/19/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/17/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/16/#board">16</a><a class="page-number" href="/page/17/#board">17</a><span class="page-number current">18</span><a class="page-number" href="/page/19/#board">19</a><a class="page-number" href="/page/20/#board">20</a><span class="space">&hellip;</span><a class="page-number" href="/page/26/#board">26</a><a class="extend next" rel="next" href="/page/19/#board"><i class="iconfont icon-arrowright"></i></a>
     </span>
   </nav>
 

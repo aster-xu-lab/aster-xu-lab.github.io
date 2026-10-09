@@ -4,6 +4,534 @@
   
   
   <entry>
+    <title>写文档也是工程：分类目录与&quot;风险单列&quot;</title>
+    <link href="/2026/10/09/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/"/>
+    <url>/2026/10/09/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>这个项目除了代码，还产出了二十来份文档。它们不是”顺便记一下”，而是有目录约定、有写作规范的工程产物。这篇文章讲一套文档分级做法，以及一条最容易被违反的原则。</p></blockquote><h2 id="一、文档按”类型”分目录，不往根目录平铺"><a href="#一、文档按”类型”分目录，不往根目录平铺" class="headerlink" title="一、文档按”类型”分目录，不往根目录平铺"></a>一、文档按”类型”分目录，不往根目录平铺</h2><p>文档按类型分成四个目录，各司其职：</p><table><thead><tr><th>目录</th><th>装什么</th></tr></thead><tbody><tr><td><strong>方案与排期</strong></td><td>冻结的方案、任务拆解、排期表</td></tr><tr><td><strong>汇报</strong></td><td>阶段汇报、对外口径</td></tr><tr><td><strong>会议与决策</strong></td><td>会议纪要、架构决策记录（ADR）</td></tr><tr><td><strong>指南</strong></td><td>上手 &#x2F; 学习类文档</td></tr></tbody></table><p><strong>不往根目录平铺</strong>，是这套约定的第一条。根目录平铺的文档，三天后就没人能找到。</p><p>还有一个细节：<strong>跨目录引用用相对路径</strong>（<code>../汇报/xxx.md</code>），同目录引用用裸名。并且<strong>改完文档位置要复验断链</strong>——文档一多，链接就是最脆的地方。</p><h2 id="二、为什么”分类”比”起个好文件名”更重要"><a href="#二、为什么”分类”比”起个好文件名”更重要" class="headerlink" title="二、为什么”分类”比”起个好文件名”更重要"></a>二、为什么”分类”比”起个好文件名”更重要</h2><p>因为找文档的时候，人（和 Agent）想的不是”那个文件叫什么”，而是”这事属于哪一类”。</p><p>“我上次那个排期表在哪？”→ 去<strong>方案与排期</strong>。<br>“上次为什么决定不用那个方案？”→ 去<strong>会议与决策</strong>。</p><p>分类把”检索”从”回忆文件名”变成”理解任务类型”，后者稳定得多。</p><p>有一类容易踩的坑：<strong>引述 vs 导航</strong>。表格单元格里引述某个文档时，<strong>只写文件名、不加目录前缀</strong>——因为加了前缀会撑破表格列宽，而且那是”引述”，不是”链接”。路径由文档顶部的索引行统一提供。</p><h2 id="三、最容易被违反的一条：风险与缺失单列"><a href="#三、最容易被违反的一条：风险与缺失单列" class="headerlink" title="三、最容易被违反的一条：风险与缺失单列"></a>三、最容易被违反的一条：风险与缺失单列</h2><p>有一条写作纪律，价值极高但最容易被违反：</p><blockquote><p><strong>“风险”与”缺失调研”要单列成节，放在决策项之前，不要埋在”明确不做”清单里。</strong></p></blockquote><p>而且每条要写清<strong>三件事</strong>：</p><ol><li><strong>现状</strong>（现在是什么样）；</li><li><strong>缺什么</strong>（差在哪里）；</li><li><strong>归属谁</strong>（谁来补）。</li></ol><p>并且，<strong>要给可核对的证据</strong>——命令输出、字段值、<code>文件:行号</code>——<strong>不给形容词</strong>。</p><p>为什么要单列？因为”风险”和”不做”是两回事：</p><ul><li>“不做 Excel 导入”是<strong>范围决策</strong>（想清楚了，主动不做）；</li><li>“没测过 Excel 导入”是<strong>待办</strong>（还没轮到）。</li></ul><p>把它们混在一起，会导致一个严重后果：<strong>读者分不清哪个是”故意的”，哪个是”欠着的”</strong>。而下一个人很可能把”欠着的”当成”故意的”，从而不再跟进。</p><h2 id="四、”没测过”-≠-“不做”"><a href="#四、”没测过”-≠-“不做”" class="headerlink" title="四、”没测过” ≠ “不做”"></a>四、”没测过” ≠ “不做”</h2><p>这是上一节的直接结论，值得单独强调：</p><p><strong>绝不把”没测过”写成”不做”。</strong></p><p>这两者的区别是<strong>范围决策与待办</strong>的区别。一个功能”本期不做”是拍板的结果；一个功能”还没验证过”是排期里的一笔债。写成同一句话，债就消失了。</p><p>还有一类<strong>外部周期依赖</strong>要单独点明：<strong>证书申请、平台审核</strong>这类事，周期<strong>不在自己的排期里</strong>。它们必须被显式标为”外部依赖”，并主动去推——否则它们会以”我以为它自己能好”的方式，在最后关头炸掉。</p><h2 id="五、调研结论要落地到文档"><a href="#五、调研结论要落地到文档" class="headerlink" title="五、调研结论要落地到文档"></a>五、调研结论要落地到文档</h2><p>另一条纪律：<strong>调研的结论不要只留在对话里</strong>，要落到文档。而且<strong>按读者选位置</strong>：</p><ul><li><strong>平台级技术事实</strong> → 进架构调研文档；</li><li><strong>待办事项</strong> → 进任务清单（带任务 ID、主责、产出）；</li><li><strong>汇报口径</strong> → 进汇报目录。</li></ul><p><strong>事实与待办分开写，并互相交叉引用。</strong> 这样做的目的是防止漂移——一个结论如果在对话里、在汇报里、在任务清单里各写一遍，早晚三处不一致。</p><h2 id="六、没有版本控制时的文档纪律"><a href="#六、没有版本控制时的文档纪律" class="headerlink" title="六、没有版本控制时的文档纪律"></a>六、没有版本控制时的文档纪律</h2><p>这套文档所在的工作区<strong>没有版本控制</strong>（没有 git）。这意味着<strong>没有 diff、没有回滚兜底</strong>。所以：</p><ul><li>有副作用的改动（移动文件、重命名、批量替换）<strong>前先想好手工回滚路径</strong>，并把映射关系写进汇报；</li><li>批量文本替换涉及中文时<strong>用 Python 而不是 <code>sed</code> &#x2F; <code>perl</code></strong>（某些平台上的 sed&#x2F;perl 处理多字节字符会静默改不动）。</li></ul><p>这两条都是”没有兜底”逼出来的纪律。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li>文档<strong>有维护成本</strong>，也会<strong>漂移</strong>。分类太细反而找不到；引用太多反而处处断链。这套约定的收益只在<strong>长期、多人、多文档</strong>的项目里显现。</li><li>文档<strong>不能替代代码</strong>。它记录”为什么”，代码才是”是什么”——两者冲突时，以能跑的那个为准，并<strong>回头修文档</strong>。</li><li>单列风险、区分”不做&#x2F;没测”这些纪律，<strong>不解决”风险本身”</strong>——它只是让风险<strong>可见、可追</strong>。可见，是解决它的前提。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>文档<strong>按类型分目录</strong>（方案 &#x2F; 汇报 &#x2F; 决策 &#x2F; 指南），<strong>不往根目录平铺</strong>；跨目录用相对路径，改位置要<strong>复验断链</strong>；</li><li>分类比文件名重要——检索靠”任务类型”，不靠”回忆文件名”；</li><li>铁律：<strong>“风险”与”缺失调研”单列，放在决策项之前</strong>，每条写清<strong>现状 &#x2F; 缺什么 &#x2F; 归属谁</strong>，<strong>给证据不给形容词</strong>；</li><li><strong>绝不把”没测过”写成”不做”</strong>——那是<strong>待办 vs 范围决策</strong>的区别；<strong>外部周期依赖</strong>要单独点明并主动推；</li><li><strong>调研结论要落地到文档</strong>，按读者选位置，事实与待办分开并交叉引用；</li><li>无版本控制时：副作用改动<strong>先想好手工回滚</strong>，中文批量替换<strong>用 Python</strong>。</li></ul><hr><p><em>发表于 2026 年 10 月 · 标签: 文档, 工程方法论, 知识管理, 协作, 技术管理</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>工程方法论</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>工程方法论</tag>
+      
+      <tag>技术管理</tag>
+      
+      <tag>文档</tag>
+      
+      <tag>知识管理</tag>
+      
+      <tag>协作</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>一个月从 0 到演示：排期与降级策略</title>
+    <link href="/2026/10/08/2026-10-08-%E4%B8%80%E4%B8%AA%E6%9C%88%E4%BB%8E0%E5%88%B0%E6%BC%94%E7%A4%BA-%E6%8E%92%E6%9C%9F%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/"/>
+    <url>/2026/10/08/2026-10-08-%E4%B8%80%E4%B8%AA%E6%9C%88%E4%BB%8E0%E5%88%B0%E6%BC%94%E7%A4%BA-%E6%8E%92%E6%9C%9F%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>从零到招商演示，我给的时间是一周；从零到”能发给商户的生产版”，合理周期是 8–12 周。同一件事，两个数字差十倍。这篇文章讲怎么把”演示版”和”生产版”分开，以及演示交付里最重要的东西——降级方案。</p></blockquote><h2 id="一、先给两个不同的数字"><a href="#一、先给两个不同的数字" class="headerlink" title="一、先给两个不同的数字"></a>一、先给两个不同的数字</h2><p>接到”做个桌面端，月底演示”时，最容易犯的错是<strong>只用一句话回答</strong>。要么拍胸脯”没问题”，要么为难”做不完”。正确的做法是把问题拆成<strong>两个范围、两个周期</strong>：</p><table><thead><tr><th>范围</th><th>可行性</th><th>周期</th></tr></thead><tbody><tr><td><strong>招商演示版</strong>（macOS + 固定样例 + 写入草稿箱）</td><td>有条件可行</td><td>一周</td></tr><tr><td><strong>商户生产版</strong>（双平台 + 安装分发 + 签名公证）</td><td>不可行</td><td>8–12 周</td></tr></tbody></table><p><strong>一开始就把这两个数字说清楚，是保护项目，也是保护自己。</strong> 演示版能过，不代表产品能发；反过来，因为演示版过了就以为”下周能发”，是最危险的误解。</p><h2 id="二、冻结-MVP：演示必须完成的清单"><a href="#二、冻结-MVP：演示必须完成的清单" class="headerlink" title="二、冻结 MVP：演示必须完成的清单"></a>二、冻结 MVP：演示必须完成的清单</h2><p>演示版的范围要<strong>冻结成一份可勾选的清单</strong>，比如：</p><ol><li>应用能启动、能登录；</li><li>粘贴至少一条真实商品链接；</li><li>本地引擎打开页面并导出快照；</li><li>抽出标题 &#x2F; ID &#x2F; 品牌 &#x2F; 价格 &#x2F; 图片 &#x2F; 属性；</li><li>显示原始值与目标值，标出缺失和冲突，可人工修改；</li><li>确认后调用草稿接口；</li><li>在真实后台看到草稿。</li></ol><p>冻结的意思是：<strong>过了某个日期就不再新增范围</strong>。没有这条，演示前的每一天都会被”顺带加个小功能”蚕食。</p><h2 id="三、”明确不做”清单，比”做什么”更重要"><a href="#三、”明确不做”清单，比”做什么”更重要" class="headerlink" title="三、”明确不做”清单，比”做什么”更重要"></a>三、”明确不做”清单，比”做什么”更重要</h2><p>演示版的价值，一半在”做了什么”，另一半在”<strong>明确没做什么</strong>“。要白纸黑字写下来：</p><ul><li>Excel 导入、批量同步、自动上架；</li><li>自动车型推断、AI 补造字段、绕验证码；</li><li>断点续传、自动更新、正式安装包、公证、Windows 版；</li><li>“任意商品都能迁移”的承诺。</li></ul><p><strong>“不做”不写下来，就会变成默认要做的</strong>——因为没人在会议上反对它。写下来之后，才对”不做的也要写进项目文档”这件事有共识。</p><h2 id="四、三级回退：演示的保命符"><a href="#四、三级回退：演示的保命符" class="headerlink" title="四、三级回退：演示的保命符"></a>四、三级回退：演示的保命符</h2><p>这是演示交付里最实用的一招——<strong>给核心链路准备三级降级</strong>：</p><table><thead><tr><th>级别</th><th>方案</th><th>说明</th></tr></thead><tbody><tr><td>1</td><td>真实引擎实时抓取 → 真实草稿</td><td>理想情况</td></tr><tr><td>2</td><td>加载<strong>预先保存的真实页面快照</strong> → 真实草稿</td><td>实时抓取受限时的替补</td></tr><tr><td>3</td><td>加载<strong>固定 JSON</strong> → 只演示界面与草稿接口</td><td>并<strong>明确说明</strong>抓取链路未通过</td></tr></tbody></table><p>这里有一条底线：<strong>受限时切到快照，绝不假装实时成功。</strong> 演示时如实说”这条用了预存快照”，比”看起来成功了但其实是假的”好一万倍——后者一旦被追问就崩。</p><h2 id="五、Gate-与降级"><a href="#五、Gate-与降级" class="headerlink" title="五、Gate 与降级"></a>五、Gate 与降级</h2><p>排期不是一条直线，而是一串<strong>带退出条件的 Gate</strong>：</p><ul><li>某天之前，引擎必须能读取两个平台各一个样例；</li><li>某天之前，草稿接口必须能返回真实 ID；</li><li>某天之前，必须完成三次完整演练并录屏。</li></ul><p>每个 Gate 都有明确的<strong>退出条件</strong>。还有一条我写在计划里的原则，值得原样抄出来：</p><blockquote><p><strong>周末不作为默认承诺；如果关键 Gate 没过，立即把演示降级为”一平台真实 + 一平台快照”，不要靠临时加班掩盖关键依赖。</strong></p></blockquote><p>这句话反的是两种常见病：把”加班”当成解决依赖问题的方案；以及”gate 没过但假装能过”，一路拖到演示当天。</p><h2 id="六、每天按四项汇报"><a href="#六、每天按四项汇报" class="headerlink" title="六、每天按四项汇报"></a>六、每天按四项汇报</h2><p>汇报格式固定四项，逼自己（和团队）说清楚状态：</p><ol><li><strong>已完成</strong>；</li><li><strong>明日目标</strong>；</li><li><strong>阻塞项</strong>；</li><li><strong>需要领导决策</strong>。</li></ol><p>第三、四项是重点——<strong>阻塞和待决策的事必须每天浮出来</strong>，而不是攒到演示前一起爆。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li><strong>演示版的成功不等于生产可用</strong>。演示版可以预装环境、只跑固定样例；生产版要处理任意商品、安装分发、签名公证、Windows——这些是<strong>另一次工程</strong>。</li><li>有几类依赖<strong>不在自己的排期内</strong>：草稿接口、测试账号、合规样例、证书申请与审核。这些必须在 Gate 里<strong>标成外部依赖</strong>，并<strong>提前推</strong>，而不是等着它自己到位。</li><li>三级回退是<strong>保命符不是遮羞布</strong>——它能救一次演示，不能替代”核心链路能不能跑通”这个真问题。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>面对”月底演示”，先给<strong>两个数字</strong>：演示版一周、生产版 8–12 周，把两者严格分开；</li><li><strong>冻结 MVP</strong>（可勾选清单）+ <strong>“明确不做”清单</strong>（不写就会被蚕食）；</li><li><strong>三级回退</strong>：实时抓取 → 真实快照 → 固定 JSON；底线是<strong>受限时如实说明，不假装成功</strong>；</li><li>排期是<strong>带退出条件的 Gate</strong>；”Gate 没过就降级，不靠加班掩盖关键依赖”；</li><li>汇报固定四项：<strong>已完成 &#x2F; 明日目标 &#x2F; 阻塞项 &#x2F; 需决策</strong>；</li><li><strong>外部依赖要标出来并提前推</strong>，它们不在你的排期里。</li></ul><hr><p><em>发表于 2026 年 10 月 · 标签: 项目管理, 排期, 降级策略, 交付, 工程方法论</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>职业发展</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>工程方法论</tag>
+      
+      <tag>项目管理</tag>
+      
+      <tag>排期</tag>
+      
+      <tag>降级策略</tag>
+      
+      <tag>交付</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>ADR 驱动决策：把&quot;不做&quot;也写成可复盘的决策</title>
+    <link href="/2026/10/06/2026-10-06-ADR%E9%A9%B1%E5%8A%A8%E5%86%B3%E7%AD%96-%E6%8A%8A%E4%B8%8D%E5%81%9A%E4%B9%9F%E5%86%99%E6%88%90%E5%8F%AF%E5%A4%8D%E7%9B%98%E7%9A%84%E5%86%B3%E7%AD%96/"/>
+    <url>/2026/10/06/2026-10-06-ADR%E9%A9%B1%E5%8A%A8%E5%86%B3%E7%AD%96-%E6%8A%8A%E4%B8%8D%E5%81%9A%E4%B9%9F%E5%86%99%E6%88%90%E5%8F%AF%E5%A4%8D%E7%9B%98%E7%9A%84%E5%86%B3%E7%AD%96/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>这个项目我写了三份 ADR（架构决策记录）。它们最大的价值不是”记录选了什么”，而是<strong>记录”为什么不选另一条路”，以及后来发现自己错了什么</strong>。这篇文章讲一份有用的 ADR 长什么样。</p></blockquote><h2 id="一、ADR-是什么"><a href="#一、ADR-是什么" class="headerlink" title="一、ADR 是什么"></a>一、ADR 是什么</h2><p>一句话：<strong>一次重要架构决策的现场记录</strong>。</p><p>它不是设计文档（那是”系统长什么样”），也不是会议纪要（那是”谁说了什么”），而是”<strong>面对什么事实、做了什么决定、凭什么、后果如何</strong>“。它有<strong>状态</strong>和<strong>日期</strong>，所以可以被<strong>推翻</strong>、可以被<strong>演进</strong>。</p><h2 id="二、一份有用的-ADR-长什么样"><a href="#二、一份有用的-ADR-长什么样" class="headerlink" title="二、一份有用的 ADR 长什么样"></a>二、一份有用的 ADR 长什么样</h2><p>我这份 ADR 的骨架大致是：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs text">状态（建议中 / 已采纳 / 已推翻）<br>日期<br>背景        ← 先把事实摆清楚，别急着下结论<br>决策        ← 一句话说清选了什么<br>依据        ← 支撑决策的实测证据<br>更正        ← 把&quot;我原本错了&quot;的那几条显式写下来<br>分层/设计   ← 决策落地后的结构<br>分期        ← 顺序，以及为什么这个顺序<br>后果        ← 正面 / 负面都要写<br>依赖与待确认 ← 谁欠什么，卡在哪<br>验证方式    ← 怎么证明这个决策是对的<br>风险<br></code></pre></td></tr></table></figure><p>几个反直觉但重要的部分：</p><p><strong>① 背景先摆事实。</strong> 决策文档最常见的病是”一上来就讲结论”。正确的顺序是先把<strong>现状与事实</strong>摊开（当前代码是什么样、有哪些约束、哪些是明文禁止的），让读者能自己判断。</p><p><strong>② “依据”要带证据。</strong> 不写”性能不好”，写”实测 X 条里 Y 条失败，失败在第 Z 步”。证据可以是命令输出、文件行号、实测数字。</p><h2 id="三、三条真正让-ADR-有价值的实践"><a href="#三、三条真正让-ADR-有价值的实践" class="headerlink" title="三、三条真正让 ADR 有价值的实践"></a>三、三条真正让 ADR 有价值的实践</h2><h3 id="实践一：把”不做”也写成决策"><a href="#实践一：把”不做”也写成决策" class="headerlink" title="实践一：把”不做”也写成决策"></a>实践一：把”不做”也写成决策</h3><p>第二份 ADR 的主题就是**”本期不做”<strong>——不做代码混淆、不做加壳、不做商业级加固。它花了大篇幅解释这三个概念的区别、各自的代价，最后给出优先级：签名与公证 P0、完整性 P1、轻度混淆 P2、壳</strong>不做**。</p><p><strong>“不做”如果不写成决策，就等于”还没决定”</strong>——下次还会有人重新提一遍，重新讨论一遍。写成 ADR 之后，它有了状态、有了依据、有了”何时重开”的条件（”若合规强制防逆向，再重开”）。</p><h3 id="实践二：把”我错了”写下来"><a href="#实践二：把”我错了”写下来" class="headerlink" title="实践二：把”我错了”写下来"></a>实践二：把”我错了”写下来</h3><p>第一份 ADR 里有一节叫”需要更正的相反证据”。里面老实写了：初审时我列了两条反对复用的理由，<strong>实测都不成立</strong>，在此更正。</p><p>这节的价值在于，它把决策的论证结构<strong>升级</strong>了：</p><ul><li>原来的论证是”它做不到”——这容易被反驳（”明明可以配啊”）；</li><li>更正后的论证是”它能做，但代价落在我们最在意的合规与可测性上”——这<strong>无法反驳</strong>。</li></ul><p><strong>把”我错了”写进决策文档，比只写支持结论的理由更有价值</strong>——它让后来的人不会重复走这条已经证伪的岔路。</p><h3 id="实践三：用”状态”区分”已定”和”待定”"><a href="#实践三：用”状态”区分”已定”和”待定”" class="headerlink" title="实践三：用”状态”区分”已定”和”待定”"></a>实践三：用”状态”区分”已定”和”待定”</h3><p>ADR 开头有一个<strong>状态字段</strong>：<code>建议中</code> &#x2F; <code>已采纳</code> &#x2F; <code>已推翻</code>。</p><p>这看似不起眼，但极其有用。它让”我们决定这么做”和”我在建议这么做、但还没批”能<strong>并存</strong>——读者一眼就知道这条决策当前的可信度，不用猜。</p><h2 id="四、ADR-和普通文档的区别"><a href="#四、ADR-和普通文档的区别" class="headerlink" title="四、ADR 和普通文档的区别"></a>四、ADR 和普通文档的区别</h2><table><thead><tr><th></th><th>普通设计文档</th><th>ADR</th></tr></thead><tbody><tr><td>回答</td><td>系统长什么样</td><td>为什么长这样</td></tr><tr><td>时间性</td><td>描述当前状态</td><td>记录某一刻的决策</td></tr><tr><td>演进</td><td>不断覆盖更新</td><td>保留历史，新决策写新 ADR</td></tr><tr><td>有无”状态”</td><td>无</td><td>有（可被推翻）</td></tr></tbody></table><p>ADR 的这个特性意味着：<strong>它不是”活文档”，是”决策的日志”</strong>。一个决策被推翻了，你不删旧 ADR，而是写一份新的、状态为”已采纳”的，并在旧的那份上标”已被 X 取代”。</p><h2 id="五、避免-ADR-变成摆设"><a href="#五、避免-ADR-变成摆设" class="headerlink" title="五、避免 ADR 变成摆设"></a>五、避免 ADR 变成摆设</h2><p>两条纪律：</p><ol><li><strong>只给真正影响架构的决策写</strong>。给每个小改动写 ADR 会淹没重点。判断标准：这个决策<strong>改了之后要重做很多事</strong>、或者<strong>有外部依赖只等它拍板</strong>——才值得写。</li><li><strong>ADR 要能被找到</strong>。放在固定的目录、有固定的命名（编号 + 标题），并在相关的设计文档里<strong>反向引用</strong>它。</li></ol><h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><ul><li>ADR 有<strong>维护成本</strong>。对一个单人项目，给所有决策写 ADR 是过重的——我只给了三个”重”决策写。</li><li>ADR 记录的是”<strong>决策过程</strong>“，它<strong>不保证决策正确</strong>。一份写得再漂亮的 ADR，也可能记录了一个错误的决定——它的价值是让这个错误<strong>可被追溯、可被推翻</strong>，而不是让错误消失。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>ADR &#x3D; <strong>一次重要决策的现场记录</strong>（有状态、有日期，可被推翻、可演进）；</li><li>骨架关键在<strong>先摆事实</strong>（背景）、<strong>依据带证据</strong>（不写形容词）；</li><li>三条实践：<strong>把”不做”写成决策</strong>（否则永远是”没决定”）、<strong>把”我错了”显式更正</strong>（升级论证结构）、<strong>用状态区分”已定&#x2F;待定”</strong>；</li><li>ADR 是<strong>决策日志</strong>，不是活文档；被推翻就写新的，旧的不删；</li><li>只给<strong>真正影响架构</strong>的决策写，并保证能被找到；</li><li>ADR <strong>不保证决策正确</strong>，它保证错误<strong>可被追溯和推翻</strong>。</li></ul><hr><p><em>发表于 2026 年 10 月 · 标签: ADR, 架构决策, 工程方法论, 技术管理, 文档</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>架构决策</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>架构决策</tag>
+      
+      <tag>ADR</tag>
+      
+      <tag>工程方法论</tag>
+      
+      <tag>技术管理</tag>
+      
+      <tag>文档</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>该不该复用第三方库内置的 LLM 能力：一次 ADR 复盘</title>
+    <link href="/2026/10/05/2026-10-05-%E8%AF%A5%E4%B8%8D%E8%AF%A5%E5%A4%8D%E7%94%A8%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E5%86%85%E7%BD%AE%E7%9A%84LLM%E8%83%BD%E5%8A%9B-%E4%B8%80%E6%AC%A1ADR%E5%A4%8D%E7%9B%98/"/>
+    <url>/2026/10/05/2026-10-05-%E8%AF%A5%E4%B8%8D%E8%AF%A5%E5%A4%8D%E7%94%A8%E7%AC%AC%E4%B8%89%E6%96%B9%E5%BA%93%E5%86%85%E7%BD%AE%E7%9A%84LLM%E8%83%BD%E5%8A%9B-%E4%B8%80%E6%AC%A1ADR%E5%A4%8D%E7%9B%98/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>我们的采集引擎内置了一整套 LLM 能力——能抽取、能总结、能跑 agent。既然它已经在那儿了，为什么不直接用它做字段映射，非要在主进程里自建一套模型接入？这篇文章是一次 ADR 式的决策复盘。</p></blockquote><h2 id="一、问题：复用”现成的-LLM”到底省什么"><a href="#一、问题：复用”现成的-LLM”到底省什么" class="headerlink" title="一、问题：复用”现成的 LLM”到底省什么"></a>一、问题：复用”现成的 LLM”到底省什么</h2><p>场景是：采集到的商品字段要映射到我们商品库的类目属性上。这件事很难用纯规则写全（跨平台字段不同、跨类目属性不同），所以很自然会想：<strong>引擎不是自带 LLM 吗？直接用它映射不就行了。</strong></p><p>复用的直觉收益是：省掉模型管道的<strong>胶水代码</strong>——鉴权、HTTP、重试、schema 转换。</p><h2 id="二、但它省的，恰好不是难点"><a href="#二、但它省的，恰好不是难点" class="headerlink" title="二、但它省的，恰好不是难点"></a>二、但它省的，恰好不是难点</h2><p>把引擎的 LLM 能力拆开看，结论很清楚：</p><ul><li>它提供的是<strong>通用页面抽取</strong>的模型调用，里面<strong>没有任何”商品类目 &#x2F; 属性字典”的概念</strong>；</li><li>它随包的”知识”目录是<strong>空的</strong>，随包的技能<strong>没有一个是商业类目相关</strong>的；</li><li>官方文档给的多种抽取方案里，<strong>全篇不提”字段映射”或”类目属性”</strong>。</li></ul><p>也就是说：<strong>复用能省的是胶水，省不了映射逻辑本身——而映射逻辑正是这个问题的难点。</strong></p><p>这个判断是整次决策的转折点：如果复用省的是难点，那值得容忍它的代价；如果省的是胶水，那代价就得单独算。</p><h2 id="三、三条实测的反对事实"><a href="#三、三条实测的反对事实" class="headerlink" title="三、三条实测的反对事实"></a>三、三条实测的反对事实</h2><p>真正让决策落定的，是三条实测发现：</p><table><thead><tr><th>#</th><th>事实</th><th>为什么致命</th></tr></thead><tbody><tr><td>1</td><td><strong>Key 归属错配</strong></td><td>Key 必须对<strong>后端进程</strong>可见（CLI 自己不持有 Key）。应用自持服务端时，只能把 Key 注入服务进程的环境变量，于是引擎<strong>全部</strong> AI 能力都能用它，<strong>做不到”用户授权某一次调用”的粒度</strong></td></tr><tr><td>2</td><td><strong>默认把 prompt 与响应全文落盘</strong></td><td>引擎的日志记录器会把<strong>完整请求与响应</strong>写进日志，而且是<strong>默认行为、不是开关</strong>。商品数据会以明文落在它的日志目录，直接违反”日志不含敏感内容”的验收项</td></tr><tr><td>3</td><td><strong>依赖开发快照构建</strong></td><td>后端整体是 SNAPSHOT 构建，且我们已在同一链路上遭遇过”静默复用外部后端、端口不可配置、杀不掉外部后端”</td></tr></tbody></table><p>第 2 条尤其关键：<strong>能不能关掉日志落盘，决定的不只是”方不方便”，而是”合不合规”</strong>。默认落盘的库，即使功能再强，也不适合碰商品数据。</p><p>另外两条工程性理由：<strong>可测试性</strong>（自建可以 mock、缓存、回放、按次开关；引擎侧不可控）和<strong>语义隔离</strong>（采集证据是可溯源的，模型候选不该混进去）。</p><h2 id="四、更重要的一步：更正了两个”原本以为成立”的理由"><a href="#四、更重要的一步：更正了两个”原本以为成立”的理由" class="headerlink" title="四、更重要的一步：更正了两个”原本以为成立”的理由"></a>四、更重要的一步：更正了两个”原本以为成立”的理由</h2><p>一次好的决策复盘，不只是列出支持结论的理由，还要<strong>纠错</strong>。初审时我列过两条反对复用的理由，实测<strong>都不成立</strong>：</p><table><thead><tr><th>原判断</th><th>实测</th></tr></thead><tbody><tr><td>“provider 灵活性不足，会被绑死”</td><td><strong>错</strong>。引擎内置 20+ 个 provider（含十来个国内厂商），都支持覆盖 base url，还有通用的 OpenAI 兼容逃生口</td></tr><tr><td>“发送范围不可控，会把整页塞给模型”</td><td><strong>夸大</strong>。有选择器作用域、输入长度上限、显式截断标记、摘要模式等一连串控制</td></tr></tbody></table><p><strong>为什么这个更正很重要？</strong> 因为它改变了决策的<strong>论证结构</strong>：</p><blockquote><p>结论的依据<strong>不是</strong>“引擎做不到”，而是”<strong>它能做到的部分恰好不是难点，而它的代价落在我们最在意的合规与可测性上</strong>“。</p></blockquote><p>前者是”能力之争”（容易被反驳：”明明可以配啊”）；后者是”成本之争”（无法反驳：Key 归属和默认落盘是它的设计事实）。</p><p><strong>把”我错了”的那两条写进决策文档</strong>，比只写支持结论的三条更有价值——它让后来的人不会重复走这条已经证伪的岔路。</p><h2 id="五、自建之后的设计：分层"><a href="#五、自建之后的设计：分层" class="headerlink" title="五、自建之后的设计：分层"></a>五、自建之后的设计：分层</h2><p>决定自建，接下来是<strong>放在哪一层</strong>。最终的分层是：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs text">L0 抽取（已有，不改语义）→ 产出可溯源的商品证据<br>L1 目标字典（新增）        → 类目树、必填/选填字段、取值枚举<br>L2 映射建议层（新增，可开关）→ 规则优先，LLM 兜底<br>L3 人工确认（新增，前置）   → 编辑、接受/拒绝建议、裁决冲突<br>L4 草稿（最后）            → 证据 + 已确认建议 → 请求体<br></code></pre></td></tr></table></figure><p>三条设计约束值得强调：</p><ol><li><strong>不把模型输出写进证据结构</strong>。因为证据是要持久化、要可溯源的，模型输出必须是一个<strong>独立结构</strong>，才能做到可开关、可缓存、可重算、可审计、可拒绝。</li><li><strong>映射层不碰抽取层</strong>。抽取层是”确定性 + 不伪造”的边界（缺关键字段一律报错），不能混入非确定性逻辑。</li><li><strong>规则优先，LLM 只补未命中的字段</strong>——不是让模型从零做映射。</li></ol><h2 id="六、顺序上的一个反直觉结论"><a href="#六、顺序上的一个反直觉结论" class="headerlink" title="六、顺序上的一个反直觉结论"></a>六、顺序上的一个反直觉结论</h2><p>方案里明确了一件事：<strong>人工确认（L3）必须先于 LLM 建议（L2 的模型部分）</strong>。</p><p>理由很硬：模型输出<strong>必须经人工确认才能用</strong>。而复审这套界面一开始<strong>连字段都不能编辑</strong>——建议做出来了也没地方落地。所以先补”可编辑、可确认”，再谈”建议”。</p><p>这是一个容易搞反的顺序：大家总觉得”上 AI”是最高优先级，但<strong>没有可确认的界面，AI 的建议就是无根之木</strong>。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li><strong>自建要自己扛</strong>：重试、超时、缓存、成本控制都得自己写——这是复用的胶水省下来的那部分，现在得还回去。</li><li>复用的<strong>例外</strong>是允许的：如果目的只是”低成本验证模型能不能提升效果”，可以用引擎做一次性 spike，<strong>验证完就换掉</strong>，不作为长期架构。</li><li><strong>合规是前置条件</strong>：即使口头确认可以外发数据，只要没落到文档，就<strong>不应该在演示里展示</strong>这个能力。</li><li>有一条红线要反复划：<strong>“把已有属性映射到目标字段” ≠ “凭空补造缺失值”</strong>。前者在范围内，后者禁止。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>复用内置 LLM 省的是<strong>胶水</strong>（鉴权 &#x2F; HTTP &#x2F; 重试 &#x2F; schema），<strong>省不了映射逻辑</strong>——而映射逻辑正是难点；</li><li>三条反对事实：<strong>Key 归属错配</strong>（做不到按次授权）、<strong>默认全文落盘</strong>（合规致命）、<strong>SNAPSHOT 依赖</strong>（版本漂移）；</li><li>关键的纠错：<strong>“provider 不灵活””发送范围不可控”两条实测不成立</strong>——所以结论依据是”<strong>它能做的不是难点，代价落在合规与可测性</strong>“，而不是”它做不到”；</li><li>自建分层：抽取 → 字典 → 建议（规则优先，LLM 兜底）→ 人工确认 → 草稿；<strong>模型输出不写进证据结构</strong>；</li><li>顺序反直觉但正确：<strong>先做”可编辑可确认”，再做”AI 建议”</strong>——没有确认界面，建议无处落地；</li><li>红线：<strong>“映射已有字段”在范围内，”凭空补造”禁止</strong>。</li></ul><hr><p><em>发表于 2026 年 10 月 · 标签: LLM, 架构决策, ADR, 合规, 可测试性</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>架构决策</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>架构决策</tag>
+      
+      <tag>ADR</tag>
+      
+      <tag>LLM</tag>
+      
+      <tag>合规</tag>
+      
+      <tag>可测试性</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>让 AI Agent 在真实工程里可控：四层约定分工</title>
+    <link href="/2026/10/03/2026-10-03-%E8%AE%A9AI-Agent%E5%9C%A8%E7%9C%9F%E5%AE%9E%E5%B7%A5%E7%A8%8B%E9%87%8C%E5%8F%AF%E6%8E%A7-%E5%9B%9B%E5%B1%82%E7%BA%A6%E5%AE%9A%E5%88%86%E5%B7%A5/"/>
+    <url>/2026/10/03/2026-10-03-%E8%AE%A9AI-Agent%E5%9C%A8%E7%9C%9F%E5%AE%9E%E5%B7%A5%E7%A8%8B%E9%87%8C%E5%8F%AF%E6%8E%A7-%E5%9B%9B%E5%B1%82%E7%BA%A6%E5%AE%9A%E5%88%86%E5%B7%A5/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>让 AI 写代码不难，难的是让它在一周之后、另一个会话里、换一个人接手时，<strong>依然按同一套约定干活</strong>。这个项目我搭了四层文本约定，把”工程事实”喂给 Agent。这篇文章讲这四层怎么分工。</p></blockquote><h2 id="一、根本问题：Agent-没有长期记忆"><a href="#一、根本问题：Agent-没有长期记忆" class="headerlink" title="一、根本问题：Agent 没有长期记忆"></a>一、根本问题：Agent 没有长期记忆</h2><p>每次新会话，Agent 都是白纸。它不知道：</p><ul><li>这个仓库的包管理器是哪个；</li><li>哪些命令是<strong>不能跑</strong>的；</li><li>品牌名的大小写约定；</li><li>采集为什么只能用某一条路径。</li></ul><p>人能靠”问同事、翻文档、看历史”补上，Agent 不能。所以<strong>唯一能跨会话传递工程事实的东西，就是仓库里的文本</strong>。这就是四层约定的由来——不是给 Agent 下指令，是给它<strong>事实</strong>。</p><h2 id="二、四层约定"><a href="#二、四层约定" class="headerlink" title="二、四层约定"></a>二、四层约定</h2><table><thead><tr><th>层</th><th>载体</th><th>作用</th><th>长度</th></tr></thead><tbody><tr><td><strong>索引层</strong></td><td><code>CLAUDE.md</code></td><td>新会话的入口 + 短索引</td><td>很短</td></tr><tr><td><strong>硬约束层</strong></td><td><code>AGENTS.md</code></td><td>不变量、命令、依赖规则</td><td>长而稳</td></tr><tr><td><strong>路径域层</strong></td><td><code>.cursor/rules/*.mdc</code></td><td>按文件 glob 注入的领域细节</td><td>中等</td></tr><tr><td><strong>能力层</strong></td><td><code>.cursor/skills/</code></td><td>可复用的操作流程</td><td>按需触发</td></tr></tbody></table><p><strong>索引层</strong>只说”去哪看”和”当前快照在哪”。它<strong>刻意不复述细节</strong>——因为复述就会漂移。</p><p><strong>硬约束层</strong>是真正的规则中心：安全边界（Sandbox &#x2F; IPC）、采集边界、依赖版本钉死规则、命令清单。这里写的东西<strong>改得很少</strong>，一旦改了就是大事。</p><p><strong>路径域层</strong>是”你正在碰某个领域的代码时，才需要知道的细节”。比如你要改打包配置，才需要知道”不能在 mac 上打 win 包”。它靠 glob 匹配自动注入——<strong>不该看的东西不占上下文</strong>。</p><p><strong>能力层</strong>是操作流程：出包自检、任务环的计数规则、采集清理。它们是”做完某类事应该查一遍什么”的清单。</p><h2 id="三、为什么分层，而不是一个大文档"><a href="#三、为什么分层，而不是一个大文档" class="headerlink" title="三、为什么分层，而不是一个大文档"></a>三、为什么分层，而不是一个大文档</h2><p>核心资源是<strong>上下文预算</strong>。不可能每次对话都把整个工程手册塞给 Agent——既贵又稀释重点。分层的本质是<strong>按需加载</strong>：</p><ul><li>索引层永远在（很短的入口）；</li><li>硬约束层在涉及代码改动时进来；</li><li>路径域层<strong>只在你碰相关文件时</strong>进来；</li><li>能力层<strong>只在触发某类任务时</strong>进来。</li></ul><p>这跟”新人入职”是一样的：你不会第一天就把所有 SOP 塞给他，你会给他一个”找谁、去哪查”的索引，然后在他接手某块时丢对应的细则。</p><h2 id="四、最重要的一条纪律：不要两处漂移"><a href="#四、最重要的一条纪律：不要两处漂移" class="headerlink" title="四、最重要的一条纪律：不要两处漂移"></a>四、最重要的一条纪律：不要两处漂移</h2><p>同一个事实<strong>只写一处</strong>，别的地方<strong>引用它</strong>。</p><p>工程里有一条明确的写法：短索引文件里写”完整约定以 <code>AGENTS.md</code> 为准，此处不复述，以免两处漂移”。这不是客套，是<strong>经验的产物</strong>——两处写同一件事，早晚会一处改了一处没改，然后 Agent（和人）会读到矛盾的信息。</p><p>同理，工具的规则文件之间也<strong>互相不重复</strong>：一件事归属哪层，就在那层写死，其他地方只给指针。</p><h2 id="五、写给-Agent-的文档，和写给人不一样"><a href="#五、写给-Agent-的文档，和写给人不一样" class="headerlink" title="五、写给 Agent 的文档，和写给人不一样"></a>五、写给 Agent 的文档，和写给人不一样</h2><p>几个具体的差别：</p><ul><li><strong>命令要可执行</strong>。不写”记得检查一下类型”，写”<code>pnpm run typecheck</code>；<code>pnpm run verify:ready</code> 是 typecheck + lint”。</li><li><strong>失败码要具体</strong>。不写”打包可能失败”，写”会出现 <code>BUNDLE_PLATFORM_MISMATCH</code>，原因是跨平台打包”。</li><li><strong>“不要做什么”要显式</strong>。人靠常识避开的事，Agent 不一定——所以要白纸黑字：”本项目<strong>没有测试框架</strong>，不要臆造 <code>pnpm test</code>“、”<strong>不要</strong>在 mac 上跑 Windows 打包”。</li><li><strong>镜像的禁区也要写</strong>。比如”某个 UI 库<strong>不要</strong>整包引入”。</li></ul><p>一句话：<strong>把”老员工知道但没人写下来”的东西，写下来。</strong></p><h2 id="六、门闩：让-Agent-能自检"><a href="#六、门闩：让-Agent-能自检" class="headerlink" title="六、门闩：让 Agent 能自检"></a>六、门闩：让 Agent 能自检</h2><p>文档只能告诉 Agent”该做什么”，管不住它”做没做对”。所以还要给它<strong>能自己跑的门闩</strong>：</p><ul><li><code>verify:ready</code> &#x3D; 类型检查 + lint（只把 error 当失败，warning 不拦）；</li><li>改了 preload 之后，<strong>光过 typecheck 不够</strong>，要用调试协议断言 <code>typeof window.api === &#39;object&#39;</code>——因为”运行时是不是个对象”类型系统看不出来；</li><li>改了打包布局，要跑产物自检，而<strong>不能只信构建命令的退出码</strong>。</li></ul><p>门闩的意义是：Agent 在说”我做完了”之前，有一个<strong>能被验证的、客观的</strong>标准，而不是靠它自己判断。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li>四层约定能治”Agent 不守规矩”，<strong>治不了”Agent 判断错”</strong>——文档里的规则再细，也挡不住它写出语义错误的代码。门闩（类型 &#x2F; lint &#x2F; 产物校验）才是一道真实的墙。</li><li>这套东西<strong>有维护成本</strong>：规则会过期，文件会漂移。收益只在<strong>长期、多人、多会话</strong>的项目里才显出来；一次性小脚本不值得这么搞。</li><li>它<strong>不是某个工具的专属</strong>。约定是”给 Agent 读的工程事实”，换哪个 Agent、哪个编辑器都成立——只是不同工具的文件名不一样（<code>AGENTS.md</code> &#x2F; 规则文件 &#x2F; skills 目录）。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>Agent <strong>没有长期记忆</strong>，跨会话只能靠<strong>仓库里的文本</strong>；四层约定就是给它”事实”，不是”指令”；</li><li>四层分工：<strong>索引层</strong>（短、只指路）&#x2F; <strong>硬约束层</strong>（稳、不变量）&#x2F; <strong>路径域层</strong>（按 glob 注入）&#x2F; <strong>能力层</strong>（按任务触发）；</li><li>分层的本质是<strong>按需加载</strong>，为了省上下文、抓重点；</li><li>铁律：<strong>同一事实只写一处</strong>，其他地方引用，坚决<strong>不要两处漂移</strong>；</li><li>面向 Agent 的文档要<strong>可执行、有具体失败码、显式写禁区</strong>——把”没人写下来的常识”写下来；</li><li>文档管”该做什么”，<strong>门闩管”做没做对”</strong>：<code>verify:ready</code>、CDP 验 <code>window.api</code>、产物自检不信退出码。</li></ul><hr><p><em>发表于 2026 年 10 月 · 标签: AI辅助开发, Claude Code, 工程规范, 上下文工程, Agent</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>AI辅助开发</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>AI辅助开发</tag>
+      
+      <tag>Agent</tag>
+      
+      <tag>Claude Code</tag>
+      
+      <tag>工程规范</tag>
+      
+      <tag>上下文工程</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>没有测试框架的项目怎么做质量基线</title>
+    <link href="/2026/10/02/2026-10-02-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E9%A1%B9%E7%9B%AE%E6%80%8E%E4%B9%88%E5%81%9A%E8%B4%A8%E9%87%8F%E5%9F%BA%E7%BA%BF/"/>
+    <url>/2026/10/02/2026-10-02-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E9%A1%B9%E7%9B%AE%E6%80%8E%E4%B9%88%E5%81%9A%E8%B4%A8%E9%87%8F%E5%9F%BA%E7%BA%BF/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>这个桌面项目<strong>没有测试框架</strong>，也没有 <code>pnpm test</code>。但”没有单元测试”不等于”没有质量门禁”。这篇文章讲我用了哪几道门闩，各自能挡住什么、挡不住什么。</p></blockquote><h2 id="一、先承认：这是个取舍"><a href="#一、先承认：这是个取舍" class="headerlink" title="一、先承认：这是个取舍"></a>一、先承认：这是个取舍</h2><p>先说清楚为什么没有测试框架，而不是假装它存在：</p><ul><li>这是个 <strong>Electron 桌面应用</strong>：大量逻辑在进程间通信、原生视图、本地数据库里，纯函数式的单元不多；</li><li>核心链路依赖<strong>外部页面</strong>（抓取），单元测试要么靠 mock 到失真，要么得做端到端；</li><li>端到端测试（起真应用、跑真页面）成本和脆弱性都很高。</li></ul><p>结论是：<strong>首版不引入测试框架</strong>，把质量押在”类型 + lint + 运行时验证 + 产物校验”这四道门闩上。<strong>不假装有 <code>pnpm test</code></strong>，本身就是一条纪律——因为它会让下一个人以为单元测试是存在的。</p><h2 id="二、门闩一：类型检查（两端）"><a href="#二、门闩一：类型检查（两端）" class="headerlink" title="二、门闩一：类型检查（两端）"></a>二、门闩一：类型检查（两端）</h2><p>类型检查分两条线，都要过：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">typecheck:node   → tsc        检查主进程 / 预加载（Node 环境）<br>typecheck:web    → vue-tsc    检查渲染层（含 .vue）<br></code></pre></td></tr></table></figure><p>注意 <code>vue-tsc</code>：普通 <code>tsc</code> <strong>不检查 <code>.vue</code> 文件里的 TypeScript</strong>，所以渲染层必须用 <code>vue-tsc</code>。分开跑、都要过，才不会漏掉一端的类型错误。</p><h2 id="三、门闩二：lint（只把-error-当失败）"><a href="#三、门闩二：lint（只把-error-当失败）" class="headerlink" title="三、门闩二：lint（只把 error 当失败）"></a>三、门闩二：lint（只把 error 当失败）</h2><p>代码规范检查有一条刻意的策略：<strong>只把 <code>error</code> 级别当失败，<code>warning</code> 不拦</strong>。</p><p>理由很实际：warning 数量一旦失控，开发者会<strong>整体忽略 lint 输出</strong>，连真正的 error 一起忽略。只拦 error，保证了”门闩的输出永远值得看一眼”。</p><p>于是分两个入口：常规 lint（看全部）和 <code>lint:errors</code>（CI &#x2F; 门闩用，只看 error）。</p><h2 id="四、合起来：verify-ready"><a href="#四、合起来：verify-ready" class="headerlink" title="四、合起来：verify:ready"></a>四、合起来：verify:ready</h2><p>把上面两个合并成一个门闩：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">verify:ready = typecheck（node + web） + lint:errors<br></code></pre></td></tr></table></figure><p>它的使用时机很关键：<strong>在说”做完了”之前、在一次十分钟的构建之前</strong>跑。原话是——“不要等十分钟的打包构建，才发现漏了个返回类型”。一个小检查前置，省下一次长构建。</p><h2 id="五、门闩三：运行时验证（类型系统查不出的）"><a href="#五、门闩三：运行时验证（类型系统查不出的）" class="headerlink" title="五、门闩三：运行时验证（类型系统查不出的）"></a>五、门闩三：运行时验证（类型系统查不出的）</h2><p>有一类错误<strong>类型检查永远查不出</strong>：比如预加载脚本暴露的接口，在运行时<strong>根本不是个对象</strong>。</p><p>类型上，<code>window.api</code> 声明得清清楚楚；但打包方式一旦出错，它运行时可能是 <code>undefined</code>。TS 完全看不出来——因为它只检查类型，不检查运行结果。</p><p>所以有一条纪律：<strong>改完预加载，要用调试协议连上去，断言 <code>typeof window.api === &#39;object&#39;</code></strong>。这是运行时验证，不是类型验证，两者互补。</p><h2 id="六、门闩四：产物校验"><a href="#六、门闩四：产物校验" class="headerlink" title="六、门闩四：产物校验"></a>六、门闩四：产物校验</h2><p>打包命令<strong>成功退出 ≠ 产物正确</strong>。所以需要一层专门校验<strong>产物本身</strong>的门闩：</p><ul><li><strong>asar 卫生</strong>：归档里有没有混进不该有的东西（比如打错的兄弟目录、中间文件）；</li><li><strong>可执行位</strong>：随包的二进制有没有执行权限；</li><li><strong>渠道一致性</strong>：产物名、应用 ID、数据目录是否都属于同一个渠道；</li><li><strong>随包资源齐全</strong>。</li></ul><p>还有一道<strong>打包前预检</strong>，清理散落的中间文件、对意外的顶层路径直接失败——避免”出完包才发现归档脏了”。</p><p>核心思想一句话：<strong>打包的完整性用产物本身来验证，不要信构建命令的返回值。</strong></p><h2 id="七、四道门闩分别挡什么"><a href="#七、四道门闩分别挡什么" class="headerlink" title="七、四道门闩分别挡什么"></a>七、四道门闩分别挡什么</h2><table><thead><tr><th>门闩</th><th>挡住</th><th>挡不住</th></tr></thead><tbody><tr><td>类型检查</td><td>类型错误、拼写、接口不匹配</td><td>运行时错误、逻辑错误</td></tr><tr><td>lint</td><td>风格、可疑写法</td><td>语义错误</td></tr><tr><td>运行时验证</td><td>契约在运行时是否存在</td><td>契约的<strong>语义</strong>对不对</td></tr><tr><td>产物校验</td><td>打包配置 &#x2F; 卫生 &#x2F; 一致性错误</td><td>代码逻辑错误</td></tr></tbody></table><h2 id="八、诚实的边界"><a href="#八、诚实的边界" class="headerlink" title="八、诚实的边界"></a>八、诚实的边界</h2><p>必须说清楚这四道门闩<strong>挡不住什么</strong>：</p><ul><li>它们<strong>挡不住业务逻辑错误</strong>——比如状态派生算错了、计数对不上、某个边界没处理。这类问题要靠<strong>人工实测 + 记录</strong>（工程里有专门的实测记录表，逐条对照验收点）；</li><li>它们<strong>挡不住”需求和实现不符”</strong>——那要靠对照文档；</li><li>类型和 lint 只能证明”<strong>不违反已知规则</strong>“，证明不了”<strong>行为正确</strong>“。</li></ul><p>所以这套门闩的定位是：<strong>把”低级错误”挡在门外，把人力留给”逻辑正确性”的人工验证</strong>。它不是测试框架的替代品，是在没有测试框架时的<strong>最优折中</strong>。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>无测试框架是<strong>刻意的取舍</strong>（Electron + 外部依赖场景下单元测试性价比低），<strong>不假装有 <code>pnpm test</code></strong>；</li><li>四道门闩：<strong>类型检查</strong>（<code>tsc</code> + <code>vue-tsc</code> 两端）、<strong>lint</strong>（只拦 error）、<strong>运行时验证</strong>（CDP 断言 <code>window.api</code>）、<strong>产物校验</strong>（asar 卫生 &#x2F; 可执行位 &#x2F; 渠道一致性）；</li><li><code>verify:ready</code> &#x3D; typecheck + lint:errors，<strong>在长构建之前跑</strong>；</li><li><strong>类型检查查不出运行时契约</strong>，”契约存在”必须用运行时验证补；</li><li>门闩的思想：<strong>用产物本身验证打包</strong>，<strong>不信构建退出码</strong>；</li><li>诚实的边界：这些门闩<strong>挡不住逻辑错误</strong>——那部分只能靠人工实测与记录。</li></ul><hr><p><em>发表于 2026 年 10 月 · 标签: 工程方法论, 质量, typecheck, 打包校验, 工程实践</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>工程方法论</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>工程实践</tag>
+      
+      <tag>工程方法论</tag>
+      
+      <tag>质量</tag>
+      
+      <tag>typecheck</tag>
+      
+      <tag>打包校验</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>桌面端的签名、公证与混淆加壳：先分清这三件事</title>
+    <link href="/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/"/>
+    <url>/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。</p></blockquote><h2 id="一、三个概念先分清"><a href="#一、三个概念先分清" class="headerlink" title="一、三个概念先分清"></a>一、三个概念先分清</h2><table><thead><tr><th>概念</th><th>在干什么</th><th>实际效果</th></tr></thead><tbody><tr><td><strong>代码混淆</strong></td><td>改 JS 可读性（改名、平坦化、字符串加密）</td><td>抬高逆向成本；<strong>逻辑仍在客户端</strong></td></tr><tr><td><strong>加壳</strong></td><td>静态看起来不像明文，运行时解开</td><td>容易触发杀软误报、破坏签名和更新；对 Electron 收益有限</td></tr><tr><td><strong>加固</strong>（真正该做的）</td><td>让应用更难被系统拦截、更难被滥用 &#x2F; 篡改</td><td>代码签名、完整性校验、sandbox、密钥不放客户端</td></tr></tbody></table><p>关键认知：<strong><code>app.asar</code> 不是加固，它只是打包格式</strong>。asar 是归档不是加密，可以被原样提取出来。把代码打进 asar 带来的安全感，是错觉。</p><h2 id="二、”加固”应该优先理解为三件事"><a href="#二、”加固”应该优先理解为三件事" class="headerlink" title="二、”加固”应该优先理解为三件事"></a>二、”加固”应该优先理解为三件事</h2><p>对这个产品，”加固”优先做的是：</p><ol><li><strong>平台信任链</strong>：mac 的 Developer ID + 公证 + staple；Windows 的 Authenticode + 时间戳；嵌套的二进制（运行时 &#x2F; JVM &#x2F; Chromium）<strong>从内到外逐层签</strong>。</li><li><strong>运行时边界</strong>：维持 <code>sandbox</code> &#x2F; IPC &#x2F; 密钥不下渲染进程。</li><li><strong>秘密不上客户端</strong>：假定”打包出去的策略、白名单、业务规则都能被拆包看到”，真正不能泄漏的放服务端。</li></ol><p>至于混淆和加壳，都在这个”优先”之后——<strong>先把签名链做出来，再谈藏代码</strong>。业界对 B 端商户工具的常见顺序也是：签名与分发信任 → 客户端不放真秘密 →（可选）轻度混淆 → 很少上商业壳。</p><h2 id="三、一个容易说错的细节：mac-的”残缺签名”不等于”未签名”"><a href="#三、一个容易说错的细节：mac-的”残缺签名”不等于”未签名”" class="headerlink" title="三、一个容易说错的细节：mac 的”残缺签名”不等于”未签名”"></a>三、一个容易说错的细节：mac 的”残缺签名”不等于”未签名”</h2><p>这是我自己踩过的认知坑。当前产物是 <strong>adhoc &#x2F; 残缺签名</strong>，不是”没签名”，两者行为完全不同：</p><ul><li><code>codesign --verify --deep --strict</code> <strong>能通过</strong>，但 <code>spctl</code> 失败（没有开发者身份、Sealed Resources 缺失）；</li><li>带 quarantine 标记的副本双击会报”已损坏”，而且系统设置里<strong>没有</strong>“仍要打开”选项，只能手动 <code>xattr -dr com.apple.quarantine</code> 去掉隔离标记；</li><li>有意思的是，<strong>完全未签名的包反而能在图形界面放行</strong>——因为系统对它没有”签名但无效”的判断。</li></ul><p>所以”签名残缺”和”未签名”必须分开说，把两者混为一谈会导致排查方向完全错。</p><h2 id="四、嵌套二进制的签名顺序"><a href="#四、嵌套二进制的签名顺序" class="headerlink" title="四、嵌套二进制的签名顺序"></a>四、嵌套二进制的签名顺序</h2><p>一个真实发布前必须解决的难点：随包资源（运行时、JVM、Chromium）<strong>不在打包器的签名范围内</strong>，因为它们被放在 asar 之外。要签名，得自己写 <code>afterSign</code> &#x2F; <code>afterPack</code> 钩子，<strong>从内到外</strong>逐层签：先签最里层的二进制，再签外层的 <code>.app</code>，最后签 dmg 并公证 + <code>stapler staple</code>。</p><p>还有 entitlements 的坑：</p><ul><li>mac 的 entitlements 里现在只有 JIT 相关项；</li><li>开了 hardened runtime 之后，<strong>JVM 的 <code>dlopen</code> 很可能还需要 <code>disable-library-validation</code></strong>；</li><li>这些必须在公证<strong>之前</strong>先验证，否则会出现”签完了、公证过了，但应用起不来”。</li></ul><h2 id="五、Windows-Authenticode：三个要点"><a href="#五、Windows-Authenticode：三个要点" class="headerlink" title="五、Windows Authenticode：三个要点"></a>五、Windows Authenticode：三个要点</h2><ul><li><strong>私钥必须在硬件</strong>（证书 + 硬件令牌 &#x2F; HSM）；</li><li>签名<strong>必须带时间戳</strong>，否则证书过期后历史签名失效；</li><li><strong>SmartScreen 不因签名立即放行</strong>——签名只是让它有资格被”学习”为可信，新证书仍可能弹警告。</li></ul><p>对内部分发来说，未签名的安装包触发 SmartScreen 警告是可以预期的；正式外发才必须完整签名。</p><h2 id="六、优先级：把精力放在决定”能不能发出去”的事上"><a href="#六、优先级：把精力放在决定”能不能发出去”的事上" class="headerlink" title="六、优先级：把精力放在决定”能不能发出去”的事上"></a>六、优先级：把精力放在决定”能不能发出去”的事上</h2><table><thead><tr><th>优先级</th><th>做什么</th></tr></thead><tbody><tr><td><strong>P0</strong></td><td>完整签名 &#x2F; 公证 &#x2F; Authenticode + 嵌套二进制</td></tr><tr><td><strong>P0</strong></td><td>维持 IPC &#x2F; sandbox &#x2F; 密钥主进程</td></tr><tr><td>P1</td><td>生产产物完整性 &#x2F; 防篡改（可选）</td></tr><tr><td>P2</td><td>轻度 JS 混淆（可选，且只在生产 channel）</td></tr><tr><td><strong>不做</strong></td><td>UPX 等 PE 壳、重度控制流混淆、指望客户端藏住采集逻辑</td></tr></tbody></table><p>一句话口径：<strong>Electron 商户端打包默认不做混淆加壳；”加固” &#x3D; 签名 + 运行时边界 + 秘密不上客户端。</strong></p><p>一个重要的区分：<strong>test &#x2F; 内部分发</strong>和 <strong>production &#x2F; 外发</strong>在”签名、是否混淆”上<strong>可以不同</strong>（测试包留可读日志、签名可残缺），但在<strong>sandbox &#x2F; IPC &#x2F; 产物结构</strong>上<strong>必须相同</strong>——禁止”测试包松、生产包紧”，否则测试就失去了意义。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li>签名、公证依赖<strong>外部周期</strong>（证书申请、平台审核），时间不在自己的排期里，需要提前推。</li><li>加了壳 &#x2F; 重度混淆会<strong>破坏崩溃栈和调试体验</strong>，也会和公证、自动更新校验冲突——收益低、风险高，所以我们明确不做。</li><li>客户端加固<strong>永远只是抬高成本</strong>，做不到”无法逆向”。真正的秘密只有一条路：<strong>放到服务端</strong>。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>三个词分清：<strong>混淆</strong>改可读性、<strong>加壳</strong>骗静态、<strong>加固</strong>才是该做的（签名 + 运行边界 + 秘密不上客户端）；</li><li><strong><code>app.asar</code> 不是加密</strong>，不是加固；</li><li>mac 的**”签名残缺” ≠ “未签名”**：codesign 通过但 spctl 失败，行为和完全未签名相反；</li><li>嵌套二进制要<strong>从内到外逐层签</strong>，并注意 hardened runtime 下 JVM 的 <code>dlopen</code> 可能需要 <code>disable-library-validation</code>；</li><li>Windows 签名：<strong>私钥在硬件、必须带时间戳、SmartScreen 不立即放行</strong>；</li><li>优先级：<strong>签名与公证 P0</strong> → 完整性 P1 → 轻度混淆 P2 → 壳不做；test &#x2F; prod 在签名与混淆上可不同，<strong>在 sandbox &#x2F; IPC &#x2F; 产物结构上必须相同</strong>。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: Electron, 代码签名, 公证, 混淆, 打包</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>架构决策</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Electron</tag>
+      
+      <tag>打包</tag>
+      
+      <tag>代码签名</tag>
+      
+      <tag>公证</tag>
+      
+      <tag>混淆</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Electron 双 channel 共存与跨平台构建禁令</title>
+    <link href="/2026/09/28/2026-09-28-Electron%E5%8F%8Cchannel%E5%85%B1%E5%AD%98%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E7%A6%81%E4%BB%A4/"/>
+    <url>/2026/09/28/2026-09-28-Electron%E5%8F%8Cchannel%E5%85%B1%E5%AD%98%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E7%A6%81%E4%BB%A4/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>一个桌面应用要同时发”测试版”和”生产版”，两个版本还得能在同一台机器上并存、互不覆盖。这篇文章讲双 channel 隔离要隔离哪些东西，以及 asar 污染和跨平台构建这两个真踩过的坑。</p></blockquote><h2 id="一、为什么需要双-channel-共存"><a href="#一、为什么需要双-channel-共存" class="headerlink" title="一、为什么需要双 channel 共存"></a>一、为什么需要双 channel 共存</h2><p>测试版和生产版是两类用户：内部试用 &#x2F; 商家正式使用。理想情况下，同一台机器上：</p><ul><li>两个版本<strong>能同时安装</strong>；</li><li>各自有独立的配置、缓存、数据库；</li><li>安装一个不会覆盖另一个；</li><li>同 channel 的覆盖升级仍然正常。</li></ul><p>要做到这些，”隔离”必须隔离得彻底——半隔离会出很多诡异问题（比如两个版本抢同一个数据库、抢同一个单实例锁）。</p><h2 id="二、隔离清单"><a href="#二、隔离清单" class="headerlink" title="二、隔离清单"></a>二、隔离清单</h2><p>channel 隔离落在五个地方：</p><table><thead><tr><th>项</th><th>生产版</th><th>测试版</th></tr></thead><tbody><tr><td>显示名 &#x2F; 应用名</td><td><code>App</code></td><td><code>App Test</code></td></tr><tr><td>appId（bundle id）</td><td><code>com.company.app</code></td><td><code>com.company.app.test</code></td></tr><tr><td>Windows 可执行文件名</td><td><code>app.exe</code></td><td><code>app-test.exe</code></td></tr><tr><td>userData（数据目录）</td><td><code>…/app</code></td><td><code>…/app-test</code></td></tr><tr><td>内嵌页的会话分区</td><td><code>persist:web</code></td><td><code>persist:web-test</code></td></tr></tbody></table><p><strong>每一项都要改，漏一个就出问题</strong>：漏了 appId，两个版本可能被系统认成同一个应用；漏了 userData，两个版本共用一个数据库；漏了 partition，两个版本共用登录态。</p><p>安装包文件名也要带 channel（<code>app-test-setup.exe</code> &#x2F; <code>app-production-setup.exe</code>），否则分发时最容易拿错。</p><h2 id="三、Windows-上-userData-落在安装目录旁"><a href="#三、Windows-上-userData-落在安装目录旁" class="headerlink" title="三、Windows 上 userData 落在安装目录旁"></a>三、Windows 上 userData 落在安装目录旁</h2><p>一个和 macOS 不一样的地方：打包后的 Windows 版，数据目录默认在<strong>安装目录旁边</strong>（<code>&lt;installDir&gt;/data</code>），而不是 <code>%APPDATA%</code>。mac 和开发态则还是用标准的应用支持目录 &#x2F; 渠道子目录。</p><p>这个差异带来一个安装器上的要求：<strong>不能默认装到没有写权限的位置</strong>（比如 <code>Program Files</code>）。所以 Windows 安装器用”非一键 + 允许改安装目录”的模式，让数据目录总是可写的。</p><h2 id="四、真坑一：asar-污染，安装包涨到几个-GB"><a href="#四、真坑一：asar-污染，安装包涨到几个-GB" class="headerlink" title="四、真坑一：asar 污染，安装包涨到几个 GB"></a>四、真坑一：asar 污染，安装包涨到几个 GB</h2><p>这是最贵的一个坑。现象是安装包突然变得巨大。</p><p>根因是打包器<strong>只会自动排除当前构建的输出目录</strong>。当产物按平台分目录时（比如输出到 <code>dist/win-x64-test/</code>），同级的兄弟目录——上一个版本的 <code>.app</code>、<code>.dmg</code>、<code>win-unpacked/</code>——<strong>不会被自动排除</strong>，于是被一起打进了 <code>app.asar</code>。</p><p>结果就是 asar 膨胀到 <strong>约 2.3 GB</strong>，安装包数 GB，NSIS 直接以 exit 1 失败。</p><p>修复很简单但必须显式写：让打包配置<strong>排除掉整个产物目录</strong>（<code>!dist{,/**/*}</code>），不能指望打包器自动处理。顺带还应该在出包前加一道<strong>预检</strong>，清理散落的中间文件、对意外的顶层路径直接失败——避免”出完包才发现 asar 脏了”这种事后发现。</p><h2 id="五、真坑二：跨平台构建禁令"><a href="#五、真坑二：跨平台构建禁令" class="headerlink" title="五、真坑二：跨平台构建禁令"></a>五、真坑二：跨平台构建禁令</h2><p>前面讲 sidecar 时提过：随包的采集引擎是<strong>按构建机平台</strong>嵌入的。所以：</p><blockquote><p><strong>不要在 macOS 上跑 Windows 的打包脚本，也不要在 Windows 上跑 macOS 的。</strong></p></blockquote><p>在 mac 上打 Windows 包，会把 darwin 的运行时打进安装包，用户在 Windows 上首启就报平台不匹配（<code>BUNDLE_PLATFORM_MISMATCH</code>）。各平台在各自的机器 &#x2F; runner 上出包，是硬要求，不是建议。</p><h2 id="六、出包校验：不要信退出码"><a href="#六、出包校验：不要信退出码" class="headerlink" title="六、出包校验：不要信退出码"></a>六、出包校验：不要信退出码</h2><p>打包命令”成功退出”<strong>不等于</strong>产物正确。我们专门写了一个产物校验步骤，检查那些退出码看不出来的东西：</p><ul><li>asar 卫生（有没有混进不该有的东西）；</li><li>可执行文件的可执行位；</li><li>channel 一致性（产物、文件名、appId 是否都属于同一个 channel）；</li><li>随包资源是否齐全。</li></ul><p>并且把它挂在出包流程里，两边产物都在的时候必须显式指定校验哪个 channel。核心思想一句话：<strong>打包的完整性要用产物本身验证，而不是用构建命令的返回值</strong>。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li>双 channel 的隔离清单是<strong>针对我们这套技术栈</strong>的（Electron + 内嵌远程页 + 本地数据库 + sidecar）。换栈的话隔离点会变，但”凡是会跨版本共享的状态都要隔离”这个原则不变。</li><li>跨平台构建禁令是<strong>sidecar 带来的</strong>；如果应用不随包平台相关的二进制，跨平台构建在技术上可行——但我们不押这个假设。</li><li>产物校验能挡住”打包配置错误”，<strong>挡不住”代码逻辑错误”</strong>——它是打包层的门禁，不是质量门禁。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>双 channel 共存要隔离<strong>五样东西</strong>：显示名、appId、可执行文件名、userData、会话 partition，外加安装包文件名；</li><li>Windows 打包版的 userData 在<strong>安装目录旁</strong>，所以不能默认装到无写权限路径；</li><li><strong>asar 污染</strong>是最大体积坑：打包器只自动排除当前输出目录，必须显式排除整个产物目录，否则安装包能涨到 GB 级；</li><li><strong>不能跨平台构建</strong>：sidecar 按构建机平台嵌入，跨平台打包会导致平台不匹配；</li><li>出包要用<strong>产物校验</strong>（asar 卫生 &#x2F; 可执行位 &#x2F; channel 一致性），<strong>不要信退出码</strong>。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: Electron, 打包, electron-builder, 跨平台, 工程实践</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>运维实战</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>工程实践</tag>
+      
+      <tag>Electron</tag>
+      
+      <tag>打包</tag>
+      
+      <tag>electron-builder</tag>
+      
+      <tag>跨平台</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>LLM Key 不下渲染进程：Electron 里的密钥边界</title>
+    <link href="/2026/09/27/2026-09-27-LLM-Key%E4%B8%8D%E4%B8%8B%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B-Electron%E5%AF%86%E9%92%A5%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%BB%BA%E8%AE%AE%E5%B1%82/"/>
+    <url>/2026/09/27/2026-09-27-LLM-Key%E4%B8%8D%E4%B8%8B%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B-Electron%E5%AF%86%E9%92%A5%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%BB%BA%E8%AE%AE%E5%B1%82/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>桌面应用里接 LLM，绕不开一个问题：API Key 放哪？放渲染进程最方便，也最危险。这篇文章讲 Electron 里的密钥边界怎么划，以及为什么”模型建议”必须和”采集证据”分开。</p></blockquote><h2 id="一、为什么-Key-不能进渲染进程"><a href="#一、为什么-Key-不能进渲染进程" class="headerlink" title="一、为什么 Key 不能进渲染进程"></a>一、为什么 Key 不能进渲染进程</h2><p>回顾一下上一篇讲过的进程模型：<strong>渲染进程不被信任</strong>，它是个可能被远程内容污染的浏览器环境。而我们还内嵌了一个远程的商家后台页面。</p><p>如果 Key 出现在渲染进程里，就意味着：</p><ul><li>任何运行在渲染页里的脚本（包括被注入的）都能读到它；</li><li>内嵌的远程页面一旦被污染，Key 直接泄露；</li><li>前端代码、日志、错误上报都可能把它带出去。</li></ul><p><strong>Key 是”能力凭证”，不是”界面数据”。</strong> 界面数据可以下放，凭证不行。</p><h2 id="二、Key-只在主进程"><a href="#二、Key-只在主进程" class="headerlink" title="二、Key 只在主进程"></a>二、Key 只在主进程</h2><p>做法是彻底的三段式：</p><table><thead><tr><th>环节</th><th>在哪</th><th>谁能看到</th></tr></thead><tbody><tr><td><strong>存</strong></td><td>主进程的配置，用系统安全存储加密</td><td>只有主进程</td></tr><tr><td><strong>用</strong></td><td>主进程发 HTTP 请求</td><td>只有主进程</td></tr><tr><td><strong>显示</strong></td><td>渲染层只拿到一个布尔 <code>hasApiKey</code></td><td>渲染层</td></tr></tbody></table><p>界面能做的事只有两件：<strong>判断”配没配 Key”</strong>（决定设置页怎么显示），<strong>提交”新 Key”</strong>（转给主进程保存）。它<strong>永远读不到已保存的 Key</strong>——连回显都不给。</p><p>这和”输入密码框不该回显密码”是同一个道理，只不过这里回显的话泄露面更大。</p><h2 id="三、设置项也要校验"><a href="#三、设置项也要校验" class="headerlink" title="三、设置项也要校验"></a>三、设置项也要校验</h2><p>Key 这类设置从渲染层传进来，主进程落库前要<strong>校验</strong>（用 schema 校验库，比如 Zod）。这不只是格式问题——它挡住了”渲染层塞进一个畸形对象”这类输入，等于在主进程侧再设一道边界。</p><p>原则和 IPC 一样：<strong>渲染层的输入不可信，主进程要自己验。</strong></p><h2 id="四、模型输出必须与证据分离"><a href="#四、模型输出必须与证据分离" class="headerlink" title="四、模型输出必须与证据分离"></a>四、模型输出必须与证据分离</h2><p>安全边界之外，还有一个<strong>语义边界</strong>，同样重要。</p><p>采集到的商品数据（<code>SourceProduct</code>）是<strong>证据</strong>：它要可溯源、要持久化、要能回答”这个值是从哪个页面、哪个字段来的”。而 LLM 产出的是<strong>建议</strong>：候选值 + 置信度 + 依据。</p><p>如果把模型输出直接写进证据结构，会同时毁掉三件事：</p><ul><li><strong>可溯源性</strong>——证据里混进了”猜”出来的值，就分不清真假；</li><li><strong>可回退性</strong>——模型输出已经落到持久化结构里，想关掉模型都关不干净；</li><li><strong>可审计性</strong>——审计时无法区分”抓来的”和”模型给的”。</li></ul><p>所以建议必须是<strong>独立结构</strong>，好处是它能<strong>可开关、可缓存、可重算、可拒绝</strong>。这是”建议层”这个词的全部意义：它永远<strong>平行于</strong>证据，从不<strong>并入</strong>证据。</p><h2 id="五、可开关的真正含义：关掉模型-行为不变"><a href="#五、可开关的真正含义：关掉模型-行为不变" class="headerlink" title="五、可开关的真正含义：关掉模型 &#x3D; 行为不变"></a>五、可开关的真正含义：关掉模型 &#x3D; 行为不变</h2><p>“建议层可开关”不是一句场面话，它有具体的验收标准：</p><blockquote><p><strong>关掉模型开关时，系统行为与”完全没接 AI”时</strong>完全一致**。**</p></blockquote><p>怎么验？用一条固定样例跑冒烟，断言<strong>事件流和落库字段一字不变</strong>。这条回归测试的意义在于：它把”AI 能力”钉死成一个<strong>附加项</strong>，而不是<strong>必经之路</strong>——模型出问题、Key 欠费、接口超时，都不影响主链路。</p><p>这也是”确定性链路 + 可选建议层”这个架构的核心价值：<strong>AI 挂了，产品照常能用。</strong></p><h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><ul><li>“用户自配 Key、用户自费”是<strong>产品层面的取舍</strong>（谁承担成本、数据发给谁），不只是技术问题——它需要合规口径落到文档，否则不该在演示里展示。</li><li>Key 的加密依赖<strong>系统的安全存储能力</strong>。一个要警惕的设计陷阱是：<strong>不要把密钥安全的设计，依赖在一条尚未交付的链路上</strong>（比如某个还没做好的登录 &#x2F; 凭证服务）——否则安全边界会跟着它一起延期。</li><li>这套边界解决的是”<strong>Key 不泄露</strong>“和”<strong>模型不污染证据</strong>“，它<strong>不解决</strong>“模型输出对不对”——那要靠人工确认和验证，不是靠边界。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li><strong>Key 是能力凭证，不下渲染进程</strong>：存（主进程 + 系统安全存储）、用（主进程）、显示（只给 <code>hasApiKey</code> 布尔）；</li><li>设置项的输入由<strong>主进程校验</strong>，因为渲染层输入不可信；</li><li><strong>模型输出必须与证据分离</strong>：建议是独立结构，才能可开关、可缓存、可重算、可拒绝，不毁掉证据的可溯源性；</li><li>“可开关”要落到验收：<strong>关掉模型，事件流与落库字段与没接 AI 时完全一致</strong>——AI 是附加项，不是必经路；</li><li>诚实的边界：Key 安全<strong>不要依赖未交付的链路</strong>；合规口径要先落到文档。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: Electron, LLM, 安全, 密钥管理, 架构</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>AI辅助开发</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>架构</tag>
+      
+      <tag>LLM</tag>
+      
+      <tag>Electron</tag>
+      
+      <tag>安全</tag>
+      
+      <tag>密钥管理</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型</title>
+    <link href="/2026/09/25/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/"/>
+    <url>/2026/09/25/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>桌面端要嵌入一个已有的商家后台网页，还要用它当登录闸门。这篇文章讲 <code>WebContentsView</code> 的用法，以及内嵌远程页面时”怎么判定登录状态”这个看似简单、实则全是坑的问题。</p></blockquote><h2 id="一、为什么是-WebContentsView"><a href="#一、为什么是-WebContentsView" class="headerlink" title="一、为什么是 WebContentsView"></a>一、为什么是 WebContentsView</h2><p>要在 Electron 里显示一个外部网页，历史上有几种做法：<code>&lt;iframe&gt;</code>（跨域限制多）、<code>&lt;webview&gt;</code> 标签（已不推荐）、以及 <code>WebContentsView</code>。<code>WebContentsView</code> 是独立的一个 <code>WebContents</code>，有自己的进程、自己的会话，是现在推荐的做法。</p><p>这里有个朴素的设计值得记住：<strong>一个 View 身兼两职</strong>。</p><ul><li>未登录时，它铺满内容区，显示的就是登录页——它本身就是”闸门”；</li><li>登录后，同一个 View 变成商家后台页面。</li></ul><p>关键操作是<strong>改 bounds，不重建</strong>。切换登录状态时只调整这个 View 的位置和大小，而不是销毁再创建。重建会丢会话、丢状态、闪屏。</p><h2 id="二、登录判定：只判-token-存在，绝不读值"><a href="#二、登录判定：只判-token-存在，绝不读值" class="headerlink" title="二、登录判定：只判 token 存在，绝不读值"></a>二、登录判定：只判 token 存在，绝不读值</h2><p>“页面到底登录没有”是这个方案里最讲究的地方。我们最终的规则只有一条：</p><blockquote><p><strong>只看 <code>localStorage.ACCESS_TOKEN</code> 是否存在，永不读值。</strong></p></blockquote><p>具体有三层含义：</p><ol><li><strong>不读值</strong>：只判存在性。token 的内容不进内存之外的任何地方，不落日志、不转发、不显示。</li><li><strong>不按 URL 判</strong>：这是最容易犯的错。登录前的商家站是营销站，<code>/home</code>、<code>/about</code> 这类路径在未登录时也存在，按路径判会把”未登录”误判成”已登录”。<strong>路径不是登录凭证。</strong></li><li><strong>探测失败 &#x3D; 未登录（fail closed）</strong>：页面没就绪、加载出错，一律按未登录处理。宁可多要求一次登录，也不放一个未登录的人进去。</li></ol><p>还有一个细节：导航安定之后再补一次校验（延迟几百毫秒，只补一次），因为单页应用登录后可能有一次导航过渡，太早探测会读到中间态。</p><h2 id="三、远程页面的安全姿态"><a href="#三、远程页面的安全姿态" class="headerlink" title="三、远程页面的安全姿态"></a>三、远程页面的安全姿态</h2><p>内嵌的商家页是<strong>远程内容</strong>，所以要按”不可信”对待：</p><ul><li><code>contextIsolation</code> + 无 <code>nodeIntegration</code> + <code>sandbox</code>；</li><li><strong>不挂 preload</strong>——远程页拿不到任何 <code>window.api</code>；</li><li>观察用 <code>webContents</code> 的事件，动作走主进程方法，<strong>不通过注入脚本</strong>。</li></ul><p>这样即使商家后台页面被注入，它也<strong>够不到本地能力</strong>——它只能在自己的沙箱里蹦跶。</p><h2 id="四、导航拦截：两个事件都要挂"><a href="#四、导航拦截：两个事件都要挂" class="headerlink" title="四、导航拦截：两个事件都要挂"></a>四、导航拦截：两个事件都要挂</h2><p>内嵌页面里的链接怎么处理，是一组容易漏的规则：</p><table><thead><tr><th>场景</th><th>处理</th></tr></thead><tbody><tr><td>内嵌白名单域名内的链接</td><td><strong>就地导航</strong>（留在内嵌视图里）</td></tr><tr><td>主窗口里的链接</td><td><strong>一律 <code>openExternal</code></strong>（交给系统浏览器）</td></tr><tr><td><code>target=&quot;_blank&quot;</code> &#x2F; <code>window.open</code></td><td>一律 <code>openExternal</code></td></tr><tr><td>法律条款页（如服务协议、隐私政策）</td><td>也交给系统浏览器</td></tr></tbody></table><p>注意这里有个<strong>反差</strong>：主窗口的规则是”一律 deny + 外部打开”，而内嵌视图的规则是”白名单内就地导航”。两套规则方向相反，很容易写混。</p><p>技术上的坑是：<code>will-navigate</code> <strong>和</strong> <code>will-redirect</code> 都要挂，重定向可以绕过只挂一个的防护。而且这两个事件的回调首参是 <code>details</code> 对象，用的是 <code>details.url</code> 和 <code>details.preventDefault()</code>——不少老示例里用的是已废弃的第二参数，照抄会踩坑。</p><p><code>target=&quot;_blank&quot;</code> 那条尤其重要：登录页上的”用户协议”链接如果被 <code>loadURL</code> 顶掉了当前文档，用户就<strong>回不到登录页</strong>了。所以这类必须 <code>openExternal</code>。</p><h2 id="五、加载状态的三个事件，一个都不能少"><a href="#五、加载状态的三个事件，一个都不能少" class="headerlink" title="五、加载状态的三个事件，一个都不能少"></a>五、加载状态的三个事件，一个都不能少</h2><p>判断”页面是否加载完成”看起来简单，实际要用三个事件配合，少一个就有坑：</p><ul><li><code>did-start-loading</code>：开始加载；但<strong>页面内导航也会触发它，且不一定有配对的 <code>did-finish-load</code></strong>；</li><li><code>did-fail-load</code>：加载失败；</li><li><code>did-stop-loading</code>：加载停止——用它来判定”就绪”，但要在状态确实是 loading 时才置位。</li></ul><p>最阴的一条是：<strong>加载失败后，Chromium 仍会提交一个错误页面</strong>，于是事件顺序变成”失败 → 完成 → 停止”。如果只看后两个事件，会把一个错误页当成”加载成功”。所以必须让后两个事件先检查”是否已经 <code>loadFailed</code>“。</p><h2 id="六、一个踩过的坑：浅色模式校正不能用-debugger"><a href="#六、一个踩过的坑：浅色模式校正不能用-debugger" class="headerlink" title="六、一个踩过的坑：浅色模式校正不能用 debugger"></a>六、一个踩过的坑：浅色模式校正不能用 debugger</h2><p>商家后台的 SPA 会把深色模式持久化在 <code>localStorage</code> 里。桌面端想强制浅色，光设 Electron 的主题是不够的——得在商家的文档里把那个持久化标记清掉、把 <code>html</code> 上的 <code>dark</code> 类摘掉，必要时还得多一次重载。</p><p>但有个陷阱：<strong>做这件事的时候不要用 <code>webContents.debugger</code></strong>。在同时开着远程调试端口的情况下，<code>debugger</code> 会挂住，把 <code>loadURL</code> 一起阻塞。改成直接执行脚本就好。这是一个”手段选对了，但用错场景”的典型坑。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li>登录判定用”token 存在性”是<strong>基于这个商家后台的实现约定</strong>的，换一个后台未必成立；它的好处是不碰 token 值，坏处是依赖对方把 token 放在那个位置。</li><li>一个 View 同时当闸门和内容，是<strong>为了省一个窗口</strong>的取舍；如果登录页和内容页差异极大，拆成两个 View 会更清晰。</li><li>隔离和沙箱能防”远程页拿到本地能力”，但<strong>防不住商家后台自己的权限模型问题</strong>——那是另一层的事。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>用 <strong><code>WebContentsView</code></strong>，一个 View 身兼登录闸门与商家页，<strong>改 bounds 不重建</strong>；</li><li>登录判定<strong>只判 token 存在性</strong>：不读值、不按 URL 判、探测失败按未登录（fail closed）；</li><li>远程页按不可信处理：<strong>无 preload、无 Node、sandbox</strong>，观察走事件、动作走方法；</li><li>导航规则是<strong>两套相反的</strong>：内嵌白名单就地导航，主窗口一律外部打开；<code>target=&quot;_blank&quot;</code> 与法律页都外部打开；<code>will-navigate</code> 和 <code>will-redirect</code> 都要挂；</li><li>加载状态要<strong>三个事件配合</strong>，且注意”失败后仍会提交错误页”的顺序陷阱；</li><li>浅色校正<strong>不要用 <code>debugger</code></strong>（会在远程调试下挂住）。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: Electron, WebContentsView, 安全, 登录闸门, IPC</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>架构设计</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Electron</tag>
+      
+      <tag>IPC</tag>
+      
+      <tag>安全</tag>
+      
+      <tag>WebContentsView</tag>
+      
+      <tag>登录闸门</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>事件就是状态：用一个事件流驱动 UI 与数据库</title>
+    <link href="/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
+    <url>/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>采集任务有进度、有失败、有重试、有暂停。状态一多，最容易出的问题是”界面显示的和数据库里存的对不上”。我的做法是：<strong>只让一个事件流当真相</strong>，UI 和数据库都是它的投影。</p></blockquote><h2 id="一、问题：状态到底从哪来"><a href="#一、问题：状态到底从哪来" class="headerlink" title="一、问题：状态到底从哪来"></a>一、问题：状态到底从哪来</h2><p>如果界面自己算一套状态、数据库自己存一套状态，那它们<strong>迟早会漂移</strong>。最典型的一个反例：早期把”失败项”放在内存里，界面重开就没了；数据库里其实有失败的记录，但界面读不到。</p><p>根本原因是没有回答一个问题：<strong>这个系统的状态真相在哪？</strong></p><p>我的答案是一句话：</p><blockquote><p><strong>事件就是状态（Events are state）。</strong></p></blockquote><h2 id="二、一条事件流，两个投影"><a href="#二、一条事件流，两个投影" class="headerlink" title="二、一条事件流，两个投影"></a>二、一条事件流，两个投影</h2><p>具体做法：</p><ul><li>启动时，界面<strong>拉一次快照</strong>（<code>snapshot()</code>），拿到所有任务的当前状态；</li><li>此后，主进程<strong>只推事件</strong>，界面<strong>只消费事件</strong>；每个事件同时驱动两件事：更新 UI、更新本地数据库。</li></ul><p>于是 UI 和数据库不再是两个”各自算状态”的东西，而是<strong>同一个事件流的两个投影</strong>——它们理论上永远一致。</p><p>这条约束有一个必须记住的推论，也是我们真踩过的坑：<strong>给事件加字段时，必须同时改持久化类型和渲染层的事件处理</strong>。只改一处，UI 和数据库就会静默不一致——和后端”改了 DTO 忘了改 DAO”是同一类 bug，只不过这里的一致性检查更弱。</p><h2 id="三、两条轴：任务状态-≠-商品状态"><a href="#三、两条轴：任务状态-≠-商品状态" class="headerlink" title="三、两条轴：任务状态 ≠ 商品状态"></a>三、两条轴：任务状态 ≠ 商品状态</h2><p>状态复杂起来的根源是：<strong>一个采集任务里，每个商品也有自己的生命周期</strong>。这两者不是一回事：</p><table><thead><tr><th>轴</th><th>存哪</th><th>展示成什么</th></tr></thead><tbody><tr><td><strong>采集</strong></td><td>任务表上的 <code>stage</code></td><td>文案：采集中 &#x2F; 已暂停 &#x2F; 需人工 &#x2F; 采集结束 &#x2F; 已中止</td></tr><tr><td><strong>处理</strong></td><td>由商品状态<strong>派生</strong>（<strong>不落任务表</strong>）</td><td>徽标：处理中 &#x2F; 部分完成 &#x2F; 全部完成 &#x2F; 已放弃</td></tr></tbody></table><p>关键设计是<strong>第二条轴不落任务表</strong>——它是从商品的 <code>workflow_status</code> 实时派生的。</p><p>为什么？因为商品状态会因为”人工复核””放弃””生成草稿”等<strong>界面动作</strong>而变化，如果任务表也存一份，就会立刻出现”改了商品、忘了改任务”的同步问题。派生就没有这个问题：<strong>永远只有一个真相源</strong>。</p><p>UI 上因此有两条进度：一条采集进度条，一条处理进度条（我们后来还做成了”三环”）。它们各自独立，不会互相掩盖。</p><h2 id="四、占位行：让”识别中”也能落库"><a href="#四、占位行：让”识别中”也能落库" class="headerlink" title="四、占位行：让”识别中”也能落库"></a>四、占位行：让”识别中”也能落库</h2><p>一个具体的设计：商品还没抓到，界面上却要显示”识别中”。如果这个”识别中”只存在内存里，重启就丢。</p><p>做法是<strong>落一个占位行</strong>：key 形如 <code>recognizing:{taskId}:{lineNo}</code>，等抓取成功 &#x2F; 失败时，再用真实商品行替换它。失败时同理，落一个 <code>failed:{taskId}:{lineNo}</code> 的占位。</p><p>两个好处：</p><ol><li><strong>重启可恢复</strong>——快照就能读到”识别中”，不依赖内存；</li><li><strong>key 空间隔离</strong>——占位行的 key 前缀和真实商品（平台 + 商品 ID）不同，互不干扰。</li></ol><p>这也是”事件就是状态”的延伸：连”正在识别”这种瞬时状态，也落了库、成了事件流的一部分。</p><h2 id="五、派生（derive）的单一真相源"><a href="#五、派生（derive）的单一真相源" class="headerlink" title="五、派生（derive）的单一真相源"></a>五、派生（derive）的单一真相源</h2><p>商品状态不是谁想写就写，而是<strong>派生出来的</strong>：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs text">[识别中] → 成功 → ready ←→ conflict → 裁决后 → pending ←→ ready<br>                                    │<br>                                    ├→ draft（草稿成功，终态）<br>                                    ├→ abandoned（放弃，终态）<br>                                    └→ failed（识别失败，终态）<br></code></pre></td></tr></table></figure><p>有两个刻意的设计：</p><p><strong>① 落库时由主进程重新派生。</strong> 渲染层提交复核时也会带一个状态，但主进程会<strong>用自己派生的结果覆盖它</strong>。这就是”单一真相源”——界面不能信誓旦旦地把状态写成别的值。</p><p><strong>② 终态保护。</strong> <code>draft</code> &#x2F; <code>abandoned</code> &#x2F; <code>failed</code> 是终态，派生遇到它们时<strong>直接返回原值</strong>，不重算。比如”已生成草稿的商品”不能再被改成别的状态。</p><p>这里还有个容易被误判成 bug 的地方：<strong>已生成草稿的商品，不能被改成”放弃”</strong>，这是<strong>有意为之</strong>（在数据库层的更新语句里就带了条件）。所以回归测试时如果发现”设放弃没生效”，那是预期行为，不是缺陷。</p><p>还有一个踩过的坑值得记：一开始把”识别中”也放进了终态集合，而占位行<strong>确实会落库</strong>，结果导致”识别中”的行一旦被复核保存就<strong>永久冻结</strong>。后来缩小了终态集合——<strong>“瞬时态”和”终态”不能混在一个保护列表里</strong>。</p><h2 id="六、失败也要语义分离"><a href="#六、失败也要语义分离" class="headerlink" title="六、失败也要语义分离"></a>六、失败也要语义分离</h2><p>单条商品失败，<strong>不等于</strong>任务失败。所以：</p><ul><li>单条失败：<code>failedCount++</code>，<strong>不</strong>把任务的 <code>stage</code> 写成失败，<strong>不</strong>设置任务的完成时间；</li><li>失败的语义分成两层：<code>fetch_status</code>（URL 采集层：成功 &#x2F; 失败）和 <code>workflow_status</code>（商品层：识别失败）。</li></ul><p>这样”任务还在跑，但有几条失败了”和”整个任务崩了”就是两种不同的表达，界面能把它们分开显示（失败可筛、可重试）。</p><p>一个实测确认过的细节：中途失败一条、后面继续跑完，任务的 <code>finished_at</code> 应该是<strong>整单结束的时刻</strong>，而不是第一次失败的时刻——早期版本被”首败”钉死过，后来修掉了。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><p>有一个<strong>已知的、故意的</strong>界面边界：如果用户把”曾有问题的商品”（进过冲突 &#x2F; 待补 &#x2F; 识别失败）放弃掉，那条”处理问题”的环<strong>永远到不了 100%</strong>——因为环的分母包含”曾进入过问题状态的”商品，而分子只认”就绪 &#x2F; 草稿”。用户视角已经没有待办了，环却还显示”待处理 N”。</p><p>这不是 bug，是当前口径的后果，被记录了下来（后续可选：让”已放弃”计入分子，或在环旁加个小标记）。<strong>把它写进文档，比假装它不存在好</strong>——否则下次一定有人当 bug 报。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>核心原则：<strong>事件就是状态</strong>——启动拉一次快照，之后只推事件，UI 与数据库是同一事件流的两个投影；</li><li>推论：<strong>加事件字段必须同时改持久化与渲染层</strong>，否则静默不一致；</li><li><strong>两条轴</strong>：采集状态落任务表，处理状态<strong>从商品状态派生、不落任务表</strong>（避免同步问题）；</li><li><strong>占位行</strong>让”识别中 &#x2F; 失败”也落库，重启可恢复，且与真实商品 key 空间隔离；</li><li>状态的<strong>单一真相源</strong>：落库时由主进程重新派生，并保护终态；<strong>瞬时态不能进终态保护列表</strong>；</li><li>失败要<strong>语义分离</strong>：单条失败 ≠ 任务失败；<code>fetch_status</code> 与 <code>workflow_status</code> 分开；</li><li>已知边界（放弃”曾有问题的”商品后处理环到不了 100%）<strong>写进文档</strong>，而不是留给下一个人当 bug 报。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: 事件驱动, 状态机, Electron, SQLite, 架构</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>架构设计</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>状态机</tag>
+      
+      <tag>事件驱动</tag>
+      
+      <tag>架构</tag>
+      
+      <tag>Electron</tag>
+      
+      <tag>SQLite</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>爬虫的人机协同：验证码弹框，而不是硬刚</title>
+    <link href="/2026/09/22/2026-09-22-%E7%88%AC%E8%99%AB%E7%9A%84%E4%BA%BA%E6%9C%BA%E5%8D%8F%E5%90%8C-%E9%AA%8C%E8%AF%81%E7%A0%81%E5%BC%B9%E6%A1%86%E4%B8%8E%E7%86%94%E6%96%AD%E8%87%AA%E6%84%88/"/>
+    <url>/2026/09/22/2026-09-22-%E7%88%AC%E8%99%AB%E7%9A%84%E4%BA%BA%E6%9C%BA%E5%8D%8F%E5%90%8C-%E9%AA%8C%E8%AF%81%E7%A0%81%E5%BC%B9%E6%A1%86%E4%B8%8E%E7%86%94%E6%96%AD%E8%87%AA%E6%84%88/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>反爬最难受的不是”被拦”，而是”不知道被拦了还是代码坏了”。这篇文章讲怎么把采集失败<strong>分类</strong>、把验证码做成一次<strong>人工确认</strong>、把会话崩溃做成<strong>自愈</strong>，而不是无限重试或者静默把失败当成功。</p></blockquote><h2 id="一、第一步：把失败分类，而不是一锅端"><a href="#一、第一步：把失败分类，而不是一锅端" class="headerlink" title="一、第一步：把失败分类，而不是一锅端"></a>一、第一步：把失败分类，而不是一锅端</h2><p>采集失败的原因很多，但处理方式只有几类。所以第一件事是让每种失败都有<strong>独立的错误码</strong>，而不是笼统的”采集失败”：</p><table><thead><tr><th>类别</th><th>处理方式</th></tr></thead><tbody><tr><td>验证码 &#x2F; 机器人检查</td><td>人工确认（HITL）</td></tr><tr><td>页面错误 &#x2F; 网络异常</td><td>冷却后重试</td></tr><tr><td>商品已下架 &#x2F; 被删除</td><td>标记失败，不重试</td></tr><tr><td>缺标题 &#x2F; 缺商品 ID</td><td>直接报错——<strong>不猜</strong></td></tr><tr><td>布局不认识</td><td>标记失败，等人看一眼选择器</td></tr></tbody></table><p>这里有一条贯穿始终的原则：<strong>绝不把失败伪装成成功</strong>。验证码、下架、页面错误、缺关键字段——一律显式报错，带上中文提示，而不是返回一个字段残缺的”成功”产物，让错误往下游传。</p><p>分类的价值在下一步才显现：只有分对了，才谈得上”哪一类该弹框、哪一类该重试、哪一类该放弃”。</p><h2 id="二、验证码走人机协同（HITL）"><a href="#二、验证码走人机协同（HITL）" class="headerlink" title="二、验证码走人机协同（HITL）"></a>二、验证码走人机协同（HITL）</h2><p>验证码是采集里最尴尬的一类：<strong>程序过不去，但人可以轻松过去一次</strong>。</p><p>所以产品路径不是”硬刚”，而是把控制权交还给用户：</p><ol><li>采集线程检出验证码，发出一个 <code>awaiting_human</code> 事件；</li><li>应用弹出模态框，提示用户去浏览器里过一次验证；</li><li>有个细节很关键——<strong>默认无头的平台，遇到验证码会临时切换到有头窗口</strong>打开那个页面，让用户看得见、点得到；</li><li>用户过完验证，点”已完成验证”（或”跳过”），采集继续。</li></ol><p>这样验证码就不再是”这条采集失败了”，而变成”这条采集等了一下人”。批测里验证码被直接计为失败，但产品里大部分都能救回来——这也是为什么<strong>批测的失败率和产品的实际可用率不能直接等同</strong>。</p><h2 id="三、会话复用：先暖个场"><a href="#三、会话复用：先暖个场" class="headerlink" title="三、会话复用：先暖个场"></a>三、会话复用：先暖个场</h2><p>在验证码之外，更常见的是”同一批请求被识别为异常流量”。应对的核心是<strong>会话复用</strong>：</p><ul><li>每个平台一个持久会话 + 一个持久 profile；</li><li>打开时先访问一次平台首页”暖场”，避免从空白页冷启动；</li><li>之后换商品只做 <code>goto</code> 换地址，<strong>不再反复开新窗口</strong>。</li></ul><p>前面那篇讲过效果的对比：同一条 eBay 链路，每条开新窗口的旧方案 29 条就扩不动；改成暖场 + 复用之后扩到了 1233 条。</p><h2 id="四、限速与熔断"><a href="#四、限速与熔断" class="headerlink" title="四、限速与熔断"></a>四、限速与熔断</h2><p>复用会话还不够，节奏也要控制：</p><ul><li><strong>健康状态下间隔约 1 秒</strong>：不空等，保证吞吐；</li><li><strong>刚出现风控后间隔约 4 秒</strong>：给站点退让一点；</li><li><strong>连续 8 次风控 &#x2F; 页面错误</strong>：判定该平台会话已”脏”，<strong>冷却约 90 秒并重建这个平台的会话</strong>（磁盘上的 profile 保留）。</li></ul><p>熔断的粒度是<strong>按平台</strong>的——Amazon 出问题和 eBay 出问题是两回事，不能一起停。</p><h2 id="五、崩溃自愈：重启，而不是死磕"><a href="#五、崩溃自愈：重启，而不是死磕" class="headerlink" title="五、崩溃自愈：重启，而不是死磕"></a>五、崩溃自愈：重启，而不是死磕</h2><p>引擎和本地服务进程偶尔会崩。我的处理很简单粗暴，但有效：</p><blockquote><p><strong>引擎进程异常退出 &#x2F; 超时 → 直接重启本地服务 → 重试本条一次。</strong></p></blockquote><p>为什么是”重启”而不是”原地重试”？因为实测发现：能修好的崩溃，重启服务就能修好；重启服务都修不好的，原地重试也白搭。重试一次还不行的，就按失败处理，不无限纠缠。</p><p>反过来，我**关掉了”每 N 条主动回收会话”**这个看起来很合理的策略。原因是它非但没消除崩溃，还把崩溃固定在了”回收后第 1～2 条”。这件事值得单独看一眼诊断。</p><h2 id="六、一次崩溃诊断：崩在哪，比崩了几次更重要"><a href="#六、一次崩溃诊断：崩在哪，比崩了几次更重要" class="headerlink" title="六、一次崩溃诊断：崩在哪，比崩了几次更重要"></a>六、一次崩溃诊断：崩在哪，比崩了几次更重要</h2><p>关掉主动回收之后，我盯了三件事：<strong>崩在哪个步骤、崩的周期、进程输出</strong>。</p><p>诊断结果（100 条对照）：</p><ul><li><strong>崩点几乎都在”抽字段”这一步</strong>（<code>failStep = eval</code>），不是打开页面；</li><li>关掉主动回收后，崩溃出现在第 11、22、33、55… 条——<strong>大约每 11 条一次</strong>，这个周期和”每 10 条回收”几乎同量级；</li><li>进程输出（stdout）里反复出现的是 <code>browser_evaluate</code> 的 <strong>HTTP 30 秒超时</strong>，不是验证码。</li></ul><p>结论就清晰了：<strong>主矛盾不是会话太老，而是长会话下”抽字段”这个调用会周期性超时</strong>。主动回收消不掉它，但”重启服务 + 重试”能把永久失败压成可恢复失败。</p><p>这个诊断也直接否定了两个直觉：一，”崩得多肯定是会话太久”（不是）；二，”崩得多肯定是验证码”（不是，是超时）。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li>上面这套是<strong>单机、无代理池</strong>的工程。有代理池时，很多风控问题会前移到代理层，客户端策略的权重会下降。</li><li>HITL 意味着<strong>采集不是完全无人值守</strong>的——一批里出现验证码，得有人在旁边点一下。这是刻意的取舍：宁可要一次人工，也不做绕过。</li><li>“抽字段超时”的根因（为什么长会话下会周期性超时）我们只做到了”缓解 + 可恢复”，<strong>没有根治</strong>——更细的字段抽取、上游排查都还留着。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>采集失败先<strong>分类</strong>：验证码 &#x2F; 页面错误 &#x2F; 已下架 &#x2F; 缺字段 &#x2F; 布局未知，各有各的处理，<strong>绝不把失败当成功</strong>；</li><li>验证码走 <strong>HITL</strong>：发事件 → 弹框 →（无头平台）临时切有头 → 人工过验证 → 继续；</li><li><strong>会话复用 + 暖场</strong>是稳定性的地基，同平台只 <code>goto</code> 换址；</li><li><strong>限速分级 + 按平台熔断</strong>：健康 1s、风控后 4s、连续 8 次冷却 90s 重建会话；</li><li>崩溃处理是<strong>重启 + 重试一次</strong>，不做无限重试；”每 N 条主动回收”实测有害，已关闭；</li><li>诊断的价值在于<strong>定位崩点</strong>（崩在抽字段、周期约每 11 条、根因是 30s 超时），而不是数崩溃次数。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: 爬虫, 反爬, 稳定性, 熔断, 数据采集</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>踩坑</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>熔断</tag>
+      
+      <tag>爬虫</tag>
+      
+      <tag>反爬</tag>
+      
+      <tag>数据采集</tag>
+      
+      <tag>稳定性</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>反爬可用率对照实验：同一份代码，Amazon 与 eBay 差十倍</title>
+    <link href="/2026/09/20/2026-09-20-%E5%8F%8D%E7%88%AC%E5%8F%AF%E7%94%A8%E7%8E%87%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C-Amazon%E4%B8%8EeBay%E7%9A%84%E5%8D%81%E5%80%8D%E5%B7%AE%E8%B7%9D/"/>
+    <url>/2026/09/20/2026-09-20-%E5%8F%8D%E7%88%AC%E5%8F%AF%E7%94%A8%E7%8E%87%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C-Amazon%E4%B8%8EeBay%E7%9A%84%E5%8D%81%E5%80%8D%E5%B7%AE%E8%B7%9D/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>同一套采集引擎、同一台机器、同一批种子链接，Amazon 的可用率是 8%，eBay 是 90%。这篇文章讲这十倍差距是怎么测出来的、差距到底在哪，以及为什么”看起来更快的批量方案”是个陷阱。</p></blockquote><h2 id="一、先把实验设计说清楚"><a href="#一、先把实验设计说清楚" class="headerlink" title="一、先把实验设计说清楚"></a>一、先把实验设计说清楚</h2><p>结论要站得住，前提是实验可比。这次对照做了三件事：</p><ul><li><strong>种子统一</strong>：两份已保存的真实商品全页 HTML，从中提取内链（Amazon 44 个 ASIN、eBay 29 个 <code>/itm/</code>），再按各自方案扩链。</li><li><strong>统一跳过项</strong>：批测一律跳过 DOM 快照与图片下载，只测”能不能把商品页打开并抽出关键字段”。</li><li><strong>三套方案跑同样的输入</strong>：</li></ul><table><thead><tr><th>方案</th><th>一句话</th><th>采集方式</th></tr></thead><tbody><tr><td><strong>A 应用等价</strong></td><td>改造前的实现</td><td>Amazon 每条 <code>open --fresh --headless</code>；eBay 每条开新窗口</td></tr><tr><td><strong>B crawl &#x2F; swarm</strong></td><td>引擎自带的批量模式</td><td>并行 crawl &#x2F; swarm + X-SQL</td></tr><tr><td><strong>C 推荐模式</strong></td><td>现在的产品实现</td><td>按平台复用 session + 持久 profile，同平台只 <code>goto</code> 换地址</td></tr></tbody></table><p>三种方案用的是同一个底层浏览器引擎，差别只在”怎么组织会话”。这样测出来的差异，才归因到策略而不是工具。</p><h2 id="二、实测数字"><a href="#二、实测数字" class="headerlink" title="二、实测数字"></a>二、实测数字</h2><h3 id="Amazon"><a href="#Amazon" class="headerlink" title="Amazon"></a>Amazon</h3><table><thead><tr><th>指标</th><th align="right">A 应用等价</th><th align="right">B 批量并行</th><th align="right">C 推荐模式</th></tr></thead><tbody><tr><td>目标 &#x2F; 尝试</td><td align="right">100 &#x2F; 100</td><td align="right">10 crawl &#x2F; 20 swarm</td><td align="right">100 &#x2F; 62（扩链中断）</td></tr><tr><td>可用成功</td><td align="right"><strong>86</strong></td><td align="right">crawl 10→1；swarm 20→1</td><td align="right"><strong>7</strong></td></tr><tr><td>风控信号</td><td align="right">第 82 条起连续 14 次验证码</td><td align="right">大量验证码壳页</td><td align="right">连续 55 次验证码</td></tr><tr><td>墙钟</td><td align="right">42 min</td><td align="right">10 条约 30 s</td><td align="right">20 min（未满 100）</td></tr></tbody></table><h3 id="eBay"><a href="#eBay" class="headerlink" title="eBay"></a>eBay</h3><table><thead><tr><th>指标</th><th align="right">A 应用等价</th><th align="right">B 批量并行</th><th align="right">C 推荐模式</th></tr></thead><tbody><tr><td>目标 &#x2F; 尝试</td><td align="right">100 &#x2F; 29（扩不动）</td><td align="right">批量</td><td align="right">100 &#x2F; <strong>100</strong></td></tr><tr><td>可用成功</td><td align="right">真商品约 18 &#x2F; 29</td><td align="right"><strong>0</strong>（Error Page）</td><td align="right"><strong>100</strong></td></tr><tr><td>风控信号</td><td align="right">每条新窗口高频触发”检查您的浏览器”</td><td align="right">直接 Error Page</td><td align="right">抽检无异常</td></tr><tr><td>墙钟</td><td align="right">5.6 min（仅 29 条）</td><td align="right">秒级失败</td><td align="right">29 min</td></tr></tbody></table><p>同样的引擎，Amazon 在 IP 干净时能跑到 86&#x2F;100，一旦出口 IP 被”打伤”，方案 C 也只能到 7&#x2F;100。而 eBay 在方案 C 下是 100&#x2F;100。</p><h2 id="三、结论一：不要用批量模式（crawl-swarm）做商品导入"><a href="#三、结论一：不要用批量模式（crawl-swarm）做商品导入" class="headerlink" title="三、结论一：不要用批量模式（crawl &#x2F; swarm）做商品导入"></a>三、结论一：不要用批量模式（crawl &#x2F; swarm）做商品导入</h2><p>B 方案最迷惑人的地方是<strong>墙钟好看</strong>：10 条大约 30 秒，比串行快了约 5 倍。但可用产量是 crawl 10→1、swarm 20→1，eBay 直接是 0。</p><p>原因不神秘——批量模式为了吞吐会开高并发、少等待，正好撞在强站的风控点上。<strong>规模化 ≠ 能过强站</strong>。在我们这个场景里，B 不是”更快”，是”更快地拿到验证码”。</p><p>所以产品路径最终没有采用引擎自带的批量能力，而是坚持串行 + 会话复用的方案 C。</p><h2 id="四、结论二：Amazon-的瓶颈是出口-IP，不是浏览器可见性"><a href="#四、结论二：Amazon-的瓶颈是出口-IP，不是浏览器可见性" class="headerlink" title="四、结论二：Amazon 的瓶颈是出口 IP，不是浏览器可见性"></a>四、结论二：Amazon 的瓶颈是出口 IP，不是浏览器可见性</h2><p>直觉上会觉得”有头浏览器更像真人，应该更不容易被封”。实测否定了这一点：</p><table><thead><tr><th>在同一台已受伤的机器上</th><th align="right">可用率</th></tr></thead><tbody><tr><td>无头（headless）</td><td align="right">约 <strong>9%</strong>（5 &#x2F; 56）</td></tr><tr><td>有头（headed）</td><td align="right">约 <strong>8%</strong>（3 &#x2F; 40）</td></tr></tbody></table><p><strong>有头并不抬产量。</strong> 也就是说，”人手在 Chrome 里能打开 Amazon 页面”和”程序能采集 Amazon”是两件事：页面对人的风控松，对自动化流量的判定另有依据，出口 IP 的声誉是主因。</p><p>结论是：Amazon 这条线要提可用率，主杠杆是<strong>换网络 &#x2F; 上代理池</strong>，而不是继续调浏览器参数。IP 被打伤之后，任何客户端的策略调整都救不回来。</p><h2 id="五、结论三：eBay-能稳，靠的是”暖会话-复用”"><a href="#五、结论三：eBay-能稳，靠的是”暖会话-复用”" class="headerlink" title="五、结论三：eBay 能稳，靠的是”暖会话 + 复用”"></a>五、结论三：eBay 能稳，靠的是”暖会话 + 复用”</h2><p>eBay 的对比更能说明策略的价值。方案 A（每条开新窗口）会高频触发浏览器的安全检查，29 条就扩不动了；方案 C 先访问一次平台首页”暖场”，之后在同一个 profile、同一个会话里反复 <code>goto</code> 换商品页，扩链直接从 29 走到 1233。</p><p>会话复用之后，eBay 的单条耗时 p50 大约 5 秒，100 条约 25 分钟、可用率 90% 以上。</p><p>这里有个反直觉的细节值得记：<strong>同样的”复用会话”思路，对 Amazon 收效有限，对 eBay 立竿见影</strong>。所以策略不能跨平台照搬，必须按平台单独标定。</p><h2 id="六、和业界量级对照一下"><a href="#六、和业界量级对照一下" class="headerlink" title="六、和业界量级对照一下"></a>六、和业界量级对照一下</h2><p>事后我找了电商商品详情采集的经验区间做参照（同一指标：墙钟 &#x2F; 100 条）：</p><table><thead><tr><th>形态</th><th align="right">粗估 &#x2F; 100 条</th></tr></thead><tbody><tr><td>高并发 API + 多代理池</td><td align="right">约 1–5 min</td></tr><tr><td>浏览器渲染 + 代理池</td><td align="right">约 5–15 min</td></tr><tr><td>刻意限速串行（保成功率）</td><td align="right">约 15–40 min</td></tr><tr><td><strong>无代理池、单出口、串行真浏览器</strong></td><td align="right"><strong>约 20–60 min</strong></td></tr></tbody></table><p>我们 eBay 的 ~25 min 正好落在”无池串行”这一档，说明优化已经到位——想进”几分钟级”那一档，靠继续挤本地间隔是没用的，必须上代理池 + 适度并发。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li>以上全部是<strong>单机、无代理池</strong>的结论。有代理池时，速度和可用率的瓶颈都会转移。</li><li>批测<strong>不接入人工验证</strong>：验证码在批测里直接计为失败。而在真实产品里，验证码会弹框请用户手动过一次，所以产品的实际可用率会高于批测数字，两者不能直接等同。</li><li>这套结论只对<strong>公开商品详情页</strong>成立，且样本量是百条级，不是全站统计。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>同一引擎，Amazon 8–9%、eBay 90–100%，差距不在”工具”而在”策略 + 出口”；</li><li><strong>不要用 crawl &#x2F; swarm 做商品导入</strong>：墙钟快 2–5 倍，可用产量崩到个位数，eBay 直接为 0；</li><li><strong>Amazon 的主杠杆是出口 IP</strong>：有头 vs 无头 ≈ 8% vs 9%，无增益，换网络才是解；</li><li><strong>eBay 靠”暖会话 + 会话复用”稳定</strong>：29 → 1233 扩链，p50 ≈ 5 s、100 条 ≈ 25 min；</li><li>策略<strong>不可跨平台照搬</strong>，必须逐平台标定；无池串行 20–60 min &#x2F; 100 条已是该档位的合理水平。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: 爬虫, 反爬, 对照实验, 数据采集, 性能优化</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>踩坑</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>性能优化</tag>
+      
+      <tag>爬虫</tag>
+      
+      <tag>反爬</tag>
+      
+      <tag>对照实验</tag>
+      
+      <tag>数据采集</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Electron 桌面端爬虫：为什么我用 CLI sidecar 而不是 Puppeteer</title>
+    <link href="/2026/09/18/2026-09-18-Electron%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%88%AC%E8%99%AB-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89CLI-sidecar%E8%80%8C%E4%B8%8D%E6%98%AFPuppeteer/"/>
+    <url>/2026/09/18/2026-09-18-Electron%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%88%AC%E8%99%AB-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89CLI-sidecar%E8%80%8C%E4%B8%8D%E6%98%AFPuppeteer/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>在 Electron 里做网页采集，最自然的想法是”直接 <code>npm i playwright</code> 跑”。我没有这么做——随包分发的是一个 CLI + JVM + Chromium 的 sidecar。这篇文章讲这个取舍，以及”随包 sidecar”引出的一堆跨平台构建硬约束。</p></blockquote><h2 id="一、候选方案其实有三条"><a href="#一、候选方案其实有三条" class="headerlink" title="一、候选方案其实有三条"></a>一、候选方案其实有三条</h2><p>要在一个桌面应用里采集网页，至少有三条路：</p><ol><li><strong>应用内直接跑 Playwright &#x2F; Puppeteer</strong>：最轻，<code>npm i</code> 就能用，但等于自己实现”打开页面 → 处理状态 → 抽字段 → 重试”的整条链路。</li><li><strong>依赖用户机器上的 Chrome</strong>：不用随包浏览器，但要处理”用户没装 &#x2F; 版本不对 &#x2F; 被插件干扰”，故障面不可控。</li><li><strong>随包一个完整的采集 sidecar</strong>：体积大，但环境完全自持、版本完全可控。</li></ol><p>我选了第三条，随包的是一个浏览器自动化 CLI（含 JVM 运行时与固定版本 Chromium）。</p><h2 id="二、为什么不用方案-1（自己写-Playwright）"><a href="#二、为什么不用方案-1（自己写-Playwright）" class="headerlink" title="二、为什么不用方案 1（自己写 Playwright）"></a>二、为什么不用方案 1（自己写 Playwright）</h2><p>不是 Playwright 不好，而是<strong>它只是一个库，不是一套采集能力</strong>。真正耗时的从来不是”怎么开页面”，而是：</p><ul><li>页面状态判定（正常 &#x2F; 验证码 &#x2F; 已下架 &#x2F; 布局不认识）；</li><li>字段抽取的优先级（结构化数据 → 页面内 JSON → meta → 固定选择器 → 认不出就报错，而不是猜）；</li><li>会话复用、限速、熔断、崩溃后重试；</li><li>崩溃诊断：到底崩在”打开页面”、”抽取字段”还是”JVM 挂了”。</li></ul><p>这些如果从零写，工作量远大于”接一个现成引擎”。随包 CLI 直接提供了会话模型、抽取命令、页面状态分类和诊断输出，我只需要在上面做编排——这也是后面几篇会反复提到的”把失败分类”的前提。</p><p>方案 2 被我直接排除：桌面软件不能把核心能力押在”用户机器上恰好有个可用的 Chrome”上。</p><h2 id="三、sidecar-怎么进包"><a href="#三、sidecar-怎么进包" class="headerlink" title="三、sidecar 怎么进包"></a>三、sidecar 怎么进包</h2><p>随包不是简单地把文件拷进去，而是有一套 staging 流程：</p><ul><li>一个 <code>stage</code> 脚本从本机抽取<strong>当前平台</strong>的 CLI + 固定版本运行时 + Playwright 系 Chromium（版本来自 <code>playwright-core</code> 的 <code>browsers.json</code>），并生成 <code>manifest.json</code>，里面写清楚每个文件的平台、架构与 <strong>SHA-256 校验和</strong>。</li><li>打包时用 electron-builder 的 <code>extraResources</code> 把整个目录放到 <strong>asar 之外</strong>——因为里面是可执行文件（JVM、Chromium），不能被塞进 asar 归档。</li><li>首启时校验 manifest：平台、架构、校验和都对得上，才原子复制到用户数据目录；对不上就返回一个<strong>明确的失败码</strong>（缺包 &#x2F; 平台不匹配 &#x2F; 校验和失败 &#x2F; Chromium 缺失 &#x2F; Chromium 校验和失败），而不是让用户看到一个语焉不详的崩溃。</li></ul><p>关键点是<strong>校验和与平台一起进了 manifest</strong>，这直接引出下一节的硬约束。</p><h2 id="四、跨平台构建的硬禁令"><a href="#四、跨平台构建的硬禁令" class="headerlink" title="四、跨平台构建的硬禁令"></a>四、跨平台构建的硬禁令</h2><p>因为 sidecar 是按<strong>构建机平台</strong>嵌入的，就有了一条不能商量的规则：</p><blockquote><p><strong>绝不在 macOS 上打 Windows 包，也绝不在 Windows 上打 macOS 包。</strong></p></blockquote><p>在 mac 上构建 Windows 包，会把 darwin 的 CLI &#x2F; JVM &#x2F; Chromium 打进安装包，用户装到 Windows 上首启就报”平台不匹配”。这不是理论风险，是我们实际撞过的坑——错误码就是上面那个 <code>BUNDLE_PLATFORM_MISMATCH</code>。</p><p>配套的做法是各平台在各自的机器 &#x2F; runner 上出包，产物按<strong>平台 + 渠道</strong>分目录（mac-arm64 &#x2F; win-x64 × test &#x2F; production），互不覆盖。</p><h2 id="五、运行时目录绝不写回安装目录"><a href="#五、运行时目录绝不写回安装目录" class="headerlink" title="五、运行时目录绝不写回安装目录"></a>五、运行时目录绝不写回安装目录</h2><p>一个容易踩的坑：sidecar 会写日志、缓存、profile。如果这些路径继承调用方的当前目录，打包版会把产物撒得到处都是——甚至打进 asar。</p><p>做法是<strong>把可写目录全部固定在用户数据目录下</strong>：运行时、状态、数据、日志、工作区各一个子目录，且<strong>显式指定工作目录</strong>（引擎会往 cwd 写自己的元数据目录）。打包版默认的 cwd 是只读的根目录，不指定就会失败或写出奇怪的东西。</p><p>原则一句话：<strong>安装目录只读，所有可变状态进用户数据目录。</strong></p><h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><ul><li><strong>体积大</strong>：随包 JVM + Chromium，安装包远大于”只跑 Playwright”。这是自持环境的必然代价，换来的是”用户机器上环境永远正确”。</li><li><strong>和平台绑死</strong>：sidecar 是二进制，升级引擎等于重建各平台产物，跨平台构建不能偷懒。</li><li><strong>供应链风险</strong>：我们依赖的引擎后端在开发期是快照（SNAPSHOT）构建，存在”版本漂移”和”升级必重测”的问题——这是选第三方引擎要接受的一类债。</li><li>如果需求只是”抓几个静态页面”，这套方案是<strong>过重</strong>的。它适合的是”要长期稳定跑电商强站商品页”的场景。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>桌面端采集有三条路，我选了<strong>随包 sidecar</strong>：环境自持、版本可控，代价是体积；</li><li>拒绝”应用内直接跑 Playwright”不是因为库不好，而是<strong>它只给了一个库，没给采集能力</strong>（状态判定 &#x2F; 抽取优先级 &#x2F; 会话 &#x2F; 熔断 &#x2F; 诊断）；</li><li>sidecar 用 <strong>staging + manifest（含 SHA-256）+ extraResources（不进 asar）</strong> 进包，首启按平台 &#x2F; 架构 &#x2F; 校验和校验；</li><li>由此产生硬禁令：<strong>不能跨平台打对方的包</strong>，否则平台不匹配；</li><li><strong>安装目录只读</strong>，运行时状态全部进用户数据目录，且必须显式指定工作目录。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: Electron, 爬虫, 架构选型, sidecar, 打包</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>架构决策</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>架构选型</tag>
+      
+      <tag>Electron</tag>
+      
+      <tag>打包</tag>
+      
+      <tag>爬虫</tag>
+      
+      <tag>sidecar</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块</title>
+    <link href="/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/"/>
+    <url>/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>Electron 里做本地数据库，默认答案通常是 <code>better-sqlite3</code>。我最后用的是 Electron 内置的 <code>node:sqlite</code>。这篇讲为什么——核心不是”性能”，而是”不想让主进程背上原生模块”，以及随之而来的几个 schema 设计取舍。</p></blockquote><h2 id="一、better-sqlite3-的隐性代价"><a href="#一、better-sqlite3-的隐性代价" class="headerlink" title="一、better-sqlite3 的隐性代价"></a>一、better-sqlite3 的隐性代价</h2><p><code>better-sqlite3</code> 很好用，但它是<strong>原生模块</strong>（native addon），这意味着：</p><ul><li>要按 <strong>Electron 的 ABI</strong> 重编译（<code>electron-rebuild</code> 那一套）；</li><li>打包时要处理 <code>.node</code> 二进制、不同平台 &#x2F; 架构各一份；</li><li>Electron 升级小版本，可能要重新编译；</li><li>构建流水线多一步”依赖原生工具链”的环境要求。</li></ul><p>这些代价平时不明显，但一旦进了打包链路，就会变成”换个 Node 版本就构建失败”这类烦人问题。</p><h2 id="二、node-sqlite：内置、零原生依赖"><a href="#二、node-sqlite：内置、零原生依赖" class="headerlink" title="二、node:sqlite：内置、零原生依赖"></a>二、node:sqlite：内置、零原生依赖</h2><p>Electron 内置了自己的 Node 运行时，而较新的 Node 提供了内置的 <code>node:sqlite</code>。于是可以做到：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">主进程：只用 Electron + node:*，不引任何原生 npm 数据库依赖<br>打包：npmRebuild: false<br></code></pre></td></tr></table></figure><p>这条取舍我写在工程硬约束里：<strong>主进程不引原生 npm addon</strong>。好处是构建链路干净——不需要原生工具链，不需要 ABI 对齐，Electron 升级不用担心 SQLite 编译不过。</p><p>代价是：API 比 <code>better-sqlite3</code> 朴素，生态工具（迁移框架、ORM）也少。但对”桌面端本地库”这个场景，<strong>这些都不是刚需</strong>——本地库不需要连连接池、不需要分布式、不需要复杂迁移框架。</p><h2 id="三、迁移不能靠版本号"><a href="#三、迁移不能靠版本号" class="headerlink" title="三、迁移不能靠版本号"></a>三、迁移不能靠版本号</h2><p>一个和”上了 ORM 就放心”相反的现实：SQLite 的 schema 演进要<strong>自己管</strong>，而且方式很朴素：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">运行时迁移 = 幂等操作<br>  ensureColumn(...)            -- 没有这列就加<br>  CREATE INDEX IF NOT EXISTS   -- 没有这索引就建<br></code></pre></td></tr></table></figure><p>关键点是：<strong>不要用版本号去 gate 迁移</strong>。工程里有个 <code>schema_meta.version</code>，但它只是给人 &#x2F; 运维看的标记，真正的迁移靠的是”每次启动都跑一遍幂等操作”。原因很实际——版本号是单点状态，一旦中间某个版本失败或手动改过库，靠版本号判断就会卡死或漏跑。</p><p>配套一条纪律：<strong>DDL 的真源文档和代码要保持同步</strong>，否则文档就成了过期地图。</p><h2 id="四、存储模型：证据与人工修改分离"><a href="#四、存储模型：证据与人工修改分离" class="headerlink" title="四、存储模型：证据与人工修改分离"></a>四、存储模型：证据与人工修改分离</h2><p>表结构上有一个刻意的设计：<strong>证据和人工复核分开存</strong>。</p><ul><li><code>product_json</code>：<strong>采集到的原始证据</strong>，不伪造、可溯源；</li><li><code>review_json</code>：<strong>人工复核的编辑</strong>。</li></ul><p>两者分开的直接好处是：<strong>人工改字段不会污染原始证据</strong>。这对”可审计”和”可回算”很重要——任何时候你能回答”这个值是人填的，还是抓来的”。</p><p>也有历史债：早期为了让表长得像上游商品的形状，加了一批投影列（商品名、来源标题之类）。后来发现这些列是冗余的——列表和快照都直接解析 JSON 列就行——于是<strong>停止写入投影列</strong>，但<strong>保留列定义</strong>以兼容旧库。这是一个典型的”不删列、只停写”的兼容策略。</p><h2 id="五、反规范化计数器的陷阱"><a href="#五、反规范化计数器的陷阱" class="headerlink" title="五、反规范化计数器的陷阱"></a>五、反规范化计数器的陷阱</h2><p>为了工作台列表快，任务表上放了三个计数列：总 URL 数、完成数、失败数。这是<strong>反规范化</strong>——它们<strong>不保证</strong>等于 URL 行数或商品行数。</p><p>漂移的来源有：</p><ul><li><strong>重试</strong>：重试会重新计数，累计和本轮要分开；</li><li><strong>占位行</strong>：识别中 &#x2F; 失败占位行也会占 key；</li><li><strong>跨任务同商品的 UPSERT</strong>：同一个商品换了任务归属，行会”搬家”。</li></ul><p>所以文档里明确写了一条：<strong>不要拿计数列去”对账”商品行</strong>。它们是给列表排序 &#x2F; 展示用的，不是真相源。这个坑在状态机那篇里还会碰到（”识别环”的分母问题）。</p><h2 id="六、外键的取舍"><a href="#六、外键的取舍" class="headerlink" title="六、外键的取舍"></a>六、外键的取舍</h2><p>schema 里写了一句 <code>PRAGMA foreign_keys = ON</code>，但实际上<strong>没有任何外键约束声明</strong>——所以这条 PRAGMA 目前是个 no-op，孤儿清理全靠应用层 SQL（比如替换任务 URL 时显式删）。</p><p>这是个有意的取舍：加真外键就需要配套的”删任务”设计（级联还是阻止），而我们还没定型删除语义。<strong>先留 PRAGMA、不声明约束</strong>，并在注释里写清楚”这是有意省略，不是忘了”——避免下一个人以为数据库会级联清理。</p><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li>选内置 SQLite 换来的是”构建简单”，代价是”生态简单”——没有成熟的迁移框架和 ORM，schema 演进全靠幂等约定，<strong>需要团队自律</strong>。</li><li>反规范化计数器是<strong>性能换一致性</strong>，一旦有重试 &#x2F; 占位 &#x2F; 迁移这类”非直线”操作，就会和真实行数偏离，必须靠文档约定而不是靠直觉。</li><li>这套存储设计是<strong>按”桌面单机、按商家隔离”的场景</strong>做的（每个商家一个库文件、每库一套捕获目录）。它不适合”多端共享一个库”的场景。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>选 <strong><code>node:sqlite</code>（内置）</strong> 而不是 <code>better-sqlite3</code>：<strong>主进程零原生依赖</strong>、<code>npmRebuild: false</code>，构建链路干净；代价是 API 朴素、生态少；</li><li>schema 演进靠<strong>幂等操作</strong>（<code>ensureColumn</code> &#x2F; <code>CREATE INDEX IF NOT EXISTS</code>），<strong>不靠版本号 gate</strong>；DDL 文档与代码必须同步；</li><li><strong>证据（<code>product_json</code>）与人工复核（<code>review_json</code>）分开存</strong>，人工编辑不污染证据；投影列<strong>停写不删列</strong>做兼容；</li><li>任务计数列是<strong>反规范化</strong>，不保证等于行数（重试 &#x2F; 占位 &#x2F; UPSERT 会漂移），<strong>不要拿来对账</strong>；</li><li>外键<strong>有意不声明</strong>（PRAGMA 是 no-op），孤儿清理走应用 SQL——要在注释里写明”有意省略”。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: Electron, SQLite, node:sqlite, 原生模块, 打包</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>技术</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Electron</tag>
+      
+      <tag>打包</tag>
+      
+      <tag>SQLite</tag>
+      
+      <tag>node:sqlite</tag>
+      
+      <tag>原生模块</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
+    <title>Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界</title>
+    <link href="/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/"/>
+    <url>/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/</url>
+    
+    <content type="html"><![CDATA[<hr><blockquote><p>写了七年 Java 后端，我的第一个桌面项目是 Electron。后端的直觉在这里一半有用、一半是坑。这篇文章讲 Electron 三个进程的边界怎么划，以及从后端视角最容易踩的几个点。</p></blockquote><h2 id="一、先建立心智模型"><a href="#一、先建立心智模型" class="headerlink" title="一、先建立心智模型"></a>一、先建立心智模型</h2><p>Electron 不是”一个进程里跑前端”，它天然是三层的。用后端的语言类比，会瞬间清晰：</p><table><thead><tr><th>Electron 层</th><th>类比</th><th>能力</th></tr></thead><tbody><tr><td><strong>main（主进程）</strong></td><td>后端服务</td><td>有 Node、能开窗口、能读写文件、能起子进程</td></tr><tr><td><strong>preload（预加载）</strong></td><td>API 网关 &#x2F; BFF</td><td>唯一的桥，运行在渲染页之前</td></tr><tr><td><strong>renderer（渲染进程）</strong></td><td>浏览器前端</td><td>只管界面，<strong>没有 Node</strong>，跑在沙箱里</td></tr></tbody></table><p>关键心智转变是：<strong>渲染进程不被信任</strong>。它不是你的前端代码，它是”一个可能被远程内容污染的浏览器标签”。所以任何”能力”都不能直接从 renderer 拿——必须经过 preload 这道窄门，由 main 执行。</p><h2 id="二、安全边界是硬约束，不是可选项"><a href="#二、安全边界是硬约束，不是可选项" class="headerlink" title="二、安全边界是硬约束，不是可选项"></a>二、安全边界是硬约束，不是可选项</h2><p>主窗口的配置基本是定死的：</p><figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-attr">webPreferences</span>: &#123;<br>  <span class="hljs-attr">contextIsolation</span>: <span class="hljs-literal">true</span>,   <span class="hljs-comment">// 渲染页与 preload 的 JS 上下文隔离</span><br>  <span class="hljs-attr">sandbox</span>: <span class="hljs-literal">true</span>,            <span class="hljs-comment">// 渲染进程沙箱</span><br>  <span class="hljs-attr">nodeIntegration</span>: <span class="hljs-literal">false</span>    <span class="hljs-comment">// 渲染页里没有 Node</span><br>&#125;<br></code></pre></td></tr></table></figure><p><code>contextIsolation: true</code> 是最容易忽略但最关键的一条：它把渲染页的 <code>window</code> 和 preload 的 JS 环境隔开，防止页面篡改 preload 暴露的 API。开了它，渲染页就<strong>拿不到</strong> preload 的作用域，也改不了。</p><h2 id="三、renderer-只走-window-api"><a href="#三、renderer-只走-window-api" class="headerlink" title="三、renderer 只走 window.api"></a>三、renderer 只走 <code>window.api</code></h2><p>桥是窄的，而且<strong>通道要显式声明</strong>。做法是三层对齐：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs text">src/shared/importer.ts      ← 通道名与类型的唯一真源<br>      ↓<br>preload（实现这些方法，只暴露白名单）<br>      ↓<br>main（ipcMain.handle 处理）<br></code></pre></td></tr></table></figure><p>规矩是：<strong>不允许 renderer 直接 <code>ipcRenderer.invoke(任意通道)</code></strong>，也不允许 preload 做”泛型透传”。每加一个能力，都要在 shared 里声明 → preload 实现 → main 处理，三处都改。这看起来啰嗦，但正是它保证了”渲染页能干什么”是一张可审计的清单，而不是一个万能通道。</p><p>这和写后端 API 是一样的思路——<strong>契约先行、能力收敛</strong>，只是这里的”对外接口”是 IPC。</p><h2 id="四、把事件当状态传"><a href="#四、把事件当状态传" class="headerlink" title="四、把事件当状态传"></a>四、把事件当状态传</h2><p>采集这类长任务会产生大量进度。我们的做法是：<strong>main 是唯一的状态源</strong>。</p><ul><li>启动时 renderer 拉一次快照（<code>snapshot()</code>）；</li><li>之后 main 只推<strong>事件</strong>，renderer 只消费事件；</li><li>每个事件同时驱动两件事：更新 UI、更新本地数据库。</li></ul><p>这条约束有个直接推论，也是我们踩过的坑：<strong>给事件加字段时，必须同时改持久化类型和 renderer 的事件处理</strong>。只改一处，UI 和数据库就会静默不一致——这和后端”改了 DTO 忘了改 DAO”是同一类 bug。</p><h2 id="五、两个容易翻车的细节"><a href="#五、两个容易翻车的细节" class="headerlink" title="五、两个容易翻车的细节"></a>五、两个容易翻车的细节</h2><p><strong>① preload 的依赖要放 <code>devDependencies</code>。</strong></p><p>electron-vite 会把 <code>dependencies</code> 里的包<strong>外置</strong>（不打进 bundle），而 preload 是打进 bundle 的。所以 preload 用到的库如果错放进 <code>dependencies</code>，打包后会找不到。规则一句话：<strong>preload-only 的依赖放 devDependencies</strong>。</p><p><strong>② 改了 preload，typecheck 不够，要用 CDP 验。</strong></p><p>类型检查只检查类型，不检查”运行时的 <code>window.api</code> 是不是真的是个对象”。preload 一旦打包方式出错，最典型的表现是 <code>window.api</code> 变成 <code>undefined</code>——TS 完全看不出来。所以改完 preload，要用调试协议连上去，断言 <code>typeof window.api === &#39;object&#39;</code>。这是<strong>运行时验证</strong>，不是类型验证。</p><h2 id="六、从后端带来的好习惯与坏直觉"><a href="#六、从后端带来的好习惯与坏直觉" class="headerlink" title="六、从后端带来的好习惯与坏直觉"></a>六、从后端带来的好习惯与坏直觉</h2><p><strong>有用的</strong>：</p><ul><li><strong>分层</strong>：main &#x2F; preload &#x2F; renderer 就是服务 &#x2F; 网关 &#x2F; 前端，边界感直接迁移；</li><li><strong>契约先行</strong>：先定 shared 里的通道与类型，再实现；</li><li><strong>失败显式化</strong>：错误码 + 中文提示，宁可报错也不返回残缺数据。</li></ul><p><strong>是坑的</strong>：</p><ul><li><strong>想找一个”框架”</strong>：Electron 生态里 UI 层很自由，但没有”Spring”式的统一注解框架，别硬套；</li><li><strong>想上 ORM</strong>：桌面端本地存储用内置能力就够，引 ORM 会带来原生依赖和打包问题（见下一篇）；</li><li><strong>想加测试框架</strong>：桌面工程<strong>没有测试框架</strong>，也没有 <code>pnpm test</code>。质量门禁靠”类型检查 + lint + 打包自检”，而不是单元测试——这是刻意的取舍，不是疏漏。</li></ul><h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul><li>这套边界是<strong>安全优先</strong>的取向：IPC 走白名单、渲染页无 Node、远程内容无 preload。代价是”想加个功能要改三处”，灵活性换安全。</li><li>沙箱和隔离能挡住”渲染页被污染后拿到系统权限”，但<strong>挡不住业务逻辑本身的漏洞</strong>——安全边界解决的是进程信任问题，不是数据正确性问题。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul><li>Electron 三层：<strong>main（有权限）&#x2F; preload（窄门）&#x2F; renderer（沙箱、无 Node）</strong>，用后端类比即”服务 &#x2F; 网关 &#x2F; 前端”；</li><li><strong>渲染进程不被信任</strong>：<code>contextIsolation</code> + <code>sandbox</code> + 关 <code>nodeIntegration</code> 是硬约束；</li><li>renderer 只走 <code>window.api</code>，<strong>通道在 shared 声明、preload 实现、main 处理</strong>，禁止泛型透传；</li><li><strong>main 是唯一状态源</strong>：启动拉一次快照，之后只推事件；加事件字段要同时改持久化和渲染层；</li><li>两个细节坑：preload 依赖放 <code>devDependencies</code>；改 preload 后要用 CDP 断言 <code>window.api</code>，typecheck 不够；</li><li>后端的好习惯（分层 &#x2F; 契约 &#x2F; 失败显式化）能迁移；坏直觉（找框架 &#x2F; 上 ORM &#x2F; 加测试框架）要克制。</li></ul><hr><p><em>发表于 2026 年 9 月 · 标签: Electron, 进程模型, IPC, 桌面端, 安全</em></p>]]></content>
+    
+    
+    <categories>
+      
+      <category>架构设计</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Electron</tag>
+      
+      <tag>进程模型</tag>
+      
+      <tag>IPC</tag>
+      
+      <tag>桌面端</tag>
+      
+      <tag>安全</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  <entry>
     <title>从 SyncTask 到 Agent：编排引擎思想的工程迁移</title>
     <link href="/2026/08/27/2026-08-27-%E4%BB%8ESyncTask%E5%88%B0Agent-%E7%BC%96%E6%8E%92%E5%BC%95%E6%93%8E%E6%80%9D%E6%83%B3%E7%9A%84%E5%B7%A5%E7%A8%8B%E8%BF%81%E7%A7%BB/"/>
     <url>/2026/08/27/2026-08-27-%E4%BB%8ESyncTask%E5%88%B0Agent-%E7%BC%96%E6%8E%92%E5%BC%95%E6%93%8E%E6%80%9D%E6%83%B3%E7%9A%84%E5%B7%A5%E7%A8%8B%E8%BF%81%E7%A7%BB/</url>

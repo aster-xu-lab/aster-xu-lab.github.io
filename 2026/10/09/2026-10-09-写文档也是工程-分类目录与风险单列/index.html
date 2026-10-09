@@ -1,0 +1,906 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="这个项目除了代码，还产出了二十来份文档。它们不是”顺便记一下”，而是有目录约定、有写作规范的工程产物。这篇文章讲一套文档分级做法，以及一条最容易被违反的原则。  一、文档按”类型”分目录，不往根目录平铺文档按类型分成四个目录，各司其职：    目录 装什么    方案与排期 冻结的方案、任务拆解、排期表   汇报 阶段汇报、对外口径   会议与决策 会议纪要、架构决策记录（ADR）   指南">
+<meta property="og:type" content="article">
+<meta property="og:title" content="写文档也是工程：分类目录与&quot;风险单列&quot;">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/09/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="这个项目除了代码，还产出了二十来份文档。它们不是”顺便记一下”，而是有目录约定、有写作规范的工程产物。这篇文章讲一套文档分级做法，以及一条最容易被违反的原则。  一、文档按”类型”分目录，不往根目录平铺文档按类型分成四个目录，各司其职：    目录 装什么    方案与排期 冻结的方案、任务拆解、排期表   汇报 阶段汇报、对外口径   会议与决策 会议纪要、架构决策记录（ADR）   指南">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-09T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-09T03:16:11.547Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="协作">
+<meta property="article:tag" content="工程方法论">
+<meta property="article:tag" content="技术管理">
+<meta property="article:tag" content="文档">
+<meta property="article:tag" content="知识管理">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>写文档也是工程：分类目录与&#34;风险单列&#34; - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="写文档也是工程：分类目录与&#34;风险单列&#34;"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-10-09 09:00" pubdate>
+          2026年10月9日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          16 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">写文档也是工程：分类目录与&#34;风险单列&#34;</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>这个项目除了代码，还产出了二十来份文档。它们不是”顺便记一下”，而是有目录约定、有写作规范的工程产物。这篇文章讲一套文档分级做法，以及一条最容易被违反的原则。</p>
+</blockquote>
+<h2 id="一、文档按”类型”分目录，不往根目录平铺"><a href="#一、文档按”类型”分目录，不往根目录平铺" class="headerlink" title="一、文档按”类型”分目录，不往根目录平铺"></a>一、文档按”类型”分目录，不往根目录平铺</h2><p>文档按类型分成四个目录，各司其职：</p>
+<table>
+<thead>
+<tr>
+<th>目录</th>
+<th>装什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>方案与排期</strong></td>
+<td>冻结的方案、任务拆解、排期表</td>
+</tr>
+<tr>
+<td><strong>汇报</strong></td>
+<td>阶段汇报、对外口径</td>
+</tr>
+<tr>
+<td><strong>会议与决策</strong></td>
+<td>会议纪要、架构决策记录（ADR）</td>
+</tr>
+<tr>
+<td><strong>指南</strong></td>
+<td>上手 &#x2F; 学习类文档</td>
+</tr>
+</tbody></table>
+<p><strong>不往根目录平铺</strong>，是这套约定的第一条。根目录平铺的文档，三天后就没人能找到。</p>
+<p>还有一个细节：<strong>跨目录引用用相对路径</strong>（<code>../汇报/xxx.md</code>），同目录引用用裸名。并且<strong>改完文档位置要复验断链</strong>——文档一多，链接就是最脆的地方。</p>
+<h2 id="二、为什么”分类”比”起个好文件名”更重要"><a href="#二、为什么”分类”比”起个好文件名”更重要" class="headerlink" title="二、为什么”分类”比”起个好文件名”更重要"></a>二、为什么”分类”比”起个好文件名”更重要</h2><p>因为找文档的时候，人（和 Agent）想的不是”那个文件叫什么”，而是”这事属于哪一类”。</p>
+<p>“我上次那个排期表在哪？”→ 去<strong>方案与排期</strong>。<br>“上次为什么决定不用那个方案？”→ 去<strong>会议与决策</strong>。</p>
+<p>分类把”检索”从”回忆文件名”变成”理解任务类型”，后者稳定得多。</p>
+<p>有一类容易踩的坑：<strong>引述 vs 导航</strong>。表格单元格里引述某个文档时，<strong>只写文件名、不加目录前缀</strong>——因为加了前缀会撑破表格列宽，而且那是”引述”，不是”链接”。路径由文档顶部的索引行统一提供。</p>
+<h2 id="三、最容易被违反的一条：风险与缺失单列"><a href="#三、最容易被违反的一条：风险与缺失单列" class="headerlink" title="三、最容易被违反的一条：风险与缺失单列"></a>三、最容易被违反的一条：风险与缺失单列</h2><p>有一条写作纪律，价值极高但最容易被违反：</p>
+<blockquote>
+<p><strong>“风险”与”缺失调研”要单列成节，放在决策项之前，不要埋在”明确不做”清单里。</strong></p>
+</blockquote>
+<p>而且每条要写清<strong>三件事</strong>：</p>
+<ol>
+<li><strong>现状</strong>（现在是什么样）；</li>
+<li><strong>缺什么</strong>（差在哪里）；</li>
+<li><strong>归属谁</strong>（谁来补）。</li>
+</ol>
+<p>并且，<strong>要给可核对的证据</strong>——命令输出、字段值、<code>文件:行号</code>——<strong>不给形容词</strong>。</p>
+<p>为什么要单列？因为”风险”和”不做”是两回事：</p>
+<ul>
+<li>“不做 Excel 导入”是<strong>范围决策</strong>（想清楚了，主动不做）；</li>
+<li>“没测过 Excel 导入”是<strong>待办</strong>（还没轮到）。</li>
+</ul>
+<p>把它们混在一起，会导致一个严重后果：<strong>读者分不清哪个是”故意的”，哪个是”欠着的”</strong>。而下一个人很可能把”欠着的”当成”故意的”，从而不再跟进。</p>
+<h2 id="四、”没测过”-≠-“不做”"><a href="#四、”没测过”-≠-“不做”" class="headerlink" title="四、”没测过” ≠ “不做”"></a>四、”没测过” ≠ “不做”</h2><p>这是上一节的直接结论，值得单独强调：</p>
+<p><strong>绝不把”没测过”写成”不做”。</strong></p>
+<p>这两者的区别是<strong>范围决策与待办</strong>的区别。一个功能”本期不做”是拍板的结果；一个功能”还没验证过”是排期里的一笔债。写成同一句话，债就消失了。</p>
+<p>还有一类<strong>外部周期依赖</strong>要单独点明：<strong>证书申请、平台审核</strong>这类事，周期<strong>不在自己的排期里</strong>。它们必须被显式标为”外部依赖”，并主动去推——否则它们会以”我以为它自己能好”的方式，在最后关头炸掉。</p>
+<h2 id="五、调研结论要落地到文档"><a href="#五、调研结论要落地到文档" class="headerlink" title="五、调研结论要落地到文档"></a>五、调研结论要落地到文档</h2><p>另一条纪律：<strong>调研的结论不要只留在对话里</strong>，要落到文档。而且<strong>按读者选位置</strong>：</p>
+<ul>
+<li><strong>平台级技术事实</strong> → 进架构调研文档；</li>
+<li><strong>待办事项</strong> → 进任务清单（带任务 ID、主责、产出）；</li>
+<li><strong>汇报口径</strong> → 进汇报目录。</li>
+</ul>
+<p><strong>事实与待办分开写，并互相交叉引用。</strong> 这样做的目的是防止漂移——一个结论如果在对话里、在汇报里、在任务清单里各写一遍，早晚三处不一致。</p>
+<h2 id="六、没有版本控制时的文档纪律"><a href="#六、没有版本控制时的文档纪律" class="headerlink" title="六、没有版本控制时的文档纪律"></a>六、没有版本控制时的文档纪律</h2><p>这套文档所在的工作区<strong>没有版本控制</strong>（没有 git）。这意味着<strong>没有 diff、没有回滚兜底</strong>。所以：</p>
+<ul>
+<li>有副作用的改动（移动文件、重命名、批量替换）<strong>前先想好手工回滚路径</strong>，并把映射关系写进汇报；</li>
+<li>批量文本替换涉及中文时<strong>用 Python 而不是 <code>sed</code> &#x2F; <code>perl</code></strong>（某些平台上的 sed&#x2F;perl 处理多字节字符会静默改不动）。</li>
+</ul>
+<p>这两条都是”没有兜底”逼出来的纪律。</p>
+<h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul>
+<li>文档<strong>有维护成本</strong>，也会<strong>漂移</strong>。分类太细反而找不到；引用太多反而处处断链。这套约定的收益只在<strong>长期、多人、多文档</strong>的项目里显现。</li>
+<li>文档<strong>不能替代代码</strong>。它记录”为什么”，代码才是”是什么”——两者冲突时，以能跑的那个为准，并<strong>回头修文档</strong>。</li>
+<li>单列风险、区分”不做&#x2F;没测”这些纪律，<strong>不解决”风险本身”</strong>——它只是让风险<strong>可见、可追</strong>。可见，是解决它的前提。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>文档<strong>按类型分目录</strong>（方案 &#x2F; 汇报 &#x2F; 决策 &#x2F; 指南），<strong>不往根目录平铺</strong>；跨目录用相对路径，改位置要<strong>复验断链</strong>；</li>
+<li>分类比文件名重要——检索靠”任务类型”，不靠”回忆文件名”；</li>
+<li>铁律：<strong>“风险”与”缺失调研”单列，放在决策项之前</strong>，每条写清<strong>现状 &#x2F; 缺什么 &#x2F; 归属谁</strong>，<strong>给证据不给形容词</strong>；</li>
+<li><strong>绝不把”没测过”写成”不做”</strong>——那是<strong>待办 vs 范围决策</strong>的区别；<strong>外部周期依赖</strong>要单独点明并主动推；</li>
+<li><strong>调研结论要落地到文档</strong>，按读者选位置，事实与待办分开并交叉引用；</li>
+<li>无版本控制时：副作用改动<strong>先想好手工回滚</strong>，中文批量替换<strong>用 Python</strong>。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 10 月 · 标签: 文档, 工程方法论, 知识管理, 协作, 技术管理</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B7%A5%E7%A8%8B%E6%96%B9%E6%B3%95%E8%AE%BA/" class="category-chain-item">工程方法论</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E6%96%B9%E6%B3%95%E8%AE%BA/" class="print-no-link">#工程方法论</a>
+      
+        <a href="/tags/%E6%8A%80%E6%9C%AF%E7%AE%A1%E7%90%86/" class="print-no-link">#技术管理</a>
+      
+        <a href="/tags/%E6%96%87%E6%A1%A3/" class="print-no-link">#文档</a>
+      
+        <a href="/tags/%E7%9F%A5%E8%AF%86%E7%AE%A1%E7%90%86/" class="print-no-link">#知识管理</a>
+      
+        <a href="/tags/%E5%8D%8F%E4%BD%9C/" class="print-no-link">#协作</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>写文档也是工程：分类目录与&#34;风险单列&#34;</div>
+      <div>https://aster-xu-lab.github.io/2026/10/09/2026-10-09-写文档也是工程-分类目录与风险单列/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年10月9日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/10/08/2026-10-08-%E4%B8%80%E4%B8%AA%E6%9C%88%E4%BB%8E0%E5%88%B0%E6%BC%94%E7%A4%BA-%E6%8E%92%E6%9C%9F%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/" title="一个月从 0 到演示：排期与降级策略">
+                        <span class="hidden-mobile">一个月从 0 到演示：排期与降级策略</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

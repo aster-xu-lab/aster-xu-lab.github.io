@@ -336,15 +336,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/02/13/2024-02-13-DDIA-07-%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C/" target="_self">
-          DDIA-07-一致性哈希：当分片不再是2的幂次
+        <a href="/2024/04/16/2024-04-16-synctask-vs-nflow/" target="_self">
+          SyncTaskJob vs nFlow：自己手写的任务编排引擎，和业界方案差距在哪
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/02/13/2024-02-13-DDIA-07-%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/16/2024-04-16-synctask-vs-nflow/" target="_self">
         <div>
-          引言：一次扩容引发的血案凌晨两点，告警群炸了。 Redis 缓存命中率从 98% 直线掉到 12%，MySQL 连接池瞬间打满，订单查询超时，用户端白屏。值班同学紧急回滚扩容操作，15 分钟后恢复。事后复盘，根因只有一句话：缓存 key 用 hash(key) % N 计算分片，加了一台 Redis 后 N 从 10 变成 11，90% 的缓存 key 指向了错误节点，缓存集体失效，DB 被穿透
+          从代码细节到设计思想，对比订单中心自研的 SyncTaskJob 和北欧开源引擎 nFlow 的异同与差距。
         </div>
       </a>
 
@@ -352,54 +352,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-13 09:00" pubdate>
-              2024-02-13
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Redis/">#Redis</a>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C/">#一致性哈希</a>
-            
-              <a href="/tags/%E5%88%86%E7%89%87/">#分片</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2024/02/09/2024-02-09-Redisson%E7%9C%8B%E9%97%A8%E7%8B%97%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%BB%AD%E6%9C%9F%E5%8E%9F%E7%90%86/" target="_self">
-          Redisson 看门狗源码分析：分布式锁的续期是怎么实现的
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/02/09/2024-02-09-Redisson%E7%9C%8B%E9%97%A8%E7%8B%97%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E7%BB%AD%E6%9C%9F%E5%8E%9F%E7%90%86/" target="_self">
-        <div>
-          分布式锁三大坑之一是”锁续期”——业务执行超过锁过期时间，锁提前释放。Redisson 用”看门狗”（watchdog）解决。这篇从源码层看它到底怎么实现续期。  一、问题：锁会提前过期最基础的分布式锁 SET key value NX EX 30：锁过期时间 30 秒。但如果业务执行超过 30 秒，锁提前释放，另一个线程拿到锁——两个线程同时执行临界区，锁形同虚设。 解法是”续期”：业务没结
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-09 09:00" pubdate>
-              2024-02-09
+            <time datetime="2024-04-16 09:00" pubdate>
+              2024-04-16
             </time>
           </div>
         
@@ -414,8 +368,15 @@
     
       <span class="category-chain">
         
-  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
   
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/" class="category-chain-item">源码分析</a>
+  
+  
+
   
 
       </span>
@@ -429,13 +390,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/">#分布式锁</a>
+              <a href="/tags/Java/">#Java</a>
             
-              <a href="/tags/Redisson/">#Redisson</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E7%BC%96%E6%8E%92/">#任务编排</a>
             
-              <a href="/tags/%E7%9C%8B%E9%97%A8%E7%8B%97/">#看门狗</a>
+              <a href="/tags/%E5%B7%A5%E4%BD%9C%E6%B5%81%E5%BC%95%E6%93%8E/">#工作流引擎</a>
             
-              <a href="/tags/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90/">#源码分析</a>
+              <a href="/tags/%E8%87%AA%E7%A0%94vs%E5%BC%80%E6%BA%90/">#自研vs开源</a>
             
           </div>
         
@@ -449,15 +410,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/02/05/2024-02-05-Redis%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E4%B8%8E%E9%AB%98%E5%8F%AF%E7%94%A8-%E4%B8%89%E5%A4%A7%E5%9D%91%E4%B8%8E%E9%9B%86%E7%BE%A4%E6%BC%94%E8%BF%9B/" target="_self">
-          Redis 分布式锁与高可用：三大坑、Redisson、主从哨兵 Cluster
+        <a href="/2024/04/15/2024-04-15-%E4%B8%89%E7%A7%8DMQ%E9%80%89%E5%9E%8B-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E4%B8%89%E4%B8%AA%E9%83%BD%E7%94%A8/" target="_self">
+          RocketMQ、RabbitMQ、Kafka选型：为什么我三个都用
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/02/05/2024-02-05-Redis%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E4%B8%8E%E9%AB%98%E5%8F%AF%E7%94%A8-%E4%B8%89%E5%A4%A7%E5%9D%91%E4%B8%8E%E9%9B%86%E7%BE%A4%E6%BC%94%E8%BF%9B/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/15/2024-04-15-%E4%B8%89%E7%A7%8DMQ%E9%80%89%E5%9E%8B-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E4%B8%89%E4%B8%AA%E9%83%BD%E7%94%A8/" target="_self">
         <div>
-          一、分布式锁的基础：SET NX EXRedis 分布式锁的最基础形态是一条命令： 1SET lock_key unique_value NX EX 30   NX：key 不存在才设置（互斥）； EX 30：过期时间（防死锁）； unique_value：持有者唯一标识（防误删）。  三个要素缺一个都有坑。下面逐个说。 二、三大坑坑 1：死锁——持锁的线程崩溃了，锁永远不释放。解法：加过期时间
+          面试官常问：”你简历上三种 MQ 都写了，是不是都堆上去的？”这其实是 MQ 选型里最值得想清楚的问题。我用过的三种 MQ——RocketMQ、RabbitMQ、Kafka——不是堆技术栈，是各司其职。这篇把选型逻辑讲透。 一、先看选型对比表    RocketMQ RabbitMQ Kafka    吞吐 高（万级） 低（千~万级） 最高（百万级）   可靠性 高（事务消息） 高（confir
         </div>
       </a>
 
@@ -465,8 +426,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-05 09:00" pubdate>
-              2024-02-05
+            <time datetime="2024-04-15 09:00" pubdate>
+              2024-04-15
             </time>
           </div>
         
@@ -481,7 +442,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
+  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
   
   
 
@@ -496,17 +457,15 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/Redis/">#Redis</a>
+              <a href="/tags/%E9%80%89%E5%9E%8B/">#选型</a>
             
-              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/">#分布式锁</a>
+              <a href="/tags/Kafka/">#Kafka</a>
             
-              <a href="/tags/Redisson/">#Redisson</a>
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
             
-              <a href="/tags/%E8%84%91%E8%A3%82/">#脑裂</a>
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
             
-              <a href="/tags/%E5%93%A8%E5%85%B5/">#哨兵</a>
-            
-              <a href="/tags/Cluster/">#Cluster</a>
+              <a href="/tags/RabbitMQ/">#RabbitMQ</a>
             
           </div>
         
@@ -520,15 +479,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/02/02/2024-02-02-DDIA-06-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%AE%9E%E6%88%98/" target="_self">
-          DDIA-06-实战：订单中心读写分离——主库扛写从库扛读的正确姿势
+        <a href="/2024/04/09/2024-04-09-synctask-local-message-table/" target="_self">
+          SyncTaskJob 就是一张本地消息表——只是你自己没意识到
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/02/02/2024-02-02-DDIA-06-%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%AE%9E%E6%88%98/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/09/2024-04-09-synctask-local-message-table/" target="_self">
         <div>
-          订单中心读写分离实战：从慢SQL拖垮主库到ShardingSphere-JDBC落地的完整记录，包含路由设计、延迟监控、迁移流程。
+          拆解 SyncTaskJob 的 sync_task 表与业界标准本地消息表模式的异同——你不知不觉地实现了一个经典的分布式事务模式。
         </div>
       </a>
 
@@ -536,8 +495,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-02 09:00" pubdate>
-              2024-02-02
+            <time datetime="2024-04-09 09:00" pubdate>
+              2024-04-09
             </time>
           </div>
         
@@ -552,7 +511,81 @@
     
       <span class="category-chain">
         
-  <a href="/categories/DDIA%E5%AE%9E%E6%88%98%E7%B3%BB%E5%88%97/" class="category-chain-item">DDIA实战系列</a>
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+    <span>></span>
+    
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/" class="category-chain-item">分布式事务</a>
+  
+  
+
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
+            
+              <a href="/tags/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8/">#本地消息表</a>
+            
+              <a href="/tags/SyncTaskJob/">#SyncTaskJob</a>
+            
+              <a href="/tags/Transactional-Outbox/">#Transactional Outbox</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/04/08/2024-04-08-%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E4%B8%89%E7%AB%AF%E4%BF%9D%E9%9A%9C%E4%B8%8E%E6%B6%88%E8%B4%B9%E5%B9%82%E7%AD%89/" target="_self">
+          消息不丢的三端保障与消费幂等：分布式系统的最后一公里
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/08/2024-04-08-%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E4%B8%89%E7%AB%AF%E4%BF%9D%E9%9A%9C%E4%B8%8E%E6%B6%88%E8%B4%B9%E5%B9%82%E7%AD%89/" target="_self">
+        <div>
+          一条消息从发出到消费，要过三个关口生产端 → Broker → 消费端。任何一个环节都可能丢消息、重消息。所以”消息可靠性”从来不是一个单点问题，而是三端各自的职责：    环节 主要风险 保障手段    生产端 发出去，Broker 没收（网络抖动&#x2F;超时） 同步发送 + Confirm 确认 + 重试；本地消息表 &#x2F; 事务消息   Broker 端 存了但宕机丢（内存没落盘
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-04-08 09:00" pubdate>
+              2024-04-08
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
   
   
 
@@ -567,14 +600,87 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/MySQL/">#MySQL</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
+            
+              <a href="/tags/%E5%B9%82%E7%AD%89/">#幂等</a>
+            
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
+            
+              <a href="/tags/%E6%B6%88%E6%81%AF%E5%8F%AF%E9%9D%A0%E6%80%A7/">#消息可靠性</a>
+            
+              <a href="/tags/%E6%AD%BB%E4%BF%A1%E9%98%9F%E5%88%97/">#死信队列</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2024/04/06/2024-04-06-DDIA-08-2PC%E5%88%B0TCC/" target="_self">
+          DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/06/2024-04-06-DDIA-08-2PC%E5%88%B0TCC/" target="_self">
+        <div>
+          从Seata AT模式（2PC）到自研TCC方案的完整演进路线，含核心代码设计、空回滚/悬挂问题解决，以及40%+性能提升的实测数据。
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2024-04-06 09:00" pubdate>
+              2024-04-06
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
+            
+              <a href="/tags/Seata/">#Seata</a>
+            
+              <a href="/tags/TCC/">#TCC</a>
+            
+              <a href="/tags/2PC/">#2PC</a>
             
               <a href="/tags/DDIA/">#DDIA</a>
             
               <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
             
-              <a href="/tags/%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/">#读写分离</a>
-            
           </div>
         
       </div>
@@ -587,15 +693,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/02/01/2024-02-01-%E7%BC%93%E5%AD%98%E4%B8%89%E5%85%84%E5%BC%9F%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7-%E7%A9%BF%E9%80%8F%E5%87%BB%E7%A9%BF%E9%9B%AA%E5%B4%A9/" target="_self">
-          缓存三兄弟与缓存一致性：穿透、击穿、雪崩和延迟双删
+        <a href="/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/" target="_self">
+          分布式任务引擎的可靠性设计：防重、断点续传与四级告警
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/02/01/2024-02-01-%E7%BC%93%E5%AD%98%E4%B8%89%E5%85%84%E5%BC%9F%E4%B8%8E%E4%B8%80%E8%87%B4%E6%80%A7-%E7%A9%BF%E9%80%8F%E5%87%BB%E7%A9%BF%E9%9B%AA%E5%B4%A9/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/" target="_self">
         <div>
-          一、先分清三个名字很像的问题“穿透&#x2F;击穿&#x2F;雪崩”三个词常被记混，它们其实对应三种完全不同的场景：    问题 定义 关键区分 解决    穿透 查数据库里不存在的数据 缓存和库都没有 布隆过滤器 &#x2F; 缓存空值   击穿 单个热点 key 过期瞬间 一个 key 扛不住了 互斥锁 &#x2F; 逻辑过期   雪崩 一批 key 同时过期（或 Redis 挂） 一大批
+          分布式任务引擎的可靠性设计：防重、断点续传与四级告警可靠性不是加分项，是底线任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。 这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。 一、双重防重：分布式锁 + 二次查库为什么需要两层？单靠分布式锁（Re
         </div>
       </a>
 
@@ -603,8 +709,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-02-01 09:00" pubdate>
-              2024-02-01
+            <time datetime="2024-04-02 09:00" pubdate>
+              2024-04-02
             </time>
           </div>
         
@@ -619,7 +725,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
+  <a href="/categories/%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/" class="category-chain-item">框架设计</a>
   
   
 
@@ -634,15 +740,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E7%BC%93%E5%AD%98/">#缓存</a>
+              <a href="/tags/SyncTask/">#SyncTask</a>
             
-              <a href="/tags/Redis/">#Redis</a>
+              <a href="/tags/%E5%8F%AF%E9%9D%A0%E6%80%A7/">#可靠性</a>
             
-              <a href="/tags/%E7%BC%93%E5%AD%98%E7%A9%BF%E9%80%8F/">#缓存穿透</a>
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/">#分布式锁</a>
             
-              <a href="/tags/%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7/">#缓存一致性</a>
+              <a href="/tags/%E6%96%AD%E7%82%B9%E7%BB%AD%E4%BC%A0/">#断点续传</a>
             
-              <a href="/tags/%E4%BA%8C%E7%BA%A7%E7%BC%93%E5%AD%98/">#二级缓存</a>
+              <a href="/tags/%E5%91%8A%E8%AD%A6%E8%AE%BE%E8%AE%A1/">#告警设计</a>
+            
+              <a href="/tags/%E6%8C%87%E6%95%B0%E9%80%80%E9%81%BF/">#指数退避</a>
             
           </div>
         
@@ -656,15 +764,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/01/22/2024-01-22-DDIA-06-%E5%A4%9A%E4%B8%BB%E5%A4%8D%E5%88%B6%E4%B8%8ECAP/" target="_self">
-          DDIA-06-多主复制与无主复制：CAP定理的博弈现场
+        <a href="/2024/04/01/2024-04-01-RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF-%E5%8D%8A%E6%B6%88%E6%81%AF%E4%B8%8E%E5%9B%9E%E6%9F%A5/" target="_self">
+          RocketMQ事务消息：半消息与回查，怎么做到&#34;业务成功消息必达&#34;
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/22/2024-01-22-DDIA-06-%E5%A4%9A%E4%B8%BB%E5%A4%8D%E5%88%B6%E4%B8%8ECAP/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/04/01/2024-04-01-RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF-%E5%8D%8A%E6%B6%88%E6%81%AF%E4%B8%8E%E5%9B%9E%E6%9F%A5/" target="_self">
         <div>
-          前言上一篇文章我们聊了单主复制的实现细节——一个 Leader 负责所有写入，若干 Follower 异步追赶日志。这是绝大多数关系型数据库的默认模式，简单、可靠、符合直觉。 但现实世界的需求远比”一主多从”复杂。如果你的用户分布在全球，纽约和东京的同事需要同时编辑同一份文档怎么办？如果你不想承受主从切换的中断时间怎么办？如果你的数据库挂了一台节点，另几台还在跑，但数据不完整，该不该让它继续对外
+          先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：  先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发
         </div>
       </a>
 
@@ -672,8 +780,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-01-22 09:00" pubdate>
-              2024-01-22
+            <time datetime="2024-04-01 09:00" pubdate>
+              2024-04-01
             </time>
           </div>
         
@@ -688,15 +796,8 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  <a href="/categories/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="category-chain-item">消息队列</a>
   
-  
-    <span>></span>
-    
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/DDIA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA读书笔记</a>
-  
-  
-
   
 
       </span>
@@ -710,19 +811,15 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/DDIA/">#DDIA</a>
+              <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/">#消息队列</a>
             
-              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/">#分布式</a>
+              <a href="/tags/RocketMQ/">#RocketMQ</a>
             
-              <a href="/tags/%E5%A4%8D%E5%88%B6/">#复制</a>
+              <a href="/tags/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF/">#事务消息</a>
             
-              <a href="/tags/CAP/">#CAP</a>
+              <a href="/tags/%E5%8D%8A%E6%B6%88%E6%81%AF/">#半消息</a>
             
-              <a href="/tags/%E5%A4%9A%E4%B8%BB%E5%A4%8D%E5%88%B6/">#多主复制</a>
-            
-              <a href="/tags/%E6%97%A0%E4%B8%BB%E5%A4%8D%E5%88%B6/">#无主复制</a>
-            
-              <a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7/">#一致性</a>
+              <a href="/tags/%E9%A1%BA%E5%BA%8F%E6%B6%88%E6%81%AF/">#顺序消息</a>
             
           </div>
         
@@ -736,15 +833,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2024/01/12/2024-01-12-DDIA-06-%E5%A4%8D%E5%88%B6%E5%BB%B6%E8%BF%9F%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/" target="_self">
-          DDIA-06-复制延迟与最终一致性：你看到的库存可能不是真实库存
+        <a href="/2024/03/29/2024-03-29-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" target="_self">
+          双层权重调度：分层时间轮在业务调度中的应用
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/12/2024-01-12-DDIA-06-%E5%A4%8D%E5%88%B6%E5%BB%B6%E8%BF%9F%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/29/2024-03-29-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" target="_self">
         <div>
-          引言：一个让人血压飙升的线上事故2024年双11，凌晨0点15分，值班群里炸了——  “用户反馈：明明付了钱，订单页面显示’未支付’，用户连付了三笔。”  这是我职业生涯中遇到的最诡异的一次线上问题。用户端看到的是”未支付”，但支付宝扣款成功的通知已经到了我们的callback接口。数据库里也确实有这笔支付流水。那为什么订单状态还是”未支付”？ 排查了半小时，根因找到了：MySQL主从复制延迟。
+          双层权重调度：分层时间轮在业务调度中的应用问题背景SyncTaskJob 引擎管理着 93 个 Handler，每个 Handler 背后是数以万计的同步任务。不同任务对响应时间的要求完全不同：  新任务——刚产生的订单，期望 5 秒内开始同步 重试任务——失败一次的，可以等 30 秒 扫尾任务——失败 3 次以上的，5 分钟扫一次就够了 低优先级任务——历史数据补录，优先级最低  如果所有任务都
         </div>
       </a>
 
@@ -752,8 +849,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2024-01-12 09:00" pubdate>
-              2024-01-12
+            <time datetime="2024-03-29 09:00" pubdate>
+              2024-03-29
             </time>
           </div>
         
@@ -768,15 +865,8 @@
     
       <span class="category-chain">
         
-  <a href="/categories/DDIA/" class="category-chain-item">DDIA</a>
+  <a href="/categories/%E6%A1%86%E6%9E%B6%E8%AE%BE%E8%AE%A1/" class="category-chain-item">框架设计</a>
   
-  
-    <span>></span>
-    
-  <a href="/categories/DDIA/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
-  
-  
-
   
 
       </span>
@@ -790,59 +880,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/DDIA/">#DDIA</a>
+              <a href="/tags/SyncTask/">#SyncTask</a>
             
-              <a href="/tags/%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/">#读写分离</a>
+              <a href="/tags/%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E/">#任务引擎</a>
             
-              <a href="/tags/%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/">#最终一致性</a>
+              <a href="/tags/%E8%B0%83%E5%BA%A6%E7%AE%97%E6%B3%95/">#调度算法</a>
             
-              <a href="/tags/%E5%A4%8D%E5%88%B6%E5%BB%B6%E8%BF%9F/">#复制延迟</a>
+              <a href="/tags/%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/">#分层时间轮</a>
             
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2024/01/01/2024-01-01-DDIA-06-%E5%90%8C%E6%AD%A5vs%E5%BC%82%E6%AD%A5%E5%A4%8D%E5%88%B6/" target="_self">
-          DDIA-06同步vs异步复制：99.99%可用性要求下的复制策略选择
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2024/01/01/2024-01-01-DDIA-06-%E5%90%8C%E6%AD%A5vs%E5%BC%82%E6%AD%A5%E5%A4%8D%E5%88%B6/" target="_self">
-        <div>
-          一、一个故障复盘去年双十一大促前的一次压测，订单中心一个从库的磁盘满了。由于我们当时用的是异步复制，主库照常写入，从库复制延迟从30ms飙升到60秒，主从数据差距超过200万行。促销开始时，读请求被路由到这个延迟的从库，用户看到下单后几分钟才出现的订单状态，客服电话被打爆。 那次事故之后，我们开始重新审视复制策略。当时日订单量刚突破130万，可用性目标从99.9%提升到99.99%——这意味着全
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2024-01-01 09:00" pubdate>
-              2024-01-01
-            </time>
-          </div>
-        
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
+              <a href="/tags/%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6/">#权重调度</a>
             
-              <a href="/tags/MySQL/">#MySQL</a>
-            
-              <a href="/tags/DDIA/">#DDIA</a>
-            
-              <a href="/tags/%E5%8D%8A%E5%90%8C%E6%AD%A5%E5%A4%8D%E5%88%B6/">#半同步复制</a>
-            
-              <a href="/tags/MGR/">#MGR</a>
+              <a href="/tags/XXL-JOB/">#XXL-JOB</a>
             
           </div>
         
@@ -856,15 +904,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/12/21/2023-12-21-DDIA-06-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6Binlog/" target="_self">
-          DDIA-06-主从复制：MySQL Binlog复制到底做了什么
+        <a href="/2024/03/27/2024-03-27-DDIA-07-%E8%B7%A8%E5%88%86%E7%89%87%E6%9F%A5%E8%AF%A2%E4%B8%83%E5%A4%A7%E8%A7%A3%E6%B3%95/" target="_self">
+          DDIA-07-跨分片查询的七大解法：从分页到聚合
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/12/21/2023-12-21-DDIA-06-%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6Binlog/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/27/2024-03-27-DDIA-07-%E8%B7%A8%E5%88%86%E7%89%87%E6%9F%A5%E8%AF%A2%E4%B8%83%E5%A4%A7%E8%A7%A3%E6%B3%95/" target="_self">
         <div>
-          一、为什么需要主从复制？先看一个真实数据。 我们的订单中心，日订单130万，峰值QPS约8000。MySQL单机扛读还行，但问题是：(1) 机器总会挂，(2) 读写都在一台机器上互相抢资源，(3) 备份不好做。主从复制就是解决这些问题的标准答案。 DDIA第六章的主题就是Replication（复制）。Martin Kleppmann说得很直白：复制的核心动机有三——  高可用：主库挂了从库顶上
+          引言当单表数据量突破千万级，分库分表几乎是所有中台系统的必经之路。在一个日订单130万的电商中台里，订单表按 user_id 做了 64 分片，单库单表可以扛住日常写入。但有一天，运营提了一个需求：”商家后台里，按商家ID查订单列表，还要支持按金额排序和分页。”——你盯着代码，发现 merchant_id 并不是分片键。 这就是跨分片查询的起点。DDIA第6章花了大量篇幅讨论分区（partiti
         </div>
       </a>
 
@@ -872,8 +920,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-12-21 09:00" pubdate>
-              2023-12-21
+            <time datetime="2024-03-27 09:00" pubdate>
+              2024-03-27
             </time>
           </div>
         
@@ -903,13 +951,13 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/MySQL/">#MySQL</a>
-            
               <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/%E4%B8%BB%E4%BB%8E%E5%A4%8D%E5%88%B6/">#主从复制</a>
+              <a href="/tags/%E8%B7%A8%E5%88%86%E7%89%87%E6%9F%A5%E8%AF%A2/">#跨分片查询</a>
             
-              <a href="/tags/%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB/">#读写分离</a>
+              <a href="/tags/%E5%88%86%E9%A1%B5/">#分页</a>
+            
+              <a href="/tags/%E8%81%9A%E5%90%88/">#聚合</a>
             
           </div>
         
@@ -923,15 +971,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/12/11/2023-12-11-DDIA-05-%E7%BC%96%E7%A0%81%E4%B8%8E%E6%BC%94%E5%8C%96/" target="_self">
-          DDIA-05-编码与演化的艺术：JSON/Protobuf/Avro在电商系统中的真实选择
+        <a href="/2024/03/22/2024-03-22-%E6%94%BE%E5%BC%83DAG%E9%80%89%E6%8B%A9Choreography/" target="_self">
+          放弃DAG：为什么我用afterExecute埋点替代了编排引擎
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/12/11/2023-12-11-DDIA-05-%E7%BC%96%E7%A0%81%E4%B8%8E%E6%BC%94%E5%8C%96/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2024/03/22/2024-03-22-%E6%94%BE%E5%BC%83DAG%E9%80%89%E6%8B%A9Choreography/" target="_self">
         <div>
-          前言不知道你有没有注意过这样一件事：在分布式系统中，数据只有两种状态——在内存里，或者在传输中。 当你写下一行 orderService.createOrder(orderDTO) ，数据在JVM堆内，这是内存状态。当你把这个订单通过HTTP发给下游、通过MQ推给消费者、通过RPC调用远程服务——数据就进入了传输状态。而传输的前提，是编码（Encoding），也就是我们常说的序列化。 DDIA第
+          放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎一个有争议的架构决策同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的链式依赖。 遇到链式依赖，99% 的工程师第一反应是：”用 DAG 编排引擎啊！” 我最初也是这样想的。我调研了 Temporal、Conductor、nFlow、Flowable、Airflow、Az
         </div>
       </a>
 
@@ -939,8 +987,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-12-11 09:00" pubdate>
-              2023-12-11
+            <time datetime="2024-03-22 09:00" pubdate>
+              2024-03-22
             </time>
           </div>
         
@@ -955,15 +1003,8 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E5%86%B3%E7%AD%96/" class="category-chain-item">架构决策</a>
   
-  
-    <span>></span>
-    
-  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/DDIA%E8%AF%BB%E4%B9%A6%E7%AC%94%E8%AE%B0/" class="category-chain-item">DDIA读书笔记</a>
-  
-  
-
   
 
       </span>
@@ -977,21 +1018,19 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">#架构设计</a>
+              <a href="/tags/SyncTask/">#SyncTask</a>
             
-              <a href="/tags/DDIA/">#DDIA</a>
+              <a href="/tags/Choreography/">#Choreography</a>
             
-              <a href="/tags/%E7%BC%96%E7%A0%81/">#编码</a>
+              <a href="/tags/Orchestration/">#Orchestration</a>
             
-              <a href="/tags/Schema%E6%BC%94%E5%8C%96/">#Schema演化</a>
+              <a href="/tags/DAG/">#DAG</a>
             
-              <a href="/tags/%E5%BA%8F%E5%88%97%E5%8C%96/">#序列化</a>
+              <a href="/tags/%E7%BC%96%E6%8E%92%E5%BC%95%E6%93%8E/">#编排引擎</a>
             
-              <a href="/tags/JSON/">#JSON</a>
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E5%86%B3%E7%AD%96/">#架构决策</a>
             
-              <a href="/tags/Protobuf/">#Protobuf</a>
-            
-              <a href="/tags/Avro/">#Avro</a>
+              <a href="/tags/ADR/">#ADR</a>
             
           </div>
         
@@ -1003,7 +1042,7 @@
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <a class="extend prev" rel="prev" href="/page/10/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/9/#board">9</a><a class="page-number" href="/page/10/#board">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/#board">12</a><a class="page-number" href="/page/13/#board">13</a><span class="space">&hellip;</span><a class="page-number" href="/page/24/#board">24</a><a class="extend next" rel="next" href="/page/12/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/10/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/9/#board">9</a><a class="page-number" href="/page/10/#board">10</a><span class="page-number current">11</span><a class="page-number" href="/page/12/#board">12</a><a class="page-number" href="/page/13/#board">13</a><span class="space">&hellip;</span><a class="page-number" href="/page/26/#board">26</a><a class="extend next" rel="next" href="/page/12/#board"><i class="iconfont icon-arrowright"></i></a>
     </span>
   </nav>
 

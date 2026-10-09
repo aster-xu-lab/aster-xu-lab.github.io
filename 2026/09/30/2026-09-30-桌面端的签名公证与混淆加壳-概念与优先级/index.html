@@ -1,0 +1,929 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。  一、三个概念先分清   概念 在干什么 实际效果    代码混淆 改 JS 可读性（改名、平坦化、字符串加密） 抬高逆向成本；逻辑仍在客户端   加壳 静态看起来不像明文，运行时解开 容易触发杀软误报、破坏签名和更新；对 Electr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="桌面端的签名、公证与混淆加壳：先分清这三件事">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。  一、三个概念先分清   概念 在干什么 实际效果    代码混淆 改 JS 可读性（改名、平坦化、字符串加密） 抬高逆向成本；逻辑仍在客户端   加壳 静态看起来不像明文，运行时解开 容易触发杀软误报、破坏签名和更新；对 Electr">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-09-30T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-09T03:19:30.777Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="代码签名">
+<meta property="article:tag" content="公证">
+<meta property="article:tag" content="打包">
+<meta property="article:tag" content="混淆">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>桌面端的签名、公证与混淆加壳：先分清这三件事 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Fluid</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="桌面端的签名、公证与混淆加壳：先分清这三件事"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-09-30 09:00" pubdate>
+          2026年9月30日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          19 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">桌面端的签名、公证与混淆加壳：先分清这三件事</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。</p>
+</blockquote>
+<h2 id="一、三个概念先分清"><a href="#一、三个概念先分清" class="headerlink" title="一、三个概念先分清"></a>一、三个概念先分清</h2><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>在干什么</th>
+<th>实际效果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>代码混淆</strong></td>
+<td>改 JS 可读性（改名、平坦化、字符串加密）</td>
+<td>抬高逆向成本；<strong>逻辑仍在客户端</strong></td>
+</tr>
+<tr>
+<td><strong>加壳</strong></td>
+<td>静态看起来不像明文，运行时解开</td>
+<td>容易触发杀软误报、破坏签名和更新；对 Electron 收益有限</td>
+</tr>
+<tr>
+<td><strong>加固</strong>（真正该做的）</td>
+<td>让应用更难被系统拦截、更难被滥用 &#x2F; 篡改</td>
+<td>代码签名、完整性校验、sandbox、密钥不放客户端</td>
+</tr>
+</tbody></table>
+<p>关键认知：<strong><code>app.asar</code> 不是加固，它只是打包格式</strong>。asar 是归档不是加密，可以被原样提取出来。把代码打进 asar 带来的安全感，是错觉。</p>
+<h2 id="二、”加固”应该优先理解为三件事"><a href="#二、”加固”应该优先理解为三件事" class="headerlink" title="二、”加固”应该优先理解为三件事"></a>二、”加固”应该优先理解为三件事</h2><p>对这个产品，”加固”优先做的是：</p>
+<ol>
+<li><strong>平台信任链</strong>：mac 的 Developer ID + 公证 + staple；Windows 的 Authenticode + 时间戳；嵌套的二进制（运行时 &#x2F; JVM &#x2F; Chromium）<strong>从内到外逐层签</strong>。</li>
+<li><strong>运行时边界</strong>：维持 <code>sandbox</code> &#x2F; IPC &#x2F; 密钥不下渲染进程。</li>
+<li><strong>秘密不上客户端</strong>：假定”打包出去的策略、白名单、业务规则都能被拆包看到”，真正不能泄漏的放服务端。</li>
+</ol>
+<p>至于混淆和加壳，都在这个”优先”之后——<strong>先把签名链做出来，再谈藏代码</strong>。业界对 B 端商户工具的常见顺序也是：签名与分发信任 → 客户端不放真秘密 →（可选）轻度混淆 → 很少上商业壳。</p>
+<h2 id="三、一个容易说错的细节：mac-的”残缺签名”不等于”未签名”"><a href="#三、一个容易说错的细节：mac-的”残缺签名”不等于”未签名”" class="headerlink" title="三、一个容易说错的细节：mac 的”残缺签名”不等于”未签名”"></a>三、一个容易说错的细节：mac 的”残缺签名”不等于”未签名”</h2><p>这是我自己踩过的认知坑。当前产物是 <strong>adhoc &#x2F; 残缺签名</strong>，不是”没签名”，两者行为完全不同：</p>
+<ul>
+<li><code>codesign --verify --deep --strict</code> <strong>能通过</strong>，但 <code>spctl</code> 失败（没有开发者身份、Sealed Resources 缺失）；</li>
+<li>带 quarantine 标记的副本双击会报”已损坏”，而且系统设置里<strong>没有</strong>“仍要打开”选项，只能手动 <code>xattr -dr com.apple.quarantine</code> 去掉隔离标记；</li>
+<li>有意思的是，<strong>完全未签名的包反而能在图形界面放行</strong>——因为系统对它没有”签名但无效”的判断。</li>
+</ul>
+<p>所以”签名残缺”和”未签名”必须分开说，把两者混为一谈会导致排查方向完全错。</p>
+<h2 id="四、嵌套二进制的签名顺序"><a href="#四、嵌套二进制的签名顺序" class="headerlink" title="四、嵌套二进制的签名顺序"></a>四、嵌套二进制的签名顺序</h2><p>一个真实发布前必须解决的难点：随包资源（运行时、JVM、Chromium）<strong>不在打包器的签名范围内</strong>，因为它们被放在 asar 之外。要签名，得自己写 <code>afterSign</code> &#x2F; <code>afterPack</code> 钩子，<strong>从内到外</strong>逐层签：先签最里层的二进制，再签外层的 <code>.app</code>，最后签 dmg 并公证 + <code>stapler staple</code>。</p>
+<p>还有 entitlements 的坑：</p>
+<ul>
+<li>mac 的 entitlements 里现在只有 JIT 相关项；</li>
+<li>开了 hardened runtime 之后，<strong>JVM 的 <code>dlopen</code> 很可能还需要 <code>disable-library-validation</code></strong>；</li>
+<li>这些必须在公证<strong>之前</strong>先验证，否则会出现”签完了、公证过了，但应用起不来”。</li>
+</ul>
+<h2 id="五、Windows-Authenticode：三个要点"><a href="#五、Windows-Authenticode：三个要点" class="headerlink" title="五、Windows Authenticode：三个要点"></a>五、Windows Authenticode：三个要点</h2><ul>
+<li><strong>私钥必须在硬件</strong>（证书 + 硬件令牌 &#x2F; HSM）；</li>
+<li>签名<strong>必须带时间戳</strong>，否则证书过期后历史签名失效；</li>
+<li><strong>SmartScreen 不因签名立即放行</strong>——签名只是让它有资格被”学习”为可信，新证书仍可能弹警告。</li>
+</ul>
+<p>对内部分发来说，未签名的安装包触发 SmartScreen 警告是可以预期的；正式外发才必须完整签名。</p>
+<h2 id="六、优先级：把精力放在决定”能不能发出去”的事上"><a href="#六、优先级：把精力放在决定”能不能发出去”的事上" class="headerlink" title="六、优先级：把精力放在决定”能不能发出去”的事上"></a>六、优先级：把精力放在决定”能不能发出去”的事上</h2><table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>做什么</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>P0</strong></td>
+<td>完整签名 &#x2F; 公证 &#x2F; Authenticode + 嵌套二进制</td>
+</tr>
+<tr>
+<td><strong>P0</strong></td>
+<td>维持 IPC &#x2F; sandbox &#x2F; 密钥主进程</td>
+</tr>
+<tr>
+<td>P1</td>
+<td>生产产物完整性 &#x2F; 防篡改（可选）</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>轻度 JS 混淆（可选，且只在生产 channel）</td>
+</tr>
+<tr>
+<td><strong>不做</strong></td>
+<td>UPX 等 PE 壳、重度控制流混淆、指望客户端藏住采集逻辑</td>
+</tr>
+</tbody></table>
+<p>一句话口径：<strong>Electron 商户端打包默认不做混淆加壳；”加固” &#x3D; 签名 + 运行时边界 + 秘密不上客户端。</strong></p>
+<p>一个重要的区分：<strong>test &#x2F; 内部分发</strong>和 <strong>production &#x2F; 外发</strong>在”签名、是否混淆”上<strong>可以不同</strong>（测试包留可读日志、签名可残缺），但在<strong>sandbox &#x2F; IPC &#x2F; 产物结构</strong>上<strong>必须相同</strong>——禁止”测试包松、生产包紧”，否则测试就失去了意义。</p>
+<h2 id="七、诚实的边界"><a href="#七、诚实的边界" class="headerlink" title="七、诚实的边界"></a>七、诚实的边界</h2><ul>
+<li>签名、公证依赖<strong>外部周期</strong>（证书申请、平台审核），时间不在自己的排期里，需要提前推。</li>
+<li>加了壳 &#x2F; 重度混淆会<strong>破坏崩溃栈和调试体验</strong>，也会和公证、自动更新校验冲突——收益低、风险高，所以我们明确不做。</li>
+<li>客户端加固<strong>永远只是抬高成本</strong>，做不到”无法逆向”。真正的秘密只有一条路：<strong>放到服务端</strong>。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
+<li>三个词分清：<strong>混淆</strong>改可读性、<strong>加壳</strong>骗静态、<strong>加固</strong>才是该做的（签名 + 运行边界 + 秘密不上客户端）；</li>
+<li><strong><code>app.asar</code> 不是加密</strong>，不是加固；</li>
+<li>mac 的**”签名残缺” ≠ “未签名”**：codesign 通过但 spctl 失败，行为和完全未签名相反；</li>
+<li>嵌套二进制要<strong>从内到外逐层签</strong>，并注意 hardened runtime 下 JVM 的 <code>dlopen</code> 可能需要 <code>disable-library-validation</code>；</li>
+<li>Windows 签名：<strong>私钥在硬件、必须带时间戳、SmartScreen 不立即放行</strong>；</li>
+<li>优先级：<strong>签名与公证 P0</strong> → 完整性 P1 → 轻度混淆 P2 → 壳不做；test &#x2F; prod 在签名与混淆上可不同，<strong>在 sandbox &#x2F; IPC &#x2F; 产物结构上必须相同</strong>。</li>
+</ul>
+<hr>
+<p><em>发表于 2026 年 9 月 · 标签: Electron, 代码签名, 公证, 混淆, 打包</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E5%86%B3%E7%AD%96/" class="category-chain-item">架构决策</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E6%89%93%E5%8C%85/" class="print-no-link">#打包</a>
+      
+        <a href="/tags/%E4%BB%A3%E7%A0%81%E7%AD%BE%E5%90%8D/" class="print-no-link">#代码签名</a>
+      
+        <a href="/tags/%E5%85%AC%E8%AF%81/" class="print-no-link">#公证</a>
+      
+        <a href="/tags/%E6%B7%B7%E6%B7%86/" class="print-no-link">#混淆</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>桌面端的签名、公证与混淆加壳：先分清这三件事</div>
+      <div>https://aster-xu-lab.github.io/2026/09/30/2026-09-30-桌面端的签名公证与混淆加壳-概念与优先级/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年9月30日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/10/02/2026-10-02-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E9%A1%B9%E7%9B%AE%E6%80%8E%E4%B9%88%E5%81%9A%E8%B4%A8%E9%87%8F%E5%9F%BA%E7%BA%BF/" title="没有测试框架的项目怎么做质量基线">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">没有测试框架的项目怎么做质量基线</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/09/28/2026-09-28-Electron%E5%8F%8Cchannel%E5%85%B1%E5%AD%98%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E7%A6%81%E4%BB%A4/" title="Electron 双 channel 共存与跨平台构建禁令">
+                        <span class="hidden-mobile">Electron 双 channel 共存与跨平台构建禁令</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
