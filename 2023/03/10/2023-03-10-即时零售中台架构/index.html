@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="即时零售中台：从异步批量到事件驱动秒级响应一个新的挑战做了三年订单中台（cloud-order），核心模式是：定时拉取 → 批量处理 → 异步同步。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。 但即时零售（闪购）完全不同：用户期望 30 分钟内送达。延迟从”分钟级可容忍”变成了”秒级就是事故”。 这篇文章聊聊订单中台和即时零售中台在架构上的本质">
+    <meta name="description" content="即时零售中台：从异步批量到事件驱动秒级响应一个新的挑战做了三年订单中台（cloud-order），核心模式是：定时拉取 → 批量处理 → 异步同步。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。 但即时零售（闪购）完全不同：用户期望 30 分钟内送达。延迟从”分钟级可容忍”变成了”秒级就是事故”。 这篇文章聊聊订单中台和即时零售中台在架构上的本">
 <meta property="og:type" content="article">
 <meta property="og:title" content="即时零售中台：从异步批量到事件驱动秒级响应">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/03/10/2023-03-10-%E5%8D%B3%E6%97%B6%E9%9B%B6%E5%94%AE%E4%B8%AD%E5%8F%B0%E6%9E%B6%E6%9E%84/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="即时零售中台：从异步批量到事件驱动秒级响应一个新的挑战做了三年订单中台（cloud-order），核心模式是：定时拉取 → 批量处理 → 异步同步。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。 但即时零售（闪购）完全不同：用户期望 30 分钟内送达。延迟从”分钟级可容忍”变成了”秒级就是事故”。 这篇文章聊聊订单中台和即时零售中台在架构上的本质">
+<meta property="og:description" content="即时零售中台：从异步批量到事件驱动秒级响应一个新的挑战做了三年订单中台（cloud-order），核心模式是：定时拉取 → 批量处理 → 异步同步。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。 但即时零售（闪购）完全不同：用户期望 30 分钟内送达。延迟从”分钟级可容忍”变成了”秒级就是事故”。 这篇文章聊聊订单中台和即时零售中台在架构上的本">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-03-10T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.847Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.802Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="事件驱动">
 <meta property="article:tag" content="即时零售">
@@ -90,7 +90,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -103,7 +104,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -160,6 +161,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -253,6 +266,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -386,7 +413,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="即时零售中台：从异步批量到事件驱动秒级响应"><a href="#即时零售中台：从异步批量到事件驱动秒级响应" class="headerlink" title="即时零售中台：从异步批量到事件驱动秒级响应"></a>即时零售中台：从异步批量到事件驱动秒级响应</h1><h2 id="一个新的挑战"><a href="#一个新的挑战" class="headerlink" title="一个新的挑战"></a>一个新的挑战</h2><p>做了三年订单中台（cloud-order），核心模式是：<strong>定时拉取 → 批量处理 → 异步同步</strong>。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。</p>
+                <hr>
+<h1 id="即时零售中台：从异步批量到事件驱动秒级响应"><a href="#即时零售中台：从异步批量到事件驱动秒级响应" class="headerlink" title="即时零售中台：从异步批量到事件驱动秒级响应"></a>即时零售中台：从异步批量到事件驱动秒级响应</h1><h2 id="一个新的挑战"><a href="#一个新的挑战" class="headerlink" title="一个新的挑战"></a>一个新的挑战</h2><p>做了三年订单中台（cloud-order），核心模式是：<strong>定时拉取 → 批量处理 → 异步同步</strong>。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。</p>
 <p>但即时零售（闪购）完全不同：用户期望 <strong>30 分钟内送达</strong>。延迟从”分钟级可容忍”变成了”秒级就是事故”。</p>
 <p>这篇文章聊聊订单中台和即时零售中台在架构上的本质差异，以及如何从异步批量系统演进到事件驱动秒级响应系统。</p>
 <h2 id="一、两种业务模型的本质差异"><a href="#一、两种业务模型的本质差异" class="headerlink" title="一、两种业务模型的本质差异"></a>一、两种业务模型的本质差异</h2><table>

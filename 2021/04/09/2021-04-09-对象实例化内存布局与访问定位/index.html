@@ -19,12 +19,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="对象实例化面试题 对象在JVM中是怎么存储的？ 对象头信息里面有哪些东西？ Java对象头有什么？  从对象创建的方式 和 步骤开始说 对象创建方式 new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法 Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器 Constructor的newInstance(X">
+    <meta name="description" content="对象实例化面试题 对象在JVM中是怎么存储的？ 对象头信息里面有哪些东西？ Java对象头有什么？  从对象创建的方式 和 步骤开始说 对象创建方式 new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法 Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器 Constructor的newInstance(">
 <meta property="og:type" content="article">
 <meta property="og:title" content="对象实例化内存布局与访问定位">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/04/09/2021-04-09-%E5%AF%B9%E8%B1%A1%E5%AE%9E%E4%BE%8B%E5%8C%96%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80%E4%B8%8E%E8%AE%BF%E9%97%AE%E5%AE%9A%E4%BD%8D/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="对象实例化面试题 对象在JVM中是怎么存储的？ 对象头信息里面有哪些东西？ Java对象头有什么？  从对象创建的方式 和 步骤开始说 对象创建方式 new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法 Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器 Constructor的newInstance(X">
+<meta property="og:description" content="对象实例化面试题 对象在JVM中是怎么存储的？ 对象头信息里面有哪些东西？ Java对象头有什么？  从对象创建的方式 和 步骤开始说 对象创建方式 new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法 Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器 Constructor的newInstance(">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f6e609d24c9801f4e6879d36f5dd0098.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/17844283941cb36e89731acb0cb4a68a.png">
@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/899dea5272ca6dcad87dae0b19e351d4.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/720b495982884ce83d6ba4a7750fcae9.png">
 <meta property="article:published_time" content="2021-04-09T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.728Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.785Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JVM">
 <meta property="article:tag" content="Java虚拟机">
@@ -95,7 +95,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -108,7 +109,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -165,6 +166,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -258,6 +271,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -391,7 +418,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="对象实例化"><a href="#对象实例化" class="headerlink" title="对象实例化"></a>对象实例化</h1><h2 id="面试题"><a href="#面试题" class="headerlink" title="面试题"></a>面试题</h2><ul>
+                <hr>
+<h1 id="对象实例化"><a href="#对象实例化" class="headerlink" title="对象实例化"></a>对象实例化</h1><h2 id="面试题"><a href="#面试题" class="headerlink" title="面试题"></a>面试题</h2><ul>
 <li>对象在JVM中是怎么存储的？</li>
 <li>对象头信息里面有哪些东西？</li>
 <li>Java对象头有什么？</li>

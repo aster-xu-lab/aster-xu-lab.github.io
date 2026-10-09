@@ -19,12 +19,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="1、非公平锁实现原理加锁解锁流程先从构造器开始看，默认为非公平锁的实现 123public ReentrantLock() &#123; 	sync &#x3D; new NonfairSync();&#125; NofairSync 继承自 AQS没有竞争时第一个竞争出现时Thread-1执行了  CAS尝试将state由0改为1，结果失败 进入tryAcquire逻辑，这时state已经是1，结果仍然">
+    <meta name="description" content="1、非公平锁实现原理加锁解锁流程先从构造器开始看，默认为非公平锁的实现 123public ReentrantLock() &#123; 	sync &#x3D; new NonfairSync();&#125; NofairSync 继承自 AQS没有竞争时第一个竞争出现时Thread-1执行了  CAS尝试将state由0改为1，结果失败 进入tryAcquire逻辑，这时state已经是1，结果仍">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JUC-ReentrantLock原理">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/11/23/2021-11-23-JUC-ReentrantLock%E5%8E%9F%E7%90%86/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="1、非公平锁实现原理加锁解锁流程先从构造器开始看，默认为非公平锁的实现 123public ReentrantLock() &#123; 	sync &#x3D; new NonfairSync();&#125; NofairSync 继承自 AQS没有竞争时第一个竞争出现时Thread-1执行了  CAS尝试将state由0改为1，结果失败 进入tryAcquire逻辑，这时state已经是1，结果仍然">
+<meta property="og:description" content="1、非公平锁实现原理加锁解锁流程先从构造器开始看，默认为非公平锁的实现 123public ReentrantLock() &#123; 	sync &#x3D; new NonfairSync();&#125; NofairSync 继承自 AQS没有竞争时第一个竞争出现时Thread-1执行了  CAS尝试将state由0改为1，结果失败 进入tryAcquire逻辑，这时state已经是1，结果仍">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/69f1e64c68d7e08af3b9d68a2ec0a976.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/15db51cd6534cccbf95ceeb9490e2cf1.png">
@@ -49,7 +49,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f6f22b744b2bb8c8169c5ca597cbdae7.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ecc05a60ce8ac9e78e9699d60016dc7c.png">
 <meta property="article:published_time" content="2021-11-23T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.737Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.794Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="AQS">
 <meta property="article:tag" content="JUC">
@@ -111,7 +111,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -124,7 +125,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -181,6 +182,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -274,6 +287,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -407,7 +434,8 @@
             
               <div class="markdown-body">
                 
-                <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/69f1e64c68d7e08af3b9d68a2ec0a976.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+                <hr>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/69f1e64c68d7e08af3b9d68a2ec0a976.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h1 id="1、非公平锁实现原理"><a href="#1、非公平锁实现原理" class="headerlink" title="1、非公平锁实现原理"></a>1、非公平锁实现原理</h1><h2 id="加锁解锁流程"><a href="#加锁解锁流程" class="headerlink" title="加锁解锁流程"></a>加锁解锁流程</h2><p>先从构造器开始看，默认为非公平锁的实现</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-title function_">ReentrantLock</span><span class="hljs-params">()</span> &#123;<br> 	sync = <span class="hljs-keyword">new</span> <span class="hljs-title class_">NonfairSync</span>();<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>NofairSync 继承自 AQS<br>没有竞争时<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/15db51cd6534cccbf95ceeb9490e2cf1.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>第一个竞争出现时<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b5c09fa2e05a4f8721ec90d376566b5.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>Thread-1执行了</p>

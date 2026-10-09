@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用 加解读锁 12long stamp &#x3D; lock.readLock();lock.unlockRead(stamp);  加解写锁 12long stamp &#x3D; lock.writeLock();lock.unlockWrite(stamp);  乐观读，StampedLock支持typeOptimist">
+    <meta name="description" content="该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用 加解读锁 12long stamp &#x3D; lock.readLock();lock.unlockRead(stamp);  加解写锁 12long stamp &#x3D; lock.writeLock();lock.unlockWrite(stamp);  乐观读，StampedLock支持typeOptimis">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JUC-StampedLock">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/12/12/2021-12-12-JUC-StampedLock/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用 加解读锁 12long stamp &#x3D; lock.readLock();lock.unlockRead(stamp);  加解写锁 12long stamp &#x3D; lock.writeLock();lock.unlockWrite(stamp);  乐观读，StampedLock支持typeOptimist">
+<meta property="og:description" content="该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用 加解读锁 12long stamp &#x3D; lock.readLock();lock.unlockRead(stamp);  加解写锁 12long stamp &#x3D; lock.writeLock();lock.unlockWrite(stamp);  乐观读，StampedLock支持typeOptimis">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-12-12T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.737Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.798Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JUC">
 <meta property="article:tag" content="Java并发">
@@ -87,7 +87,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -100,7 +101,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -157,6 +158,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -250,6 +263,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -383,7 +410,8 @@
             
               <div class="markdown-body">
                 
-                <p>该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用</p>
+                <hr>
+<p>该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用</p>
 <p>加解读锁</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">long</span> <span class="hljs-variable">stamp</span> <span class="hljs-operator">=</span> lock.readLock();<br>lock.unlockRead(stamp);<br></code></pre></td></tr></table></figure>
 

@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="写在前面 由于本章较长，所以按照小标题发布了 本章小结 分析多线程访问共享片段时，哪些代码片段属于临界区 使用synchronized互斥解决临界区的线程安全问题 掌握synchronized锁对象语法 掌握synchronized加载成员方法和静态方法语法 掌握wait&#x2F;notify同步方法   使用lock互斥解决代码临界区的线程安全问题 掌握lock的使用细节：可打断、锁超时、公平">
+    <meta name="description" content="写在前面 由于本章较长，所以按照小标题发布了 本章小结 分析多线程访问共享片段时，哪些代码片段属于临界区 使用synchronized互斥解决临界区的线程安全问题 掌握synchronized锁对象语法 掌握synchronized加载成员方法和静态方法语法 掌握wait&#x2F;notify同步方法   使用lock互斥解决代码临界区的线程安全问题 掌握lock的使用细节：可打断、锁超时、公">
 <meta property="og:type" content="article">
 <meta property="og:title" content="第三章小结">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/09/27/2021-09-27-%E7%AC%AC%E4%B8%89%E7%AB%A0%E5%B0%8F%E7%BB%93/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="写在前面 由于本章较长，所以按照小标题发布了 本章小结 分析多线程访问共享片段时，哪些代码片段属于临界区 使用synchronized互斥解决临界区的线程安全问题 掌握synchronized锁对象语法 掌握synchronized加载成员方法和静态方法语法 掌握wait&#x2F;notify同步方法   使用lock互斥解决代码临界区的线程安全问题 掌握lock的使用细节：可打断、锁超时、公平">
+<meta property="og:description" content="写在前面 由于本章较长，所以按照小标题发布了 本章小结 分析多线程访问共享片段时，哪些代码片段属于临界区 使用synchronized互斥解决临界区的线程安全问题 掌握synchronized锁对象语法 掌握synchronized加载成员方法和静态方法语法 掌握wait&#x2F;notify同步方法   使用lock互斥解决代码临界区的线程安全问题 掌握lock的使用细节：可打断、锁超时、公">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-09-27T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.734Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.798Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JUC">
 <meta property="article:tag" content="Java并发">
@@ -87,7 +87,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -100,7 +101,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -157,6 +158,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -250,6 +263,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -383,7 +410,8 @@
             
               <div class="markdown-body">
                 
-                <p>写在前面</p>
+                <hr>
+<p>写在前面</p>
 <p>由于本章较长，所以按照小标题发布了</p>
 <h1 id="本章小结"><a href="#本章小结" class="headerlink" title="本章小结"></a>本章小结</h1><ul>
 <li>分析多线程访问共享片段时，哪些代码片段属于临界区</li>

@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="SyncTaskJob 引擎 V2 升级：从 CountDownLatch 到 CompletableFuture背景SyncTaskJob 是我们订单中心和仓储系统的核心同步任务编排引擎，管理着 93 个 Handler 的执行调度。V1 版本使用 CountDownLatch 做并行控制，存在几个明显痛点：  无超时控制——一个 Handler 卡住，整个批次永远等不到完成 粒度太粗——锁和状">
+    <meta name="description" content="SyncTaskJob 引擎 V2 升级：从 CountDownLatch 到 CompletableFuture背景SyncTaskJob 是我们订单中心和仓储系统的核心同步任务编排引擎，管理着 93 个 Handler 的执行调度。V1 版本使用 CountDownLatch 做并行控制，存在几个明显痛点：  无超时控制——一个 Handler 卡住，整个批次永远等不到完成 粒度太粗——锁和">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SyncTaskJob引擎V2升级：从CountDownLatch到CompletableFuture">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/03/15/2024-03-15-SyncTaskJob%E5%BC%95%E6%93%8EV2%E5%8D%87%E7%BA%A7/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="SyncTaskJob 引擎 V2 升级：从 CountDownLatch 到 CompletableFuture背景SyncTaskJob 是我们订单中心和仓储系统的核心同步任务编排引擎，管理着 93 个 Handler 的执行调度。V1 版本使用 CountDownLatch 做并行控制，存在几个明显痛点：  无超时控制——一个 Handler 卡住，整个批次永远等不到完成 粒度太粗——锁和状">
+<meta property="og:description" content="SyncTaskJob 引擎 V2 升级：从 CountDownLatch 到 CompletableFuture背景SyncTaskJob 是我们订单中心和仓储系统的核心同步任务编排引擎，管理着 93 个 Handler 的执行调度。V1 版本使用 CountDownLatch 做并行控制，存在几个明显痛点：  无超时控制——一个 Handler 卡住，整个批次永远等不到完成 粒度太粗——锁和">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-03-15T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.837Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.795Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CompletableFuture">
 <meta property="article:tag" content="Java">
@@ -90,7 +90,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -103,7 +104,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -160,6 +161,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -253,6 +266,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -386,7 +413,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="SyncTaskJob-引擎-V2-升级：从-CountDownLatch-到-CompletableFuture"><a href="#SyncTaskJob-引擎-V2-升级：从-CountDownLatch-到-CompletableFuture" class="headerlink" title="SyncTaskJob 引擎 V2 升级：从 CountDownLatch 到 CompletableFuture"></a>SyncTaskJob 引擎 V2 升级：从 CountDownLatch 到 CompletableFuture</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>SyncTaskJob 是我们订单中心和仓储系统的核心同步任务编排引擎，管理着 93 个 Handler 的执行调度。V1 版本使用 <code>CountDownLatch</code> 做并行控制，存在几个明显痛点：</p>
+                <hr>
+<h1 id="SyncTaskJob-引擎-V2-升级：从-CountDownLatch-到-CompletableFuture"><a href="#SyncTaskJob-引擎-V2-升级：从-CountDownLatch-到-CompletableFuture" class="headerlink" title="SyncTaskJob 引擎 V2 升级：从 CountDownLatch 到 CompletableFuture"></a>SyncTaskJob 引擎 V2 升级：从 CountDownLatch 到 CompletableFuture</h1><h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>SyncTaskJob 是我们订单中心和仓储系统的核心同步任务编排引擎，管理着 93 个 Handler 的执行调度。V1 版本使用 <code>CountDownLatch</code> 做并行控制，存在几个明显痛点：</p>
 <ol>
 <li><strong>无超时控制</strong>——一个 Handler 卡住，整个批次永远等不到完成</li>
 <li><strong>粒度太粗</strong>——锁和状态更新都是逐条操作，DB 交互次数多</li>

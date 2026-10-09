@@ -19,12 +19,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="Java及JVM简介Java是跨平台的语言 JVM是跨语言的平台 随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。 Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结">
+    <meta name="description" content="Java及JVM简介Java是跨平台的语言 JVM是跨语言的平台 随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。 Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JVM与Java体系结构">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/02/01/2021-02-01-JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="Java及JVM简介Java是跨平台的语言 JVM是跨语言的平台 随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。 Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结">
+<meta property="og:description" content="Java及JVM简介Java是跨平台的语言 JVM是跨语言的平台 随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。 Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b080632fc9e2d2057719ebe4b7ee1788.png#pic_center">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ffafa4f5a56b2bb1425c3f49895b7064.png#pic_center">
@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/992cf9c73afbe71d8296006d3440fa8e.png#pic_center">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bf729d58a99f9689e4d2238022629165.png#pic_center">
 <meta property="article:published_time" content="2021-02-01T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.726Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.789Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JVM">
 <meta property="article:tag" content="JVM体系结构">
@@ -96,7 +96,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -109,7 +110,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -166,6 +167,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -259,6 +272,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -392,7 +419,8 @@
             
               <div class="markdown-body">
                 
-                <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b080632fc9e2d2057719ebe4b7ee1788.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+                <hr>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b080632fc9e2d2057719ebe4b7ee1788.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h1 id="Java及JVM简介"><a href="#Java及JVM简介" class="headerlink" title="Java及JVM简介"></a>Java及JVM简介</h1><p>Java是跨平台的语言</p>
 <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ffafa4f5a56b2bb1425c3f49895b7064.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>JVM是跨语言的平台</p>
 <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f2403eba26719d8b7c52375001b2548b.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。</p>

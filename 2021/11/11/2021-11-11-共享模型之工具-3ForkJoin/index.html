@@ -19,16 +19,16 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="3、Fork&#x2F;Join1）概念Fork&#x2F;Join是JDK1.7加入的新的线程池实现，它体现的是一种分治思想，适用于能够进行任务拆分的CPU密集型运算 所谓的任务拆分，是将一个大任务拆分为算法上相同的小任务，直至不能呢个拆分可以直接求解。跟递归相关的一些计算，如归并排序、斐波那契数列，都可以用分支思想进行求解 Fork&#x2F;Join在分支的思想上加入了多线程，可以把每个任务">
+    <meta name="description" content="3、Fork&#x2F;Join1）概念Fork&#x2F;Join是JDK1.7加入的新的线程池实现，它体现的是一种分治思想，适用于能够进行任务拆分的CPU密集型运算 所谓的任务拆分，是将一个大任务拆分为算法上相同的小任务，直至不能呢个拆分可以直接求解。跟递归相关的一些计算，如归并排序、斐波那契数列，都可以用分支思想进行求解 Fork&#x2F;Join在分支的思想上加入了多线程，可以把每个任">
 <meta property="og:type" content="article">
 <meta property="og:title" content="7、共享模型之工具 - 3、Fork&#x2F;Join">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/11/11/2021-11-11-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E5%B7%A5%E5%85%B7-3ForkJoin/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="3、Fork&#x2F;Join1）概念Fork&#x2F;Join是JDK1.7加入的新的线程池实现，它体现的是一种分治思想，适用于能够进行任务拆分的CPU密集型运算 所谓的任务拆分，是将一个大任务拆分为算法上相同的小任务，直至不能呢个拆分可以直接求解。跟递归相关的一些计算，如归并排序、斐波那契数列，都可以用分支思想进行求解 Fork&#x2F;Join在分支的思想上加入了多线程，可以把每个任务">
+<meta property="og:description" content="3、Fork&#x2F;Join1）概念Fork&#x2F;Join是JDK1.7加入的新的线程池实现，它体现的是一种分治思想，适用于能够进行任务拆分的CPU密集型运算 所谓的任务拆分，是将一个大任务拆分为算法上相同的小任务，直至不能呢个拆分可以直接求解。跟递归相关的一些计算，如归并排序、斐波那契数列，都可以用分支思想进行求解 Fork&#x2F;Join在分支的思想上加入了多线程，可以把每个任">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d53d5b4daa7aa42b72ec904d0c536c72.png">
 <meta property="article:published_time" content="2021-11-11T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.736Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.795Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JUC">
 <meta property="article:tag" content="Java并发">
@@ -90,7 +90,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -103,7 +104,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -160,6 +161,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -253,6 +266,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -386,7 +413,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="3、Fork-Join"><a href="#3、Fork-Join" class="headerlink" title="3、Fork&#x2F;Join"></a>3、Fork&#x2F;Join</h1><h2 id="1）概念"><a href="#1）概念" class="headerlink" title="1）概念"></a>1）概念</h2><p>Fork&#x2F;Join是JDK1.7加入的新的线程池实现，它体现的是一种分治思想，适用于能够进行任务拆分的CPU密集型运算</p>
+                <hr>
+<h1 id="3、Fork-Join"><a href="#3、Fork-Join" class="headerlink" title="3、Fork&#x2F;Join"></a>3、Fork&#x2F;Join</h1><h2 id="1）概念"><a href="#1）概念" class="headerlink" title="1）概念"></a>1）概念</h2><p>Fork&#x2F;Join是JDK1.7加入的新的线程池实现，它体现的是一种分治思想，适用于能够进行任务拆分的CPU密集型运算</p>
 <p>所谓的任务拆分，是将一个大任务拆分为算法上相同的小任务，直至不能呢个拆分可以直接求解。跟递归相关的一些计算，如归并排序、斐波那契数列，都可以用分支思想进行求解</p>
 <p>Fork&#x2F;Join在分支的思想上加入了多线程，可以把每个任务分解和合并交给不同的线程来完成，进一步提升了运算效率</p>
 <p>Fork&#x2F;Join默认会创建与CPU核心大小相同的线程池</p>

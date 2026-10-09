@@ -19,12 +19,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="前言这次所讲述的是运行时数据区的最后一个部分从线程共享与否的角度来看ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理 栈、堆、方法区的交互关系下面就涉及了对象的访问定位  Person：存放在元空间，也可以说方法区 person：存放在Java栈的局部变量表中 new Person()：存放在Java堆中  方法区的理解《Java虚拟机规范》中">
+    <meta name="description" content="前言这次所讲述的是运行时数据区的最后一个部分从线程共享与否的角度来看ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理 栈、堆、方法区的交互关系下面就涉及了对象的访问定位  Person：存放在元空间，也可以说方法区 person：存放在Java栈的局部变量表中 new Person()：存放在Java堆中  方法区的理解《Java虚拟机规范》">
 <meta property="og:type" content="article">
 <meta property="og:title" content="方法区">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/04/02/2021-04-02-%E6%96%B9%E6%B3%95%E5%8C%BA/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="前言这次所讲述的是运行时数据区的最后一个部分从线程共享与否的角度来看ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理 栈、堆、方法区的交互关系下面就涉及了对象的访问定位  Person：存放在元空间，也可以说方法区 person：存放在Java栈的局部变量表中 new Person()：存放在Java堆中  方法区的理解《Java虚拟机规范》中">
+<meta property="og:description" content="前言这次所讲述的是运行时数据区的最后一个部分从线程共享与否的角度来看ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理 栈、堆、方法区的交互关系下面就涉及了对象的访问定位  Person：存放在元空间，也可以说方法区 person：存放在Java栈的局部变量表中 new Person()：存放在Java堆中  方法区的理解《Java虚拟机规范》">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61e641c97d8c357eb53b95255d280af4.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4b85454ebd564c0c89c1551e4d4dfc0c.png">
@@ -52,7 +52,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/650d961c71a15ce93466af8b302c4cf6.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0be6da1853daee3c2d2de80e620f3cf2.png">
 <meta property="article:published_time" content="2021-04-02T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.728Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.790Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JVM">
 <meta property="article:tag" content="Java虚拟机">
@@ -114,7 +114,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -127,7 +128,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -184,6 +185,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -277,6 +290,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -410,7 +437,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>这次所讲述的是运行时数据区的最后一个部分<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61e641c97d8c357eb53b95255d280af4.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>从线程共享与否的角度来看<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4b85454ebd564c0c89c1551e4d4dfc0c.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理</p>
+                <hr>
+<h1 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h1><p>这次所讲述的是运行时数据区的最后一个部分<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61e641c97d8c357eb53b95255d280af4.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>从线程共享与否的角度来看<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4b85454ebd564c0c89c1551e4d4dfc0c.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理</p>
 <h1 id="栈、堆、方法区的交互关系"><a href="#栈、堆、方法区的交互关系" class="headerlink" title="栈、堆、方法区的交互关系"></a>栈、堆、方法区的交互关系</h1><p>下面就涉及了对象的访问定位<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7acebc411e227a043623c3fa049a3083.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <ul>
 <li>Person：存放在元空间，也可以说方法区</li>

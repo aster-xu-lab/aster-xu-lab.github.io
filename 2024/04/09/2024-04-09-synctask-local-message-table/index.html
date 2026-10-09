@@ -27,7 +27,7 @@
 <meta property="og:description" content="拆解 SyncTaskJob 的 sync_task 表与业界标准本地消息表模式的异同——你不知不觉地实现了一个经典的分布式事务模式。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-04-09T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-27T08:59:34.892Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.802Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="SyncTaskJob">
 <meta property="article:tag" content="Transactional Outbox">
@@ -88,7 +88,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -101,7 +102,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -158,6 +159,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -251,6 +264,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -384,7 +411,8 @@
             
               <div class="markdown-body">
                 
-                <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>前几天拆解了订单中心的 SyncTaskJob 调度引擎，发现它的核心是一张 <code>sync_task</code> 表：</p>
+                <hr>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>前几天拆解了订单中心的 SyncTaskJob 调度引擎，发现它的核心是一张 <code>sync_task</code> 表：</p>
 <figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm"><span class="hljs-keyword">sync_task </span>表：<br>  id │ <span class="hljs-keyword">orderType </span>│ referenceId │ <span class="hljs-keyword">syncSystem </span>│ type │ status │ retryTimes │ ...<br></code></pre></td></tr></table></figure>
 
 <p>业务代码在创建订单的同时，往这张表里插入一条”待同步”的记录。然后 xxl-job 定时轮询这张表，把状态为 INIT&#x2F;FAIL&#x2F;WAIT 的记录捞出来，分发给对应的 Handler 推送到外部系统（聚水潭、金蝶、FMS 等）。</p>

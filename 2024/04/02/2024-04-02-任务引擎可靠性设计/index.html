@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警可靠性不是加分项，是底线任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。 这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。 一、双重防重：分布式锁 + 二次查库为什么需要两层？单靠分布式锁（Re">
+    <meta name="description" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警可靠性不是加分项，是底线任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。 这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。 一、双重防重：分布式锁 + 二次查库为什么需要两层？单靠分布式锁（R">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警可靠性不是加分项，是底线任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。 这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。 一、双重防重：分布式锁 + 二次查库为什么需要两层？单靠分布式锁（Re">
+<meta property="og:description" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警可靠性不是加分项，是底线任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。 这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。 一、双重防重：分布式锁 + 二次查库为什么需要两层？单靠分布式锁（R">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-04-02T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.844Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.800Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="SyncTask">
 <meta property="article:tag" content="分布式锁">
@@ -90,7 +90,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -103,7 +104,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -160,6 +161,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -253,6 +266,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -386,7 +413,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="分布式任务引擎的可靠性设计：防重、断点续传与四级告警"><a href="#分布式任务引擎的可靠性设计：防重、断点续传与四级告警" class="headerlink" title="分布式任务引擎的可靠性设计：防重、断点续传与四级告警"></a>分布式任务引擎的可靠性设计：防重、断点续传与四级告警</h1><h2 id="可靠性不是加分项，是底线"><a href="#可靠性不是加分项，是底线" class="headerlink" title="可靠性不是加分项，是底线"></a>可靠性不是加分项，是底线</h2><p>任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。</p>
+                <hr>
+<h1 id="分布式任务引擎的可靠性设计：防重、断点续传与四级告警"><a href="#分布式任务引擎的可靠性设计：防重、断点续传与四级告警" class="headerlink" title="分布式任务引擎的可靠性设计：防重、断点续传与四级告警"></a>分布式任务引擎的可靠性设计：防重、断点续传与四级告警</h1><h2 id="可靠性不是加分项，是底线"><a href="#可靠性不是加分项，是底线" class="headerlink" title="可靠性不是加分项，是底线"></a>可靠性不是加分项，是底线</h2><p>任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。</p>
 <p>这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。</p>
 <h2 id="一、双重防重：分布式锁-二次查库"><a href="#一、双重防重：分布式锁-二次查库" class="headerlink" title="一、双重防重：分布式锁 + 二次查库"></a>一、双重防重：分布式锁 + 二次查库</h2><h3 id="为什么需要两层？"><a href="#为什么需要两层？" class="headerlink" title="为什么需要两层？"></a>为什么需要两层？</h3><p>单靠分布式锁（Redis）防止并发，单靠数据库状态机防止重复处理。两者各有一个盲区：</p>
 <ul>

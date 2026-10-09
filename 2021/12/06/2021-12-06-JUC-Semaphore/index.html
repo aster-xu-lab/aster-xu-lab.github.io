@@ -34,7 +34,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7941a749ae1832f86474a197db7eab9b.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2e88a994f77f99a5b96ce03b4df3a6ed.png">
 <meta property="article:published_time" content="2021-12-06T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.737Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.807Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JUC">
 <meta property="article:tag" content="Java并发">
@@ -96,7 +96,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -109,7 +110,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -166,6 +167,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -259,6 +272,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -392,7 +419,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h1><p>信号量，用来限制能通知访问共享资源的线程上限</p>
+                <hr>
+<h1 id="基本使用"><a href="#基本使用" class="headerlink" title="基本使用"></a>基本使用</h1><p>信号量，用来限制能通知访问共享资源的线程上限</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">Semaphore</span> <span class="hljs-variable">semaphore</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Semaphore</span>(<span class="hljs-number">3</span>);<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>            <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>                <span class="hljs-keyword">try</span> &#123;<br>                    semaphore.acquire();<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125;<br>                <span class="hljs-keyword">try</span> &#123;<br>                    log.debug(<span class="hljs-string">&quot;running&quot;</span>);<br>                    Thread.sleep(<span class="hljs-number">1000</span>);<br>                    log.debug(<span class="hljs-string">&quot;end&quot;</span>);<br>                &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                    e.printStackTrace();<br>                &#125; <span class="hljs-keyword">finally</span> &#123;<br>                    semaphore.release();<br>                &#125;<br>            &#125;).start();<br>        &#125;<br>    &#125;<br></code></pre></td></tr></table></figure>
 <p>输出</p>
 <figure class="highlight dns"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs dns"><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:02.327</span> [Thread-<span class="hljs-number">0</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:02.327</span> [Thread-<span class="hljs-number">3</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:02.327</span> [Thread-<span class="hljs-number">1</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">0</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">1</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">3</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">4</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">2</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:03.331</span> [Thread-<span class="hljs-number">5</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">4</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">5</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">8</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">2</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">9</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:04.343</span> [Thread-<span class="hljs-number">6</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:05.355</span> [Thread-<span class="hljs-number">9</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:05.355</span> [Thread-<span class="hljs-number">6</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:05.355</span> [Thread-<span class="hljs-number">8</span>] c.Test - end<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:05.355</span> [Thread-<span class="hljs-number">7</span>] c.Test - running<br><span class="hljs-number">2022/05/15</span>-<span class="hljs-number">14</span>:<span class="hljs-number">34:06.367</span> [Thread-<span class="hljs-number">7</span>] c.Test - end<br></code></pre></td></tr></table></figure>

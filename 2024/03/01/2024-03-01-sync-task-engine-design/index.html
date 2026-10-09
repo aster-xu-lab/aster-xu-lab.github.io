@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="背景2024 年，订单中心需要将销售、采购、售后、开票等单据同步到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS、抖音、快手……）。最初的做法很简单：每接入一个新系统就写一个独立的 xxl-job Handler。很快问题就来了——  重复代码太多：每个 Job 都要自己写失败重试、并发控制、错误告警，写到最后自己都搞不清哪个是哪个 扩展性差：每次加新系统都要改 xxl-job 调度配置，手滑配">
+    <meta name="description" content="背景2024 年，订单中心需要将销售、采购、售后、开票等单据同步到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS、抖音、快手……）。最初的做法很简单：每接入一个新系统就写一个独立的 xxl-job Handler。很快问题就来了——  重复代码太多：每个 Job 都要自己写失败重试、并发控制、错误告警，写到最后自己都搞不清哪个是哪个 扩展性差：每次加新系统都要改 xxl-job 调度配置，手滑">
 <meta property="og:type" content="article">
 <meta property="og:title" content="轻量级业务任务编排引擎 SyncTask Engine 设计手记">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/03/01/2024-03-01-sync-task-engine-design/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="背景2024 年，订单中心需要将销售、采购、售后、开票等单据同步到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS、抖音、快手……）。最初的做法很简单：每接入一个新系统就写一个独立的 xxl-job Handler。很快问题就来了——  重复代码太多：每个 Job 都要自己写失败重试、并发控制、错误告警，写到最后自己都搞不清哪个是哪个 扩展性差：每次加新系统都要改 xxl-job 调度配置，手滑配">
+<meta property="og:description" content="背景2024 年，订单中心需要将销售、采购、售后、开票等单据同步到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS、抖音、快手……）。最初的做法很简单：每接入一个新系统就写一个独立的 xxl-job Handler。很快问题就来了——  重复代码太多：每个 Job 都要自己写失败重试、并发控制、错误告警，写到最后自己都搞不清哪个是哪个 扩展性差：每次加新系统都要改 xxl-job 调度配置，手滑">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-03-01T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-27T08:59:34.885Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.785Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="SPI">
@@ -90,7 +90,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -103,7 +104,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -160,6 +161,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -253,6 +266,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -386,7 +413,8 @@
             
               <div class="markdown-body">
                 
-                <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>2024 年，订单中心需要将销售、采购、售后、开票等单据同步到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS、抖音、快手……）。最初的做法很简单：每接入一个新系统就写一个独立的 xxl-job Handler。很快问题就来了——</p>
+                <hr>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>2024 年，订单中心需要将销售、采购、售后、开票等单据同步到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS、抖音、快手……）。最初的做法很简单：每接入一个新系统就写一个独立的 xxl-job Handler。很快问题就来了——</p>
 <ul>
 <li><strong>重复代码太多</strong>：每个 Job 都要自己写失败重试、并发控制、错误告警，写到最后自己都搞不清哪个是哪个</li>
 <li><strong>扩展性差</strong>：每次加新系统都要改 xxl-job 调度配置，手滑配错 cron 就是事故</li>

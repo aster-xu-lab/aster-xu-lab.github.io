@@ -19,16 +19,16 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="习题卖票练习测试下面代码是否存在线程安全问题，并尝试改正 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172package sync.test;import lombok.exte">
+    <meta name="description" content="习题卖票练习测试下面代码是否存在线程安全问题，并尝试改正 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172package sync.test;import lombok.ext">
 <meta property="og:type" content="article">
 <meta property="og:title" content="3.4、线程安全习题">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/09/02/2021-09-02-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E4%B9%A0%E9%A2%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="习题卖票练习测试下面代码是否存在线程安全问题，并尝试改正 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172package sync.test;import lombok.exte">
+<meta property="og:description" content="习题卖票练习测试下面代码是否存在线程安全问题，并尝试改正 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172package sync.test;import lombok.ext">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bf5735e83d6fd69b5cd5cc890d0ad171.png">
 <meta property="article:published_time" content="2021-09-02T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.733Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.797Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JUC">
 <meta property="article:tag" content="Java并发">
@@ -89,7 +89,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -102,7 +103,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -159,6 +160,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -252,6 +265,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -385,7 +412,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="习题"><a href="#习题" class="headerlink" title="习题"></a>习题</h1><h2 id="卖票练习"><a href="#卖票练习" class="headerlink" title="卖票练习"></a>卖票练习</h2><p>测试下面代码是否存在线程安全问题，并尝试改正</p>
+                <hr>
+<h1 id="习题"><a href="#习题" class="headerlink" title="习题"></a>习题</h1><h2 id="卖票练习"><a href="#卖票练习" class="headerlink" title="卖票练习"></a>卖票练习</h2><p>测试下面代码是否存在线程安全问题，并尝试改正</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">package</span> sync.test;<br><br><span class="hljs-keyword">import</span> lombok.extern.slf4j.Slf4j;<br><br><span class="hljs-keyword">import</span> java.util.ArrayList;<br><span class="hljs-keyword">import</span> java.util.List;<br><span class="hljs-keyword">import</span> java.util.Random;<br><span class="hljs-keyword">import</span> java.util.Vector;<br><br><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@author</span>: 言叶长琴</span><br><span class="hljs-comment"> */</span><br><span class="hljs-meta">@Slf4j(topic = &quot;c.ExerciseSell&quot;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ExerciseSell</span> &#123;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">TicketWindow</span> <span class="hljs-variable">ticketWindow</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">TicketWindow</span>(<span class="hljs-number">1000</span>);<br>        List&lt;Thread&gt; list = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;&gt;();<br>        <span class="hljs-comment">// 用来存储卖出去多少张票</span><br>        List&lt;Integer&gt; sellCount = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Vector</span>&lt;&gt;();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">1000</span>; i++) &#123;<br>            <span class="hljs-type">Thread</span> <span class="hljs-variable">t</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>                <span class="hljs-comment">// 分析这里的竞态条件</span><br>                <span class="hljs-type">int</span> <span class="hljs-variable">count</span> <span class="hljs-operator">=</span> ticketWindow.sell(randomAmount());<br>                sellCount.add(count);<br>            &#125;);<br>            list.add(t);<br>            t.start();<br>        &#125;<br>        list.forEach((t) -&gt; &#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                t.join();<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                e.printStackTrace();<br>            &#125;<br>        &#125;);<br>        <span class="hljs-comment">// 买出去的票求和</span><br>        log.debug(<span class="hljs-string">&quot;selled count:&#123;&#125;&quot;</span>, sellCount.stream().mapToInt(c -&gt; c).sum());<br>        <span class="hljs-comment">// 剩余票数</span><br>        log.debug(<span class="hljs-string">&quot;remainder count:&#123;&#125;&quot;</span>, ticketWindow.getCount());<br>    &#125;<br><br>    <span class="hljs-comment">// Random 为线程安全</span><br>    <span class="hljs-keyword">static</span> <span class="hljs-type">Random</span> <span class="hljs-variable">random</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Random</span>();<br><br>    <span class="hljs-comment">// 随机 1~5</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">randomAmount</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> random.nextInt(<span class="hljs-number">5</span>) + <span class="hljs-number">1</span>;<br>    &#125;<br><br>&#125;<br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">TicketWindow</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> count;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">TicketWindow</span><span class="hljs-params">(<span class="hljs-type">int</span> count)</span> &#123;<br>        <span class="hljs-built_in">this</span>.count = count;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">getCount</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> count;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">sell</span><span class="hljs-params">(<span class="hljs-type">int</span> amount)</span> &#123;<br>        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.count &gt;= amount) &#123;<br>            <span class="hljs-built_in">this</span>.count -= amount;<br>            <span class="hljs-keyword">return</span> amount;<br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>sell()方法加synchronized</p>
 <p>另外，用下面的代码行不行，为什么？</p>

@@ -19,19 +19,19 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="概念这次我们主要关注的是黄色部分，内存的分配与回收 什么是垃圾在提到什么是垃圾之前，我们先看下面一张图从上图我们可以很明确的知道，Java 和 C++语言的区别，就在于垃圾收集技术和内存动态分配上，C语言没有垃圾收集技术，需要我们手动的收集。 垃圾收集，不是Java语言的伴生产物。早在1960年，第一门开始使用内存动态分配和垃圾收集技术的Lisp语言诞生。 关于垃圾收集有三个经典问题：  哪些内存">
+    <meta name="description" content="概念这次我们主要关注的是黄色部分，内存的分配与回收 什么是垃圾在提到什么是垃圾之前，我们先看下面一张图从上图我们可以很明确的知道，Java 和 C++语言的区别，就在于垃圾收集技术和内存动态分配上，C语言没有垃圾收集技术，需要我们手动的收集。 垃圾收集，不是Java语言的伴生产物。早在1960年，第一门开始使用内存动态分配和垃圾收集技术的Lisp语言诞生。 关于垃圾收集有三个经典问题：  哪些内">
 <meta property="og:type" content="article">
 <meta property="og:title" content="垃圾回收概述">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/05/09/2021-05-09-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%A6%82%E8%BF%B0/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="概念这次我们主要关注的是黄色部分，内存的分配与回收 什么是垃圾在提到什么是垃圾之前，我们先看下面一张图从上图我们可以很明确的知道，Java 和 C++语言的区别，就在于垃圾收集技术和内存动态分配上，C语言没有垃圾收集技术，需要我们手动的收集。 垃圾收集，不是Java语言的伴生产物。早在1960年，第一门开始使用内存动态分配和垃圾收集技术的Lisp语言诞生。 关于垃圾收集有三个经典问题：  哪些内存">
+<meta property="og:description" content="概念这次我们主要关注的是黄色部分，内存的分配与回收 什么是垃圾在提到什么是垃圾之前，我们先看下面一张图从上图我们可以很明确的知道，Java 和 C++语言的区别，就在于垃圾收集技术和内存动态分配上，C语言没有垃圾收集技术，需要我们手动的收集。 垃圾收集，不是Java语言的伴生产物。早在1960年，第一门开始使用内存动态分配和垃圾收集技术的Lisp语言诞生。 关于垃圾收集有三个经典问题：  哪些内">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e5d29f5afef4915f2720e4fa90e9a67f.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7c9a607eb53a5cc1aea6096292a32846.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fe9246e81094f0d01ca10535e48e138a.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/03d0a24e4d2f5db5cc13be5808df0b52.png">
 <meta property="article:published_time" content="2021-05-09T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.729Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.792Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="GC">
 <meta property="article:tag" content="JVM">
@@ -93,7 +93,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -106,7 +107,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -163,6 +164,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -256,6 +269,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -389,7 +416,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><p>这次我们主要关注的是黄色部分，内存的分配与回收<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e5d29f5afef4915f2720e4fa90e9a67f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+                <hr>
+<h1 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h1><p>这次我们主要关注的是黄色部分，内存的分配与回收<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e5d29f5afef4915f2720e4fa90e9a67f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
 <h1 id="什么是垃圾"><a href="#什么是垃圾" class="headerlink" title="什么是垃圾"></a>什么是垃圾</h1><p>在提到什么是垃圾之前，我们先看下面一张图<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7c9a607eb53a5cc1aea6096292a32846.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>从上图我们可以很明确的知道，Java 和 C++语言的区别，就在于垃圾收集技术和内存动态分配上，C语言没有垃圾收集技术，需要我们手动的收集。</p>
 <p>垃圾收集，不是Java语言的伴生产物。早在1960年，第一门开始使用内存动态分配和垃圾收集技术的Lisp语言诞生。 关于垃圾收集有三个经典问题：</p>
 <ul>

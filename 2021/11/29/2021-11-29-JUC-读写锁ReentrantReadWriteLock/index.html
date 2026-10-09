@@ -19,12 +19,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="1、ReentrantReadWriteLock当读操作远远高于写操作时，这时候使用读写锁让读-读可以并发，提高性能。类似于数据库中的select ... from ... lock in share mode 提供一个数据容器类分别使用读锁保护数据的read()方法，写锁保护数据的write()方法 123456789101112131415161718192021222324252627282">
+    <meta name="description" content="1、ReentrantReadWriteLock当读操作远远高于写操作时，这时候使用读写锁让读-读可以并发，提高性能。类似于数据库中的select ... from ... lock in share mode 提供一个数据容器类分别使用读锁保护数据的read()方法，写锁保护数据的write()方法 12345678910111213141516171819202122232425262728">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JUC-读写锁ReentrantReadWriteLock">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/11/29/2021-11-29-JUC-%E8%AF%BB%E5%86%99%E9%94%81ReentrantReadWriteLock/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="1、ReentrantReadWriteLock当读操作远远高于写操作时，这时候使用读写锁让读-读可以并发，提高性能。类似于数据库中的select ... from ... lock in share mode 提供一个数据容器类分别使用读锁保护数据的read()方法，写锁保护数据的write()方法 123456789101112131415161718192021222324252627282">
+<meta property="og:description" content="1、ReentrantReadWriteLock当读操作远远高于写操作时，这时候使用读写锁让读-读可以并发，提高性能。类似于数据库中的select ... from ... lock in share mode 提供一个数据容器类分别使用读锁保护数据的read()方法，写锁保护数据的write()方法 12345678910111213141516171819202122232425262728">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/74379c6c52c807d99aede8d1f7d3597d.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/47c0493f46218f5f8c5eae2ec89d4bbd.png">
@@ -43,7 +43,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c98a75208007a86aebbcbe51afa2e026.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/73ed4c257610233205fa57c7ec4dc9ca.png">
 <meta property="article:published_time" content="2021-11-29T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.737Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.792Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JUC">
 <meta property="article:tag" content="Java并发">
@@ -105,7 +105,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -118,7 +119,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -175,6 +176,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -268,6 +281,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -401,7 +428,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="1、ReentrantReadWriteLock"><a href="#1、ReentrantReadWriteLock" class="headerlink" title="1、ReentrantReadWriteLock"></a>1、ReentrantReadWriteLock</h1><p>当读操作远远高于写操作时，这时候使用<code>读写锁</code>让<code>读-读</code>可以并发，提高性能。类似于数据库中的<code>select ... from ... lock in share mode</code></p>
+                <hr>
+<h1 id="1、ReentrantReadWriteLock"><a href="#1、ReentrantReadWriteLock" class="headerlink" title="1、ReentrantReadWriteLock"></a>1、ReentrantReadWriteLock</h1><p>当读操作远远高于写操作时，这时候使用<code>读写锁</code>让<code>读-读</code>可以并发，提高性能。类似于数据库中的<code>select ... from ... lock in share mode</code></p>
 <p>提供一个<code>数据容器类</code>分别使用读锁保护数据的<code>read()</code>方法，写锁保护数据的<code>write()</code>方法</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">DataContainer</span> &#123;<br><br>    <span class="hljs-keyword">private</span> Object data;<br>    <span class="hljs-keyword">private</span> <span class="hljs-type">ReentrantReadWriteLock</span> <span class="hljs-variable">rw</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ReentrantReadWriteLock</span>();<br>    <span class="hljs-keyword">private</span> ReentrantReadWriteLock.<span class="hljs-type">ReadLock</span> <span class="hljs-variable">r</span> <span class="hljs-operator">=</span> rw.readLock();<br>    <span class="hljs-keyword">private</span> ReentrantReadWriteLock.<span class="hljs-type">WriteLock</span> <span class="hljs-variable">w</span> <span class="hljs-operator">=</span> rw.writeLock();<br><br>    <span class="hljs-keyword">public</span> Object <span class="hljs-title function_">read</span><span class="hljs-params">()</span> &#123;<br>        log.debug(<span class="hljs-string">&quot;获取读锁&quot;</span>);<br>        r.lock();<br>        <span class="hljs-keyword">try</span> &#123;<br>            log.debug(<span class="hljs-string">&quot;读取&quot;</span>);<br>            sleep(<span class="hljs-number">1</span>);<br>            <span class="hljs-keyword">return</span> data;<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            log.debug(<span class="hljs-string">&quot;释放读锁&quot;</span>);<br>            r.unlock();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> Object <span class="hljs-title function_">write</span><span class="hljs-params">()</span> &#123;<br>        log.debug(<span class="hljs-string">&quot;获取写锁&quot;</span>);<br>        w.lock();<br>        <span class="hljs-keyword">try</span> &#123;<br>            log.debug(<span class="hljs-string">&quot;写入&quot;</span>);<br>            sleep(<span class="hljs-number">1</span>);<br>            <span class="hljs-keyword">return</span> data;<br>        &#125; <span class="hljs-keyword">finally</span> &#123;<br>            log.debug(<span class="hljs-string">&quot;释放写锁&quot;</span>);<br>            w.unlock();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">sleep</span><span class="hljs-params">(<span class="hljs-type">long</span> second)</span> &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            Thread.sleep(second * <span class="hljs-number">1000</span>);<br>        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>            e.printStackTrace();<br>        &#125;<br>    &#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
 

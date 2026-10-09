@@ -19,12 +19,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="本章内容上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性 这一张进一步深入学习共享变量在多线程之间的【可见性】问题与多条指令执行时的【有序性】问题 1、Java内存模型JMM即Java Menory Model，它定义了主存，工作内存的抽象概念，底层对应着CPU寄存器、缓存、硬件内存、CPU指令优化等。 JMM 体现在以下几个方面  原子性 - 保证指令不会受到线程上下">
+    <meta name="description" content="本章内容上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性 这一张进一步深入学习共享变量在多线程之间的【可见性】问题与多条指令执行时的【有序性】问题 1、Java内存模型JMM即Java Menory Model，它定义了主存，工作内存的抽象概念，底层对应着CPU寄存器、缓存、硬件内存、CPU指令优化等。 JMM 体现在以下几个方面  原子性 - 保证指令不会受到线程上">
 <meta property="og:type" content="article">
 <meta property="og:title" content="4、Java内存模型、volatile原理、CPU缓存结构、balking模式、单例模式">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/10/04/2021-10-04-Java%E5%86%85%E5%AD%98%E6%A8%A1%E5%9E%8Bvolatile%E5%8E%9F%E7%90%86CPU%E7%BC%93%E5%AD%98%E7%BB%93%E6%9E%84balking%E6%A8%A1%E5%BC%8F%E5%8D%95%E4%BE%8B%E6%A8%A1%E5%BC%8F/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="本章内容上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性 这一张进一步深入学习共享变量在多线程之间的【可见性】问题与多条指令执行时的【有序性】问题 1、Java内存模型JMM即Java Menory Model，它定义了主存，工作内存的抽象概念，底层对应着CPU寄存器、缓存、硬件内存、CPU指令优化等。 JMM 体现在以下几个方面  原子性 - 保证指令不会受到线程上下">
+<meta property="og:description" content="本章内容上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性 这一张进一步深入学习共享变量在多线程之间的【可见性】问题与多条指令执行时的【有序性】问题 1、Java内存模型JMM即Java Menory Model，它定义了主存，工作内存的抽象概念，底层对应着CPU寄存器、缓存、硬件内存、CPU指令优化等。 JMM 体现在以下几个方面  原子性 - 保证指令不会受到线程上">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7ae16d2166e14e013880cbf7cbbcb26.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/026880714100968b89d8d0f2649e3977.png">
@@ -44,7 +44,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ad80968a8985bd8c7116ef4c3a874f9d.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5f6c5efc68e5aa7b79e34dc496f7c561.png">
 <meta property="article:published_time" content="2021-10-04T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.734Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.805Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JMM">
 <meta property="article:tag" content="JUC">
@@ -107,7 +107,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -120,7 +121,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -177,6 +178,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -270,6 +283,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -403,7 +430,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="本章内容"><a href="#本章内容" class="headerlink" title="本章内容"></a>本章内容</h1><p>上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性</p>
+                <hr>
+<h1 id="本章内容"><a href="#本章内容" class="headerlink" title="本章内容"></a>本章内容</h1><p>上一章讲解的Monitor主要关注的是访问共享变量时，保证临界区代码的原子性</p>
 <p>这一张进一步深入学习共享变量在多线程之间的【可见性】问题与多条指令执行时的【有序性】问题</p>
 <h1 id="1、Java内存模型"><a href="#1、Java内存模型" class="headerlink" title="1、Java内存模型"></a>1、Java内存模型</h1><p>JMM即Java Menory Model，它定义了主存，工作内存的抽象概念，底层对应着CPU寄存器、缓存、硬件内存、CPU指令优化等。</p>
 <p>JMM 体现在以下几个方面</p>

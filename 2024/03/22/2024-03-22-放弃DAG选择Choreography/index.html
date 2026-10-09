@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎一个有争议的架构决策同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的链式依赖。 遇到链式依赖，99% 的工程师第一反应是：”用 DAG 编排引擎啊！” 我最初也是这样想的。我调研了 Temporal、Conductor、nFlow、Flowable、Airflow、Az">
+    <meta name="description" content="放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎一个有争议的架构决策同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的链式依赖。 遇到链式依赖，99% 的工程师第一反应是：”用 DAG 编排引擎啊！” 我最初也是这样想的。我调研了 Temporal、Conductor、nFlow、Flowable、Airflow、A">
 <meta property="og:type" content="article">
 <meta property="og:title" content="放弃DAG：为什么我用afterExecute埋点替代了编排引擎">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/03/22/2024-03-22-%E6%94%BE%E5%BC%83DAG%E9%80%89%E6%8B%A9Choreography/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎一个有争议的架构决策同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的链式依赖。 遇到链式依赖，99% 的工程师第一反应是：”用 DAG 编排引擎啊！” 我最初也是这样想的。我调研了 Temporal、Conductor、nFlow、Flowable、Airflow、Az">
+<meta property="og:description" content="放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎一个有争议的架构决策同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的链式依赖。 遇到链式依赖，99% 的工程师第一反应是：”用 DAG 编排引擎啊！” 我最初也是这样想的。我调研了 Temporal、Conductor、nFlow、Flowable、Airflow、A">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-03-22T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.855Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.807Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ADR">
 <meta property="article:tag" content="Choreography">
@@ -91,7 +91,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -104,7 +105,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -161,6 +162,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -254,6 +267,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -387,7 +414,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="放弃-DAG：为什么我用-afterExecute-埋点替代了编排引擎"><a href="#放弃-DAG：为什么我用-afterExecute-埋点替代了编排引擎" class="headerlink" title="放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎"></a>放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎</h1><h2 id="一个有争议的架构决策"><a href="#一个有争议的架构决策" class="headerlink" title="一个有争议的架构决策"></a>一个有争议的架构决策</h2><p>同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的<strong>链式依赖</strong>。</p>
+                <hr>
+<h1 id="放弃-DAG：为什么我用-afterExecute-埋点替代了编排引擎"><a href="#放弃-DAG：为什么我用-afterExecute-埋点替代了编排引擎" class="headerlink" title="放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎"></a>放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎</h1><h2 id="一个有争议的架构决策"><a href="#一个有争议的架构决策" class="headerlink" title="一个有争议的架构决策"></a>一个有争议的架构决策</h2><p>同步任务引擎中有一个高频场景：订单同步完成后需要自动触发库存同步，库存同步完成后触发物流同步。这是一个典型的<strong>链式依赖</strong>。</p>
 <p>遇到链式依赖，99% 的工程师第一反应是：”用 DAG 编排引擎啊！”</p>
 <p>我最初也是这样想的。我调研了 Temporal、Conductor、nFlow、Flowable、Airflow、Azkaban 六个方案，然后做了一个让很多人意外的决定：<strong>全部放弃，用最简单的 afterExecute 埋点实现</strong>。</p>
 <p>这个决策在当时是有争议的。今天这篇文章记录完整的思考过程。</p>

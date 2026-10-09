@@ -27,7 +27,7 @@
 <meta property="og:description" content="1、固定运行顺序比如，必须先2后1打印 1.1、wait notify 版本1234567891011121314151617181920212223242526static Object obj &#x3D; new Object();    static boolean t2runed &#x3D; false;    public static void main(String[] args) &#123;">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-09-21T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.734Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.791Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JUC">
 <meta property="article:tag" content="Java并发">
@@ -87,7 +87,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -100,7 +101,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -157,6 +158,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -250,6 +263,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -383,7 +410,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="1、固定运行顺序"><a href="#1、固定运行顺序" class="headerlink" title="1、固定运行顺序"></a>1、固定运行顺序</h1><p>比如，必须先2后1打印</p>
+                <hr>
+<h1 id="1、固定运行顺序"><a href="#1、固定运行顺序" class="headerlink" title="1、固定运行顺序"></a>1、固定运行顺序</h1><p>比如，必须先2后1打印</p>
 <h2 id="1-1、wait-notify-版本"><a href="#1-1、wait-notify-版本" class="headerlink" title="1.1、wait notify 版本"></a>1.1、wait notify 版本</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">Object</span> <span class="hljs-variable">obj</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br>    <span class="hljs-keyword">static</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">t2runed</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">Thread</span> <span class="hljs-variable">t1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            <span class="hljs-keyword">synchronized</span> (obj) &#123;<br>                <span class="hljs-keyword">while</span>(!t2runed) &#123;<br>                    <span class="hljs-keyword">try</span> &#123;<br>                        obj.wait();<br>                    &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                        e.printStackTrace();<br>                    &#125;<br>                &#125;<br>                System.out.println(<span class="hljs-number">1</span>);<br>            &#125;<br><br>        &#125;, <span class="hljs-string">&quot;t1&quot;</span>);<br>        <span class="hljs-type">Thread</span> <span class="hljs-variable">t2</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            System.out.println(<span class="hljs-number">2</span>);<br>            <span class="hljs-keyword">synchronized</span> (obj) &#123;<br>                t2runed = <span class="hljs-literal">true</span>;<br>                obj.notifyAll();<br>            &#125;<br>        &#125;,<span class="hljs-string">&quot;t2&quot;</span>);<br>        t1.start();<br>        t2.start();<br>    &#125;<br></code></pre></td></tr></table></figure>
 <p>输出</p>
 <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs">2<br>1<br></code></pre></td></tr></table></figure>

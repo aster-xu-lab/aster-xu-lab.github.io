@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="简介用来进行线程同步协作，等待所有线程完成倒计时。 其中构造参数用来初始化等待计数值，await()用来等待计数归零，countDown()用来让计数减一 12345678910111213141516171819202122232425262728293031323334353637public static void main(String[] args) throws Interrupted">
+    <meta name="description" content="简介用来进行线程同步协作，等待所有线程完成倒计时。 其中构造参数用来初始化等待计数值，await()用来等待计数归零，countDown()用来让计数减一 12345678910111213141516171819202122232425262728293031323334353637public static void main(String[] args) throws Interrupte">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JUC-CountdownLatch">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/12/18/2021-12-18-JUC-CountdownLatch/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="简介用来进行线程同步协作，等待所有线程完成倒计时。 其中构造参数用来初始化等待计数值，await()用来等待计数归零，countDown()用来让计数减一 12345678910111213141516171819202122232425262728293031323334353637public static void main(String[] args) throws Interrupted">
+<meta property="og:description" content="简介用来进行线程同步协作，等待所有线程完成倒计时。 其中构造参数用来初始化等待计数值，await()用来等待计数归零，countDown()用来让计数减一 12345678910111213141516171819202122232425262728293031323334353637public static void main(String[] args) throws Interrupte">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-12-18T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.738Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.784Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CountDownLatch">
 <meta property="article:tag" content="JUC">
@@ -87,7 +87,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -100,7 +101,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -157,6 +158,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -250,6 +263,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -383,7 +410,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>用来进行线程同步协作，等待所有线程完成倒计时。</p>
+                <hr>
+<h1 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h1><p>用来进行线程同步协作，等待所有线程完成倒计时。</p>
 <p>其中构造参数用来初始化等待计数值，await()用来等待计数归零，countDown()用来让计数减一</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br>        <span class="hljs-type">CountDownLatch</span> <span class="hljs-variable">latch</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">CountDownLatch</span>(<span class="hljs-number">3</span>);<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            log.debug(<span class="hljs-string">&quot;begin&quot;</span>);<br>            <span class="hljs-keyword">try</span> &#123;<br>                Thread.sleep(<span class="hljs-number">1000</span>);<br>                latch.countDown();<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                e.printStackTrace();<br>            &#125;<br>            log.debug(<span class="hljs-string">&quot;end&#123;&#125;&quot;</span>, latch.getCount());<br>        &#125;).start();<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            log.debug(<span class="hljs-string">&quot;begin&quot;</span>);<br>            <span class="hljs-keyword">try</span> &#123;<br>                Thread.sleep(<span class="hljs-number">2000</span>);<br>                latch.countDown();<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                e.printStackTrace();<br>            &#125;<br>            log.debug(<span class="hljs-string">&quot;end&#123;&#125;&quot;</span>, latch.getCount());<br>        &#125;).start();<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>            log.debug(<span class="hljs-string">&quot;begin&quot;</span>);<br>            <span class="hljs-keyword">try</span> &#123;<br>                Thread.sleep(<span class="hljs-number">1500</span>);<br>                latch.countDown();<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                e.printStackTrace();<br>            &#125;<br>            log.debug(<span class="hljs-string">&quot;end&#123;&#125;&quot;</span>, latch.getCount());<br>        &#125;).start();<br><br>        log.debug(<span class="hljs-string">&quot;waiting...&quot;</span>);<br>        latch.await();<br>        log.debug(<span class="hljs-string">&quot;wait end...&quot;</span>);<br>    &#125;<br></code></pre></td></tr></table></figure>
 

@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="背景2024 年，订单中心需要把单据同步到 10+ 个外部系统。每接一个新系统就写一个 xxl-job Handler，重复代码越来越多。 一年后 WMS 中心抄了这套设计，44 个 Handler。然后我们就陷入了两个项目维护同一套编排逻辑的窘境。 2026 年 7 月，SyncTask Engine 来了。但第一版其实只是个核心引擎——接入方得自己写 Java Config 组装 Bean，引">
+    <meta name="description" content="背景2024 年，订单中心需要把单据同步到 10+ 个外部系统。每接一个新系统就写一个 xxl-job Handler，重复代码越来越多。 一年后 WMS 中心抄了这套设计，44 个 Handler。然后我们就陷入了两个项目维护同一套编排逻辑的窘境。 2026 年 7 月，SyncTask Engine 来了。但第一版其实只是个核心引擎——接入方得自己写 Java Config 组装 Bean，">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SyncTask Engine 全家桶：一个依赖就能跑的轻量级任务编排引擎">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/03/08/2024-03-08-sync-task-engine-family-bucket/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="背景2024 年，订单中心需要把单据同步到 10+ 个外部系统。每接一个新系统就写一个 xxl-job Handler，重复代码越来越多。 一年后 WMS 中心抄了这套设计，44 个 Handler。然后我们就陷入了两个项目维护同一套编排逻辑的窘境。 2026 年 7 月，SyncTask Engine 来了。但第一版其实只是个核心引擎——接入方得自己写 Java Config 组装 Bean，引">
+<meta property="og:description" content="背景2024 年，订单中心需要把单据同步到 10+ 个外部系统。每接一个新系统就写一个 xxl-job Handler，重复代码越来越多。 一年后 WMS 中心抄了这套设计，44 个 Handler。然后我们就陷入了两个项目维护同一套编排逻辑的窘境。 2026 年 7 月，SyncTask Engine 来了。但第一版其实只是个核心引擎——接入方得自己写 Java Config 组装 Bean，">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-03-08T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-27T08:59:34.886Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.797Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="MyBatis">
@@ -92,7 +92,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -105,7 +106,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -162,6 +163,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -255,6 +268,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -388,7 +415,8 @@
             
               <div class="markdown-body">
                 
-                <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>2024 年，订单中心需要把单据同步到 10+ 个外部系统。每接一个新系统就写一个 xxl-job Handler，重复代码越来越多。</p>
+                <hr>
+<h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>2024 年，订单中心需要把单据同步到 10+ 个外部系统。每接一个新系统就写一个 xxl-job Handler，重复代码越来越多。</p>
 <p>一年后 WMS 中心抄了这套设计，44 个 Handler。然后我们就陷入了两个项目维护同一套编排逻辑的窘境。</p>
 <p>2026 年 7 月，SyncTask Engine 来了。但第一版其实只是个核心引擎——接入方得自己写 Java Config 组装 Bean，引用多个依赖。<strong>不够开箱即用。</strong></p>
 <p>这一轮重构的思路很明确：像 Spring Boot 官方 Starter 那样，<strong>一个依赖，默认自带最佳实践</strong>。</p>

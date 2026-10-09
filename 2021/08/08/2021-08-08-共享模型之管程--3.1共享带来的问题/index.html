@@ -19,12 +19,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="1、共享带来的问题小故事 老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快  小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用 但小南不能一天24小事使用算盘，他经常要小憩一会儿（sleep），又或者是去吃饭上厕所（阻塞io操作），有时还需要一根烟，没烟的时候思绪全无（wait），这些情况称为阻塞  在这些时候，算盘没有利用起来（不能收钱了），老王">
+    <meta name="description" content="1、共享带来的问题小故事 老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快  小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用 但小南不能一天24小事使用算盘，他经常要小憩一会儿（sleep），又或者是去吃饭上厕所（阻塞io操作），有时还需要一根烟，没烟的时候思绪全无（wait），这些情况称为阻塞  在这些时候，算盘没有利用起来（不能收钱了），老">
 <meta property="og:type" content="article">
 <meta property="og:title" content="3、共享模型之管程 -- 3.1、共享带来的问题">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/08/08/2021-08-08-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E7%AE%A1%E7%A8%8B--3.1%E5%85%B1%E4%BA%AB%E5%B8%A6%E6%9D%A5%E7%9A%84%E9%97%AE%E9%A2%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="1、共享带来的问题小故事 老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快  小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用 但小南不能一天24小事使用算盘，他经常要小憩一会儿（sleep），又或者是去吃饭上厕所（阻塞io操作），有时还需要一根烟，没烟的时候思绪全无（wait），这些情况称为阻塞  在这些时候，算盘没有利用起来（不能收钱了），老王">
+<meta property="og:description" content="1、共享带来的问题小故事 老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快  小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用 但小南不能一天24小事使用算盘，他经常要小憩一会儿（sleep），又或者是去吃饭上厕所（阻塞io操作），有时还需要一根烟，没烟的时候思绪全无（wait），这些情况称为阻塞  在这些时候，算盘没有利用起来（不能收钱了），老">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/226feb641c0b0e9a3a1fb99600d96279.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f208fe0ddfc89d0d2e16214954173c87.png">
@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5ca2d7d4423c741afaa4bb9094650d97.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a9f50f13054a3138f4bc9ba8ac03833b.png">
 <meta property="article:published_time" content="2021-08-08T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.732Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.787Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JUC">
 <meta property="article:tag" content="Java并发">
@@ -97,7 +97,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -110,7 +111,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -167,6 +168,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -260,6 +273,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -393,7 +420,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="1、共享带来的问题"><a href="#1、共享带来的问题" class="headerlink" title="1、共享带来的问题"></a>1、共享带来的问题</h1><h2 id="小故事"><a href="#小故事" class="headerlink" title="小故事"></a>小故事</h2><ul>
+                <hr>
+<h1 id="1、共享带来的问题"><a href="#1、共享带来的问题" class="headerlink" title="1、共享带来的问题"></a>1、共享带来的问题</h1><h2 id="小故事"><a href="#小故事" class="headerlink" title="小故事"></a>小故事</h2><ul>
 <li>老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快</li>
 <li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/226feb641c0b0e9a3a1fb99600d96279.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
 <li>小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用</li>

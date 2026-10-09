@@ -19,12 +19,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="System.gc()的理解在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。 然而system.gc() 调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效) JVM实现者可以通过system.gc() 调用来决定JVM的GC行为。而一般情况下">
+    <meta name="description" content="System.gc()的理解在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。 然而system.gc() 调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效) JVM实现者可以通过system.gc() 调用来决定JVM的GC行为。而一般情况">
 <meta property="og:type" content="article">
 <meta property="og:title" content="垃圾回收相关概念">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/05/16/2021-05-16-%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E7%9B%B8%E5%85%B3%E6%A6%82%E5%BF%B5/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="System.gc()的理解在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。 然而system.gc() 调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效) JVM实现者可以通过system.gc() 调用来决定JVM的GC行为。而一般情况下">
+<meta property="og:description" content="System.gc()的理解在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。 然而system.gc() 调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效) JVM实现者可以通过system.gc() 调用来决定JVM的GC行为。而一般情况">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31c2399ee88d39728234f2e0517c63d7.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3acca7a09c5f5c9f2647c9dc58be3756.png">
@@ -35,7 +35,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ef02ba82c1deaf9d9a10c9fd2824c61f.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0108a938e38bcfa21d0727e47f0adf3c.png">
 <meta property="article:published_time" content="2021-05-16T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.730Z">
+<meta property="article:modified_time" content="2026-10-09T06:51:24.789Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="GC">
 <meta property="article:tag" content="JVM">
@@ -97,7 +97,8 @@
 
 
   
-<meta name="generator" content="Hexo 8.1.2"></head>
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
 
 
 <body>
@@ -110,7 +111,7 @@
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
-      <strong>Fluid</strong>
+      <strong>AsterXu Lab</strong>
     </a>
 
     <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
@@ -167,6 +168,18 @@
               <a class="nav-link" href="/tags/" target="_self">
                 <i class="iconfont icon-tags-fill"></i>
                 <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
               </a>
             </li>
           
@@ -260,6 +273,20 @@
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-tags-fill"></i>
                   <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
                 </div>
               </a>
             </div>
@@ -393,7 +420,8 @@
             
               <div class="markdown-body">
                 
-                <h1 id="System-gc-的理解"><a href="#System-gc-的理解" class="headerlink" title="System.gc()的理解"></a>System.gc()的理解</h1><p>在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。</p>
+                <hr>
+<h1 id="System-gc-的理解"><a href="#System-gc-的理解" class="headerlink" title="System.gc()的理解"></a>System.gc()的理解</h1><p>在默认情况下，通过system.gc（）者Runtime.getRuntime().gc() 的调用，会显式触发FullGC，同时对老年代和新生代进行回收，尝试释放被丢弃对象占用的内存。</p>
 <p>然而system.gc() 调用附带一个免责声明，无法保证对垃圾收集器的调用。(不能确保立即生效)</p>
 <p>JVM实现者可以通过system.gc() 调用来决定JVM的GC行为。而一般情况下，垃圾回收应该是自动进行的，无须手动触发，否则就太过于麻烦了。在一些特殊情况下，如我们正在编写一个性能基准，我们可以在运行之间调用System.gc()</p>
 <p>代码演示是否出发GC操作</p>
