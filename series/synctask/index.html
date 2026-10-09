@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="轻量级业务任务编排引擎：从「不做 DAG」的决策，到调度、可靠性、Starter，再到和 Agent 编排的对照。 推荐顺序一、设计取舍 轻量级业务任务编排引擎 SyncTask Engine 设计手记 放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎 SyncTask 引擎设计复盘：为什么主动选择「不做 DAG」（置顶）  二、调度与可靠性 SyncTaskJob 引擎">
+    <meta name="description" content="轻量级业务任务编排引擎。从「主动不做 DAG」的设计取舍，到调度、可靠性、Starter 接入，最后落到和 Agent 编排的对照。              共 15 篇，按推荐顺序连读。标 必读 的是这一系列的核心，时间有限先读这三篇。 一、设计取舍 轻量级业务任务编排引擎 SyncTask Engine 设计手记为什么自研而不用现成方案，引擎的核心设计是什么，">
 <meta property="og:type" content="website">
 <meta property="og:title" content="SyncTask 任务编排">
 <meta property="og:url" content="https://aster-xu-lab.github.io/series/synctask/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="轻量级业务任务编排引擎：从「不做 DAG」的决策，到调度、可靠性、Starter，再到和 Agent 编排的对照。 推荐顺序一、设计取舍 轻量级业务任务编排引擎 SyncTask Engine 设计手记 放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎 SyncTask 引擎设计复盘：为什么主动选择「不做 DAG」（置顶）  二、调度与可靠性 SyncTaskJob 引擎">
+<meta property="og:description" content="轻量级业务任务编排引擎。从「主动不做 DAG」的设计取舍，到调度、可靠性、Starter 接入，最后落到和 Agent 编排的对照。              共 15 篇，按推荐顺序连读。标 必读 的是这一系列的核心，时间有限先读这三篇。 一、设计取舍 轻量级业务任务编排引擎 SyncTask Engine 设计手记为什么自研而不用现成方案，引擎的核心设计是什么，">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-09T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-09T06:50:47.942Z">
+<meta property="article:modified_time" content="2026-10-09T08:14:23.409Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
 <meta name="twitter:card" content="summary_large_image">
@@ -39,6 +39,12 @@
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
 
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
 
 
 
@@ -89,7 +95,7 @@
   <header>
     
 
-<div class="header-inner" style="height: 60vh;">
+<div class="header-inner" style="height: 25vh;">
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
@@ -355,39 +361,72 @@
 
 <article class="page-content">
   <hr>
-<p>轻量级业务任务编排引擎：从「不做 DAG」的决策，到调度、可靠性、Starter，再到和 Agent 编排的对照。</p>
-<h2 id="推荐顺序"><a href="#推荐顺序" class="headerlink" title="推荐顺序"></a>推荐顺序</h2><h3 id="一、设计取舍"><a href="#一、设计取舍" class="headerlink" title="一、设计取舍"></a>一、设计取舍</h3><ol>
-<li><a href="/2024/03/01/2024-03-01-sync-task-engine-design/">轻量级业务任务编排引擎 SyncTask Engine 设计手记</a></li>
-<li><a href="/2024/03/22/2024-03-22-%E6%94%BE%E5%BC%83DAG%E9%80%89%E6%8B%A9Choreography/">放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎</a></li>
-<li><a href="/2026/06/03/2026-06-03-SyncTask%E5%BC%95%E6%93%8E%E8%AE%BE%E8%AE%A1%E5%A4%8D%E7%9B%98-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%81%9ADAG/">SyncTask 引擎设计复盘：为什么主动选择「不做 DAG」</a>（置顶）</li>
+<div class="markdown-body">
+
+<div class="note note-info">
+            <p>轻量级业务任务编排引擎。从「主动不做 DAG」的设计取舍，到调度、可靠性、Starter 接入，最后落到和 Agent 编排的对照。</p> 
+          </div>
+
+<p>共 15 篇，按推荐顺序连读。标 <span class="label label-primary">必读</span> 的是这一系列的核心，时间有限先读这三篇。</p>
+<h2 id="一、设计取舍"><a href="#一、设计取舍" class="headerlink" title="一、设计取舍"></a>一、设计取舍</h2><ol>
+<li><strong><a href="/2024/03/01/2024-03-01-sync-task-engine-design/">轻量级业务任务编排引擎 SyncTask Engine 设计手记</a></strong><br>为什么自研而不用现成方案，引擎的核心设计是什么，SPI 扩展点怎么玩。</li>
+<li><strong><a href="/2024/03/22/2024-03-22-%E6%94%BE%E5%BC%83DAG%E9%80%89%E6%8B%A9Choreography/">放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎</a></strong><br>同步链只有 11 个 Handler、链结构半年才变一次——为这种规模引入 DAG 值不值。</li>
+<li><strong><a href="/2026/06/03/2026-06-03-SyncTask%E5%BC%95%E6%93%8E%E8%AE%BE%E8%AE%A1%E5%A4%8D%E7%9B%98-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%81%9ADAG/">SyncTask 引擎设计复盘：为什么主动选择「不做 DAG」</a> <span class="label label-primary">必读</span></strong><br>49 + 44 个 Handler、80% 逻辑重复的业务现场，以及”主动不做三件事”背后的决策逻辑。</li>
 </ol>
-<h3 id="二、调度与可靠性"><a href="#二、调度与可靠性" class="headerlink" title="二、调度与可靠性"></a>二、调度与可靠性</h3><ol start="4">
-<li><a href="/2024/03/15/2024-03-15-SyncTaskJob%E5%BC%95%E6%93%8EV2%E5%8D%87%E7%BA%A7/">SyncTaskJob 引擎 V2：从 CountDownLatch 到 CompletableFuture</a></li>
-<li><a href="/2024/03/29/2024-03-29-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/">双层权重调度：分层时间轮在业务调度中的应用</a></li>
-<li><a href="/2026/07/10/2026-07-10-SyncTask%E8%B0%83%E5%BA%A6%E5%BC%95%E6%93%8E%E6%B7%B1%E6%8C%96-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E4%B8%8E%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/">SyncTask 调度引擎深挖：双层权重调度与分层时间轮</a></li>
-<li><a href="/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/">分布式任务引擎的可靠性设计：防重、断点续传与四级告警</a></li>
+<h2 id="二、调度与可靠性"><a href="#二、调度与可靠性" class="headerlink" title="二、调度与可靠性"></a>二、调度与可靠性</h2><ol start="4">
+<li><strong><a href="/2024/03/15/2024-03-15-SyncTaskJob%E5%BC%95%E6%93%8EV2%E5%8D%87%E7%BA%A7/">SyncTaskJob 引擎 V2：从 CountDownLatch 到 CompletableFuture</a></strong><br>93 个 Handler 的并行控制。V1 用 CountDownLatch 踩到的坑，以及 V2 换来的超时控制。</li>
+<li><strong><a href="/2024/03/29/2024-03-29-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/">双层权重调度：分层时间轮在业务调度中的应用</a></strong><br>新任务要快、失败要退避、扫描要省——三层要求怎么用调度组合同时满足。</li>
+<li><strong><a href="/2026/07/10/2026-07-10-SyncTask%E8%B0%83%E5%BA%A6%E5%BC%95%E6%93%8E%E6%B7%B1%E6%8C%96-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E4%B8%8E%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/">SyncTask 调度引擎深挖：双层权重调度与分层时间轮</a> <span class="label label-primary">必读</span></strong><br>一套<strong>没有引入任何延迟队列或退避算法</strong>的调度方案，以及它为什么不会被故障拖垮。</li>
+<li><strong><a href="/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/">分布式任务引擎的可靠性设计：防重、断点续传与四级告警</a></strong><br>任务引擎挂了意味着数据没同步、订单漏处理——防重、断点续传、指数退避、四级告警四个机制。</li>
 </ol>
-<h3 id="三、和消息表-中间件的关系"><a href="#三、和消息表-中间件的关系" class="headerlink" title="三、和消息表 &#x2F; 中间件的关系"></a>三、和消息表 &#x2F; 中间件的关系</h3><ol start="8">
-<li><a href="/2024/04/09/2024-04-09-synctask-local-message-table/">SyncTaskJob 就是一张本地消息表</a></li>
-<li><a href="/2024/04/23/2024-04-23-synctask-mq-persistence-comparison/">SyncTask Job 与基于日志的消息中间件：持久化机制对比</a></li>
-<li><a href="/2024/04/16/2024-04-16-synctask-vs-nflow/">SyncTaskJob vs nFlow</a></li>
+<h2 id="三、和消息表、中间件的关系"><a href="#三、和消息表、中间件的关系" class="headerlink" title="三、和消息表、中间件的关系"></a>三、和消息表、中间件的关系</h2><ol start="8">
+<li><strong><a href="/2024/04/09/2024-04-09-synctask-local-message-table/">SyncTaskJob 就是一张本地消息表</a></strong><br>从 <code>sync_task</code> 这张表的角度，重新理解整个引擎的设计。</li>
+<li><strong><a href="/2024/04/23/2024-04-23-synctask-mq-persistence-comparison/">SyncTask Job 与基于日志的消息中间件：持久化机制对比</a></strong><br>“状态持久化”和”数据持久化”是两种东西——为什么它不能和 RocketMQ 直接类比。</li>
+<li><strong><a href="/2024/04/16/2024-04-16-synctask-vs-nflow/">SyncTaskJob vs nFlow：两套编排引擎的架构对照</a></strong><br>和北欧开源引擎 nFlow（2014 年起用于生产）逐项对比后的取舍。</li>
 </ol>
-<h3 id="四、工程接入"><a href="#四、工程接入" class="headerlink" title="四、工程接入"></a>四、工程接入</h3><ol start="11">
-<li><a href="/2024/03/08/2024-03-08-sync-task-engine-family-bucket/">SyncTask Engine 全家桶</a></li>
-<li><a href="/2024/05/01/2024-05-01-SpringBoot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D%E4%B8%8ESyncTask-Starter/">Spring Boot 自动装配与 SyncTask Starter</a></li>
-<li><a href="/2026/08/10/2026-08-10-SyncTask-Starter%E7%9A%84%E5%B7%A5%E7%A8%8B%E7%BB%86%E8%8A%82-%E9%9B%B6%E9%85%8D%E7%BD%AE%E6%8E%A5%E5%85%A5/">SyncTask Starter 的工程细节：零配置接入</a></li>
+<h2 id="四、工程接入"><a href="#四、工程接入" class="headerlink" title="四、工程接入"></a>四、工程接入</h2><ol start="11">
+<li><strong><a href="/2024/03/08/2024-03-08-sync-task-engine-family-bucket/">SyncTask Engine 全家桶</a></strong><br>引擎的仓库入口与模块索引。</li>
+<li><strong><a href="/2024/05/01/2024-05-01-SpringBoot%E8%87%AA%E5%8A%A8%E8%A3%85%E9%85%8D%E4%B8%8ESyncTask-Starter/">Spring Boot 自动装配与 SyncTask Starter</a></strong><br>从 <code>@SpringBootApplication</code> 拆开自动装配的原理，再看 Starter 怎么做到零配置。</li>
+<li><strong><a href="/2026/08/10/2026-08-10-SyncTask-Starter%E7%9A%84%E5%B7%A5%E7%A8%8B%E7%BB%86%E8%8A%82-%E9%9B%B6%E9%85%8D%E7%BD%AE%E6%8E%A5%E5%85%A5/">SyncTask Starter 的工程细节：零配置接入是怎么做到的</a></strong><br>接入一个业务任务从数天降到数小时，靠的不是引擎本身，而是 Starter。</li>
 </ol>
-<h3 id="五、迁向-Agent"><a href="#五、迁向-Agent" class="headerlink" title="五、迁向 Agent"></a>五、迁向 Agent</h3><ol start="14">
-<li><a href="/2026/02/03/2026-02-03-AgentTeam%E7%94%A8DAG-SyncTask%E5%8D%B4%E6%94%BE%E5%BC%83DAG/">Agent Team 用 DAG，SyncTask 却放弃 DAG</a></li>
-<li><a href="/2026/08/27/2026-08-27-%E4%BB%8ESyncTask%E5%88%B0Agent-%E7%BC%96%E6%8E%92%E5%BC%95%E6%93%8E%E6%80%9D%E6%83%B3%E7%9A%84%E5%B7%A5%E7%A8%8B%E8%BF%81%E7%A7%BB/">从 SyncTask 到 Agent：编排引擎思想的工程迁移</a></li>
+<h2 id="五、迁向-Agent"><a href="#五、迁向-Agent" class="headerlink" title="五、迁向 Agent"></a>五、迁向 Agent</h2><ol start="14">
+<li><strong><a href="/2026/02/03/2026-02-03-AgentTeam%E7%94%A8DAG-SyncTask%E5%8D%B4%E6%94%BE%E5%BC%83DAG/">Agent Team 用 DAG，SyncTask 却放弃 DAG</a></strong><br>同一个 DAG 决策，两个项目给出相反答案——差异到底在哪。</li>
+<li><strong><a href="/2026/08/27/2026-08-27-%E4%BB%8ESyncTask%E5%88%B0Agent-%E7%BC%96%E6%8E%92%E5%BC%95%E6%93%8E%E6%80%9D%E6%83%B3%E7%9A%84%E5%B7%A5%E7%A8%8B%E8%BF%81%E7%A7%BB/">从 SyncTask 到 Agent：编排引擎思想的工程迁移</a> <span class="label label-primary">必读</span></strong><br>做 Agent 时最大的优势不是 Python 也不是 Prompt，而是这套编排经验——讲具体的工程迁移做法。</li>
 </ol>
 <hr>
 <p><a href="/series/">← 返回系列导读</a></p>
+</div>
 
 
   
 
 </article>
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
 
 
 
@@ -488,6 +527,59 @@
 
 
 
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
 
   <script  src="/js/local-search.js" ></script>
 

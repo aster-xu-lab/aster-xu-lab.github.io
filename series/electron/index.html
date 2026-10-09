@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、密钥与构建。按时间顺序连读即可。 推荐顺序 Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界 用 node:sqlite 替掉 better-sqlite3 Electron 桌面端爬虫：为什么选 CLI sidecar 而不是 Puppeteer 反爬可用率对照实验：Amaz">
+    <meta name="description" content="一个 Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、密钥与构建。按时间顺序连读即可。              主线 10 篇按顺序读；后面 4 篇是同一条项目线上的工程方法论，可以穿插。 一、进程与依赖 Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界 写了七年后端，第一个桌面项目。后端的直">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Electron 桌面实战">
 <meta property="og:url" content="https://aster-xu-lab.github.io/series/electron/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、密钥与构建。按时间顺序连读即可。 推荐顺序 Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界 用 node:sqlite 替掉 better-sqlite3 Electron 桌面端爬虫：为什么选 CLI sidecar 而不是 Puppeteer 反爬可用率对照实验：Amaz">
+<meta property="og:description" content="一个 Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、密钥与构建。按时间顺序连读即可。              主线 10 篇按顺序读；后面 4 篇是同一条项目线上的工程方法论，可以穿插。 一、进程与依赖 Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界 写了七年后端，第一个桌面项目。后端的直">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-09T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-09T06:50:59.121Z">
+<meta property="article:modified_time" content="2026-10-09T08:14:23.814Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
 <meta name="twitter:card" content="summary_large_image">
@@ -39,6 +39,12 @@
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
 
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
 
 
 
@@ -89,7 +95,7 @@
   <header>
     
 
-<div class="header-inner" style="height: 60vh;">
+<div class="header-inner" style="height: 25vh;">
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
@@ -355,33 +361,72 @@
 
 <article class="page-content">
   <hr>
-<p>Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、密钥与构建。按时间顺序连读即可。</p>
-<h2 id="推荐顺序"><a href="#推荐顺序" class="headerlink" title="推荐顺序"></a>推荐顺序</h2><ol>
-<li><a href="/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/">Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界</a></li>
-<li><a href="/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/">用 node:sqlite 替掉 better-sqlite3</a></li>
-<li><a href="/2026/09/18/2026-09-18-Electron%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%88%AC%E8%99%AB-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89CLI-sidecar%E8%80%8C%E4%B8%8D%E6%98%AFPuppeteer/">Electron 桌面端爬虫：为什么选 CLI sidecar 而不是 Puppeteer</a></li>
-<li><a href="/2026/09/20/2026-09-20-%E5%8F%8D%E7%88%AC%E5%8F%AF%E7%94%A8%E7%8E%87%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C-Amazon%E4%B8%8EeBay%E7%9A%84%E5%8D%81%E5%80%8D%E5%B7%AE%E8%B7%9D/">反爬可用率对照实验：Amazon 与 eBay 的十倍差距</a></li>
-<li><a href="/2026/09/22/2026-09-22-%E7%88%AC%E8%99%AB%E7%9A%84%E4%BA%BA%E6%9C%BA%E5%8D%8F%E5%90%8C-%E9%AA%8C%E8%AF%81%E7%A0%81%E5%BC%B9%E6%A1%86%E4%B8%8E%E7%86%94%E6%96%AD%E8%87%AA%E6%84%88/">爬虫的人机协同：验证码弹框与熔断自愈</a></li>
-<li><a href="/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/">事件就是状态：用一个事件流驱动 UI 与数据库</a></li>
-<li><a href="/2026/09/25/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/">把商家后台嵌进桌面端：WebContentsView 与登录闸门</a></li>
-<li><a href="/2026/09/27/2026-09-27-LLM-Key%E4%B8%8D%E4%B8%8B%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B-Electron%E5%AF%86%E9%92%A5%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%BB%BA%E8%AE%AE%E5%B1%82/">LLM Key 不下渲染进程：Electron 里的密钥边界</a></li>
-<li><a href="/2026/09/28/2026-09-28-Electron%E5%8F%8Cchannel%E5%85%B1%E5%AD%98%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E7%A6%81%E4%BB%A4/">Electron 双 channel 共存与跨平台构建禁令</a></li>
-<li><a href="/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/">桌面端的签名、公证与混淆加壳</a></li>
+<div class="markdown-body">
+
+<div class="note note-info">
+            <p>一个 Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、密钥与构建。按时间顺序连读即可。</p> 
+          </div>
+
+<p>主线 10 篇按顺序读；后面 4 篇是同一条项目线上的工程方法论，可以穿插。</p>
+<h2 id="一、进程与依赖"><a href="#一、进程与依赖" class="headerlink" title="一、进程与依赖"></a>一、进程与依赖</h2><ol>
+<li><strong><a href="/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/">Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界</a></strong><br> 写了七年后端，第一个桌面项目。后端的直觉在这里一半有用、一半是坑。</li>
+<li><strong><a href="/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/">用 node:sqlite 替掉 better-sqlite3：告别原生模块</a></strong><br> 放弃默认答案 better-sqlite3，核心不是性能，而是不想让主进程背上原生模块。</li>
 </ol>
-<h2 id="配套工程笔记"><a href="#配套工程笔记" class="headerlink" title="配套工程笔记"></a>配套工程笔记</h2><p>同一条项目线上的方法论文章，可穿插阅读：</p>
+<h2 id="二、采集与反爬"><a href="#二、采集与反爬" class="headerlink" title="二、采集与反爬"></a>二、采集与反爬</h2><ol start="3">
+<li><strong><a href="/2026/09/18/2026-09-18-Electron%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%88%AC%E8%99%AB-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89CLI-sidecar%E8%80%8C%E4%B8%8D%E6%98%AFPuppeteer/">Electron 桌面端爬虫：为什么选 CLI sidecar 而不是 Puppeteer</a></strong><br> 随包分发一个 CLI + JVM + Chromium，以及这个选择引出的跨平台构建硬约束。</li>
+<li><strong><a href="/2026/09/20/2026-09-20-%E5%8F%8D%E7%88%AC%E5%8F%AF%E7%94%A8%E7%8E%87%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C-Amazon%E4%B8%8EeBay%E7%9A%84%E5%8D%81%E5%80%8D%E5%B7%AE%E8%B7%9D/">反爬可用率对照实验：Amazon 与 eBay 的十倍差距</a> <span class="label label-primary">必读</span></strong><br> 同一套代码，Amazon 8%、eBay 90%。十倍差距怎么测出来的，以及哪个”更快的方案”是陷阱。</li>
+<li><strong><a href="/2026/09/22/2026-09-22-%E7%88%AC%E8%99%AB%E7%9A%84%E4%BA%BA%E6%9C%BA%E5%8D%8F%E5%90%8C-%E9%AA%8C%E8%AF%81%E7%A0%81%E5%BC%B9%E6%A1%86%E4%B8%8E%E7%86%94%E6%96%AD%E8%87%AA%E6%84%88/">爬虫的人机协同：验证码弹框，而不是硬刚</a></strong><br> 最难受的不是被拦，是不知道被拦了还是代码坏了——失败分类、人工确认、会话自愈。</li>
+</ol>
+<h2 id="三、状态与安全"><a href="#三、状态与安全" class="headerlink" title="三、状态与安全"></a>三、状态与安全</h2><ol start="6">
+<li><strong><a href="/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/">事件就是状态：用一个事件流驱动 UI 与数据库</a> <span class="label label-primary">必读</span></strong><br> 状态一多就容易”界面和库里对不上”。只让一个事件流当真相，两边都是它的投影。</li>
+<li><strong><a href="/2026/09/25/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/">把商家后台嵌进桌面端：WebContentsView 与登录闸门</a></strong><br> 内嵌远程页面还要拿它当登录闸门，”怎么判定登录状态”这个问题看似简单实则全是坑。</li>
+<li><strong><a href="/2026/09/27/2026-09-27-LLM-Key%E4%B8%8D%E4%B8%8B%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B-Electron%E5%AF%86%E9%92%A5%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%BB%BA%E8%AE%AE%E5%B1%82/">LLM Key 不下渲染进程：Electron 里的密钥边界</a></strong><br> API Key 放哪？放渲染进程最方便也最危险。以及为什么”模型建议”必须和”采集证据”分开。</li>
+</ol>
+<h2 id="四、构建与外发"><a href="#四、构建与外发" class="headerlink" title="四、构建与外发"></a>四、构建与外发</h2><ol start="9">
+<li><strong><a href="/2026/09/28/2026-09-28-Electron%E5%8F%8Cchannel%E5%85%B1%E5%AD%98%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E7%A6%81%E4%BB%A4/">Electron 双 channel 共存与跨平台构建禁令</a></strong><br> 测试版和生产版要在同一台机器上并存、互不覆盖——要隔离哪些东西，以及 asar 污染的坑。</li>
+<li><strong><a href="/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/">桌面端的签名、公证与混淆加壳：先分清这三件事</a> <span class="label label-primary">必读</span></strong><br>三个词常被混为一谈，但手段、成本、收益差很多。讲清楚”加固”该先做什么。</li>
+</ol>
+<h2 id="配套工程笔记"><a href="#配套工程笔记" class="headerlink" title="配套工程笔记"></a>配套工程笔记</h2><p>同一条项目线上的方法论，可穿插阅读：</p>
 <ul>
-<li><a href="/2026/10/02/2026-10-02-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E9%A1%B9%E7%9B%AE%E6%80%8E%E4%B9%88%E5%81%9A%E8%B4%A8%E9%87%8F%E5%9F%BA%E7%BA%BF/">没有测试框架的项目怎么做质量基线</a></li>
-<li><a href="/2026/10/06/2026-10-06-ADR%E9%A9%B1%E5%8A%A8%E5%86%B3%E7%AD%96-%E6%8A%8A%E4%B8%8D%E5%81%9A%E4%B9%9F%E5%86%99%E6%88%90%E5%8F%AF%E5%A4%8D%E7%9B%98%E7%9A%84%E5%86%B3%E7%AD%96/">ADR 驱动决策：把不做也写成可复盘的决策</a></li>
-<li><a href="/2026/10/08/2026-10-08-%E4%B8%80%E4%B8%AA%E6%9C%88%E4%BB%8E0%E5%88%B0%E6%BC%94%E7%A4%BA-%E6%8E%92%E6%9C%9F%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/">一个月从 0 到演示：排期与降级策略</a></li>
-<li><a href="/2026/10/09/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/">写文档也是工程：分类目录与风险单列</a></li>
+<li><strong><a href="/2026/10/02/2026-10-02-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E9%A1%B9%E7%9B%AE%E6%80%8E%E4%B9%88%E5%81%9A%E8%B4%A8%E9%87%8F%E5%9F%BA%E7%BA%BF/">没有测试框架的项目怎么做质量基线</a></strong><br>没有 <code>pnpm test</code> 不等于没有质量门禁——几道门闩各自能挡住什么、挡不住什么。</li>
+<li><strong><a href="/2026/10/06/2026-10-06-ADR%E9%A9%B1%E5%8A%A8%E5%86%B3%E7%AD%96-%E6%8A%8A%E4%B8%8D%E5%81%9A%E4%B9%9F%E5%86%99%E6%88%90%E5%8F%AF%E5%A4%8D%E7%9B%98%E7%9A%84%E5%86%B3%E7%AD%96/">ADR 驱动决策：把”不做”也写成可复盘的决策</a></strong><br>一份有用的 ADR 长什么样，为什么它的价值在”为什么不选另一条路”。</li>
+<li><strong><a href="/2026/10/08/2026-10-08-%E4%B8%80%E4%B8%AA%E6%9C%88%E4%BB%8E0%E5%88%B0%E6%BC%94%E7%A4%BA-%E6%8E%92%E6%9C%9F%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/">一个月从 0 到演示：排期与降级策略</a></strong><br>演示版和生产版差十倍工期，怎么分开；演示交付里最重要的东西是降级方案。</li>
+<li><strong><a href="/2026/10/09/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/">写文档也是工程：分类目录与”风险单列”</a></strong><br>二十来份文档的目录约定与写作规范，以及最容易被违反的一条原则。</li>
 </ul>
 <hr>
 <p><a href="/series/">← 返回系列导读</a></p>
+</div>
 
 
   
 
 </article>
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
 
 
 
@@ -482,6 +527,59 @@
 
 
 
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
 
   <script  src="/js/local-search.js" ></script>
 
