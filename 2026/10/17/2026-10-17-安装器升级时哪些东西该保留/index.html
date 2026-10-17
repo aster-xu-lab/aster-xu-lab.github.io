@@ -1,0 +1,935 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="桌面应用升级最容易丢的不是代码，是用户数据。NSIS 卸载器会删整个安装目录，而升级又会先跑旧卸载器——不加保护就是「升一次级丢一次数据」。这篇文章把安装&#x2F;升级拆成三类状态：应用、用户数据、更新元数据，分别讲它们的边界。  一、先复现：升级为什么会删数据这个应用的 Windows 打包版把可写数据放在安装目录下： 1234&lt;installDir&gt;&#x2F;data&#x2F;  impor">
+<meta property="og:type" content="article">
+<meta property="og:title" content="安装器升级时，哪些东西该保留：应用、用户数据、更新元数据">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E5%AE%89%E8%A3%85%E5%99%A8%E5%8D%87%E7%BA%A7%E6%97%B6%E5%93%AA%E4%BA%9B%E4%B8%9C%E8%A5%BF%E8%AF%A5%E4%BF%9D%E7%95%99/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="桌面应用升级最容易丢的不是代码，是用户数据。NSIS 卸载器会删整个安装目录，而升级又会先跑旧卸载器——不加保护就是「升一次级丢一次数据」。这篇文章把安装&#x2F;升级拆成三类状态：应用、用户数据、更新元数据，分别讲它们的边界。  一、先复现：升级为什么会删数据这个应用的 Windows 打包版把可写数据放在安装目录下： 1234&lt;installDir&gt;&#x2F;data&#x2F;  impor">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-17T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-17T08:19:05.006Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="NSIS">
+<meta property="article:tag" content="安装器">
+<meta property="article:tag" content="打包">
+<meta property="article:tag" content="数据保留">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>安装器升级时，哪些东西该保留：应用、用户数据、更新元数据 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="安装器升级时，哪些东西该保留：应用、用户数据、更新元数据"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-10-17 09:00" pubdate>
+          2026年10月17日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          19 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">安装器升级时，哪些东西该保留：应用、用户数据、更新元数据</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>桌面应用升级最容易丢的不是代码，是用户数据。NSIS 卸载器会删整个安装目录，而升级又会先跑旧卸载器——不加保护就是「升一次级丢一次数据」。这篇文章把安装&#x2F;升级拆成三类状态：应用、用户数据、更新元数据，分别讲它们的边界。</p>
+</blockquote>
+<h2 id="一、先复现：升级为什么会删数据"><a href="#一、先复现：升级为什么会删数据" class="headerlink" title="一、先复现：升级为什么会删数据"></a>一、先复现：升级为什么会删数据</h2><p>这个应用的 Windows 打包版把可写数据放在安装目录下：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">&lt;installDir&gt;/data/<br>  imports.sqlite<br>  captures/<br>  merchants/<br></code></pre></td></tr></table></figure>
+
+<p>这样用户可以把应用装到大盘，而不是默认的 C 盘。代价是：electron-builder 生成的 NSIS 卸载器会 <code>RMDir /r $INSTDIR</code>，而且<strong>升级时会先静默跑一遍旧卸载器</strong>。</p>
+<p>于是升级流程变成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">旧卸载器 → 删除 $INSTDIR（包括 data）→ 安装新版本<br></code></pre></td></tr></table></figure>
+
+<p>用标记文件实测，确实每次升级都会把任务、商品、captures、登录态删光。这不是偶发，是默认行为。</p>
+<h2 id="二、用户数据：卸载前挪走，安装后挪回"><a href="#二、用户数据：卸载前挪走，安装后挪回" class="headerlink" title="二、用户数据：卸载前挪走，安装后挪回"></a>二、用户数据：卸载前挪走，安装后挪回</h2><p>修法是在 NSIS 的 <code>customUnInit</code> &#x2F; <code>customInstall</code> 里做一次搬运：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">卸载前：&lt;installDir&gt;/data → &lt;installDir&gt;.data-keep（同盘兄弟目录）<br>安装后：&lt;installDir&gt;.data-keep → &lt;installDir&gt;/data<br></code></pre></td></tr></table></figure>
+
+<p>几个关键约束：</p>
+<ul>
+<li><strong>必须同盘</strong>，否则 <code>Rename</code> 会失败；跨盘时回退到 <code>xcopy</code>。</li>
+<li><strong>不能用 <code>xcopy /O</code></strong>：非提权下复制 ACL 会「访问拒绝」，复制成功前不能删保留副本。</li>
+<li><strong>新目录已有数据时优先保留活动数据</strong>，不覆盖。</li>
+<li><strong>升级无条件保留</strong>；静默卸载默认保留；交互卸载给一个默认勾选的「保留本地数据」选项；<code>--delete-app-data</code> 才强制删除。</li>
+</ul>
+<h2 id="三、换目录安装：保留数据会「搁浅」"><a href="#三、换目录安装：保留数据会「搁浅」" class="headerlink" title="三、换目录安装：保留数据会「搁浅」"></a>三、换目录安装：保留数据会「搁浅」</h2><p>第一版只在新安装目录的兄弟位置找 <code>.data-keep</code>。如果用户这次把应用装到了另一个目录，旧数据就找不到了。</p>
+<p>现在按优先级找三处：</p>
+<ol>
+<li>新卸载器写入的独立注册表指针（按通道隔离，不在卸载器自删的键下）；</li>
+<li>新 <code>$INSTDIR</code> 的兄弟目录；</li>
+<li><strong>旧</strong> <code>$INSTDIR</code> 的兄弟目录——安装器在旧卸载器删除注册表之前，先记下旧的 <code>InstallLocation</code>。</li>
+</ol>
+<p>证据做两层：</p>
+<ul>
+<li>宏级语义探针直接编译真实 <code>installer.nsh</code>，13&#x2F;13：同盘指针、旧卸载器换目录、就地升级、跨盘复制、活动数据优先、<code>--delete-app-data</code>、失效指针回落；</li>
+<li>真实包静默换目录安装：旧目录删除、无 <code>.data-keep</code> 残留、数据 <strong>1051 文件 &#x2F; 204,677,245 B</strong> 与 <code>imports.sqlite</code> 的 SHA-256 <strong>逐字节一致</strong>。</li>
+</ul>
+<h2 id="四、更新元数据：不是每个构建目标都会生成"><a href="#四、更新元数据：不是每个构建目标都会生成" class="headerlink" title="四、更新元数据：不是每个构建目标都会生成"></a>四、更新元数据：不是每个构建目标都会生成</h2><p>自动更新依赖 <code>resources/app-update.yml</code>。但 electron-builder <strong>只在 nsis &#x2F; dmg &#x2F; zip 目标写这个文件</strong>，<code>--dir</code>（<code>build:unpack</code>）不会写。</p>
+<p>最初的实现是「afterPack 里缺这个文件就失败」，结果 unpack 构建直接红。后来的策略是：</p>
+<ul>
+<li><code>--dir</code> 构建跳过检查；</li>
+<li>正式包缺文件仍然直接失败，而不是留一个「能装但不能更新」的哑弹。</li>
+</ul>
+<p>另一个坑是缓存目录。electron-builder 派生的 <code>updaterCacheDirName</code> 默认是 <code>sanitize(package.json name) + &quot;-updater&quot;</code>，<strong>不带通道后缀</strong>。test 和 prod 会共用同一个更新缓存目录，和「双通道互不干扰」的原则冲突。现在由统一的 <code>afterPack</code> 入口按 appId 加 <code>-test</code> 后缀。</p>
+<h2 id="五、运行时文件：Squirrel-要求可写"><a href="#五、运行时文件：Squirrel-要求可写" class="headerlink" title="五、运行时文件：Squirrel 要求可写"></a>五、运行时文件：Squirrel 要求可写</h2><p>macOS 上还遇到一个安装失败：Squirrel 在安装前会逐个移除 quarantine 属性，但 Browser4 JVM 里有 <strong>88 个 <code>runtime/**/legal/*</code> 文件是 <code>0444</code></strong>。<code>removexattr</code> 返回 EACCES，ShipIt 重试 3 次后放弃，重新拉起旧版本。</p>
+<p>症状看起来像「安装位置权限问题」，但实测 <code>/Applications</code> 和 <code>~/Applications</code> 修复前都会失败。真正的修法是在签名前给这些文件补 owner-write：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">u+w → zip 内权限变成 -rw-r--r--<br></code></pre></td></tr></table></figure>
+
+<p>修复后一次安装通过。<strong>这不是路径问题，是文件模式问题。</strong></p>
+<h2 id="六、验证环境卫生"><a href="#六、验证环境卫生" class="headerlink" title="六、验证环境卫生"></a>六、验证环境卫生</h2><p>安装器按注册表里残留的旧 <code>InstallLocation</code> 决定安装路径（这是升级语义）。所以做安装验证前要清两个键，而不是一个：</p>
+<ul>
+<li><code>Uninstall</code> 下的应用项；</li>
+<li><code>HKCU\Software\&lt;APP_GUID&gt;</code>——它决定 <code>$INSTDIR</code>。</li>
+</ul>
+<p>否则新包装回旧路径，会出现「装成功但程序不在你以为的地方」。装完也不要假设默认路径，用 <code>UninstallString</code> 反查实际位置。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>安装&#x2F;升级要把状态分三类看：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>谁负责</th>
+<th>失败后果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>应用文件</td>
+<td>安装器</td>
+<td>重装即可</td>
+</tr>
+<tr>
+<td>用户数据</td>
+<td>安装器 + 应用</td>
+<td><strong>不可恢复</strong></td>
+</tr>
+<tr>
+<td>更新元数据</td>
+<td>构建产物</td>
+<td>能装但不能更新</td>
+</tr>
+</tbody></table>
+<p>优先级很清楚：<strong>用户数据是唯一不能靠重装恢复的东西</strong>，所以所有升级路径都要围绕它设计。至于「保留数据」这件事，默认值应该是保留，删除必须是一个显式选择。</p>
+<hr>
+<p><em>发表于 2026 年 10 月 · 标签: Electron, NSIS, 安装器, 数据保留, 打包</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%88%98/" class="category-chain-item">运维实战</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E6%89%93%E5%8C%85/" class="print-no-link">#打包</a>
+      
+        <a href="/tags/NSIS/" class="print-no-link">#NSIS</a>
+      
+        <a href="/tags/%E5%AE%89%E8%A3%85%E5%99%A8/" class="print-no-link">#安装器</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E4%BF%9D%E7%95%99/" class="print-no-link">#数据保留</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>安装器升级时，哪些东西该保留：应用、用户数据、更新元数据</div>
+      <div>https://aster-xu-lab.github.io/2026/10/17/2026-10-17-安装器升级时哪些东西该保留/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年10月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/10/17/2026-10-17-%E6%8A%8A%E9%87%8D%E5%A4%8D%E5%B7%A5%E4%BD%9C%E6%B5%81%E6%B2%89%E6%B7%80%E6%88%90Skill%E4%B8%8EAgent/" title="把重复工作流沉淀成 Skill 与 Agent">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">把重复工作流沉淀成 Skill 与 Agent</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E8%87%AA%E5%8A%A8%E6%9B%B4%E6%96%B0%E4%B8%8D%E6%98%AF%E6%8E%A5%E4%B8%AA%E5%BA%93%E5%B0%B1%E5%AE%8C%E4%BA%86/" title="桌面端自动更新不是接个 electron-updater 就完了">
+                        <span class="hidden-mobile">桌面端自动更新不是接个 electron-updater 就完了</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,963 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="「在 macOS 上打 Windows 包」看起来只是换一个 --win 参数，实际上会把 darwin 的运行时打进 Windows 安装包，首启直接报平台不匹配。跨平台构建的边界不止构建命令，还包括 afterPack、产物目录、通道身份和平台矩阵。  一、为什么不能跨平台出包这个应用随包带了 Browser4 运行时。打包前有一个 stage:browser4 步骤，它会把当前构建机的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="跨平台构建不是一条命令：Windows 与 macOS 出包的边界">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E4%B8%8D%E6%98%AF%E4%B8%80%E6%9D%A1%E5%91%BD%E4%BB%A4/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="「在 macOS 上打 Windows 包」看起来只是换一个 --win 参数，实际上会把 darwin 的运行时打进 Windows 安装包，首启直接报平台不匹配。跨平台构建的边界不止构建命令，还包括 afterPack、产物目录、通道身份和平台矩阵。  一、为什么不能跨平台出包这个应用随包带了 Browser4 运行时。打包前有一个 stage:browser4 步骤，它会把当前构建机的">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-17T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-17T08:20:07.158Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="electron-builder">
+<meta property="article:tag" content="工程实践">
+<meta property="article:tag" content="打包">
+<meta property="article:tag" content="跨平台">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>跨平台构建不是一条命令：Windows 与 macOS 出包的边界 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="跨平台构建不是一条命令：Windows 与 macOS 出包的边界"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-10-17 09:00" pubdate>
+          2026年10月17日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          21 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">跨平台构建不是一条命令：Windows 与 macOS 出包的边界</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>「在 macOS 上打 Windows 包」看起来只是换一个 <code>--win</code> 参数，实际上会把 darwin 的运行时打进 Windows 安装包，首启直接报平台不匹配。跨平台构建的边界不止构建命令，还包括 afterPack、产物目录、通道身份和平台矩阵。</p>
+</blockquote>
+<h2 id="一、为什么不能跨平台出包"><a href="#一、为什么不能跨平台出包" class="headerlink" title="一、为什么不能跨平台出包"></a>一、为什么不能跨平台出包</h2><p>这个应用随包带了 Browser4 运行时。打包前有一个 <code>stage:browser4</code> 步骤，它会把<strong>当前构建机的 platform &#x2F; arch</strong> 写进 manifest，并拷贝对应的 CLI、JVM、Chromium。</p>
+<p>如果在 macOS 上跑 <code>build:win</code>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">manifest 写的是 darwin/arm64<br>实际打进去的是 darwin 的 CLI/JVM/Chromium<br>产物却是 Windows 安装包<br></code></pre></td></tr></table></figure>
+
+<p>用户装上后首启报：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">BROWSER4_BUNDLE_PLATFORM_MISMATCH<br></code></pre></td></tr></table></figure>
+
+<p>所以规则很硬：</p>
+<ul>
+<li>Windows 包只在 Windows x64 &#x2F; Windows runner 上构建；</li>
+<li>macOS 包只在 Apple Silicon 上构建；</li>
+<li>不要在 mac 上打 win，也不要在 Windows 上打 mac。</li>
+</ul>
+<p>这不是「建议」，是构建产物的正确性问题。</p>
+<h2 id="二、afterPack-是单值键，必须自带平台守卫"><a href="#二、afterPack-是单值键，必须自带平台守卫" class="headerlink" title="二、afterPack 是单值键，必须自带平台守卫"></a>二、<code>afterPack</code> 是单值键，必须自带平台守卫</h2><p><code>afterPack</code> 在 electron-builder 配置里只能有一个值，两个平台共用。当前它指向 macOS 的 Browser4 深层签名脚本，但 <strong>Windows 打包同样会触发它</strong>。</p>
+<p>所以那个脚本的第一行必须是：</p>
+<figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs js"><span class="hljs-keyword">if</span> (context.<span class="hljs-property">electronPlatformName</span> !== <span class="hljs-string">&#x27;darwin&#x27;</span>) <span class="hljs-keyword">return</span>;<br></code></pre></td></tr></table></figure>
+
+<p>这一行是 Windows 唯一的防线。由此得到两条维护规则：</p>
+<ol>
+<li><strong>守卫之前不要加任何代码</strong>——读环境变量、写文件、复制文件都不行，否则 Windows 打包会跟着中招；</li>
+<li><strong>将来给 Windows 加签名，不能再加一个 <code>afterPack</code></strong>，必须在同一个脚本里按平台分支。</li>
+</ol>
+<p>这类「全局单值钩子」是跨平台构建里最容易埋雷的地方。</p>
+<h2 id="三、产物按平台-通道分目录"><a href="#三、产物按平台-通道分目录" class="headerlink" title="三、产物按平台 + 通道分目录"></a>三、产物按平台 + 通道分目录</h2><p>早期的输出目录是 <code>dist/</code>，所有平台和通道混在一起。后来改成：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">dist/win-x64-test/<br>dist/win-x64-prod/<br>dist/mac-arm64-test/<br>dist/mac-arm64-prod/<br></code></pre></td></tr></table></figure>
+
+<p>文件名也带通道，例如 <code>…-test-setup.exe</code> &#x2F; <code>…-prod-setup.exe</code>，避免测试包和生产包混淆。</p>
+<p>这里有一个必须显式处理的坑：<strong>自定义 <code>directories.output</code> 后，electron-builder 只自动排除当前输出目录</strong>。如果 <code>files</code> 里不显式排除整个 <code>dist{,/**/*}</code>，兄弟目录里的旧 <code>.app</code>、<code>*.nsis.7z</code> 会被打进 asar。实际出现过 asar 约 2.3G、安装包数 GB 的情况。</p>
+<p>结论：<strong>输出目录是构建输入的一部分</strong>，必须把整个 <code>dist</code> 从 files 里排除。</p>
+<h2 id="四、test-prod-必须能并存"><a href="#四、test-prod-必须能并存" class="headerlink" title="四、test &#x2F; prod 必须能并存"></a>四、test &#x2F; prod 必须能并存</h2><p>双通道不只是两个 env 文件，还包括一整套身份隔离：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>prod</th>
+<th>test</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>显示名</td>
+<td>Autovado Merchant Desktop</td>
+<td>… Test</td>
+</tr>
+<tr>
+<td>appId</td>
+<td><code>com.autovado.merchant.desktop</code></td>
+<td><code>…desktop.test</code></td>
+</tr>
+<tr>
+<td>Windows exe</td>
+<td><code>autovado-merchant-desktop.exe</code></td>
+<td><code>…-test.exe</code></td>
+</tr>
+<tr>
+<td>mac &#x2F; 开发 userData</td>
+<td><code>…/autovado-merchant-desktop</code></td>
+<td><code>…-test</code></td>
+</tr>
+<tr>
+<td>商家 partition</td>
+<td><code>persist:merchant-web</code></td>
+<td><code>persist:merchant-web-test</code></td>
+</tr>
+<tr>
+<td>更新缓存目录</td>
+<td>默认</td>
+<td>带 <code>-test</code> 后缀</td>
+</tr>
+</tbody></table>
+<p>少任何一项，两个通道就会互相覆盖。例如更新缓存目录：electron-builder 默认派生的是 <code>sanitize(package.json name) + &quot;-updater&quot;</code>，不带通道后缀，test 与 prod 会共用一个缓存目录。现在由统一的 <code>afterPack</code> 入口按 appId 修正。</p>
+<h2 id="五、平台矩阵：只支持两种组合"><a href="#五、平台矩阵：只支持两种组合" class="headerlink" title="五、平台矩阵：只支持两种组合"></a>五、平台矩阵：只支持两种组合</h2><p>本期只支持：</p>
+<ul>
+<li><code>darwin / arm64</code></li>
+<li><code>win32 / x64</code></li>
+</ul>
+<p>Intel Mac 直接返回 <code>UNSUPPORTED_PLATFORM</code>，不做兼容。这个决定要在客户端和服务端同时生效：</p>
+<ul>
+<li>客户端上报 platform &#x2F; arch；</li>
+<li>服务端没有该平台的可用制品时返回 <code>UNSUPPORTED_PLATFORM</code>；</li>
+<li>客户端校验响应里的 <code>release.platform/arch</code> 必须与当前进程一致，拿错平台的包直接判无效。</li>
+</ul>
+<p><code>verify:package</code> 也按 <code>process.platform</code> 分发到 macOS &#x2F; Windows 两套校验，不允许跨平台跑。</p>
+<h2 id="六、产物类型也有平台差异"><a href="#六、产物类型也有平台差异" class="headerlink" title="六、产物类型也有平台差异"></a>六、产物类型也有平台差异</h2><ul>
+<li>Windows：安装和自动更新用同一个 NSIS 包；</li>
+<li>macOS：<strong>自动更新必须用 zip</strong>，dmg 只用于手动安装；新用户下载优先 dmg，但 feed 必须能找到 zip。</li>
+</ul>
+<p>这不是偏好，是 Squirrel.Mac 的约束。发布时如果只登记 dmg，自动更新会失败。</p>
+<h2 id="七、边界"><a href="#七、边界" class="headerlink" title="七、边界"></a>七、边界</h2><ul>
+<li>Windows 本期没有 Authenticode 签名，SmartScreen 警告是预期行为；</li>
+<li>macOS 已接 Developer ID 签名，但 dmg 外发所需的公证还没跑；</li>
+<li>没有做跨平台的 CI 构建矩阵，出包仍然是「在目标平台上手工执行」；</li>
+<li>Linux 有构建脚本，但不在本期支持矩阵里。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>跨平台构建的核心不是「一条命令能出几个平台的包」，而是承认平台差异并把它写进工程约束：</p>
+<ol>
+<li><strong>在目标平台上构建</strong>，运行时不会跨平台；</li>
+<li><strong>单值钩子要带平台守卫</strong>，守卫必须是第一行；</li>
+<li><strong>产物目录和通道身份要隔离</strong>，否则会互相污染；</li>
+<li><strong>支持矩阵要显式</strong>，不支持比「试试看」更安全。</li>
+</ol>
+<p>把这些边界写进脚本和规则文件之后，跨平台才从「靠人记住」变成「构建时自动挡住」。</p>
+<hr>
+<p><em>发表于 2026 年 10 月 · 标签: Electron, 跨平台, electron-builder, 打包, 工程实践</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E5%86%B3%E7%AD%96/" class="category-chain-item">架构决策</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" class="print-no-link">#工程实践</a>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E6%89%93%E5%8C%85/" class="print-no-link">#打包</a>
+      
+        <a href="/tags/electron-builder/" class="print-no-link">#electron-builder</a>
+      
+        <a href="/tags/%E8%B7%A8%E5%B9%B3%E5%8F%B0/" class="print-no-link">#跨平台</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>跨平台构建不是一条命令：Windows 与 macOS 出包的边界</div>
+      <div>https://aster-xu-lab.github.io/2026/10/17/2026-10-17-跨平台构建不是一条命令/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年10月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/10/17/2026-10-17-%E7%BB%99%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E5%86%99%E7%8A%B6%E6%80%81%E6%9C%BA%E6%8E%A2%E9%92%88/" title="给没有测试框架的桌面应用写状态机探针">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">给没有测试框架的桌面应用写状态机探针</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/10/17/2026-10-17-%E7%AD%BE%E5%90%8D%E5%92%8C%E5%85%AC%E8%AF%81%E7%9C%9F%E7%9A%84%E5%81%9A%E4%BA%86%E4%BB%A5%E5%90%8E/" title="签名和公证真的做了以后：从概念到 Squirrel 装不上的那 88 个文件">
+                        <span class="hidden-mobile">签名和公证真的做了以后：从概念到 Squirrel 装不上的那 88 个文件</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

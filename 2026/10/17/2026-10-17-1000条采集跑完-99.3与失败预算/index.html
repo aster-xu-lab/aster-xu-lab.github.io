@@ -1,0 +1,975 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="同一台机器、同一批 1000 条链接，跑了两条路径：一条只做采集，一条是完整产品链路（图片下载 + HTML 落盘 + SQLite）。前者 153 分钟，后者 250.8 分钟。差额不是噪音，可以逐项拆开；7 条失败也不是随机分布，全部来自同一个原因。  一、两条路径，两个口径先把口径说清楚，否则数字没有意义：     采集 bench 应用路径    成功 999&#x2F;1000（99">
+<meta property="og:type" content="article">
+<meta property="og:title" content="1000 条采集跑完：99.3%、4.18 小时，以及 7 条失败全来自一个 302">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-1000%E6%9D%A1%E9%87%87%E9%9B%86%E8%B7%91%E5%AE%8C-99.3%E4%B8%8E%E5%A4%B1%E8%B4%A5%E9%A2%84%E7%AE%97/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="同一台机器、同一批 1000 条链接，跑了两条路径：一条只做采集，一条是完整产品链路（图片下载 + HTML 落盘 + SQLite）。前者 153 分钟，后者 250.8 分钟。差额不是噪音，可以逐项拆开；7 条失败也不是随机分布，全部来自同一个原因。  一、两条路径，两个口径先把口径说清楚，否则数字没有意义：     采集 bench 应用路径    成功 999&#x2F;1000（99">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-17T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-17T08:18:54.931Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="失败归因">
+<meta property="article:tag" content="性能">
+<meta property="article:tag" content="数据采集">
+<meta property="article:tag" content="爬虫">
+<meta property="article:tag" content="长任务">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>1000 条采集跑完：99.3%、4.18 小时，以及 7 条失败全来自一个 302 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="1000 条采集跑完：99.3%、4.18 小时，以及 7 条失败全来自一个 302"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-10-17 09:00" pubdate>
+          2026年10月17日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          17 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">1000 条采集跑完：99.3%、4.18 小时，以及 7 条失败全来自一个 302</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>同一台机器、同一批 1000 条链接，跑了两条路径：一条只做采集，一条是完整产品链路（图片下载 + HTML 落盘 + SQLite）。前者 153 分钟，后者 250.8 分钟。差额不是噪音，可以逐项拆开；7 条失败也不是随机分布，全部来自同一个原因。</p>
+</blockquote>
+<h2 id="一、两条路径，两个口径"><a href="#一、两条路径，两个口径" class="headerlink" title="一、两条路径，两个口径"></a>一、两条路径，两个口径</h2><p>先把口径说清楚，否则数字没有意义：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="right">采集 bench</th>
+<th align="right">应用路径</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>成功</td>
+<td align="right">999&#x2F;1000（99.9%）</td>
+<td align="right"><strong>993&#x2F;1000（99.3%）</strong></td>
+</tr>
+<tr>
+<td>墙钟</td>
+<td align="right">153.0 min（2.55 h）</td>
+<td align="right"><strong>250.8 min（4.18 h）</strong></td>
+</tr>
+<tr>
+<td>单条</td>
+<td align="right">p50 6.4 s</td>
+<td align="right"><strong>均值 15.0 s</strong></td>
+</tr>
+<tr>
+<td>失败构成</td>
+<td align="right">1× <code>PAGE_ERROR</code></td>
+<td align="right"><strong>7× <code>PRODUCT_ID_MISSING</code></strong></td>
+</tr>
+<tr>
+<td>infra 事件</td>
+<td align="right">0</td>
+<td align="right">3 次 runtime 重启（自愈后仍成功）</td>
+</tr>
+<tr>
+<td>HITL</td>
+<td align="right">0</td>
+<td align="right">0</td>
+</tr>
+</tbody></table>
+<p>bench 不下载图片、不落 HTML、不写数据库，所以它衡量的是「采集引擎」；应用路径才是用户真正会遇到的耗时。<strong>排期必须用应用路径的数字，不能用 bench 的数字。</strong></p>
+<h2 id="二、8-6-秒的差额拆账"><a href="#二、8-6-秒的差额拆账" class="headerlink" title="二、8.6 秒的差额拆账"></a>二、8.6 秒的差额拆账</h2><p>应用路径比 bench 每条多 8.6 秒。这部分不是某一处慢，而是完整链路的固定成本：</p>
+<ul>
+<li>图片下载（同条限流并行 4）；</li>
+<li>轻量 HTML 落盘；</li>
+<li>SQLite 写入；</li>
+<li>事件与状态更新。</li>
+</ul>
+<p>对应的产物规模：</p>
+<ul>
+<li>采集产物 <strong>1031 MB &#x2F; 1000 个目录 ≈ 1.03 MB&#x2F;条</strong>；</li>
+<li>数据库 <strong>8.6 MB</strong>。</li>
+</ul>
+<p>这个拆分有两个用途。第一，产品问「为什么不能更快」时，能明确回答是图片和落盘占了大头，而不是引擎慢。第二，后续优化知道该动哪里——压缩图片、改落盘格式、批量写库，各自对应不同的收益。</p>
+<h2 id="三、失败预算：7-条失败，7-条同一个原因"><a href="#三、失败预算：7-条失败，7-条同一个原因" class="headerlink" title="三、失败预算：7 条失败，7 条同一个原因"></a>三、失败预算：7 条失败，7 条同一个原因</h2><p>这是这次跑次最有价值的发现。</p>
+<p>7 条 <code>PRODUCT_ID_MISSING</code> 的 <code>finalUrl</code> 全部落在 <code>/p/</code> 路径下。根因是 eBay 会<strong>间歇</strong>把 <code>/itm/&lt;itemId&gt;</code> 302 到 <code>/p/&lt;catalogId&gt;</code> 目录页，而且<strong>同一个 session 有粘性</strong>。抽取脚本按 <code>/itm/</code> 取商品 ID，落地页变了自然取不到。</p>
+<p>之前这个问题被记录为「间歇性 <code>PRODUCT_ID_MISSING</code>」，样本是 1 次失败 &#x2F; 约 16 次尝试，不足以定性。1000 条跑次把它变成了确定结论：<strong>7 条失败全部命中这个模式，7&#x2F;7 失败。</strong></p>
+<p>于是加了一个独立错误码：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">PRODUCT_CATALOG_REDIRECT<br></code></pre></td></tr></table></figure>
+
+<p>文案是「链接被 eBay 转到商品目录页，可能已下架」。不采这个页面，因为目录页不是商品页，硬采只会产生错误数据。</p>
+<p>这里有一个可复用的度量概念：<strong>失败预算</strong>。一次跑次里，失败是否集中在单一原因，比失败率本身更有信息量：</p>
+<ul>
+<li>失败率 0.7%，但 100% 集中在同一个原因 → 修一处就能显著改善；</li>
+<li>失败率 0.3%，但分散在 20 个原因 → 每个都不值得单独修。</li>
+</ul>
+<p>只看百分比，会把这两种情况当成同一件事。</p>
+<h2 id="四、内存：爬升到上限后平顶，不是无界增长"><a href="#四、内存：爬升到上限后平顶，不是无界增长" class="headerlink" title="四、内存：爬升到上限后平顶，不是无界增长"></a>四、内存：爬升到上限后平顶，不是无界增长</h2><p>bench 不设堆上限时，JVM RSS 的形状是：</p>
+<table>
+<thead>
+<tr>
+<th>时间</th>
+<th align="right">RSS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>起始</td>
+<td align="right">35 MB</td>
+</tr>
+<tr>
+<td>11 min</td>
+<td align="right">越过 2 GB</td>
+</tr>
+<tr>
+<td>27 min</td>
+<td align="right">越过 4 GB</td>
+</tr>
+<tr>
+<td>72 min</td>
+<td align="right">8.5 GB</td>
+</tr>
+<tr>
+<td>之后 80 min</td>
+<td align="right"><strong>纹丝不动</strong></td>
+</tr>
+</tbody></table>
+<p>这正是「堆涨到默认上限（约 1&#x2F;4 物理内存）后进入稳态」的形状，不是泄漏。应用侧设了 <code>-Xmx2048m</code>，同样的形状被压到峰值 2310 MB、末值 899 MB，而且 A&#x2F;B 证明上限没有吞吐代价。</p>
+<p>长跑任务的内存判断，不能只看「峰值高不高」，要看<strong>是否持续增长</strong>。爬升后平顶，是可以接受的；平顶后继续爬，才是泄漏。</p>
+<h2 id="五、长任务排期按-4-小时量级"><a href="#五、长任务排期按-4-小时量级" class="headerlink" title="五、长任务排期按 4 小时量级"></a>五、长任务排期按 4 小时量级</h2><p>之前记录的是「约 3 小时」，来源是 macOS 上 3 条的小样本（10–12 s&#x2F;条）。这次实测 15.0 s&#x2F;条，折算 1000 条约 4.2 小时，比旧估计慢 25–50%。</p>
+<p>这不是旧数据「错了」，而是<strong>样本外推的边界</strong>：3 条样本覆盖不到长跑里的图片下载抖动、runtime 自愈、GC 稳态。排期时应该用完整链路的中长样本，而不是引擎路径的小样本。</p>
+<p>另外，单条均值也不够。这次 p50 6.4 s、p90 11.5 s、max 62.8 s，长任务的墙钟由尾部决定，只看均值会系统性偏乐观。</p>
+<h2 id="六、边界"><a href="#六、边界" class="headerlink" title="六、边界"></a>六、边界</h2><ul>
+<li>单机、单 IP、单时段；<code>ROBOT_CHECK</code> 的频率会随 IP 和时段浮动（同一天早些的 400 条跑次出现 3 次，这次 0 次）；</li>
+<li>应用路径的 3 次 runtime 重启都自愈了，但没有统计「重启发生在哪一条、为什么」；</li>
+<li>图片与落盘各自的耗时还没有单独拆分，目前只知道合计 8.6 s；</li>
+<li>99.3% 是在这批链接上的结果，不代表所有类目和所有时段。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次跑次留下四个可复用的结论：</p>
+<ol>
+<li><strong>排期用完整链路数据</strong>，引擎 bench 只能用来定位引擎本身；</li>
+<li><strong>性能差额要能拆账</strong>，8.6 s&#x2F;条可以对应到图片、落盘和 DB；</li>
+<li><strong>失败要看分布</strong>，7 条失败全来自一个 302，比「成功率 99.3%」更有行动价值；</li>
+<li><strong>内存看形状</strong>，爬升后平顶是稳态，不是泄漏。</li>
+</ol>
+<hr>
+<p><em>发表于 2026 年 10 月 · 标签: 爬虫, 性能, 长任务, 失败归因, 数据采集</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="category-chain-item">性能优化</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%80%A7%E8%83%BD/" class="print-no-link">#性能</a>
+      
+        <a href="/tags/%E7%88%AC%E8%99%AB/" class="print-no-link">#爬虫</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E9%87%87%E9%9B%86/" class="print-no-link">#数据采集</a>
+      
+        <a href="/tags/%E9%95%BF%E4%BB%BB%E5%8A%A1/" class="print-no-link">#长任务</a>
+      
+        <a href="/tags/%E5%A4%B1%E8%B4%A5%E5%BD%92%E5%9B%A0/" class="print-no-link">#失败归因</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>1000 条采集跑完：99.3%、4.18 小时，以及 7 条失败全来自一个 302</div>
+      <div>https://aster-xu-lab.github.io/2026/10/17/2026-10-17-1000条采集跑完-99.3与失败预算/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年10月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/10/17/2026-10-17-%E7%AD%BE%E5%90%8D%E5%92%8C%E5%85%AC%E8%AF%81%E7%9C%9F%E7%9A%84%E5%81%9A%E4%BA%86%E4%BB%A5%E5%90%8E/" title="签名和公证真的做了以后：从概念到 Squirrel 装不上的那 88 个文件">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">签名和公证真的做了以后：从概念到 Squirrel 装不上的那 88 个文件</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/10/09/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/" title="写文档也是工程：分类目录与&#34;风险单列&#34;">
+                        <span class="hidden-mobile">写文档也是工程：分类目录与&#34;风险单列&#34;</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

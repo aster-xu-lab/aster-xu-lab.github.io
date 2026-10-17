@@ -1,0 +1,945 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="用户关掉窗口，任务栏里还留着 Chromium；再打开一次，机器上多一份 JVM。这类问题不会立刻报错，但会一直吃内存、占端口，最后表现成「应用越用越卡」。这篇文章讲三类孤儿是怎么产生的，以及退出路径应该怎么设计。  一、孤儿从哪来：时序窗口这个应用启动时会拉起一个 Browser4 运行时（JVM），JVM 在启动后几秒内会自己开一个默认上下文的 Chromium。而平台 session 要">
+<meta property="og:type" content="article">
+<meta property="og:title" content="桌面应用不能留孤儿进程：Chromium、JVM 与退出语义">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E4%B8%8D%E8%83%BD%E7%95%99%E5%AD%A4%E5%84%BF%E8%BF%9B%E7%A8%8B/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="用户关掉窗口，任务栏里还留着 Chromium；再打开一次，机器上多一份 JVM。这类问题不会立刻报错，但会一直吃内存、占端口，最后表现成「应用越用越卡」。这篇文章讲三类孤儿是怎么产生的，以及退出路径应该怎么设计。  一、孤儿从哪来：时序窗口这个应用启动时会拉起一个 Browser4 运行时（JVM），JVM 在启动后几秒内会自己开一个默认上下文的 Chromium。而平台 session 要">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-17T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-17T08:19:28.826Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Chromium">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="JVM">
+<meta property="article:tag" content="排障">
+<meta property="article:tag" content="进程管理">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>桌面应用不能留孤儿进程：Chromium、JVM 与退出语义 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="桌面应用不能留孤儿进程：Chromium、JVM 与退出语义"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-10-17 09:00" pubdate>
+          2026年10月17日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          16 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">桌面应用不能留孤儿进程：Chromium、JVM 与退出语义</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>用户关掉窗口，任务栏里还留着 Chromium；再打开一次，机器上多一份 JVM。这类问题不会立刻报错，但会一直吃内存、占端口，最后表现成「应用越用越卡」。这篇文章讲三类孤儿是怎么产生的，以及退出路径应该怎么设计。</p>
+</blockquote>
+<h2 id="一、孤儿从哪来：时序窗口"><a href="#一、孤儿从哪来：时序窗口" class="headerlink" title="一、孤儿从哪来：时序窗口"></a>一、孤儿从哪来：时序窗口</h2><p>这个应用启动时会拉起一个 Browser4 运行时（JVM），JVM 在启动后几秒内会自己开一个默认上下文的 Chromium。而平台 session 要到 10–20 秒才真正打开。</p>
+<p>最初的清理逻辑是<strong>在 session 打开时缓存 Chromium 路径</strong>，退出时按这个路径杀残留。问题就出在中间那个窗口：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">应用启动 → JVM 起来 → 默认 context 开 Chromium（约 2s）<br>        → 用户关窗（10s 前）→ 缓存还是空的 → kill 被跳过<br>        → session 根本没打开<br></code></pre></td></tr></table></figure>
+
+<p>结果就是 Chromium 留在后台。修法有两条：</p>
+<ol>
+<li><strong>缓存提前</strong>：runtime 一解析出来就记下 Chromium 路径，不等 session；</li>
+<li><strong>同步兜底</strong>：缓存仍为空时，退出路径同步推导出随包 Chromium 目录，不依赖异步工作。</li>
+</ol>
+<p>杀进程时按<strong>路径前缀</strong>匹配，所以传目录就能覆盖目录下所有 revision 子目录。</p>
+<h2 id="二、按路径杀，不按进程名"><a href="#二、按路径杀，不按进程名" class="headerlink" title="二、按路径杀，不按进程名"></a>二、按路径杀，不按进程名</h2><p>这是最容易写错的一步。如果按 <code>chrome.exe</code> 或 <code>Google Chrome</code> 匹配，会误杀用户自己的浏览器。</p>
+<p>正确做法是只杀<strong>随包</strong>的 Chromium：</p>
+<ul>
+<li>Windows：匹配随包目录下的 <code>chrome.exe</code>；</li>
+<li>macOS：匹配 <code>.app</code> 内进程，needle 用 <code>lastIndexOf(&#39;.app/&#39;)</code>，避免打包态命中外层 Electron 的 <code>.app</code> 而自杀；</li>
+<li>跳过当前进程的 <code>pid</code> &#x2F; <code>ppid</code>；</li>
+<li><strong>不碰系统 Google Chrome</strong>。</li>
+</ul>
+<p>实测证据：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>session 已开</td>
+<td>34 个 Chromium → 0</td>
+</tr>
+<tr>
+<td>首次 session 打开前</td>
+<td>8 个 Chromium → 0</td>
+</tr>
+<tr>
+<td>退出后</td>
+<td>随包 Chromium 0、Browser4 JVM 0</td>
+</tr>
+<tr>
+<td>用户自装 Browser4</td>
+<td>未被误杀</td>
+</tr>
+<tr>
+<td>系统 Google Chrome</td>
+<td>未被误杀</td>
+</tr>
+</tbody></table>
+<p>两条路径都在 1 秒内退出干净。</p>
+<h2 id="三、日志要打出「杀的是哪个路径」"><a href="#三、日志要打出「杀的是哪个路径」" class="headerlink" title="三、日志要打出「杀的是哪个路径」"></a>三、日志要打出「杀的是哪个路径」</h2><p>第一版还有一个隐蔽问题：如果 kill 被跳过，日志里什么都没有。症状看起来和「kill 失败」一模一样——都是关窗后 Chromium 还在跑。</p>
+<p>现在退出路径会明确记录它正在杀的路径。<strong>没有日志的跳过，是最难排查的失败。</strong></p>
+<h2 id="四、退出语义：关窗不等于退出"><a href="#四、退出语义：关窗不等于退出" class="headerlink" title="四、退出语义：关窗不等于退出"></a>四、退出语义：关窗不等于退出</h2><p>两个平台的约定本来就不同：</p>
+<ul>
+<li><strong>Windows</strong>：关闭主窗口 &#x3D; 整退；但要先关掉独立的复核&#x2F;查看窗，再走 <code>before-quit</code>；</li>
+<li><strong>macOS</strong>：关闭红灯<strong>不退出</strong>，必须 Cmd+Q。这是平台习惯，不要「帮用户」改成关窗即退。</li>
+</ul>
+<p>退出路径统一走 <code>disposeForQuitSync</code>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">取消进行中的任务<br>→ 关闭各平台 session<br>→ 按随包路径强制杀 Chromium 残留<br>→ 停止 JVM<br></code></pre></td></tr></table></figure>
+
+<p>这里用同步清理，是因为 <code>before-quit</code> 之后进程可能很快结束，异步清理没有机会跑完。</p>
+<h2 id="五、监听地址也属于生命周期"><a href="#五、监听地址也属于生命周期" class="headerlink" title="五、监听地址也属于生命周期"></a>五、监听地址也属于生命周期</h2><p>另一个「进程问题」其实出在网络绑定上。JVM 开了两个 socket：</p>
+<ul>
+<li>Spring 主 server：默认绑 <code>0.0.0.0</code>；</li>
+<li>Browser4 自己的 MCP-over-HTTP server：默认 <code>0.0.0.0:8088</code>。</li>
+</ul>
+<p>后果有两个：</p>
+<ol>
+<li>Windows 防火墙每次启动都弹「Windows 安全警报」；</li>
+<li>一个能驱动浏览器的服务暴露在局域网里。</li>
+</ol>
+<p>只设 <code>--server.address=127.0.0.1</code> <strong>不够</strong>——实测这只把 Spring socket 绑到回环，MCP 那个仍停在 <code>::</code>。两个都要绑回环。</p>
+<p>防火墙弹窗还有一个放大器：打包版首启会把 runtime 拷到带版本号的目录，<strong>一升级路径就变</strong>，所以用户点了「允许」下次还会再弹。看起来像「一直在弹」，实际是路径变了导致规则没命中。</p>
+<h2 id="六、边界"><a href="#六、边界" class="headerlink" title="六、边界"></a>六、边界</h2><ul>
+<li>退出清理只覆盖随包进程；用户自己安装的 Browser4 不归应用管，也不应该被管；</li>
+<li>强制杀进程是兜底，不是正常路径。正常路径应该先让 CLI &#x2F; session 自己关闭；</li>
+<li>崩溃退出的情况没有经过 <code>before-quit</code>，只能依赖下次启动时清理或系统回收，这一块没有做成强保证；</li>
+<li>长跑后的进程数量与句柄泄漏，还没有单独做长时观察。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>孤儿进程的根因通常不是「杀不掉」，而是<strong>清理逻辑依赖了一个当时还不存在的状态</strong>。这次的三条修正可以复用：</p>
+<ol>
+<li><strong>路径尽早缓存，退出时再同步兜底</strong>；</li>
+<li><strong>按随包路径杀，不按进程名杀</strong>；</li>
+<li><strong>把「跳过」也写进日志</strong>，否则它和「失败」无法区分。</li>
+</ol>
+<p>顺带记住：进程生命周期不只包括进程本身，也包括它监听的地址。绑回环既是安全边界，也是用户体验。</p>
+<hr>
+<p><em>发表于 2026 年 10 月 · 标签: Electron, 进程管理, Chromium, JVM, 排障</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E8%BF%90%E7%BB%B4%E5%AE%9E%E6%88%98/" class="category-chain-item">运维实战</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/JVM/" class="print-no-link">#JVM</a>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E6%8E%92%E9%9A%9C/" class="print-no-link">#排障</a>
+      
+        <a href="/tags/%E8%BF%9B%E7%A8%8B%E7%AE%A1%E7%90%86/" class="print-no-link">#进程管理</a>
+      
+        <a href="/tags/Chromium/" class="print-no-link">#Chromium</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>桌面应用不能留孤儿进程：Chromium、JVM 与退出语义</div>
+      <div>https://aster-xu-lab.github.io/2026/10/17/2026-10-17-桌面应用不能留孤儿进程/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年10月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E8%87%AA%E5%8A%A8%E6%9B%B4%E6%96%B0%E4%B8%8D%E6%98%AF%E6%8E%A5%E4%B8%AA%E5%BA%93%E5%B0%B1%E5%AE%8C%E4%BA%86/" title="桌面端自动更新不是接个 electron-updater 就完了">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">桌面端自动更新不是接个 electron-updater 就完了</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/10/17/2026-10-17-364MB%E5%AE%89%E8%A3%85%E5%8C%85%E4%B8%8A%E4%BC%A0%E5%A4%B1%E8%B4%A5-%E4%BB%8Emultipart%E4%B8%8A%E9%99%90%E5%88%B0%E5%A0%86%E5%86%85OOM/" title="一个 364MB 的安装包传不上去：从 multipart 上限排到堆内 OOM">
+                        <span class="hidden-mobile">一个 364MB 的安装包传不上去：从 multipart 上限排到堆内 OOM</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

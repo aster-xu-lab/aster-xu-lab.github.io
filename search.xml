@@ -4,6 +4,336 @@
   
     
     <entry>
+      <title>一次字段名错误，吞掉了所有失败原因</title>
+      <link href="/2026/10/17/2026-10-17-%E4%B8%80%E6%AC%A1%E5%AD%97%E6%AE%B5%E5%90%8D%E9%94%99%E8%AF%AF%E5%90%9E%E6%8E%89%E6%89%80%E6%9C%89%E5%A4%B1%E8%B4%A5%E5%8E%9F%E5%9B%A0/"/>
+      <url>/2026/10/17/2026-10-17-%E4%B8%80%E6%AC%A1%E5%AD%97%E6%AE%B5%E5%90%8D%E9%94%99%E8%AF%AF%E5%90%9E%E6%8E%89%E6%89%80%E6%9C%89%E5%A4%B1%E8%B4%A5%E5%8E%9F%E5%9B%A0/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>服务端返回 <code>{success, rtn_code, rtn_msg, data}</code>，客户端读的是 <code>code / msg / message</code>。成功路径因为 <code>code === undefined</code> 侥幸命中，看起来一切正常；所有业务失败却退化成 <code>CHECK_REJECTED:undefined</code>。这篇文章讲这个错误为什么能藏这么久，以及怎么把错误契约补回来。</p></blockquote><h2 id="一、为什么成功路径会「看起来正常」"><a href="#一、为什么成功路径会「看起来正常」" class="headerlink" title="一、为什么成功路径会「看起来正常」"></a>一、为什么成功路径会「看起来正常」</h2><p>客户端原来的判断大致是：</p><figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">if</span> (payload.<span class="hljs-property">code</span> === <span class="hljs-literal">undefined</span> || payload.<span class="hljs-property">code</span> === <span class="hljs-number">0</span>) &#123;<br>  <span class="hljs-keyword">return</span> payload.<span class="hljs-property">data</span>;<br>&#125;<br><span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">CheckRejected</span>(payload.<span class="hljs-property">msg</span> ?? payload.<span class="hljs-property">message</span>);<br></code></pre></td></tr></table></figure><p>服务端实际返回：</p><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;success&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;rtn_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;0&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;rtn_msg&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ok&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;data&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> ... <span class="hljs-punctuation">&#125;</span> <span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure><p><code>payload.code</code> 是 <code>undefined</code>，于是<strong>所有响应都走了成功分支</strong>。业务数据能正常取到，页面也能正常显示，所以日常使用发现不了问题。</p><p>问题出在失败响应上。服务端返回：</p><figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;success&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">false</span></span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;rtn_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;DESKTOP_UPDATE_INVALID&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;rtn_msg&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;...&quot;</span> <span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure><p>客户端读不到 <code>code</code>，也读不到 <code>msg</code>，最后抛出的错误就变成了 <code>CHECK_REJECTED:undefined</code>。</p><h2 id="二、被吞掉的是哪三个原因"><a href="#二、被吞掉的是哪三个原因" class="headerlink" title="二、被吞掉的是哪三个原因"></a>二、被吞掉的是哪三个原因</h2><p>实测撞到的三个真实业务错误：</p><ul><li><code>DESKTOP_UPDATE_INVALID</code></li><li><code>DESKTOP_VERSION_INVALID</code></li><li><code>DESKTOP_RELEASE_REVOKED</code></li></ul><p>这三个恰好是测试期最容易遇到的：策略配错、版本号不对、制品被撤回。结果它们全部显示成同一条没有信息的错误。<strong>失败不是没发生，是失败的原因被客户端自己丢了。</strong></p><p>这类 bug 的危险之处在于：它不影响主流程，只在异常路径暴露；而异常路径又恰恰是最需要可观测性的地方。</p><h2 id="三、HTTP-200-不等于业务成功"><a href="#三、HTTP-200-不等于业务成功" class="headerlink" title="三、HTTP 200 不等于业务成功"></a>三、HTTP 200 不等于业务成功</h2><p>修的时候把判断改成同时看信封和业务码：</p><figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">if</span> (payload.<span class="hljs-property">success</span> === <span class="hljs-literal">true</span> &amp;&amp; payload.<span class="hljs-property">rtn_code</span> === <span class="hljs-string">&#x27;0&#x27;</span>) &#123;<br>  <span class="hljs-keyword">return</span> payload.<span class="hljs-property">data</span>;<br>&#125;<br><span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">CheckRejected</span>(payload.<span class="hljs-property">rtn_code</span>, payload.<span class="hljs-property">rtn_msg</span>);<br></code></pre></td></tr></table></figure><p>并保留对旧信封与裸响应的兼容，避免一次性打断所有调用方。</p><p>这里有一条通用规则：<strong>只要服务端采用「HTTP 200 + 业务码」的信封，客户端就不能只判断 HTTP 状态，也不能只判断某一个字段。</strong> 信封的字段名、成功值、失败值的含义，应该和接口文档一起被当作契约维护。</p><h2 id="四、404、签名失败、业务失败是三件事"><a href="#四、404、签名失败、业务失败是三件事" class="headerlink" title="四、404、签名失败、业务失败是三件事"></a>四、404、签名失败、业务失败是三件事</h2><p>同一个排障过程里还遇到另外两类「看起来一样」的失败：</p><ol><li><strong>路由不存在</strong>：更新基址少了网关前缀，服务端直接返回 <strong>405 nginx</strong>；补上前缀才是 200。客户端如果只把它当成「请求失败」，就会误判成网络问题。</li><li><strong>签名&#x2F;鉴权失败</strong>：同样是非 2xx，但原因完全不同。后来给上传和检查接口分别加了可区分的错误码与文案，避免把「接口没有这个路由」说成「上传失败」。</li></ol><p>错误分类的价值不在于文案好看，而在于<strong>下一步动作不同</strong>：</p><table><thead><tr><th>失败类型</th><th>用户该做什么</th></tr></thead><tbody><tr><td>路由不存在 &#x2F; 基址配错</td><td>改配置，重新出包</td></tr><tr><td>签名或鉴权失败</td><td>检查凭据，不能靠重试</td></tr><tr><td>传输失败</td><td>可以重试</td></tr><tr><td>业务拒绝（版本无效、已撤回）</td><td>重试没有意义，要改发布策略</td></tr></tbody></table><h2 id="五、checkStatus-是「上次结论」，不是「这次结果」"><a href="#五、checkStatus-是「上次结论」，不是「这次结果」" class="headerlink" title="五、checkStatus 是「上次结论」，不是「这次结果」"></a>五、<code>checkStatus</code> 是「上次结论」，不是「这次结果」</h2><p>还有一个同源的判断错误。更新检查返回里有两个字段：</p><ul><li><code>checkStatus</code>：上一次检查的结论；</li><li><code>errorCode</code>：本次操作失败的原因。</li></ul><p>下载失败时，<code>checkStatus</code> 仍然是 <code>UPDATE_AVAILABLE</code>。如果拿它判断「是否可以重试」，就会把一个不可重试的错误（比如本机环境不支持、策略已撤回）显示成「重试下载」。用户点几次也不会好。</p><p>后来把 gate 的失败判定改成<strong>以 <code>errorCode</code> 为主</strong>：撤回、系统不支持、本机配置错误 → 「更新无法继续」+「重新检查」；只有传输类失败才给「重试下载」。<strong>状态字段和事件字段要分清，前者描述过去，后者描述刚刚发生了什么。</strong></p><h2 id="六、契约校验放在哪一层"><a href="#六、契约校验放在哪一层" class="headerlink" title="六、契约校验放在哪一层"></a>六、契约校验放在哪一层</h2><p>修完之后加了一层响应校验：版本、平台、架构必须与当前进程一致，拿错平台的包直接判无效。这类校验适合放在<strong>客户端解析响应的边界</strong>，而不是散落在业务逻辑里。</p><p>原因很简单：契约错误越早失败，越接近根因；等到业务层再发现「数据不对」，现场已经被加工过一遍了。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次问题的本质不是「字段名写错」，而是<strong>客户端对错误契约的假设没有被验证</strong>：</p><ul><li>成功路径的侥幸命中，掩盖了字段名不一致；</li><li><code>catch</code> 之后只抛一个泛化错误，丢掉了服务端已经给出的原因；</li><li>状态字段与事件字段混用，导致重试策略判断错误。</li></ul><p>三个修正都不复杂，但都需要同一个前提：<strong>把错误当成一等公民来设计</strong>。错误码、信封、可重试性、下一步动作，应该在接口契约里写清楚，而不是等到线上靠 traceId 反推。</p><hr><p><em>发表于 2026 年 10 月 · 标签: 接口契约, 错误处理, Electron, 排障, 工程实践</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 踩坑 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 工程实践 </tag>
+            
+            <tag> Electron </tag>
+            
+            <tag> 接口契约 </tag>
+            
+            <tag> 错误处理 </tag>
+            
+            <tag> 排障 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>把重复工作流沉淀成 Skill 与 Agent</title>
+      <link href="/2026/10/17/2026-10-17-%E6%8A%8A%E9%87%8D%E5%A4%8D%E5%B7%A5%E4%BD%9C%E6%B5%81%E6%B2%89%E6%B7%80%E6%88%90Skill%E4%B8%8EAgent/"/>
+      <url>/2026/10/17/2026-10-17-%E6%8A%8A%E9%87%8D%E5%A4%8D%E5%B7%A5%E4%BD%9C%E6%B5%81%E6%B2%89%E6%B7%80%E6%88%90Skill%E4%B8%8EAgent/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>项目里陆续沉淀了 9 个 Skill 和 3 个 Agent。它们不是提示词合集，而是把「这类任务该怎么做、做到什么算完成」写成可复用的工作流。真正难的不是写内容，而是划清触发边界。</p></blockquote><h2 id="一、什么样的工作流值得沉淀"><a href="#一、什么样的工作流值得沉淀" class="headerlink" title="一、什么样的工作流值得沉淀"></a>一、什么样的工作流值得沉淀</h2><p>不是所有重复动作都值得写成 Skill。值得沉淀的通常同时满足四个条件：</p><ol><li><strong>会反复发生</strong>：例如每次出包、每次采集异常排查；</li><li><strong>步骤多且顺序固定</strong>：少一步就会漏；</li><li><strong>有明确的完成定义</strong>：例如「探针 N&#x2F;N 通过」「产物 10&#x2F;10」；</li><li><strong>做错的代价高</strong>：删错数据、跨平台出包、把凭据写进仓库。</li></ol><p>这个项目里的 9 个 Skill 基本都能对上：</p><table><thead><tr><th>Skill</th><th>对应的工作流</th></tr></thead><tbody><tr><td><code>import-task-rings</code></td><td>三环 &#x2F; 计数 &#x2F; 重试</td></tr><tr><td><code>capture-cleanup</code></td><td>采集清理 + 清本地图引用</td></tr><tr><td><code>package-verify</code></td><td>出包自检 &#x2F; 跨平台禁令</td></tr><tr><td><code>ui-ux-desktop</code></td><td>IA &#x2F; token &#x2F; 焦点 &#x2F; 组件复用</td></tr><tr><td><code>browser4-scrape-debug</code></td><td>采集诊断 &#x2F; HITL &#x2F; 熔断 &#x2F; 批测</td></tr><tr><td><code>merchant-gate-openapi</code></td><td>登录闸门 &#x2F; OpenAPI 商家上下文</td></tr><tr><td><code>desktop-verify</code></td><td>本机验证方法论（CDP &#x2F; 探针 &#x2F; 装机）</td></tr><tr><td><code>ebay-match-draft</code></td><td>eBay 预填 &#x2F; 类目 &#x2F; Fitment &#x2F; batchAdd</td></tr><tr><td><code>pull-impact-review</code></td><td>拉最新代码 + mac&#x2F;win 影响面</td></tr></tbody></table><p>它们有一个共同点：<strong>不是「知识介绍」，而是「操作手册 + 检查清单」</strong>。</p><h2 id="二、Skill-与-Agent-的分工"><a href="#二、Skill-与-Agent-的分工" class="headerlink" title="二、Skill 与 Agent 的分工"></a>二、Skill 与 Agent 的分工</h2><p>两者解决的不是同一个问题：</p><ul><li><strong>Skill</strong>：描述「这类任务应该怎么做」。它通常是一份流程、约束和验收标准，由当前会话按需加载；</li><li><strong>Agent</strong>：描述「把一段多步任务委派出去」。它有自己的工具、上下文和停止条件。</li></ul><p>一个简单的划分：</p><table><thead><tr><th>场景</th><th>用什么</th></tr></thead><tbody><tr><td>我需要按固定流程做一件事</td><td>Skill</td></tr><tr><td>我需要有人独立完成一段调查 &#x2F; 改动</td><td>Agent</td></tr><tr><td>流程里有高风险步骤，需要我确认</td><td>Skill + 人工确认</td></tr><tr><td>任务可以并行、且结果只需要结论</td><td>Agent</td></tr></tbody></table><p>项目里的 3 个 Agent 是 <code>scrape-agent</code>、<code>ship-agent</code>、<code>draft-openapi-agent</code>，分别对应采集诊断、发布、草稿接入三条较长的工作流。</p><h2 id="三、触发边界比内容更重要"><a href="#三、触发边界比内容更重要" class="headerlink" title="三、触发边界比内容更重要"></a>三、触发边界比内容更重要</h2><p>一个 Skill 写得再好，如果在错误的时机被触发，价值就是负的。</p><p>这里踩过的几个边界问题：</p><ul><li><strong>不要让 Skill 自动执行破坏性操作</strong>。清理、卸载、批量替换这类动作，必须有人确认；</li><li><strong>触发条件要写「什么时候不要用」</strong>。比如「采集只走本仓库 Browser4，禁止外部爬虫」——这条不是建议，是边界；</li><li><strong>验证类 Skill 要和具体的验证命令绑定</strong>。写「跑一下探针」没用，要写清楚用哪个脚本、预期几项通过；</li><li><strong>不要让 Skill 和工程规则漂移</strong>。Skill 里复述的规则越多，越容易和 <code>AGENTS.md</code> 不一致。能引用就引用，不能引用就只写操作步骤。</li></ul><h2 id="四、把「验证方法」也沉淀"><a href="#四、把「验证方法」也沉淀" class="headerlink" title="四、把「验证方法」也沉淀"></a>四、把「验证方法」也沉淀</h2><p>最有价值的一类 Skill 不是「怎么做功能」，而是「怎么证明它是对的」。</p><p><code>desktop-verify</code> 就是这一类：本机验证方法论，包括用 CDP 驱动应用、设计探针、装机与卸载、哪些路径必须真人操作。它解决的问题是：下一个人（或下一个 Agent）不必重新发明一套验证方式，也不会把「界面看到了」当成「功能通过了」。</p><p>这和写文档是同一个道理：<strong>验证方法本身也是工程产物</strong>。</p><h2 id="五、维护：Skill-会过期"><a href="#五、维护：Skill-会过期" class="headerlink" title="五、维护：Skill 会过期"></a>五、维护：Skill 会过期</h2><p>Skill 最大的风险不是没有，而是<strong>过期</strong>。过期 Skill 比没有 Skill 更糟，因为它会让人以为流程还被维护着。</p><p>目前的维护方式：</p><ul><li>Skill 只写稳定的流程与边界，具体命令尽量从仓库脚本或文档引用；</li><li>工程状态变化时，先更新 <code>ENGINEERING-STATUS.md</code>，再检查相关 Skill 是否需要跟着改；</li><li>新增 Skill 前先问「现有 Skill &#x2F; 文档能不能覆盖」，避免同类流程分裂成多份；</li><li>发现 Skill 与实际行为不一致时，优先改 Skill 或删掉，而不是留一条「历史说明」。</li></ul><h2 id="六、边界"><a href="#六、边界" class="headerlink" title="六、边界"></a>六、边界</h2><ul><li>Skill 不是万能的：它依赖模型愿意读、读得懂，也依赖上下文里能拿到正确的文件；</li><li>Agent 的产出仍然需要人验收，尤其是涉及发布、删数据、改配置的任务；</li><li>沉淀过早会过度抽象。我的经验是：<strong>同一个流程至少手工走两遍，再写成 Skill</strong>；</li><li>这套东西不能替代工程约束。硬约束（IPC 白名单、sandbox、禁止跨平台出包）仍然要写在 <code>AGENTS.md</code> 和规则文件里，Skill 只是执行层。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>把工作流沉淀成 Skill 与 Agent，本质上是在做三件事：</p><ol><li><strong>把隐性步骤显性化</strong>，让流程可重复；</li><li><strong>把完成标准写死</strong>，让「做完了」可验证；</li><li><strong>把边界写清楚</strong>，让自动化知道什么时候必须停下来。</li></ol><p>这三件事和写代码、写文档没有区别。区别只在于，产物是给人和 Agent 共同执行的。</p><hr><p><em>发表于 2026 年 10 月 · 标签: AI辅助开发, Claude Code, Skill, Agent, 工作流</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> AI辅助开发 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> AI辅助开发 </tag>
+            
+            <tag> Agent </tag>
+            
+            <tag> Claude Code </tag>
+            
+            <tag> Skill </tag>
+            
+            <tag> 工作流 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>安装器升级时，哪些东西该保留：应用、用户数据、更新元数据</title>
+      <link href="/2026/10/17/2026-10-17-%E5%AE%89%E8%A3%85%E5%99%A8%E5%8D%87%E7%BA%A7%E6%97%B6%E5%93%AA%E4%BA%9B%E4%B8%9C%E8%A5%BF%E8%AF%A5%E4%BF%9D%E7%95%99/"/>
+      <url>/2026/10/17/2026-10-17-%E5%AE%89%E8%A3%85%E5%99%A8%E5%8D%87%E7%BA%A7%E6%97%B6%E5%93%AA%E4%BA%9B%E4%B8%9C%E8%A5%BF%E8%AF%A5%E4%BF%9D%E7%95%99/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>桌面应用升级最容易丢的不是代码，是用户数据。NSIS 卸载器会删整个安装目录，而升级又会先跑旧卸载器——不加保护就是「升一次级丢一次数据」。这篇文章把安装&#x2F;升级拆成三类状态：应用、用户数据、更新元数据，分别讲它们的边界。</p></blockquote><h2 id="一、先复现：升级为什么会删数据"><a href="#一、先复现：升级为什么会删数据" class="headerlink" title="一、先复现：升级为什么会删数据"></a>一、先复现：升级为什么会删数据</h2><p>这个应用的 Windows 打包版把可写数据放在安装目录下：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">&lt;installDir&gt;/data/<br>  imports.sqlite<br>  captures/<br>  merchants/<br></code></pre></td></tr></table></figure><p>这样用户可以把应用装到大盘，而不是默认的 C 盘。代价是：electron-builder 生成的 NSIS 卸载器会 <code>RMDir /r $INSTDIR</code>，而且<strong>升级时会先静默跑一遍旧卸载器</strong>。</p><p>于是升级流程变成：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">旧卸载器 → 删除 $INSTDIR（包括 data）→ 安装新版本<br></code></pre></td></tr></table></figure><p>用标记文件实测，确实每次升级都会把任务、商品、captures、登录态删光。这不是偶发，是默认行为。</p><h2 id="二、用户数据：卸载前挪走，安装后挪回"><a href="#二、用户数据：卸载前挪走，安装后挪回" class="headerlink" title="二、用户数据：卸载前挪走，安装后挪回"></a>二、用户数据：卸载前挪走，安装后挪回</h2><p>修法是在 NSIS 的 <code>customUnInit</code> &#x2F; <code>customInstall</code> 里做一次搬运：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">卸载前：&lt;installDir&gt;/data → &lt;installDir&gt;.data-keep（同盘兄弟目录）<br>安装后：&lt;installDir&gt;.data-keep → &lt;installDir&gt;/data<br></code></pre></td></tr></table></figure><p>几个关键约束：</p><ul><li><strong>必须同盘</strong>，否则 <code>Rename</code> 会失败；跨盘时回退到 <code>xcopy</code>。</li><li><strong>不能用 <code>xcopy /O</code></strong>：非提权下复制 ACL 会「访问拒绝」，复制成功前不能删保留副本。</li><li><strong>新目录已有数据时优先保留活动数据</strong>，不覆盖。</li><li><strong>升级无条件保留</strong>；静默卸载默认保留；交互卸载给一个默认勾选的「保留本地数据」选项；<code>--delete-app-data</code> 才强制删除。</li></ul><h2 id="三、换目录安装：保留数据会「搁浅」"><a href="#三、换目录安装：保留数据会「搁浅」" class="headerlink" title="三、换目录安装：保留数据会「搁浅」"></a>三、换目录安装：保留数据会「搁浅」</h2><p>第一版只在新安装目录的兄弟位置找 <code>.data-keep</code>。如果用户这次把应用装到了另一个目录，旧数据就找不到了。</p><p>现在按优先级找三处：</p><ol><li>新卸载器写入的独立注册表指针（按通道隔离，不在卸载器自删的键下）；</li><li>新 <code>$INSTDIR</code> 的兄弟目录；</li><li><strong>旧</strong> <code>$INSTDIR</code> 的兄弟目录——安装器在旧卸载器删除注册表之前，先记下旧的 <code>InstallLocation</code>。</li></ol><p>证据做两层：</p><ul><li>宏级语义探针直接编译真实 <code>installer.nsh</code>，13&#x2F;13：同盘指针、旧卸载器换目录、就地升级、跨盘复制、活动数据优先、<code>--delete-app-data</code>、失效指针回落；</li><li>真实包静默换目录安装：旧目录删除、无 <code>.data-keep</code> 残留、数据 <strong>1051 文件 &#x2F; 204,677,245 B</strong> 与 <code>imports.sqlite</code> 的 SHA-256 <strong>逐字节一致</strong>。</li></ul><h2 id="四、更新元数据：不是每个构建目标都会生成"><a href="#四、更新元数据：不是每个构建目标都会生成" class="headerlink" title="四、更新元数据：不是每个构建目标都会生成"></a>四、更新元数据：不是每个构建目标都会生成</h2><p>自动更新依赖 <code>resources/app-update.yml</code>。但 electron-builder <strong>只在 nsis &#x2F; dmg &#x2F; zip 目标写这个文件</strong>，<code>--dir</code>（<code>build:unpack</code>）不会写。</p><p>最初的实现是「afterPack 里缺这个文件就失败」，结果 unpack 构建直接红。后来的策略是：</p><ul><li><code>--dir</code> 构建跳过检查；</li><li>正式包缺文件仍然直接失败，而不是留一个「能装但不能更新」的哑弹。</li></ul><p>另一个坑是缓存目录。electron-builder 派生的 <code>updaterCacheDirName</code> 默认是 <code>sanitize(package.json name) + &quot;-updater&quot;</code>，<strong>不带通道后缀</strong>。test 和 prod 会共用同一个更新缓存目录，和「双通道互不干扰」的原则冲突。现在由统一的 <code>afterPack</code> 入口按 appId 加 <code>-test</code> 后缀。</p><h2 id="五、运行时文件：Squirrel-要求可写"><a href="#五、运行时文件：Squirrel-要求可写" class="headerlink" title="五、运行时文件：Squirrel 要求可写"></a>五、运行时文件：Squirrel 要求可写</h2><p>macOS 上还遇到一个安装失败：Squirrel 在安装前会逐个移除 quarantine 属性，但 Browser4 JVM 里有 <strong>88 个 <code>runtime/**/legal/*</code> 文件是 <code>0444</code></strong>。<code>removexattr</code> 返回 EACCES，ShipIt 重试 3 次后放弃，重新拉起旧版本。</p><p>症状看起来像「安装位置权限问题」，但实测 <code>/Applications</code> 和 <code>~/Applications</code> 修复前都会失败。真正的修法是在签名前给这些文件补 owner-write：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">u+w → zip 内权限变成 -rw-r--r--<br></code></pre></td></tr></table></figure><p>修复后一次安装通过。<strong>这不是路径问题，是文件模式问题。</strong></p><h2 id="六、验证环境卫生"><a href="#六、验证环境卫生" class="headerlink" title="六、验证环境卫生"></a>六、验证环境卫生</h2><p>安装器按注册表里残留的旧 <code>InstallLocation</code> 决定安装路径（这是升级语义）。所以做安装验证前要清两个键，而不是一个：</p><ul><li><code>Uninstall</code> 下的应用项；</li><li><code>HKCU\Software\&lt;APP_GUID&gt;</code>——它决定 <code>$INSTDIR</code>。</li></ul><p>否则新包装回旧路径，会出现「装成功但程序不在你以为的地方」。装完也不要假设默认路径，用 <code>UninstallString</code> 反查实际位置。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>安装&#x2F;升级要把状态分三类看：</p><table><thead><tr><th>状态</th><th>谁负责</th><th>失败后果</th></tr></thead><tbody><tr><td>应用文件</td><td>安装器</td><td>重装即可</td></tr><tr><td>用户数据</td><td>安装器 + 应用</td><td><strong>不可恢复</strong></td></tr><tr><td>更新元数据</td><td>构建产物</td><td>能装但不能更新</td></tr></tbody></table><p>优先级很清楚：<strong>用户数据是唯一不能靠重装恢复的东西</strong>，所以所有升级路径都要围绕它设计。至于「保留数据」这件事，默认值应该是保留，删除必须是一个显式选择。</p><hr><p><em>发表于 2026 年 10 月 · 标签: Electron, NSIS, 安装器, 数据保留, 打包</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 运维实战 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Electron </tag>
+            
+            <tag> 打包 </tag>
+            
+            <tag> NSIS </tag>
+            
+            <tag> 安装器 </tag>
+            
+            <tag> 数据保留 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>桌面端自动更新不是接个 electron-updater 就完了</title>
+      <link href="/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E8%87%AA%E5%8A%A8%E6%9B%B4%E6%96%B0%E4%B8%8D%E6%98%AF%E6%8E%A5%E4%B8%AA%E5%BA%93%E5%B0%B1%E5%AE%8C%E4%BA%86/"/>
+      <url>/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E8%87%AA%E5%8A%A8%E6%9B%B4%E6%96%B0%E4%B8%8D%E6%98%AF%E6%8E%A5%E4%B8%AA%E5%BA%93%E5%B0%B1%E5%AE%8C%E4%BA%86/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>接入 <code>electron-updater</code> 只完成了「下载和安装」这一小段。真正的工作量在另一边：服务端要有一整套版本、制品、校验、策略和灰度模型；客户端要有一个能被验证的状态机，还要在受限时拦住所有会写数据的入口。这篇文章讲这条链路是怎么落地的，以及哪些地方我们选择了接受限制。</p></blockquote><h2 id="一、先把更新当成一个服务端系统"><a href="#一、先把更新当成一个服务端系统" class="headerlink" title="一、先把更新当成一个服务端系统"></a>一、先把更新当成一个服务端系统</h2><p>客户端只是一个消费者。服务端至少要回答五个问题：</p><table><thead><tr><th>问题</th><th>对应能力</th></tr></thead><tbody><tr><td>有没有新版本</td><td>release + artifact + feed</td></tr><tr><td>这个包是不是真的</td><td>逐 artifact 校验大小 &#x2F; SHA-512 &#x2F; 格式</td></tr><tr><td>谁能更新、什么时候必须更新</td><td>policy（目标版本、最低版本、生效时间、灰度）</td></tr><tr><td>出问题怎么退</td><td>revoke</td></tr><tr><td>新用户第一次装哪个</td><td>latest 接口，独立于策略</td></tr></tbody></table><p>几个约束是踩出来的：</p><ul><li><strong>版本号共享，制品按平台拆</strong>。一个版本号只能有一行 release，但 Windows 和 macOS 的安装包各自登记、各自校验。</li><li><strong>校验结果有 24 小时有效期</strong>。过期必须重新校验，否则可能把一个已经变化的文件发出去。</li><li><strong>发布是一次性的</strong>。<code>publish</code> 要求该版本下所有要发布的制品都已校验。某平台晚到，只能给它一个新版本号——<strong>两个平台版本号不同是预期行为，不是发错包</strong>。</li><li>灰度分桶的哈希输入包含 platform + arch，百分比按平台各自生效。</li></ul><p>这一套下来，「自动更新」就不再是客户端功能，而是一个小的发布平台。</p><h2 id="二、客户端有两个入口，不是一个按钮"><a href="#二、客户端有两个入口，不是一个按钮" class="headerlink" title="二、客户端有两个入口，不是一个按钮"></a>二、客户端有两个入口，不是一个按钮</h2><p>普通更新和强制更新在产品上是两条完全不同的路径：</p><ul><li><strong>普通更新</strong>：侧栏按钮，状态 <code>none / available / downloading / ready / error</code>，后台下载，可以稍后重启；</li><li><strong>强制更新</strong>：全屏 gate，<code>download → downloading → ready / failed</code>，没有关闭，也没有「稍后」。</li></ul><p>强制 gate 的关键不在 UI，而在<strong>它必须真的能拦住写入</strong>。受限时，三个写入口统一抛 <code>UPDATE_REQUIRED</code>：</p><ul><li>开始采集；</li><li>重试失败链接；</li><li>提交草稿。</li></ul><p>验证时做了双向对照：受限时三个入口都拒绝；恢复后，它们分别落到各自的参数校验错误。这样才能排除「一律拒绝」和「探针本身失效」两种假通过。</p><p>还有一个容易被忽略的层级问题：商家登录页是挂在主窗口上的 <code>WebContentsView</code>，渲染层级在主页面之上。强制 gate 刚上线时，未登录用户看到的是登录页，不是更新页——CDP 里能读到 <code>gate=true</code>，屏幕上却不是。<code>z-index</code> 无效，因为两者不在同一合成层。最后改成受限时让登录视图让位（<code>setVisible(false)</code>），并处理了离线受限时的初值，避免先闪一下登录页。</p><h2 id="三、状态机要能解释「为什么不可重试」"><a href="#三、状态机要能解释「为什么不可重试」" class="headerlink" title="三、状态机要能解释「为什么不可重试」"></a>三、状态机要能解释「为什么不可重试」</h2><p>最初的判断用了 <code>checkStatus</code>，但它是「上次检查的结论」，不是本次操作结果。下载失败时它仍然是 <code>UPDATE_AVAILABLE</code>，于是不可重试的错误被显示成「重试下载」。</p><p>改完之后，失败分成两类：</p><ul><li>撤回、系统不支持、本机配置错误 → 「更新无法继续」+「重新检查」；</li><li>传输类失败 → 「重试下载」。</li></ul><p>另外补了一个 <code>error</code> 态：普通更新下载失败后，侧栏入口原本会直接消失，用户没有任何重试入口。现在只在<strong>有已知目标版本</strong>时显示错误状态，避免每次启动都亮红灯。</p><h2 id="四、离线也要保持阻断"><a href="#四、离线也要保持阻断" class="headerlink" title="四、离线也要保持阻断"></a>四、离线也要保持阻断</h2><p>更新策略在本地有缓存。断网重启后，客户端仍然能恢复「当前版本受限」的结论，继续拦住写入。这里有两个细节：</p><ul><li>按服务端时间差与建议间隔调度检查，而不是只信本机时钟；</li><li>离线时无法确认策略是否解除，<strong>默认保持限制</strong>，而不是乐观放开。</li></ul><p>离线恢复探针 8&#x2F;8 通过：stub 切到受限 → 跑一次检查 → 切到离线 → 重启应用 → 限制仍在、写入仍被拒。</p><h2 id="五、验证方式：stub-真实应用"><a href="#五、验证方式：stub-真实应用" class="headerlink" title="五、验证方式：stub + 真实应用"></a>五、验证方式：stub + 真实应用</h2><p>后端用本地 stub 顶替，响应信封、字段、纳秒时间戳逐字段照抄真实接口；应用用隔离的 <code>--user-data-dir</code> 和调试端口启动，用 CDP 驱动。</p><p>状态机探针覆盖 8 种决策：<code>UPDATE_DISABLED</code>、<code>UP_TO_DATE</code>、<code>UPDATE_AVAILABLE</code>、待生效强制、已生效强制、<code>RELEASE_REVOKED</code>、业务失败、<code>required</code> 缺 <code>enforceAfter</code>。每个场景同时断言状态字段和 DOM：</p><ul><li>gate 的 <code>data-stage</code>；</li><li>侧栏的 <code>data-state</code> 与 tip；</li><li>外壳是否 <code>inert</code>。</li></ul><p><strong>每个场景先断言 stub 确实被请求过</strong>，否则可能拿上一次的陈旧状态读成通过。这一条是探针设计里最重要的防假通过措施。</p><h2 id="六、接受了的限制与还没做的"><a href="#六、接受了的限制与还没做的" class="headerlink" title="六、接受了的限制与还没做的"></a>六、接受了的限制与还没做的</h2><p>诚实记录几条边界：</p><ul><li><strong>更新永远是整包</strong>。<code>electron-updater</code> 会尝试差分下载，但在这个 feed 方案下，它拼出的 blockmap 地址必然 404，每次都回退全量。本期决定接受整包 364 MiB，差分留作后续优化。</li><li><strong>删掉了两条死链路</strong>：<code>deferUpdate</code>（IPC、落盘、判重都齐，但没有任何 UI 调用）和 <code>rolloutBucket</code>（灰度在后端按 installationId 判定）。没有调用方的功能就是死代码，留着只会让下一个人以为它在工作。</li><li><strong>prod 环境的接口部署与真实升级尚未验证</strong>；mac 的 dmg 外发所需公证也还没跑。</li><li><strong>macOS 更新必须用 zip</strong>，dmg 只用于手动安装；这是 Squirrel.Mac 的约束，不是选择。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>自动更新的难点不在「会不会用 electron-updater」，而在三件事：</p><ol><li><strong>服务端要能回答「谁该更新、什么时候必须更新、出问题怎么退」</strong>；</li><li><strong>客户端状态机要能区分可重试与不可重试</strong>，并且真的拦住写入；</li><li><strong>验证要能证明它没有假通过</strong>，而不是只截图看到 gate 出现了。</li></ol><p>把这三件事拆开做，更新才是一个可控的生产能力；只接库，得到的只是一个「有时候能升级」的按钮。</p><hr><p><em>发表于 2026 年 10 月 · 标签: Electron, 自动更新, 状态机, 发布, 架构</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 架构设计 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 状态机 </tag>
+            
+            <tag> 架构 </tag>
+            
+            <tag> Electron </tag>
+            
+            <tag> 自动更新 </tag>
+            
+            <tag> 发布 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>桌面应用不能留孤儿进程：Chromium、JVM 与退出语义</title>
+      <link href="/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E4%B8%8D%E8%83%BD%E7%95%99%E5%AD%A4%E5%84%BF%E8%BF%9B%E7%A8%8B/"/>
+      <url>/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E4%B8%8D%E8%83%BD%E7%95%99%E5%AD%A4%E5%84%BF%E8%BF%9B%E7%A8%8B/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>用户关掉窗口，任务栏里还留着 Chromium；再打开一次，机器上多一份 JVM。这类问题不会立刻报错，但会一直吃内存、占端口，最后表现成「应用越用越卡」。这篇文章讲三类孤儿是怎么产生的，以及退出路径应该怎么设计。</p></blockquote><h2 id="一、孤儿从哪来：时序窗口"><a href="#一、孤儿从哪来：时序窗口" class="headerlink" title="一、孤儿从哪来：时序窗口"></a>一、孤儿从哪来：时序窗口</h2><p>这个应用启动时会拉起一个 Browser4 运行时（JVM），JVM 在启动后几秒内会自己开一个默认上下文的 Chromium。而平台 session 要到 10–20 秒才真正打开。</p><p>最初的清理逻辑是<strong>在 session 打开时缓存 Chromium 路径</strong>，退出时按这个路径杀残留。问题就出在中间那个窗口：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">应用启动 → JVM 起来 → 默认 context 开 Chromium（约 2s）<br>        → 用户关窗（10s 前）→ 缓存还是空的 → kill 被跳过<br>        → session 根本没打开<br></code></pre></td></tr></table></figure><p>结果就是 Chromium 留在后台。修法有两条：</p><ol><li><strong>缓存提前</strong>：runtime 一解析出来就记下 Chromium 路径，不等 session；</li><li><strong>同步兜底</strong>：缓存仍为空时，退出路径同步推导出随包 Chromium 目录，不依赖异步工作。</li></ol><p>杀进程时按<strong>路径前缀</strong>匹配，所以传目录就能覆盖目录下所有 revision 子目录。</p><h2 id="二、按路径杀，不按进程名"><a href="#二、按路径杀，不按进程名" class="headerlink" title="二、按路径杀，不按进程名"></a>二、按路径杀，不按进程名</h2><p>这是最容易写错的一步。如果按 <code>chrome.exe</code> 或 <code>Google Chrome</code> 匹配，会误杀用户自己的浏览器。</p><p>正确做法是只杀<strong>随包</strong>的 Chromium：</p><ul><li>Windows：匹配随包目录下的 <code>chrome.exe</code>；</li><li>macOS：匹配 <code>.app</code> 内进程，needle 用 <code>lastIndexOf(&#39;.app/&#39;)</code>，避免打包态命中外层 Electron 的 <code>.app</code> 而自杀；</li><li>跳过当前进程的 <code>pid</code> &#x2F; <code>ppid</code>；</li><li><strong>不碰系统 Google Chrome</strong>。</li></ul><p>实测证据：</p><table><thead><tr><th>场景</th><th>结果</th></tr></thead><tbody><tr><td>session 已开</td><td>34 个 Chromium → 0</td></tr><tr><td>首次 session 打开前</td><td>8 个 Chromium → 0</td></tr><tr><td>退出后</td><td>随包 Chromium 0、Browser4 JVM 0</td></tr><tr><td>用户自装 Browser4</td><td>未被误杀</td></tr><tr><td>系统 Google Chrome</td><td>未被误杀</td></tr></tbody></table><p>两条路径都在 1 秒内退出干净。</p><h2 id="三、日志要打出「杀的是哪个路径」"><a href="#三、日志要打出「杀的是哪个路径」" class="headerlink" title="三、日志要打出「杀的是哪个路径」"></a>三、日志要打出「杀的是哪个路径」</h2><p>第一版还有一个隐蔽问题：如果 kill 被跳过，日志里什么都没有。症状看起来和「kill 失败」一模一样——都是关窗后 Chromium 还在跑。</p><p>现在退出路径会明确记录它正在杀的路径。<strong>没有日志的跳过，是最难排查的失败。</strong></p><h2 id="四、退出语义：关窗不等于退出"><a href="#四、退出语义：关窗不等于退出" class="headerlink" title="四、退出语义：关窗不等于退出"></a>四、退出语义：关窗不等于退出</h2><p>两个平台的约定本来就不同：</p><ul><li><strong>Windows</strong>：关闭主窗口 &#x3D; 整退；但要先关掉独立的复核&#x2F;查看窗，再走 <code>before-quit</code>；</li><li><strong>macOS</strong>：关闭红灯<strong>不退出</strong>，必须 Cmd+Q。这是平台习惯，不要「帮用户」改成关窗即退。</li></ul><p>退出路径统一走 <code>disposeForQuitSync</code>：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">取消进行中的任务<br>→ 关闭各平台 session<br>→ 按随包路径强制杀 Chromium 残留<br>→ 停止 JVM<br></code></pre></td></tr></table></figure><p>这里用同步清理，是因为 <code>before-quit</code> 之后进程可能很快结束，异步清理没有机会跑完。</p><h2 id="五、监听地址也属于生命周期"><a href="#五、监听地址也属于生命周期" class="headerlink" title="五、监听地址也属于生命周期"></a>五、监听地址也属于生命周期</h2><p>另一个「进程问题」其实出在网络绑定上。JVM 开了两个 socket：</p><ul><li>Spring 主 server：默认绑 <code>0.0.0.0</code>；</li><li>Browser4 自己的 MCP-over-HTTP server：默认 <code>0.0.0.0:8088</code>。</li></ul><p>后果有两个：</p><ol><li>Windows 防火墙每次启动都弹「Windows 安全警报」；</li><li>一个能驱动浏览器的服务暴露在局域网里。</li></ol><p>只设 <code>--server.address=127.0.0.1</code> <strong>不够</strong>——实测这只把 Spring socket 绑到回环，MCP 那个仍停在 <code>::</code>。两个都要绑回环。</p><p>防火墙弹窗还有一个放大器：打包版首启会把 runtime 拷到带版本号的目录，<strong>一升级路径就变</strong>，所以用户点了「允许」下次还会再弹。看起来像「一直在弹」，实际是路径变了导致规则没命中。</p><h2 id="六、边界"><a href="#六、边界" class="headerlink" title="六、边界"></a>六、边界</h2><ul><li>退出清理只覆盖随包进程；用户自己安装的 Browser4 不归应用管，也不应该被管；</li><li>强制杀进程是兜底，不是正常路径。正常路径应该先让 CLI &#x2F; session 自己关闭；</li><li>崩溃退出的情况没有经过 <code>before-quit</code>，只能依赖下次启动时清理或系统回收，这一块没有做成强保证；</li><li>长跑后的进程数量与句柄泄漏，还没有单独做长时观察。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>孤儿进程的根因通常不是「杀不掉」，而是<strong>清理逻辑依赖了一个当时还不存在的状态</strong>。这次的三条修正可以复用：</p><ol><li><strong>路径尽早缓存，退出时再同步兜底</strong>；</li><li><strong>按随包路径杀，不按进程名杀</strong>；</li><li><strong>把「跳过」也写进日志</strong>，否则它和「失败」无法区分。</li></ol><p>顺带记住：进程生命周期不只包括进程本身，也包括它监听的地址。绑回环既是安全边界，也是用户体验。</p><hr><p><em>发表于 2026 年 10 月 · 标签: Electron, 进程管理, Chromium, JVM, 排障</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 运维实战 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> JVM </tag>
+            
+            <tag> Electron </tag>
+            
+            <tag> 排障 </tag>
+            
+            <tag> 进程管理 </tag>
+            
+            <tag> Chromium </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>一个 364MB 的安装包传不上去：从 multipart 上限排到堆内 OOM</title>
+      <link href="/2026/10/17/2026-10-17-364MB%E5%AE%89%E8%A3%85%E5%8C%85%E4%B8%8A%E4%BC%A0%E5%A4%B1%E8%B4%A5-%E4%BB%8Emultipart%E4%B8%8A%E9%99%90%E5%88%B0%E5%A0%86%E5%86%85OOM/"/>
+      <url>/2026/10/17/2026-10-17-364MB%E5%AE%89%E8%A3%85%E5%8C%85%E4%B8%8A%E4%BC%A0%E5%A4%B1%E8%B4%A5-%E4%BB%8Emultipart%E4%B8%8A%E9%99%90%E5%88%B0%E5%A0%86%E5%86%85OOM/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>上传接口对 2KB、32MB、128MB、192MB 都返回 200，到 256MB 开始稳定 500；364MB 的真实安装包直接失败。第一反应是 multipart 上限，但配置里写的是 1000MB。真正的原因在 JVM 堆里，而且错误被 <code>catch (Exception)</code> 吞掉了。</p></blockquote><h2 id="一、现象：按大小分层失败"><a href="#一、现象：按大小分层失败" class="headerlink" title="一、现象：按大小分层失败"></a>一、现象：按大小分层失败</h2><p>先把边界测出来，而不是猜：</p><table><thead><tr><th>文件大小</th><th>结果</th></tr></thead><tbody><tr><td>2 KB &#x2F; 32 MB &#x2F; 128 MB &#x2F; 192 MB</td><td>200，返回可访问的存储地址</td></tr><tr><td>256 MB（复测两次一致）</td><td>500，<code>{&quot;code&quot;:&quot;5001&quot;,&quot;message&quot;:&quot;Internal server error&quot;}</code></td></tr><tr><td>364 MB（真实安装包）</td><td>500，同样 <code>5001</code>，且<strong>先收完整个 body（约 91 秒）才报错</strong></td></tr></tbody></table><p>这个分布很有信息量：不是网络中断，不是鉴权失败，也不是大小校验提前拒绝——服务端把整个文件收完了，然后才在处理阶段炸掉。</p><h2 id="二、排除-multipart：配置是-1000MB"><a href="#二、排除-multipart：配置是-1000MB" class="headerlink" title="二、排除 multipart：配置是 1000MB"></a>二、排除 multipart：配置是 1000MB</h2><p>最像的原因当然是上传大小限制。但把 Nacos 里该环境实际生效的配置拉出来看：</p><figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs properties"><span class="hljs-attr">spring.servlet.multipart.max-file-size</span>=<span class="hljs-string">1000MB</span><br><span class="hljs-attr">spring.servlet.multipart.max-request-size</span>=<span class="hljs-string">1000MB</span><br></code></pre></td></tr></table></figure><p>364MB 远小于上限，而且如果真是 multipart 拒绝，不会等到收完 body 才报错。顺带确认了另一个环境里确实有 <code>20MB/100MB</code> 的配置，但线上实例读的不是那一份——<strong>排查配置问题，一定要看生效 profile，不是仓库里的默认值</strong>。</p><h2 id="三、读源码：整个文件被读进一个堆数组"><a href="#三、读源码：整个文件被读进一个堆数组" class="headerlink" title="三、读源码：整个文件被读进一个堆数组"></a>三、读源码：整个文件被读进一个堆数组</h2><p>上传实现大致是：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">request.setBytes(file.getBytes());<br></code></pre></td></tr></table></figure><p>随后 <code>createStorage(contentType, key, request.getBytes(), extName)</code> 又把这份字节数组交给存储客户端，包成 <code>ByteArrayInputStream</code>。也就是说：</p><ul><li>文件先以 <code>MultipartFile</code> 形式落盘或缓存在临时区；</li><li><code>getBytes()</code> 把它<strong>完整物化</strong>成一个 <code>byte[]</code>；</li><li>后续构造请求时还可能再产生拷贝。</li></ul><p>堆需求至少是文件大小本身，加上若干份临时拷贝。对 256MB 的文件，512MB 堆已经没有安全余量。</p><p>再看 JVM 参数：测试环境 <code>-Xms256m -Xmx512m -Xmn128m</code>，生产环境 <code>-Xmx2g</code>。<strong>192MB 通过、256MB 失败</strong>，正好落在 512MB 堆装不下「文件 + 拷贝」的位置。根因到这里就闭合了。</p><h2 id="四、为什么错误这么不可读"><a href="#四、为什么错误这么不可读" class="headerlink" title="四、为什么错误这么不可读"></a>四、为什么错误这么不可读</h2><p><code>uploadDesktopFileByPath</code> 里只有：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">try</span> &#123;<br>    ...<br>&#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>    ...<br>&#125;<br></code></pre></td></tr></table></figure><p><code>OutOfMemoryError</code> 继承的是 <code>Error</code>，不是 <code>Exception</code>。它穿过这层 catch，落到框架的通用异常处理，最后只剩一个 <code>5001 Internal server error</code> 和一枚 traceId。<strong>一个可恢复的容量问题，被表现成了完全不可诊断的 500。</strong></p><p>这也是这次排障最花时间的地方：如果响应里能带上 <code>OutOfMemoryError</code>，排查会从「读源码 + 猜配置」缩短到几分钟。</p><h2 id="五、修法：流式上传-至少让错误可读"><a href="#五、修法：流式上传-至少让错误可读" class="headerlink" title="五、修法：流式上传 + 至少让错误可读"></a>五、修法：流式上传 + 至少让错误可读</h2><p>正解不是调堆，而是不要再把整个文件放进内存：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">try</span> (<span class="hljs-type">InputStream</span> <span class="hljs-variable">in</span> <span class="hljs-operator">=</span> file.getInputStream()) &#123;<br>    <span class="hljs-keyword">return</span> createStorageFromStream(contentType, key, in, extName);<br>&#125;<br></code></pre></td></tr></table></figure><p>存储客户端本来就提供吃 <code>InputStream</code> 的重载，同文件其它路径已经在用，不需要引入新 API。返回的 key、contentType、URL 结构与旧路径保持同构，调用方无感。</p><p>错误处理至少补到 <code>Throwable</code>：</p><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">catch</span> (Throwable t) &#123;<br>    <span class="hljs-comment">// 让 OOM 也带上可读原因，而不是只剩 traceId</span><br>&#125;<br></code></pre></td></tr></table></figure><p>这里要诚实地说边界：</p><ul><li>只改了<strong>这一个上传接口</strong>。同服务里另外 5 个走 <code>getBytes()</code> 的调用点没动，大文件仍会以同样方式 OOM；</li><li>调堆只能挪阈值。测试环境提到 2g 能过 256MB，但 364MB 在 2g 上依然没有余量，生产环境本来就是 2g，属于侥幸；</li><li>改动的机器上没有 JDK 和本地 Maven 仓库，只做了静态复核（helper 签名、import、catch 顺序、输出同构性），编译与部署由另一侧完成。<strong>没有跑过的验证，不能写成已验证。</strong></li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次故障的链条是：<strong>整包物化 → 堆不足 → Error 穿过 Exception catch → 通用 500</strong>。三个环节任何一个被提前处理，都不会演变成「配置看起来完全正确，但就是传不上去」。</p><p>留三条可复用的经验：</p><ol><li><strong>按大小分层测试</strong>，先拿到失败边界，再决定怀疑方向；</li><li><strong>配置以生效 profile 为准</strong>，不要拿仓库默认值下结论；</li><li><strong>上传&#x2F;下载这类按大小线性的接口，默认按流式设计</strong>；<code>getBytes()</code> 只适合小文件，而且要把「多大算小」写进契约。</li></ol><hr><p><em>发表于 2026 年 10 月 · 标签: JVM, OOM, 文件上传, 排障, Spring</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 踩坑 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> JVM </tag>
+            
+            <tag> Spring </tag>
+            
+            <tag> OOM </tag>
+            
+            <tag> 排障 </tag>
+            
+            <tag> 文件上传 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>给没有测试框架的桌面应用写状态机探针</title>
+      <link href="/2026/10/17/2026-10-17-%E7%BB%99%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E5%86%99%E7%8A%B6%E6%80%81%E6%9C%BA%E6%8E%A2%E9%92%88/"/>
+      <url>/2026/10/17/2026-10-17-%E7%BB%99%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E5%86%99%E7%8A%B6%E6%80%81%E6%9C%BA%E6%8E%A2%E9%92%88/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>这个项目没有测试框架，也没有 <code>pnpm test</code>。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是<strong>怎么避免探针自己假通过</strong>。</p></blockquote><h2 id="一、为什么是「状态机探针」"><a href="#一、为什么是「状态机探针」" class="headerlink" title="一、为什么是「状态机探针」"></a>一、为什么是「状态机探针」</h2><p>桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态：</p><ul><li>更新检查有 8 种决策：禁用、已最新、有更新、待生效强制、已生效强制、已撤回、业务失败、策略非法；</li><li>每种决策会同时影响状态字段、侧栏按钮、全屏 gate、外壳是否可交互；</li><li>还要验证受限时三个写入口都被拦住，恢复后各自恢复正常校验。</li></ul><p>这类问题用单元测试覆盖成本很高，用人工点又容易漏。<strong>状态机探针</strong>是折中：把每个状态当成一个场景，驱动真实应用进入该状态，同时断言状态与 UI。</p><h2 id="二、用-CDP-驱动真实应用"><a href="#二、用-CDP-驱动真实应用" class="headerlink" title="二、用 CDP 驱动真实应用"></a>二、用 CDP 驱动真实应用</h2><p>启动方式：</p><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">electron-vite dev --mode <span class="hljs-built_in">test</span> -- \<br>  --user-data-dir=/tmp/isolated-userdata \<br>  --remote-debugging-port=9222<br></code></pre></td></tr></table></figure><p>三个要点：</p><ol><li><strong>隔离 userData</strong>，避免污染本机真实数据；</li><li><strong>固定调试端口</strong>，让探针能连上；</li><li>只连接<strong>确实暴露 <code>window.api</code> 的页面</strong>。内嵌商家页常排在前面且没有 preload，按 <code>pages()[0]</code> 取会对着错误的 target 读接口。</li></ol><p>探针通过 CDP 执行 DOM 查询和点击，断言的是用户真正看得到的东西，而不是内部变量。</p><h2 id="三、stub-必须逐字段照抄真实响应"><a href="#三、stub-必须逐字段照抄真实响应" class="headerlink" title="三、stub 必须逐字段照抄真实响应"></a>三、stub 必须逐字段照抄真实响应</h2><p>后端用本地 stub 顶替，但响应不能随便造。信封、字段名、值的类型、甚至纳秒时间戳，都按真实接口的实测响应抄。</p><p>原因很直接：<strong>探针验证的是客户端对契约的处理</strong>。如果 stub 的契约比真实服务端更宽容，探针会通过，线上会失败。</p><p>这次就撞到过反例：客户端读错了信封字段，而旧 stub 恰好返回了客户端期望的字段，导致问题在探针里不可见。改成逐字段照抄之后，字段名不一致会立即暴露。</p><h2 id="四、反假通过：三条硬规则"><a href="#四、反假通过：三条硬规则" class="headerlink" title="四、反假通过：三条硬规则"></a>四、反假通过：三条硬规则</h2><p>探针最容易骗过自己。这里用了三条规则：</p><p><strong>规则一：每个场景先断言 stub 确实被请求过。</strong></p><p>否则可能拿上一次的陈旧状态读成通过。尤其是「检查失败保持限制」这类场景，状态看起来对，可能只是因为根本没发起新请求。</p><p><strong>规则二：写入口做双向对照。</strong></p><p>受限时，三个入口都抛 <code>UPDATE_REQUIRED</code>；恢复后，它们必须分别落到自己的参数校验错误：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">importer:start          → IMPORT_REQUEST_INVALID:urls<br>retry-failed            → IMPORT_TASK_ID_REQUIRED<br>submit-goods-drafts     → IMPORT_RECORD_KEYS_REQUIRED<br></code></pre></td></tr></table></figure><p>只测「受限时全部拒绝」不够——一个永远拒绝的实现也能通过。只有恢复后各入口回到各自的错误，才能证明闸门是<strong>条件性的</strong>。</p><p><strong>规则三：失败路径也要有明确预期。</strong></p><p>比如受限时后端返回 503（和连接失败走同一条 <code>!response.ok</code> 路径），探针要断言<strong>闸门不放开</strong>，而不是笼统地「请求失败」。</p><h2 id="五、dev-与打包态分开验证"><a href="#五、dev-与打包态分开验证" class="headerlink" title="五、dev 与打包态分开验证"></a>五、dev 与打包态分开验证</h2><ul><li><strong>dev 探针</strong>：51&#x2F;51，覆盖 8 种决策，每种断言状态字段 + DOM（gate 的 <code>data-stage</code>、侧栏的 <code>data-state</code> 与 tip、外壳是否 <code>inert</code>）。</li><li><strong>离线恢复探针</strong>：8&#x2F;8，验证「受限 → 断网重启 → 限制仍在、写入仍被拒」。</li><li><strong>打包态探针</strong>：10&#x2F;10，验证安装后的产物同样能走通复核窗、缺失重试、重新加载与日志诊断。</li></ul><p>还有一类是<strong>合成竞态</strong>：打开复核窗时数据库行还不存在，600ms 后才落库。探针验证窗口会在最多 4×300ms 的重试后自动恢复，而不是停在「正在加载商品…」。</p><h2 id="六、边界"><a href="#六、边界" class="headerlink" title="六、边界"></a>六、边界</h2><p>这套做法不能替代单元测试：</p><ul><li>探针是场景级的，跑一次成本比单元测试高；</li><li>每个探针都依赖具体的 DOM 结构和文案，UI 改版要跟着维护；</li><li>它证明的是「这个场景在真实应用里能走通」，不是「所有输入组合都正确」；</li><li>需要真人的路径（真实登录、验证码）仍然只能人工验证，探针只能覆盖可自动化的部分。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>没有测试框架时，质量不能靠「多点点」来保证，而要靠<strong>可重复、可证伪的验证</strong>。状态机探针的价值不在于数量，而在于三条纪律：</p><ol><li><strong>驱动真实应用</strong>，不 mock 掉要验证的那一层；</li><li><strong>stub 照抄真实契约</strong>，不让探针比线上更宽容；</li><li><strong>先证明探针自己有效</strong>，再相信它的通过。</li></ol><hr><p><em>发表于 2026 年 10 月 · 标签: Electron, 测试, CDP, 状态机, 工程实践</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 工程方法论 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 状态机 </tag>
+            
+            <tag> 测试 </tag>
+            
+            <tag> 工程实践 </tag>
+            
+            <tag> Electron </tag>
+            
+            <tag> CDP </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>跨平台构建不是一条命令：Windows 与 macOS 出包的边界</title>
+      <link href="/2026/10/17/2026-10-17-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E4%B8%8D%E6%98%AF%E4%B8%80%E6%9D%A1%E5%91%BD%E4%BB%A4/"/>
+      <url>/2026/10/17/2026-10-17-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E4%B8%8D%E6%98%AF%E4%B8%80%E6%9D%A1%E5%91%BD%E4%BB%A4/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>「在 macOS 上打 Windows 包」看起来只是换一个 <code>--win</code> 参数，实际上会把 darwin 的运行时打进 Windows 安装包，首启直接报平台不匹配。跨平台构建的边界不止构建命令，还包括 afterPack、产物目录、通道身份和平台矩阵。</p></blockquote><h2 id="一、为什么不能跨平台出包"><a href="#一、为什么不能跨平台出包" class="headerlink" title="一、为什么不能跨平台出包"></a>一、为什么不能跨平台出包</h2><p>这个应用随包带了 Browser4 运行时。打包前有一个 <code>stage:browser4</code> 步骤，它会把<strong>当前构建机的 platform &#x2F; arch</strong> 写进 manifest，并拷贝对应的 CLI、JVM、Chromium。</p><p>如果在 macOS 上跑 <code>build:win</code>：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">manifest 写的是 darwin/arm64<br>实际打进去的是 darwin 的 CLI/JVM/Chromium<br>产物却是 Windows 安装包<br></code></pre></td></tr></table></figure><p>用户装上后首启报：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">BROWSER4_BUNDLE_PLATFORM_MISMATCH<br></code></pre></td></tr></table></figure><p>所以规则很硬：</p><ul><li>Windows 包只在 Windows x64 &#x2F; Windows runner 上构建；</li><li>macOS 包只在 Apple Silicon 上构建；</li><li>不要在 mac 上打 win，也不要在 Windows 上打 mac。</li></ul><p>这不是「建议」，是构建产物的正确性问题。</p><h2 id="二、afterPack-是单值键，必须自带平台守卫"><a href="#二、afterPack-是单值键，必须自带平台守卫" class="headerlink" title="二、afterPack 是单值键，必须自带平台守卫"></a>二、<code>afterPack</code> 是单值键，必须自带平台守卫</h2><p><code>afterPack</code> 在 electron-builder 配置里只能有一个值，两个平台共用。当前它指向 macOS 的 Browser4 深层签名脚本，但 <strong>Windows 打包同样会触发它</strong>。</p><p>所以那个脚本的第一行必须是：</p><figure class="highlight js"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs js"><span class="hljs-keyword">if</span> (context.<span class="hljs-property">electronPlatformName</span> !== <span class="hljs-string">&#x27;darwin&#x27;</span>) <span class="hljs-keyword">return</span>;<br></code></pre></td></tr></table></figure><p>这一行是 Windows 唯一的防线。由此得到两条维护规则：</p><ol><li><strong>守卫之前不要加任何代码</strong>——读环境变量、写文件、复制文件都不行，否则 Windows 打包会跟着中招；</li><li><strong>将来给 Windows 加签名，不能再加一个 <code>afterPack</code></strong>，必须在同一个脚本里按平台分支。</li></ol><p>这类「全局单值钩子」是跨平台构建里最容易埋雷的地方。</p><h2 id="三、产物按平台-通道分目录"><a href="#三、产物按平台-通道分目录" class="headerlink" title="三、产物按平台 + 通道分目录"></a>三、产物按平台 + 通道分目录</h2><p>早期的输出目录是 <code>dist/</code>，所有平台和通道混在一起。后来改成：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">dist/win-x64-test/<br>dist/win-x64-prod/<br>dist/mac-arm64-test/<br>dist/mac-arm64-prod/<br></code></pre></td></tr></table></figure><p>文件名也带通道，例如 <code>…-test-setup.exe</code> &#x2F; <code>…-prod-setup.exe</code>，避免测试包和生产包混淆。</p><p>这里有一个必须显式处理的坑：<strong>自定义 <code>directories.output</code> 后，electron-builder 只自动排除当前输出目录</strong>。如果 <code>files</code> 里不显式排除整个 <code>dist{,/**/*}</code>，兄弟目录里的旧 <code>.app</code>、<code>*.nsis.7z</code> 会被打进 asar。实际出现过 asar 约 2.3G、安装包数 GB 的情况。</p><p>结论：<strong>输出目录是构建输入的一部分</strong>，必须把整个 <code>dist</code> 从 files 里排除。</p><h2 id="四、test-prod-必须能并存"><a href="#四、test-prod-必须能并存" class="headerlink" title="四、test &#x2F; prod 必须能并存"></a>四、test &#x2F; prod 必须能并存</h2><p>双通道不只是两个 env 文件，还包括一整套身份隔离：</p><table><thead><tr><th></th><th>prod</th><th>test</th></tr></thead><tbody><tr><td>显示名</td><td>Autovado Merchant Desktop</td><td>… Test</td></tr><tr><td>appId</td><td><code>com.autovado.merchant.desktop</code></td><td><code>…desktop.test</code></td></tr><tr><td>Windows exe</td><td><code>autovado-merchant-desktop.exe</code></td><td><code>…-test.exe</code></td></tr><tr><td>mac &#x2F; 开发 userData</td><td><code>…/autovado-merchant-desktop</code></td><td><code>…-test</code></td></tr><tr><td>商家 partition</td><td><code>persist:merchant-web</code></td><td><code>persist:merchant-web-test</code></td></tr><tr><td>更新缓存目录</td><td>默认</td><td>带 <code>-test</code> 后缀</td></tr></tbody></table><p>少任何一项，两个通道就会互相覆盖。例如更新缓存目录：electron-builder 默认派生的是 <code>sanitize(package.json name) + &quot;-updater&quot;</code>，不带通道后缀，test 与 prod 会共用一个缓存目录。现在由统一的 <code>afterPack</code> 入口按 appId 修正。</p><h2 id="五、平台矩阵：只支持两种组合"><a href="#五、平台矩阵：只支持两种组合" class="headerlink" title="五、平台矩阵：只支持两种组合"></a>五、平台矩阵：只支持两种组合</h2><p>本期只支持：</p><ul><li><code>darwin / arm64</code></li><li><code>win32 / x64</code></li></ul><p>Intel Mac 直接返回 <code>UNSUPPORTED_PLATFORM</code>，不做兼容。这个决定要在客户端和服务端同时生效：</p><ul><li>客户端上报 platform &#x2F; arch；</li><li>服务端没有该平台的可用制品时返回 <code>UNSUPPORTED_PLATFORM</code>；</li><li>客户端校验响应里的 <code>release.platform/arch</code> 必须与当前进程一致，拿错平台的包直接判无效。</li></ul><p><code>verify:package</code> 也按 <code>process.platform</code> 分发到 macOS &#x2F; Windows 两套校验，不允许跨平台跑。</p><h2 id="六、产物类型也有平台差异"><a href="#六、产物类型也有平台差异" class="headerlink" title="六、产物类型也有平台差异"></a>六、产物类型也有平台差异</h2><ul><li>Windows：安装和自动更新用同一个 NSIS 包；</li><li>macOS：<strong>自动更新必须用 zip</strong>，dmg 只用于手动安装；新用户下载优先 dmg，但 feed 必须能找到 zip。</li></ul><p>这不是偏好，是 Squirrel.Mac 的约束。发布时如果只登记 dmg，自动更新会失败。</p><h2 id="七、边界"><a href="#七、边界" class="headerlink" title="七、边界"></a>七、边界</h2><ul><li>Windows 本期没有 Authenticode 签名，SmartScreen 警告是预期行为；</li><li>macOS 已接 Developer ID 签名，但 dmg 外发所需的公证还没跑；</li><li>没有做跨平台的 CI 构建矩阵，出包仍然是「在目标平台上手工执行」；</li><li>Linux 有构建脚本，但不在本期支持矩阵里。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>跨平台构建的核心不是「一条命令能出几个平台的包」，而是承认平台差异并把它写进工程约束：</p><ol><li><strong>在目标平台上构建</strong>，运行时不会跨平台；</li><li><strong>单值钩子要带平台守卫</strong>，守卫必须是第一行；</li><li><strong>产物目录和通道身份要隔离</strong>，否则会互相污染；</li><li><strong>支持矩阵要显式</strong>，不支持比「试试看」更安全。</li></ol><p>把这些边界写进脚本和规则文件之后，跨平台才从「靠人记住」变成「构建时自动挡住」。</p><hr><p><em>发表于 2026 年 10 月 · 标签: Electron, 跨平台, electron-builder, 打包, 工程实践</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 架构决策 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 工程实践 </tag>
+            
+            <tag> Electron </tag>
+            
+            <tag> 打包 </tag>
+            
+            <tag> electron-builder </tag>
+            
+            <tag> 跨平台 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>签名和公证真的做了以后：从概念到 Squirrel 装不上的那 88 个文件</title>
+      <link href="/2026/10/17/2026-10-17-%E7%AD%BE%E5%90%8D%E5%92%8C%E5%85%AC%E8%AF%81%E7%9C%9F%E7%9A%84%E5%81%9A%E4%BA%86%E4%BB%A5%E5%90%8E/"/>
+      <url>/2026/10/17/2026-10-17-%E7%AD%BE%E5%90%8D%E5%92%8C%E5%85%AC%E8%AF%81%E7%9C%9F%E7%9A%84%E5%81%9A%E4%BA%86%E4%BB%A5%E5%90%8E/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>之前写过签名、公证与混淆的概念和优先级。这次是真的把 Developer ID 签名接进了构建：签的不只是 <code>.app</code>，还有随包的 JVM、Chromium 和 CLI；签完要刷新校验和；Squirrel 安装还会被 88 个只读文件卡住。概念落到工程里，细节比想象中多。</p></blockquote><h2 id="一、先分清四种状态"><a href="#一、先分清四种状态" class="headerlink" title="一、先分清四种状态"></a>一、先分清四种状态</h2><p>「签了」和「能正常安装」不是一回事。实际会遇到四种状态：</p><table><thead><tr><th>状态</th><th><code>codesign --verify</code></th><th><code>spctl</code></th><th>用户体验</th></tr></thead><tbody><tr><td>完全未签名</td><td>失败</td><td>失败</td><td>某些情况下图形界面反而能放行</td></tr><tr><td>adhoc 签名</td><td>可能通过</td><td>失败</td><td>带 quarantine 双击报「已损坏」，且没有「仍要打开」</td></tr><tr><td>Developer ID 签名</td><td>通过</td><td>通过</td><td>可以正常打开</td></tr><tr><td>Developer ID + 公证</td><td>通过</td><td>通过（Notarized）</td><td>外发分发的要求</td></tr></tbody></table><p>一个容易说错的点：<strong>adhoc 不是「未签名」</strong>。它有自己的签名结构，<code>codesign --verify --deep --strict</code> 可能通过，但 <code>spctl</code> 仍然失败；而完全未签名的包在某些图形界面路径下反而能放行。两者不能混为一谈。</p><h2 id="二、签的不只是-app"><a href="#二、签的不只是-app" class="headerlink" title="二、签的不只是 .app"></a>二、签的不只是 <code>.app</code></h2><p>这个应用随包带了 Browser4 运行时：JVM、Chromium、CLI，以及 JAR 里嵌的原生库。只让 electron-builder 签外层 <code>.app</code> 不够，里面的 Mach-O 也要签。</p><p>构建时在 <code>afterPack</code> 里做<strong>由深到浅</strong>的签名：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">Contents/Resources/browser4/**<br>  → 先签最内层的 .dylib / .jnilib / 可执行文件<br>  → 再签 .framework / .app<br>  → 最后让外层 .app 封口<br></code></pre></td></tr></table></figure><p>两个工程细节：</p><ol><li><strong>JAR 里的 <code>.jnilib</code> 要解压、签名、再放回去</strong>，否则运行时会因为签名无效被拒绝；</li><li><strong><code>signIgnore</code> 要排除 <code>Contents/Resources/browser4</code></strong>，否则 osx-sign 会尝试逐个签 <code>.jar</code>，直接卡死。外层流程跳过这块，由我们自己的脚本处理。</li></ol><p>另外启用了 hardened runtime，并配了 entitlements（含 <code>disable-library-validation</code>），否则随包的 JVM &#x2F; 原生库会被运行时拦下。</p><h2 id="三、签完必须刷新-manifest-校验和"><a href="#三、签完必须刷新-manifest-校验和" class="headerlink" title="三、签完必须刷新 manifest 校验和"></a>三、签完必须刷新 manifest 校验和</h2><p>应用启动时会校验 Browser4 运行时的文件哈希。签名会改变文件字节，所以签完之后必须<strong>刷新 manifest 里的校验和</strong>，否则首启直接报：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">BROWSER4_BUNDLE_CHECKSUM_FAILED<br></code></pre></td></tr></table></figure><p>这不是签名失败，而是「签名成功导致校验和不匹配」。顺序必须是：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">拷贝运行时 → 深层签名 → 刷新 manifest 校验和 → 外层封口<br></code></pre></td></tr></table></figure><p>顺序错了，要么签名覆盖校验和，要么校验和覆盖签名。</p><h2 id="四、Squirrel-的隐藏门槛：88-个只读文件"><a href="#四、Squirrel-的隐藏门槛：88-个只读文件" class="headerlink" title="四、Squirrel 的隐藏门槛：88 个只读文件"></a>四、Squirrel 的隐藏门槛：88 个只读文件</h2><p>签名通过、<code>verify:package</code> 10&#x2F;10、<code>.app</code> 能启动，但真实安装失败了：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">Couldn&#x27;t remove quarantine attribute ...<br>most likely means the file is read-only<br></code></pre></td></tr></table></figure><p>Squirrel（ShipIt）在安装前会逐个移除 quarantine 属性。Browser4 JVM 里有 <strong>88 个 <code>runtime/**/legal/*</code> 文件是 <code>0444</code></strong>，<code>removexattr</code> 返回 EACCES。ShipIt 重试 3 次后放弃，重新拉起旧版本。</p><p>第一反应是安装位置权限问题，但实测 <code>/Applications</code> 和 <code>~/Applications</code> 修复前都会失败。真正的修法是在签名前补 owner-write：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">chmod u+w → 88 个文件 → zip 内权限变成 -rw-r--r--<br></code></pre></td></tr></table></figure><p>修复后一次安装通过。这条经验很具体：<strong>安装器的失败不一定是签名或路径问题，也可能是随包文件的模式位。</strong></p><h2 id="五、公证：已经接线，但这一轮没跑"><a href="#五、公证：已经接线，但这一轮没跑" class="headerlink" title="五、公证：已经接线，但这一轮没跑"></a>五、公证：已经接线，但这一轮没跑</h2><p>公证流程已经接进打包脚本，可以选择 <code>--notarize</code> &#x2F; <code>--no-notarize</code>，也支持环境变量和交互确认（默认不公证）。</p><p>这一轮实测的是 <strong>Developer ID 签名 + 不公证</strong>：</p><ul><li><code>codesign --verify --deep --strict</code> 通过；</li><li><code>spctl</code> 显示 <code>Unnotarized Developer ID</code>——这是预期结果；</li><li>Squirrel 安装与自动升级不受影响；</li><li>但 <strong>dmg 对外分发需要公证</strong>，否则用户首次打开会被 Gatekeeper 拦。</li></ul><p>公证之后还要补一项验证：<strong>在本机真实开一次采集</strong>，确认 JVM 和 Chromium 在 hardened runtime 下能正常启动。签名和公证改变的是信任链，不是运行时行为，但硬编码的 runtime 限制仍可能在这时候才暴露。</p><h2 id="六、Windows：这一期不做-Authenticode"><a href="#六、Windows：这一期不做-Authenticode" class="headerlink" title="六、Windows：这一期不做 Authenticode"></a>六、Windows：这一期不做 Authenticode</h2><p>Windows 侧的结论是「知道该怎么做，但这一期不做」：</p><ul><li>私钥需要放在硬件中；</li><li>签名必须带时间戳（<code>/tr</code>）；</li><li>SmartScreen 不会因为签名立即放行，信誉需要积累；</li><li>安装包内再分发了 Browser4 的 CLI、JVM、Chromium，许可与 NOTICE 还没和维护方确认。</li></ul><p>所以未签名 setup 经网络分发可能触发 SmartScreen 警告，这是当前预期行为，不是缺陷。</p><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>签名与公证落地后，最有价值的不是「证书配好了」，而是这几条顺序与边界：</p><ol><li><strong>由深到浅签名</strong>，JAR 内原生库也要签；</li><li><strong>签完刷新 manifest 校验和</strong>，否则首启校验失败；</li><li><strong>随包文件的模式位会影响安装</strong>，只读文件会让 Squirrel 放弃；</li><li><strong>签名 ≠ 公证</strong>；Squirrel 升级不要求公证，但 dmg 外发要求；</li><li><strong>公证后必须做一次真实运行验证</strong>，不能只看 <code>spctl</code>。</li></ol><p>概念文章可以讲清楚「为什么」，但只有真正出一次包，才会知道卡住安装的是 88 个 <code>0444</code> 的文件。</p><hr><p><em>发表于 2026 年 10 月 · 标签: Electron, 代码签名, 公证, Developer ID, 打包</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 运维实战 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> Electron </tag>
+            
+            <tag> 打包 </tag>
+            
+            <tag> 代码签名 </tag>
+            
+            <tag> 公证 </tag>
+            
+            <tag> Developer ID </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
+      <title>1000 条采集跑完：99.3%、4.18 小时，以及 7 条失败全来自一个 302</title>
+      <link href="/2026/10/17/2026-10-17-1000%E6%9D%A1%E9%87%87%E9%9B%86%E8%B7%91%E5%AE%8C-99.3%E4%B8%8E%E5%A4%B1%E8%B4%A5%E9%A2%84%E7%AE%97/"/>
+      <url>/2026/10/17/2026-10-17-1000%E6%9D%A1%E9%87%87%E9%9B%86%E8%B7%91%E5%AE%8C-99.3%E4%B8%8E%E5%A4%B1%E8%B4%A5%E9%A2%84%E7%AE%97/</url>
+      
+        <content type="html"><![CDATA[<hr><blockquote><p>同一台机器、同一批 1000 条链接，跑了两条路径：一条只做采集，一条是完整产品链路（图片下载 + HTML 落盘 + SQLite）。前者 153 分钟，后者 250.8 分钟。差额不是噪音，可以逐项拆开；7 条失败也不是随机分布，全部来自同一个原因。</p></blockquote><h2 id="一、两条路径，两个口径"><a href="#一、两条路径，两个口径" class="headerlink" title="一、两条路径，两个口径"></a>一、两条路径，两个口径</h2><p>先把口径说清楚，否则数字没有意义：</p><table><thead><tr><th></th><th align="right">采集 bench</th><th align="right">应用路径</th></tr></thead><tbody><tr><td>成功</td><td align="right">999&#x2F;1000（99.9%）</td><td align="right"><strong>993&#x2F;1000（99.3%）</strong></td></tr><tr><td>墙钟</td><td align="right">153.0 min（2.55 h）</td><td align="right"><strong>250.8 min（4.18 h）</strong></td></tr><tr><td>单条</td><td align="right">p50 6.4 s</td><td align="right"><strong>均值 15.0 s</strong></td></tr><tr><td>失败构成</td><td align="right">1× <code>PAGE_ERROR</code></td><td align="right"><strong>7× <code>PRODUCT_ID_MISSING</code></strong></td></tr><tr><td>infra 事件</td><td align="right">0</td><td align="right">3 次 runtime 重启（自愈后仍成功）</td></tr><tr><td>HITL</td><td align="right">0</td><td align="right">0</td></tr></tbody></table><p>bench 不下载图片、不落 HTML、不写数据库，所以它衡量的是「采集引擎」；应用路径才是用户真正会遇到的耗时。<strong>排期必须用应用路径的数字，不能用 bench 的数字。</strong></p><h2 id="二、8-6-秒的差额拆账"><a href="#二、8-6-秒的差额拆账" class="headerlink" title="二、8.6 秒的差额拆账"></a>二、8.6 秒的差额拆账</h2><p>应用路径比 bench 每条多 8.6 秒。这部分不是某一处慢，而是完整链路的固定成本：</p><ul><li>图片下载（同条限流并行 4）；</li><li>轻量 HTML 落盘；</li><li>SQLite 写入；</li><li>事件与状态更新。</li></ul><p>对应的产物规模：</p><ul><li>采集产物 <strong>1031 MB &#x2F; 1000 个目录 ≈ 1.03 MB&#x2F;条</strong>；</li><li>数据库 <strong>8.6 MB</strong>。</li></ul><p>这个拆分有两个用途。第一，产品问「为什么不能更快」时，能明确回答是图片和落盘占了大头，而不是引擎慢。第二，后续优化知道该动哪里——压缩图片、改落盘格式、批量写库，各自对应不同的收益。</p><h2 id="三、失败预算：7-条失败，7-条同一个原因"><a href="#三、失败预算：7-条失败，7-条同一个原因" class="headerlink" title="三、失败预算：7 条失败，7 条同一个原因"></a>三、失败预算：7 条失败，7 条同一个原因</h2><p>这是这次跑次最有价值的发现。</p><p>7 条 <code>PRODUCT_ID_MISSING</code> 的 <code>finalUrl</code> 全部落在 <code>/p/</code> 路径下。根因是 eBay 会<strong>间歇</strong>把 <code>/itm/&lt;itemId&gt;</code> 302 到 <code>/p/&lt;catalogId&gt;</code> 目录页，而且<strong>同一个 session 有粘性</strong>。抽取脚本按 <code>/itm/</code> 取商品 ID，落地页变了自然取不到。</p><p>之前这个问题被记录为「间歇性 <code>PRODUCT_ID_MISSING</code>」，样本是 1 次失败 &#x2F; 约 16 次尝试，不足以定性。1000 条跑次把它变成了确定结论：<strong>7 条失败全部命中这个模式，7&#x2F;7 失败。</strong></p><p>于是加了一个独立错误码：</p><figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">PRODUCT_CATALOG_REDIRECT<br></code></pre></td></tr></table></figure><p>文案是「链接被 eBay 转到商品目录页，可能已下架」。不采这个页面，因为目录页不是商品页，硬采只会产生错误数据。</p><p>这里有一个可复用的度量概念：<strong>失败预算</strong>。一次跑次里，失败是否集中在单一原因，比失败率本身更有信息量：</p><ul><li>失败率 0.7%，但 100% 集中在同一个原因 → 修一处就能显著改善；</li><li>失败率 0.3%，但分散在 20 个原因 → 每个都不值得单独修。</li></ul><p>只看百分比，会把这两种情况当成同一件事。</p><h2 id="四、内存：爬升到上限后平顶，不是无界增长"><a href="#四、内存：爬升到上限后平顶，不是无界增长" class="headerlink" title="四、内存：爬升到上限后平顶，不是无界增长"></a>四、内存：爬升到上限后平顶，不是无界增长</h2><p>bench 不设堆上限时，JVM RSS 的形状是：</p><table><thead><tr><th>时间</th><th align="right">RSS</th></tr></thead><tbody><tr><td>起始</td><td align="right">35 MB</td></tr><tr><td>11 min</td><td align="right">越过 2 GB</td></tr><tr><td>27 min</td><td align="right">越过 4 GB</td></tr><tr><td>72 min</td><td align="right">8.5 GB</td></tr><tr><td>之后 80 min</td><td align="right"><strong>纹丝不动</strong></td></tr></tbody></table><p>这正是「堆涨到默认上限（约 1&#x2F;4 物理内存）后进入稳态」的形状，不是泄漏。应用侧设了 <code>-Xmx2048m</code>，同样的形状被压到峰值 2310 MB、末值 899 MB，而且 A&#x2F;B 证明上限没有吞吐代价。</p><p>长跑任务的内存判断，不能只看「峰值高不高」，要看<strong>是否持续增长</strong>。爬升后平顶，是可以接受的；平顶后继续爬，才是泄漏。</p><h2 id="五、长任务排期按-4-小时量级"><a href="#五、长任务排期按-4-小时量级" class="headerlink" title="五、长任务排期按 4 小时量级"></a>五、长任务排期按 4 小时量级</h2><p>之前记录的是「约 3 小时」，来源是 macOS 上 3 条的小样本（10–12 s&#x2F;条）。这次实测 15.0 s&#x2F;条，折算 1000 条约 4.2 小时，比旧估计慢 25–50%。</p><p>这不是旧数据「错了」，而是<strong>样本外推的边界</strong>：3 条样本覆盖不到长跑里的图片下载抖动、runtime 自愈、GC 稳态。排期时应该用完整链路的中长样本，而不是引擎路径的小样本。</p><p>另外，单条均值也不够。这次 p50 6.4 s、p90 11.5 s、max 62.8 s，长任务的墙钟由尾部决定，只看均值会系统性偏乐观。</p><h2 id="六、边界"><a href="#六、边界" class="headerlink" title="六、边界"></a>六、边界</h2><ul><li>单机、单 IP、单时段；<code>ROBOT_CHECK</code> 的频率会随 IP 和时段浮动（同一天早些的 400 条跑次出现 3 次，这次 0 次）；</li><li>应用路径的 3 次 runtime 重启都自愈了，但没有统计「重启发生在哪一条、为什么」；</li><li>图片与落盘各自的耗时还没有单独拆分，目前只知道合计 8.6 s；</li><li>99.3% 是在这批链接上的结果，不代表所有类目和所有时段。</li></ul><h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次跑次留下四个可复用的结论：</p><ol><li><strong>排期用完整链路数据</strong>，引擎 bench 只能用来定位引擎本身；</li><li><strong>性能差额要能拆账</strong>，8.6 s&#x2F;条可以对应到图片、落盘和 DB；</li><li><strong>失败要看分布</strong>，7 条失败全来自一个 302，比「成功率 99.3%」更有行动价值；</li><li><strong>内存看形状</strong>，爬升后平顶是稳态，不是泄漏。</li></ol><hr><p><em>发表于 2026 年 10 月 · 标签: 爬虫, 性能, 长任务, 失败归因, 数据采集</em></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> 性能优化 </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 性能 </tag>
+            
+            <tag> 爬虫 </tag>
+            
+            <tag> 数据采集 </tag>
+            
+            <tag> 长任务 </tag>
+            
+            <tag> 失败归因 </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>写文档也是工程：分类目录与&quot;风险单列&quot;</title>
       <link href="/2026/10/09/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/"/>
       <url>/2026/10/09/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/</url>

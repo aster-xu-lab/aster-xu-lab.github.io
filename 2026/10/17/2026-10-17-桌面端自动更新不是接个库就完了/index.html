@@ -1,0 +1,946 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="接入 electron-updater 只完成了「下载和安装」这一小段。真正的工作量在另一边：服务端要有一整套版本、制品、校验、策略和灰度模型；客户端要有一个能被验证的状态机，还要在受限时拦住所有会写数据的入口。这篇文章讲这条链路是怎么落地的，以及哪些地方我们选择了接受限制。  一、先把更新当成一个服务端系统客户端只是一个消费者。服务端至少要回答五个问题：    问题 对应能力    有没有新">
+<meta property="og:type" content="article">
+<meta property="og:title" content="桌面端自动更新不是接个 electron-updater 就完了">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E8%87%AA%E5%8A%A8%E6%9B%B4%E6%96%B0%E4%B8%8D%E6%98%AF%E6%8E%A5%E4%B8%AA%E5%BA%93%E5%B0%B1%E5%AE%8C%E4%BA%86/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="接入 electron-updater 只完成了「下载和安装」这一小段。真正的工作量在另一边：服务端要有一整套版本、制品、校验、策略和灰度模型；客户端要有一个能被验证的状态机，还要在受限时拦住所有会写数据的入口。这篇文章讲这条链路是怎么落地的，以及哪些地方我们选择了接受限制。  一、先把更新当成一个服务端系统客户端只是一个消费者。服务端至少要回答五个问题：    问题 对应能力    有没有新">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-10-17T01:00:00.000Z">
+<meta property="article:modified_time" content="2026-10-17T08:18:42.850Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="发布">
+<meta property="article:tag" content="架构">
+<meta property="article:tag" content="状态机">
+<meta property="article:tag" content="自动更新">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>桌面端自动更新不是接个 electron-updater 就完了 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="桌面端自动更新不是接个 electron-updater 就完了"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-10-17 09:00" pubdate>
+          2026年10月17日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          20 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">桌面端自动更新不是接个 electron-updater 就完了</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <hr>
+<blockquote>
+<p>接入 <code>electron-updater</code> 只完成了「下载和安装」这一小段。真正的工作量在另一边：服务端要有一整套版本、制品、校验、策略和灰度模型；客户端要有一个能被验证的状态机，还要在受限时拦住所有会写数据的入口。这篇文章讲这条链路是怎么落地的，以及哪些地方我们选择了接受限制。</p>
+</blockquote>
+<h2 id="一、先把更新当成一个服务端系统"><a href="#一、先把更新当成一个服务端系统" class="headerlink" title="一、先把更新当成一个服务端系统"></a>一、先把更新当成一个服务端系统</h2><p>客户端只是一个消费者。服务端至少要回答五个问题：</p>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>对应能力</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>有没有新版本</td>
+<td>release + artifact + feed</td>
+</tr>
+<tr>
+<td>这个包是不是真的</td>
+<td>逐 artifact 校验大小 &#x2F; SHA-512 &#x2F; 格式</td>
+</tr>
+<tr>
+<td>谁能更新、什么时候必须更新</td>
+<td>policy（目标版本、最低版本、生效时间、灰度）</td>
+</tr>
+<tr>
+<td>出问题怎么退</td>
+<td>revoke</td>
+</tr>
+<tr>
+<td>新用户第一次装哪个</td>
+<td>latest 接口，独立于策略</td>
+</tr>
+</tbody></table>
+<p>几个约束是踩出来的：</p>
+<ul>
+<li><strong>版本号共享，制品按平台拆</strong>。一个版本号只能有一行 release，但 Windows 和 macOS 的安装包各自登记、各自校验。</li>
+<li><strong>校验结果有 24 小时有效期</strong>。过期必须重新校验，否则可能把一个已经变化的文件发出去。</li>
+<li><strong>发布是一次性的</strong>。<code>publish</code> 要求该版本下所有要发布的制品都已校验。某平台晚到，只能给它一个新版本号——<strong>两个平台版本号不同是预期行为，不是发错包</strong>。</li>
+<li>灰度分桶的哈希输入包含 platform + arch，百分比按平台各自生效。</li>
+</ul>
+<p>这一套下来，「自动更新」就不再是客户端功能，而是一个小的发布平台。</p>
+<h2 id="二、客户端有两个入口，不是一个按钮"><a href="#二、客户端有两个入口，不是一个按钮" class="headerlink" title="二、客户端有两个入口，不是一个按钮"></a>二、客户端有两个入口，不是一个按钮</h2><p>普通更新和强制更新在产品上是两条完全不同的路径：</p>
+<ul>
+<li><strong>普通更新</strong>：侧栏按钮，状态 <code>none / available / downloading / ready / error</code>，后台下载，可以稍后重启；</li>
+<li><strong>强制更新</strong>：全屏 gate，<code>download → downloading → ready / failed</code>，没有关闭，也没有「稍后」。</li>
+</ul>
+<p>强制 gate 的关键不在 UI，而在<strong>它必须真的能拦住写入</strong>。受限时，三个写入口统一抛 <code>UPDATE_REQUIRED</code>：</p>
+<ul>
+<li>开始采集；</li>
+<li>重试失败链接；</li>
+<li>提交草稿。</li>
+</ul>
+<p>验证时做了双向对照：受限时三个入口都拒绝；恢复后，它们分别落到各自的参数校验错误。这样才能排除「一律拒绝」和「探针本身失效」两种假通过。</p>
+<p>还有一个容易被忽略的层级问题：商家登录页是挂在主窗口上的 <code>WebContentsView</code>，渲染层级在主页面之上。强制 gate 刚上线时，未登录用户看到的是登录页，不是更新页——CDP 里能读到 <code>gate=true</code>，屏幕上却不是。<code>z-index</code> 无效，因为两者不在同一合成层。最后改成受限时让登录视图让位（<code>setVisible(false)</code>），并处理了离线受限时的初值，避免先闪一下登录页。</p>
+<h2 id="三、状态机要能解释「为什么不可重试」"><a href="#三、状态机要能解释「为什么不可重试」" class="headerlink" title="三、状态机要能解释「为什么不可重试」"></a>三、状态机要能解释「为什么不可重试」</h2><p>最初的判断用了 <code>checkStatus</code>，但它是「上次检查的结论」，不是本次操作结果。下载失败时它仍然是 <code>UPDATE_AVAILABLE</code>，于是不可重试的错误被显示成「重试下载」。</p>
+<p>改完之后，失败分成两类：</p>
+<ul>
+<li>撤回、系统不支持、本机配置错误 → 「更新无法继续」+「重新检查」；</li>
+<li>传输类失败 → 「重试下载」。</li>
+</ul>
+<p>另外补了一个 <code>error</code> 态：普通更新下载失败后，侧栏入口原本会直接消失，用户没有任何重试入口。现在只在<strong>有已知目标版本</strong>时显示错误状态，避免每次启动都亮红灯。</p>
+<h2 id="四、离线也要保持阻断"><a href="#四、离线也要保持阻断" class="headerlink" title="四、离线也要保持阻断"></a>四、离线也要保持阻断</h2><p>更新策略在本地有缓存。断网重启后，客户端仍然能恢复「当前版本受限」的结论，继续拦住写入。这里有两个细节：</p>
+<ul>
+<li>按服务端时间差与建议间隔调度检查，而不是只信本机时钟；</li>
+<li>离线时无法确认策略是否解除，<strong>默认保持限制</strong>，而不是乐观放开。</li>
+</ul>
+<p>离线恢复探针 8&#x2F;8 通过：stub 切到受限 → 跑一次检查 → 切到离线 → 重启应用 → 限制仍在、写入仍被拒。</p>
+<h2 id="五、验证方式：stub-真实应用"><a href="#五、验证方式：stub-真实应用" class="headerlink" title="五、验证方式：stub + 真实应用"></a>五、验证方式：stub + 真实应用</h2><p>后端用本地 stub 顶替，响应信封、字段、纳秒时间戳逐字段照抄真实接口；应用用隔离的 <code>--user-data-dir</code> 和调试端口启动，用 CDP 驱动。</p>
+<p>状态机探针覆盖 8 种决策：<code>UPDATE_DISABLED</code>、<code>UP_TO_DATE</code>、<code>UPDATE_AVAILABLE</code>、待生效强制、已生效强制、<code>RELEASE_REVOKED</code>、业务失败、<code>required</code> 缺 <code>enforceAfter</code>。每个场景同时断言状态字段和 DOM：</p>
+<ul>
+<li>gate 的 <code>data-stage</code>；</li>
+<li>侧栏的 <code>data-state</code> 与 tip；</li>
+<li>外壳是否 <code>inert</code>。</li>
+</ul>
+<p><strong>每个场景先断言 stub 确实被请求过</strong>，否则可能拿上一次的陈旧状态读成通过。这一条是探针设计里最重要的防假通过措施。</p>
+<h2 id="六、接受了的限制与还没做的"><a href="#六、接受了的限制与还没做的" class="headerlink" title="六、接受了的限制与还没做的"></a>六、接受了的限制与还没做的</h2><p>诚实记录几条边界：</p>
+<ul>
+<li><strong>更新永远是整包</strong>。<code>electron-updater</code> 会尝试差分下载，但在这个 feed 方案下，它拼出的 blockmap 地址必然 404，每次都回退全量。本期决定接受整包 364 MiB，差分留作后续优化。</li>
+<li><strong>删掉了两条死链路</strong>：<code>deferUpdate</code>（IPC、落盘、判重都齐，但没有任何 UI 调用）和 <code>rolloutBucket</code>（灰度在后端按 installationId 判定）。没有调用方的功能就是死代码，留着只会让下一个人以为它在工作。</li>
+<li><strong>prod 环境的接口部署与真实升级尚未验证</strong>；mac 的 dmg 外发所需公证也还没跑。</li>
+<li><strong>macOS 更新必须用 zip</strong>，dmg 只用于手动安装；这是 Squirrel.Mac 的约束，不是选择。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>自动更新的难点不在「会不会用 electron-updater」，而在三件事：</p>
+<ol>
+<li><strong>服务端要能回答「谁该更新、什么时候必须更新、出问题怎么退」</strong>；</li>
+<li><strong>客户端状态机要能区分可重试与不可重试</strong>，并且真的拦住写入；</li>
+<li><strong>验证要能证明它没有假通过</strong>，而不是只截图看到 gate 出现了。</li>
+</ol>
+<p>把这三件事拆开做，更新才是一个可控的生产能力；只接库，得到的只是一个「有时候能升级」的按钮。</p>
+<hr>
+<p><em>发表于 2026 年 10 月 · 标签: Electron, 自动更新, 状态机, 发布, 架构</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E7%8A%B6%E6%80%81%E6%9C%BA/" class="print-no-link">#状态机</a>
+      
+        <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E8%87%AA%E5%8A%A8%E6%9B%B4%E6%96%B0/" class="print-no-link">#自动更新</a>
+      
+        <a href="/tags/%E5%8F%91%E5%B8%83/" class="print-no-link">#发布</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>桌面端自动更新不是接个 electron-updater 就完了</div>
+      <div>https://aster-xu-lab.github.io/2026/10/17/2026-10-17-桌面端自动更新不是接个库就完了/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年10月17日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/10/17/2026-10-17-%E5%AE%89%E8%A3%85%E5%99%A8%E5%8D%87%E7%BA%A7%E6%97%B6%E5%93%AA%E4%BA%9B%E4%B8%9C%E8%A5%BF%E8%AF%A5%E4%BF%9D%E7%95%99/" title="安装器升级时，哪些东西该保留：应用、用户数据、更新元数据">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">安装器升级时，哪些东西该保留：应用、用户数据、更新元数据</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E4%B8%8D%E8%83%BD%E7%95%99%E5%AD%A4%E5%84%BF%E8%BF%9B%E7%A8%8B/" title="桌面应用不能留孤儿进程：Chromium、JVM 与退出语义">
+                        <span class="hidden-mobile">桌面应用不能留孤儿进程：Chromium、JVM 与退出语义</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

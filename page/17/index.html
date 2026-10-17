@@ -363,15 +363,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/11/22/2022-11-22-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1Seata-AT%E5%88%B0TCC/" target="_self">
-          分布式事务实战：从Seata AT到TCC的性能提升之路
+        <a href="/2023/02/16/2023-02-16-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" target="_self">
+          AI辅助代码审查实战：用Claude审查5.3万行供应链代码
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/11/22/2022-11-22-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1Seata-AT%E5%88%B0TCC/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/02/16/2023-02-16-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" target="_self">
         <div>
-          分布式事务实战：从 Seata AT 到 TCC 的性能提升之路背景OFS订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现核心接口 RT 偏高达 400ms+，分布式事务成为性能瓶颈。 本文将复盘我们从 AT 迁移到 TCC 的完整过程，包括方案对比、改造细节和踩坑经验。 一、Seata AT 模式的原
+          AI 辅助代码审查实战：用 Claude 审查 5.3 万行供应链代码背景供应链计划系统（SCP）是我们从兄弟团队接手的一个项目，567 个 Java 文件，5.3 万行代码。接手后心里没底——代码质量到底怎么样？有哪些隐藏的坑？ 传统的 Code Review 方式面对这个量级根本不可能完成。我决定用 Claude 做一次全量代码审查。这篇文章记录完整过程和发现。 一、怎么喂代码给 AI？5.
         </div>
       </a>
 
@@ -379,8 +379,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-11-22 09:00" pubdate>
-              2022-11-22
+            <time datetime="2023-02-16 09:00" pubdate>
+              2023-02-16
             </time>
           </div>
         
@@ -395,7 +395,423 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F/" class="category-chain-item">分布式系统</a>
+  <a href="/categories/AI%E8%BE%85%E5%8A%A9%E5%BC%80%E5%8F%91/" class="category-chain-item">AI辅助开发</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/Claude/">#Claude</a>
+            
+              <a href="/tags/AI/">#AI</a>
+            
+              <a href="/tags/%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/">#代码审查</a>
+            
+              <a href="/tags/God-Class/">#God Class</a>
+            
+              <a href="/tags/N-1%E6%9F%A5%E8%AF%A2/">#N+1查询</a>
+            
+              <a href="/tags/%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F/">#代码质量</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/02/13/2023-02-13-%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E5%9C%A8%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E7%9A%84%E8%90%BD%E5%9C%B0-traceId%E8%B4%AF%E7%A9%BF/" target="_self">
+          全链路追踪在订单中心的落地：traceId 贯穿每一次调用
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/02/13/2023-02-13-%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E5%9C%A8%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E7%9A%84%E8%90%BD%E5%9C%B0-traceId%E8%B4%AF%E7%A9%BF/" target="_self">
+        <div>
+          订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。  一、问题：分布式调用链怎么定位瓶颈单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务： 123网关 → 订单服务 → 库存服务            ↘ 仓储服务
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-02-13 09:00" pubdate>
+              2023-02-13
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="category-chain-item">微服务</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/">#可观测性</a>
+            
+              <a href="/tags/%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA/">#全链路追踪</a>
+            
+              <a href="/tags/Sleuth/">#Sleuth</a>
+            
+              <a href="/tags/Zipkin/">#Zipkin</a>
+            
+              <a href="/tags/traceId/">#traceId</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/02/09/2023-02-09-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86-%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E9%9A%94%E7%A6%BB%E4%B8%8E%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA/" target="_self">
+          微服务治理：超时重试、配置中心、链路追踪与优雅下线
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/02/09/2023-02-09-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B2%BB%E7%90%86-%E8%B6%85%E6%97%B6%E9%87%8D%E8%AF%95%E9%9A%94%E7%A6%BB%E4%B8%8E%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA/" target="_self">
+        <div>
+          一、治理的本质：让分布式系统可控微服务拆完只是开始，真正难的是治理——超时重试、隔离、配置管理、可观测、发布安全。这篇把治理的几个关键面理清楚。 二、超时与重试 超时：Feign&#x2F;Dubbo 设置超时，分连接超时 + 读超时。每个调用都必须有超时——这是雪崩打断的第一道底线； 重试：注意幂等——只有幂等接口才能重试，非幂等重试会造成重复扣款&#x2F;重复下单。Dubbo 默认重试 2
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-02-09 09:00" pubdate>
+              2023-02-09
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="category-chain-item">微服务</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">#微服务</a>
+            
+              <a href="/tags/%E9%85%8D%E7%BD%AE%E4%B8%AD%E5%BF%83/">#配置中心</a>
+            
+              <a href="/tags/%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA/">#链路追踪</a>
+            
+              <a href="/tags/%E4%BC%98%E9%9B%85%E4%B8%8B%E7%BA%BF/">#优雅下线</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/02/05/2023-02-05-Sentinel%E9%99%90%E6%B5%81%E7%86%94%E6%96%AD%E9%99%8D%E7%BA%A7%E4%B8%8E%E9%9B%AA%E5%B4%A9%E4%BC%A0%E5%AF%BC/" target="_self">
+          Sentinel 限流、熔断、降级：一个下游慢如何拖垮一片，怎么打断
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/02/05/2023-02-05-Sentinel%E9%99%90%E6%B5%81%E7%86%94%E6%96%AD%E9%99%8D%E7%BA%A7%E4%B8%8E%E9%9B%AA%E5%B4%A9%E4%BC%A0%E5%AF%BC/" target="_self">
+        <div>
+          一、三个词先分清限流、熔断、降级是微服务最常被混的三个概念：     作用    限流 控制请求进入的量（按 QPS&#x2F;并发线程数&#x2F;热点参数），超出拒&#x2F;排队   熔断 下游异常&#x2F;慢时快速失败，不再调它（熔断开关），等恢复再试——护自己不拖垮   降级 放弃&#x2F;简化非核心功能（如商品详情降级只返回基础字段）——主动   一句话：限流控制”进来多少”，熔
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-02-05 09:00" pubdate>
+              2023-02-05
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="category-chain-item">微服务</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E9%99%8D%E7%BA%A7/">#降级</a>
+            
+              <a href="/tags/%E7%86%94%E6%96%AD/">#熔断</a>
+            
+              <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">#微服务</a>
+            
+              <a href="/tags/Sentinel/">#Sentinel</a>
+            
+              <a href="/tags/%E9%99%90%E6%B5%81/">#限流</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/02/01/2023-02-01-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E5%8F%91%E7%8E%B0%E4%B8%8E%E7%BD%91%E5%85%B3-Nacos%E4%B8%8EDubbo/" target="_self">
+          微服务注册发现与网关：Nacos、Dubbo、Feign 各管什么
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/02/01/2023-02-01-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E5%8F%91%E7%8E%B0%E4%B8%8E%E7%BD%91%E5%85%B3-Nacos%E4%B8%8EDubbo/" target="_self">
+        <div>
+          定位：订单中心真实在用 Spring Cloud Alibaba（Nacos&#x2F;Dubbo&#x2F;Feign&#x2F;Sentinel），这篇把”为什么用、怎么用、怎么治理”理成框架。  一、为什么拆微服务单体 → 微服务，换来解耦、独立部署、独立扩展、技术栈灵活；代价是分布式复杂性：网络调用、事务、一致性、链路追踪。 Spring Cloud Alibaba 全家桶是我的栈：
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-02-01 09:00" pubdate>
+              2023-02-01
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="category-chain-item">微服务</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%BE%AE%E6%9C%8D%E5%8A%A1/">#微服务</a>
+            
+              <a href="/tags/Nacos/">#Nacos</a>
+            
+              <a href="/tags/Dubbo/">#Dubbo</a>
+            
+              <a href="/tags/Feign/">#Feign</a>
+            
+              <a href="/tags/%E7%BD%91%E5%85%B3/">#网关</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/01/26/2023-01-26-%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA%E5%8D%8F%E5%90%8C%E8%AE%BE%E8%AE%A1/" target="_self">
+          双状态机协同设计：工单状态机与任务状态机
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/26/2023-01-26-%E5%8F%8C%E7%8A%B6%E6%80%81%E6%9C%BA%E5%8D%8F%E5%90%8C%E8%AE%BE%E8%AE%A1/" target="_self">
+        <div>
+          双状态机协同设计：工单状态机与任务状态机问题：一个工单，多种任务，状态怎么协同？工单系统中，一个维修工单下面可能有三个任务：上门检测任务、备件更换任务、清理保养任务。每个任务有自己的生命周期（待接收→执行中→已完成），工单也有自己的生命周期（待分配→服务中→待确认→已完成）。 核心问题：工单状态和任务状态如何保持协同？ 比如：当所有任务都完成了，工单应该自动进入”待确认”状态。当工单被关闭，所有
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-01-26 09:00" pubdate>
+              2023-01-26
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/">#设计模式</a>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
+            
+              <a href="/tags/%E7%8A%B6%E6%80%81%E6%9C%BA/">#状态机</a>
+            
+              <a href="/tags/COLA/">#COLA</a>
+            
+              <a href="/tags/%E5%B7%A5%E5%8D%95%E7%B3%BB%E7%BB%9F/">#工单系统</a>
+            
+              <a href="/tags/%E9%A2%86%E5%9F%9F%E5%BB%BA%E6%A8%A1/">#领域建模</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/01/11/2023-01-11-TCC%E6%B7%B1%E6%B0%B4%E5%8C%BA-%E7%A9%BA%E5%9B%9E%E6%BB%9A%E6%82%AC%E6%8C%82%E5%B9%82%E7%AD%89%E4%B8%8ESeata-AT%E5%9B%9E%E6%BB%9A%E6%9C%BA%E5%88%B6/" target="_self">
+          TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/11/2023-01-11-TCC%E6%B7%B1%E6%B0%B4%E5%8C%BA-%E7%A9%BA%E5%9B%9E%E6%BB%9A%E6%82%AC%E6%8C%82%E5%B9%82%E7%AD%89%E4%B8%8ESeata-AT%E5%9B%9E%E6%BB%9A%E6%9C%BA%E5%88%B6/" target="_self">
+        <div>
+          一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但网络是不可靠的——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。 坑 1：空回滚场景：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。 后果：直接回滚会报错&#x2F;误删——“没 Try
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-01-11 09:00" pubdate>
+              2023-01-11
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
   
   
 
@@ -416,11 +832,78 @@
             
               <a href="/tags/TCC/">#TCC</a>
             
-              <a href="/tags/AT%E6%A8%A1%E5%BC%8F/">#AT模式</a>
+              <a href="/tags/%E5%B9%82%E7%AD%89/">#幂等</a>
+            
+              <a href="/tags/undo-log/">#undo_log</a>
+            
+          </div>
+        
+      </div>
+    </article>
+  </div>
+
+  <div class="row mx-auto index-card">
+    
+    
+    <article class="col-12 col-md-12 mx-auto index-info">
+      <h2 class="index-header">
+        
+        <a href="/2023/01/06/2023-01-06-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E5%85%A8%E6%99%AF-%E5%BC%BA%E4%B8%80%E8%87%B4%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E9%80%89%E5%9E%8B/" target="_self">
+          分布式事务全景：强一致 vs 最终一致，怎么选
+        </a>
+      </h2>
+
+      
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/06/2023-01-06-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E5%85%A8%E6%99%AF-%E5%BC%BA%E4%B8%80%E8%87%B4%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E9%80%89%E5%9E%8B/" target="_self">
+        <div>
+          一、为什么需要分布式事务一次业务操作跨多个数据库&#x2F;服务（下单扣库存 + 减积分 + 记账），本地事务管不了。核心矛盾：强一致 vs 最终一致、性能 vs 一致性。 二、2PC：强一致，但三个致命缺陷两阶段提交：**准备阶段（Prepare）**问所有参与者”能提交吗？”，提交&#x2F;回滚阶段全 yes 则 commit，任一 no 则 rollback。 三个致命缺陷（为什么生产少
+        </div>
+      </a>
+
+      <div class="index-btm post-metas">
+        
+          <div class="post-meta mr-3">
+            <i class="iconfont icon-date"></i>
+            <time datetime="2023-01-06 09:00" pubdate>
+              2023-01-06
+            </time>
+          </div>
+        
+        
+          <div class="post-meta mr-3 d-flex align-items-center">
+            <i class="iconfont icon-category"></i>
+            
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%88%86%E5%B8%83%E5%BC%8F/" class="category-chain-item">分布式</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+          </div>
+        
+        
+          <div class="post-meta">
+            <i class="iconfont icon-tags"></i>
+            
+              <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1/">#分布式事务</a>
+            
+              <a href="/tags/TCC/">#TCC</a>
             
               <a href="/tags/2PC/">#2PC</a>
             
-              <a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">#性能优化</a>
+              <a href="/tags/%E6%9C%AC%E5%9C%B0%E6%B6%88%E6%81%AF%E8%A1%A8/">#本地消息表</a>
+            
+              <a href="/tags/SAGA/">#SAGA</a>
             
           </div>
         
@@ -434,15 +917,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/05/06/2022-05-06-JVM%E7%BA%BF%E4%B8%8A%E6%8E%92%E6%9F%A5-jstack-jstat-jmap%E5%A5%97%E8%B7%AF/" target="_self">
-          JVM 线上排查：高 CPU、内存溢出、GC 频繁的完整套路
+        <a href="/2023/01/04/2023-01-04-%E5%B7%A5%E5%8D%95%E7%B3%BB%E7%BB%9FSpecCoding%E5%AE%9E%E8%B7%B5/" target="_self">
+          从0到1交付一个中台：工单履约系统的Spec Coding实践
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/06/2022-05-06-JVM%E7%BA%BF%E4%B8%8A%E6%8E%92%E6%9F%A5-jstack-jstat-jmap%E5%A5%97%E8%B7%AF/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/01/04/2023-01-04-%E5%B7%A5%E5%8D%95%E7%B3%BB%E7%BB%9FSpecCoding%E5%AE%9E%E8%B7%B5/" target="_self">
         <div>
-          定位：结合真实线上经验（ThreadLocal 泄漏、慢 SQL、连接池隔离）讲 JVM 排查套路。  一、四个 JVM 工具，别搞混   工具 看什么    jstack 线程状态（死锁&#x2F;阻塞&#x2F;高 CPU 定位）   jstat GC、类加载统计   jmap 堆 dump   jinfo JVM 参数   一句话记忆：jstack 看线程、jstat 看 GC、jmap
+          从 0 到 1 交付一个中台：工单履约系统的 Spec Coding 实践先有 Spec，后有代码2024 年，公司决定做一个通用的工单履约管理中台，覆盖 3C 维修、贴膜、回收、导购四条业务线。我被指定为技术负责人，从 0 开始设计整个系统。 传统做法是拿到需求就开始建项目——拉 Spring Boot 脚手架、建表、写 CRUD。这次我换了个方式：先写 Spec，再写代码。这个决策让整个交付
         </div>
       </a>
 
@@ -450,8 +933,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-05-06 09:00" pubdate>
-              2022-05-06
+            <time datetime="2023-01-04 09:00" pubdate>
+              2023-01-04
             </time>
           </div>
         
@@ -466,7 +949,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/Linux%E8%BF%90%E7%BB%B4/" class="category-chain-item">Linux运维</a>
+  <a href="/categories/%E5%B7%A5%E7%A8%8B%E6%96%B9%E6%B3%95%E8%AE%BA/" class="category-chain-item">工程方法论</a>
   
   
 
@@ -481,17 +964,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/JVM/">#JVM</a>
+              <a href="/tags/ADR/">#ADR</a>
             
-              <a href="/tags/%E6%8E%92%E6%9F%A5/">#排查</a>
+              <a href="/tags/Spec-Coding/">#Spec Coding</a>
             
-              <a href="/tags/jstack/">#jstack</a>
+              <a href="/tags/%E9%A2%86%E5%9F%9F%E9%A9%B1%E5%8A%A8%E8%AE%BE%E8%AE%A1/">#领域驱动设计</a>
             
-              <a href="/tags/jstat/">#jstat</a>
+              <a href="/tags/AI%E8%BE%85%E5%8A%A9%E5%BC%80%E5%8F%91/">#AI辅助开发</a>
             
-              <a href="/tags/jmap/">#jmap</a>
+              <a href="/tags/%E4%BB%8E0%E5%88%B01/">#从0到1</a>
             
-              <a href="/tags/OOM/">#OOM</a>
+              <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/">#架构设计</a>
             
           </div>
         
@@ -505,15 +988,15 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2022/05/01/2022-05-01-Linux%E6%8E%92%E6%9F%A5%E4%B8%89%E6%9D%BF%E6%96%A7-CPU%E5%86%85%E5%AD%98%E7%A3%81%E7%9B%98%E7%AB%AF%E5%8F%A3%E6%97%A5%E5%BF%97/" target="_self">
-          Linux 排查三板斧：CPU、内存、磁盘、端口、日志
+        <a href="/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/" target="_self">
+          百万订单系统的缓存与降级策略
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/05/01/2022-05-01-Linux%E6%8E%92%E6%9F%A5%E4%B8%89%E6%9D%BF%E6%96%A7-CPU%E5%86%85%E5%AD%98%E7%A3%81%E7%9B%98%E7%AB%AF%E5%8F%A3%E6%97%A5%E5%BF%97/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/" target="_self">
         <div>
-          一、先看资源：top &#x2F; free &#x2F; df线上出了问题，第一步永远是看资源：    命令 看什么    top CPU&#x2F;内存占用 TOP、load average（负载）   free -m 内存使用   df -h 磁盘使用   iostat IO   load average 高要分清是 CPU 爆还是 IO 爆——top 看 CPU 占用，iostat 看
+          百万订单系统的缓存与降级策略前言我们订单系统日均处理百万级订单，双十一峰值还要翻几倍。对于 B 端系统来说，缓存策略跟 C 端完全不一样——B 端对一致性的要求更高，不能简单地”先查缓存、缓存没有查 DB”。 这篇文章聊聊我们在订单系统里的缓存和降级实践。 一、B端缓存的特殊性跟 C 端不一样的地方在于：  一致性要求高：用户看到订单状态”已发货”但实际是”待发货”，这就是客诉 数据量大但不全是
         </div>
       </a>
 
@@ -521,8 +1004,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2022-05-01 09:00" pubdate>
-              2022-05-01
+            <time datetime="2022-12-14 09:00" pubdate>
+              2022-12-14
             </time>
           </div>
         
@@ -537,7 +1020,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/Linux%E8%BF%90%E7%BB%B4/" class="category-chain-item">Linux运维</a>
+  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="category-chain-item">性能优化</a>
   
   
 
@@ -552,496 +1035,17 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E5%91%BD%E4%BB%A4/">#命令</a>
+              <a href="/tags/%E7%BC%93%E5%AD%98/">#缓存</a>
             
-              <a href="/tags/%E6%8E%92%E6%9F%A5/">#排查</a>
-            
-              <a href="/tags/Linux/">#Linux</a>
-            
-              <a href="/tags/%E8%BF%90%E7%BB%B4/">#运维</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/03/14/2022-03-14-Netty%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B-Reactor%E4%B8%BB%E4%BB%8E%E4%B8%8EEventLoop%E5%85%8D%E9%94%81%E5%93%B2%E5%AD%A6/" target="_self">
-          Netty线程模型：Reactor主从与&#34;一连接一EventLoop&#34;的免锁哲学
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/14/2022-03-14-Netty%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B-Reactor%E4%B8%BB%E4%BB%8E%E4%B8%8EEventLoop%E5%85%8D%E9%94%81%E5%93%B2%E5%AD%A6/" target="_self">
-        <div>
-          写在前面：我的简历没有 Netty 实战经历，这是一篇原理学习笔记。但 Netty 离我并不远——订单系统内部 RPC 用的 Dubbo，传输层就是 Netty。所以理解它的线程模型，对理解自己系统里”高并发 IO 到底怎么扛”是必要的。  一、Netty 解决了什么问题回顾上一篇 IO 模型的结论：BIO 一连接一线程，连接多就线程爆炸；epoll 让一个线程可以盯 N 个连接。 Netty
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-14 09:00" pubdate>
-              2022-03-14
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="category-chain-item">网络与操作系统</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Netty/">#Netty</a>
-            
-              <a href="/tags/Reactor/">#Reactor</a>
-            
-              <a href="/tags/EventLoop/">#EventLoop</a>
-            
-              <a href="/tags/Pipeline/">#Pipeline</a>
-            
-              <a href="/tags/ByteBuf/">#ByteBuf</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/03/10/2022-03-10-fork%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6COW-%E4%BB%8E%E8%BF%9B%E7%A8%8B%E5%85%8B%E9%9A%86%E5%88%B0Redis%E5%BF%AB%E7%85%A7/" target="_self">
-          fork写时复制COW：从进程克隆到Redis RDB快照
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/10/2022-03-10-fork%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6COW-%E4%BB%8E%E8%BF%9B%E7%A8%8B%E5%85%8B%E9%9A%86%E5%88%B0Redis%E5%BF%AB%E7%85%A7/" target="_self">
-        <div>
-          一个经典问题：Redis 做 RDB 快照时，还在源源不断写数据，怎么保证快照的一致性？答案的关键，是操作系统里的一个机制：fork 写时复制（Copy-On-Write, COW）。 它不只在 Redis 里出现——Java 的 Runtime.exec()、HashMap 的 CopyOnWriteArrayList 变体、Linux 守护进程 fork 子进程……底层都是同一套思路。这篇文
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-10 09:00" pubdate>
-              2022-03-10
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="category-chain-item">网络与操作系统</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
+              <a href="/tags/Caffeine/">#Caffeine</a>
             
               <a href="/tags/Redis/">#Redis</a>
             
-              <a href="/tags/fork/">#fork</a>
+              <a href="/tags/%E9%99%8D%E7%BA%A7/">#降级</a>
             
-              <a href="/tags/%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/">#写时复制</a>
+              <a href="/tags/%E7%86%94%E6%96%AD/">#熔断</a>
             
-              <a href="/tags/COW/">#COW</a>
-            
-              <a href="/tags/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">#操作系统</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/03/06/2022-03-06-%E9%9B%B6%E6%8B%B7%E8%B4%9D-4%E6%AC%A1%E6%8B%B7%E8%B4%9D%E5%8F%982%E6%AC%A1/" target="_self">
-          零拷贝：4次拷贝变2次，Kafka和Netty的&#34;零&#34;其实是两回事
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/06/2022-03-06-%E9%9B%B6%E6%8B%B7%E8%B4%9D-4%E6%AC%A1%E6%8B%B7%E8%B4%9D%E5%8F%982%E6%AC%A1/" target="_self">
-        <div>
-          先看一次最普通的”读文件发网络”你的服务要从磁盘读一个文件，通过 socket 发给客户端。直觉上这是一次很简单的操作，但操作系统底层要为它搬 4 次数据： 123磁盘 ──①DMA──▶ 内核页缓存 ──②CPU──▶ 用户态缓冲区                                      │网卡 ◀──④DMA── 内核 socket 缓冲区 ──③CPU──┘   ① DM
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-06 09:00" pubdate>
-              2022-03-06
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="category-chain-item">网络与操作系统</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Kafka/">#Kafka</a>
-            
-              <a href="/tags/%E9%9B%B6%E6%8B%B7%E8%B4%9D/">#零拷贝</a>
-            
-              <a href="/tags/sendfile/">#sendfile</a>
-            
-              <a href="/tags/DMA/">#DMA</a>
-            
-              <a href="/tags/Netty/">#Netty</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/03/02/2022-03-02-IO%E6%A8%A1%E5%9E%8B%E6%BC%94%E8%BF%9B-%E4%BB%8EBIO%E5%88%B0epoll/" target="_self">
-          IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/03/02/2022-03-02-IO%E6%A8%A1%E5%9E%8B%E6%BC%94%E8%BF%9B-%E4%BB%8EBIO%E5%88%B0epoll/" target="_self">
-        <div>
-          从一个真实的瓶颈说起刚做订单系统的时候，同步任务的调用链上有一个老服务，用的是最朴素的 BIO 写法：一个客户端连接来了就 new 一个线程去处理。QPS 一上来，先是线程数暴涨，然后线程栈把内存吃满，最后干脆拒绝新连接。 这个问题的本质，是阻塞等待——线程花大量时间睡在 read() 上，什么事都不干，却占着一个宝贵的线程资源。 IO 模型演进的全部历史，就是在回答一个问题：怎么让有限的线程，
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-03-02 09:00" pubdate>
-              2022-03-02
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/%E7%BD%91%E7%BB%9C%E4%B8%8E%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/" class="category-chain-item">网络与操作系统</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Redis/">#Redis</a>
-            
-              <a href="/tags/IO%E6%A8%A1%E5%9E%8B/">#IO模型</a>
-            
-              <a href="/tags/NIO/">#NIO</a>
-            
-              <a href="/tags/epoll/">#epoll</a>
-            
-              <a href="/tags/%E7%BD%91%E7%BB%9C%E7%BC%96%E7%A8%8B/">#网络编程</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/02/13/2022-02-13-Redis%E6%8C%81%E4%B9%85%E5%8C%96-RDB%E4%B8%8EAOF%E7%9A%84%E5%8F%96%E8%88%8D/" target="_self">
-          Redis 持久化：RDB 与 AOF 的取舍，fork+COW 为什么不停顿
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/02/13/2022-02-13-Redis%E6%8C%81%E4%B9%85%E5%8C%96-RDB%E4%B8%8EAOF%E7%9A%84%E5%8F%96%E8%88%8D/" target="_self">
-        <div>
-          一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题：     RDB 快照 AOF 日志    内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof）   恢复 快（直接加载快照） 慢（逐条重放命令）   丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度）   文件 小、二进制 大、文本，可重写   RDB：某一时刻的完
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-02-13 09:00" pubdate>
-              2022-02-13
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Redis/">#Redis</a>
-            
-              <a href="/tags/%E6%8C%81%E4%B9%85%E5%8C%96/">#持久化</a>
-            
-              <a href="/tags/RDB/">#RDB</a>
-            
-              <a href="/tags/AOF/">#AOF</a>
-            
-              <a href="/tags/fork/">#fork</a>
-            
-              <a href="/tags/%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/">#写时复制</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/02/05/2022-02-05-Redis%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E7%9C%81%E5%86%85%E5%AD%98%E4%B8%BB%E7%BA%BF/" target="_self">
-          Redis 底层数据结构：一条&#34;省内存&#34;的主线
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/02/05/2022-02-05-Redis%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E7%9C%81%E5%86%85%E5%AD%98%E4%B8%BB%E7%BA%BF/" target="_self">
-        <div>
-          一、五种类型的底层实现Redis 五种数据类型（String&#x2F;Hash&#x2F;List&#x2F;Set&#x2F;ZSet）各有底层结构：    类型 底层实现    String SDS（简单动态字符串）   List listpack（压缩列表）→ quicklist 双向链表   Hash listpack → 哈希表（不是链表）   Set 整数集合（intset）→ 哈
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-02-05 09:00" pubdate>
-              2022-02-05
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Redis/">#Redis</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/">#数据结构</a>
-            
-              <a href="/tags/SDS/">#SDS</a>
-            
-              <a href="/tags/%E8%B7%B3%E8%A1%A8/">#跳表</a>
-            
-              <a href="/tags/%E5%86%85%E5%AD%98%E4%BC%98%E5%8C%96/">#内存优化</a>
-            
-          </div>
-        
-      </div>
-    </article>
-  </div>
-
-  <div class="row mx-auto index-card">
-    
-    
-    <article class="col-12 col-md-12 mx-auto index-info">
-      <h2 class="index-header">
-        
-        <a href="/2022/02/02/2022-02-02-Redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB-%E5%8D%95%E7%BA%BF%E7%A8%8B%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF%E4%B8%8E6.0%E5%A4%9A%E7%BA%BF%E7%A8%8B/" target="_self">
-          Redis 为什么快：单线程事件循环，与 6.0 的多线程到底在哪
-        </a>
-      </h2>
-
-      
-      <a class="index-excerpt index-excerpt__noimg" href="/2022/02/02/2022-02-02-Redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB-%E5%8D%95%E7%BA%BF%E7%A8%8B%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF%E4%B8%8E6.0%E5%A4%9A%E7%BA%BF%E7%A8%8B/" target="_self">
-        <div>
-          一、先说结论：三件事，缺一不可Redis 快，常规答案是三件事：内存存储、单线程免锁、IO 多路复用。但”单线程”三个字很容易让人误解——它到底在解什么、6.0 加了多线程又是怎么回事，值得讲透。 二、IO 多路复用：单线程能服务海量连接的前提先说”单线程为什么能扛住那么多连接”。答案是我在 IO 模型那篇讲过的 epoll：  一个线程通过 epoll_wait 同时盯着成千上万个 socke
-        </div>
-      </a>
-
-      <div class="index-btm post-metas">
-        
-          <div class="post-meta mr-3">
-            <i class="iconfont icon-date"></i>
-            <time datetime="2022-02-02 09:00" pubdate>
-              2022-02-02
-            </time>
-          </div>
-        
-        
-          <div class="post-meta mr-3 d-flex align-items-center">
-            <i class="iconfont icon-category"></i>
-            
-
-<span class="category-chains">
-  
-  
-    
-      <span class="category-chain">
-        
-  <a href="/categories/Redis/" class="category-chain-item">Redis</a>
-  
-  
-
-      </span>
-    
-  
-</span>
-
-          </div>
-        
-        
-          <div class="post-meta">
-            <i class="iconfont icon-tags"></i>
-            
-              <a href="/tags/Redis/">#Redis</a>
-            
-              <a href="/tags/%E5%8D%95%E7%BA%BF%E7%A8%8B/">#单线程</a>
-            
-              <a href="/tags/IO%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8/">#IO多路复用</a>
-            
-              <a href="/tags/%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF/">#事件循环</a>
+              <a href="/tags/%E5%A4%A7%E4%BF%83%E4%BF%9D%E9%9A%9C/">#大促保障</a>
             
           </div>
         
@@ -1053,7 +1057,7 @@
 
   <nav aria-label="navigation">
     <span class="pagination" id="pagination">
-      <a class="extend prev" rel="prev" href="/page/16/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/#board">15</a><a class="page-number" href="/page/16/#board">16</a><span class="page-number current">17</span><a class="page-number" href="/page/18/#board">18</a><a class="page-number" href="/page/19/#board">19</a><span class="space">&hellip;</span><a class="page-number" href="/page/26/#board">26</a><a class="extend next" rel="next" href="/page/18/#board"><i class="iconfont icon-arrowright"></i></a>
+      <a class="extend prev" rel="prev" href="/page/16/#board"><i class="iconfont icon-arrowleft"></i></a><a class="page-number" href="/">1</a><span class="space">&hellip;</span><a class="page-number" href="/page/15/#board">15</a><a class="page-number" href="/page/16/#board">16</a><span class="page-number current">17</span><a class="page-number" href="/page/18/#board">18</a><a class="page-number" href="/page/19/#board">19</a><span class="space">&hellip;</span><a class="page-number" href="/page/27/#board">27</a><a class="extend next" rel="next" href="/page/18/#board"><i class="iconfont icon-arrowright"></i></a>
     </span>
   </nav>
 
