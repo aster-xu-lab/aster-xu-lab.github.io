@@ -19,15 +19,19 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="跨平台十二年，框架换了一茬又一茬，真正没解决的一直是同一件事：你愿意为「省掉一份代码」付出多少。这篇按桌面、移动、小程序三条战线，把 2026 年的主流方案和它们各自的代价摆到一张桌上。  一、用户先看到的是安装包我们自己那个桌面端，因为随包带了 Chromium、JVM 和一套 CLI 运行时，安装包一度到了 GB 级。后来做瘦身、拆产物、清 asar 污染，才压回一个能接受的范围。 这件事">
+    <meta name="description" content="跨平台十二年，框架换了一茬又一茬，真正没解决的一直是同一件事：你愿意为「省掉一份代码」付出多少。这篇按桌面、移动、小程序三条战线，把 2026 年的主流方案和它们各自的代价摆到一张桌上。  一、用户先看到的是安装包我们自己那个桌面端，因为随包带了 Chromium、JVM 和一套 CLI 运行时，安装包一度到了 GB 级。后来做瘦身、拆产物、清 asar 污染，才压回一个能接受的范围。 这件">
 <meta property="og:type" content="article">
 <meta property="og:title" content="跨平台选型：没有零代价的方案，只有扛得住的代价">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/21/2026-10-21-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E9%80%89%E5%9E%8B-%E6%B2%A1%E6%9C%89%E9%9B%B6%E4%BB%A3%E4%BB%B7%E7%9A%84%E6%96%B9%E6%A1%88/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="跨平台十二年，框架换了一茬又一茬，真正没解决的一直是同一件事：你愿意为「省掉一份代码」付出多少。这篇按桌面、移动、小程序三条战线，把 2026 年的主流方案和它们各自的代价摆到一张桌上。  一、用户先看到的是安装包我们自己那个桌面端，因为随包带了 Chromium、JVM 和一套 CLI 运行时，安装包一度到了 GB 级。后来做瘦身、拆产物、清 asar 污染，才压回一个能接受的范围。 这件事">
+<meta property="og:description" content="跨平台十二年，框架换了一茬又一茬，真正没解决的一直是同一件事：你愿意为「省掉一份代码」付出多少。这篇按桌面、移动、小程序三条战线，把 2026 年的主流方案和它们各自的代价摆到一张桌上。  一、用户先看到的是安装包我们自己那个桌面端，因为随包带了 Chromium、JVM 和一套 CLI 运行时，安装包一度到了 GB 级。后来做瘦身、拆产物、清 asar 污染，才压回一个能接受的范围。 这件">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/63e92b802ff6779655e23a7aed1e46fa.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/702408f6bc5864f73203289f680520e7.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/afb4e754523a0ea12c7fc44e6b489c95.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/492d720127c7c81ce252ce8aa9f7b90b.png#pic_center">
 <meta property="article:published_time" content="2026-10-21T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-21T03:42:00.220Z">
+<meta property="article:modified_time" content="2026-10-23T08:35:26.434Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="Tauri">
@@ -35,6 +39,7 @@
 <meta property="article:tag" content="架构决策">
 <meta property="article:tag" content="跨平台">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/63e92b802ff6779655e23a7aed1e46fa.png#pic_center">
   
   
   
@@ -413,6 +418,7 @@
               <div class="markdown-body">
                 
                 <hr>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/63e92b802ff6779655e23a7aed1e46fa.png#pic_center" srcset="/img/loading.gif" lazyload alt="跨平台选型：没有零代价的方案，只有扛得住的代价"></p>
 <blockquote>
 <p>跨平台十二年，框架换了一茬又一茬，真正没解决的一直是同一件事：你愿意为「省掉一份代码」付出多少。这篇按桌面、移动、小程序三条战线，把 2026 年的主流方案和它们各自的代价摆到一张桌上。</p>
 </blockquote>
@@ -424,6 +430,7 @@
 <p><strong>第一笔是包体积。</strong> 自带浏览器的方案必然重，因为里面捆的是一整套渲染引擎和运行时；借用系统 WebView 的方案会轻很多，但把兼容性责任转移给了各个操作系统。</p>
 <p><strong>第二笔是性能。</strong> 这里说的不是「卡不卡」这么粗，而是「和原生像不像」。滚动、动画、长列表、复杂表单，这些在原生组件上几乎不用特别优化，到了跨端方案里就要考虑渲染层、通信层和桥接层的损耗。</p>
 <p><strong>第三笔是生态和开发体验。</strong> 前端人才最多，Web 技术栈上手最快，所以 Web 路线的生态最厚；代价是用 Web 技术做「看起来像原生」的界面，系统菜单、文件选择器、通知这些能力始终要经过一层桥接。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/702408f6bc5864f73203289f680520e7.png#pic_center" srcset="/img/loading.gif" lazyload alt="跨平台的三笔账：包体积、性能、生态与开发体验"></p>
 <p>三笔账的残酷之处在于：<strong>你很难同时把三笔都付清。</strong> 省下体积，往往要拿学习成本或生态缺口来换；买到生态，往往要接受体积和性能的妥协。</p>
 <h2 id="三、桌面端：Electron-和-Tauri-的分界不是「新旧」"><a href="#三、桌面端：Electron-和-Tauri-的分界不是「新旧」" class="headerlink" title="三、桌面端：Electron 和 Tauri 的分界不是「新旧」"></a>三、桌面端：Electron 和 Tauri 的分界不是「新旧」</h2><p>Electron 经常被说成「上一代技术」，但看 2026 年的桌面软件清单，VSCode、Slack、Discord、Notion 这些产品仍然在 Electron 上。原因不复杂：它的生态、招人成本、调试体验和跨平台一致性，短期内没有对手能全面替代。</p>
 <p>它的短板也很明确：安装包大、空闲内存高、冷启动慢。这些是架构决定的，不是优化能抹平的。</p>
@@ -435,9 +442,11 @@
 <li>各系统 WebView 的渲染差异要自己兜，兼容性测试省不掉。</li>
 </ul>
 <p>所以这两者的分界不是「新与旧」，而是<strong>你重的是生态还是体积</strong>。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/afb4e754523a0ea12c7fc44e6b489c95.png#pic_center" srcset="/img/loading.gif" lazyload alt="桌面端的分界：Electron 与 Tauri"></p>
 <p>这里有个容易被忽略的判断：<strong>换框架不一定能省掉你真正重的那部分。</strong> 我们那个桌面端最重的是随包分发的 CLI、JVM 和 Chromium，这部分换成 Tauri 也还在；Tauri 能省掉的只是渲染层自带的那一份 Chromium。如果应用的核心复杂度本来就在运行时和原生依赖上，换框架带来的收益会比预期小很多。</p>
 <p>反过来，如果应用是轻量工具、内部工具，或者对启动速度和安装体积特别敏感，Tauri 的收益就很直接。1Password 这类把安全和性能放在体积前面的产品会走这条路，但它的前提是团队愿意为 Rust 买单。</p>
 <h2 id="四、移动端：三条路线回答的是三个不同的问题"><a href="#四、移动端：三条路线回答的是三个不同的问题" class="headerlink" title="四、移动端：三条路线回答的是三个不同的问题"></a>四、移动端：三条路线回答的是三个不同的问题</h2><p>移动端常被放在一张表里比较，但 Flutter、KMP、React Native 其实在回答三个不同的问题。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/492d720127c7c81ce252ce8aa9f7b90b.png#pic_center" srcset="/img/loading.gif" lazyload alt="移动端三条路线：复用 UI、复用逻辑、复用人与生态"></p>
 <p><strong>Flutter 回答的是「UI 能不能完全一致」。</strong> 它自己画 UI，不依赖系统控件，所以像素级统一、动画性能强。代价是它和系统 UI 是两套体系，系统分享、文件选择器这类能力要额外封装，应用看起来也容易「不像这个平台的应用」。</p>
 <p><strong>KMP &#x2F; Compose Multiplatform 回答的是「业务逻辑能不能只写一遍」。</strong> 它不追求 UI 复用，UI 各端各写原生，共享的是 Kotlin 写的逻辑层。这条路适合已经有成熟原生团队、又不想维护两套业务代码的组织。代价是 iOS 侧仍然需要原生工程能力，团队得同时懂两套构建体系。</p>
 <p><strong>React Native 回答的是「能不能复用现有的人」。</strong> React 生态、前端人才池、npm 依赖，这些是它最大的资产。新架构落地之后，启动、内存和动画的短板补上了不少，但原生模块和版本升级仍然要持续投入。</p>
