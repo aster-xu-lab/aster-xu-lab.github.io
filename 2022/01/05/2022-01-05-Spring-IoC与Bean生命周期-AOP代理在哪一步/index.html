@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="用 Spring 8 年，但 IoC 深处（三级缓存、Bean 生命周期、AOP 代理时机）一直是复习时最容易”答不全”的地方。这篇把骨架讲透。  一、IoC：把创建交给容器控制反转（IoC）：对象的创建和管理交给 Spring 容器，用依赖注入（DI）把依赖装配好，而不是到处 new。 几个关键点：  Bean 创建时机：ApplicationContext 的 refresh() 触发——">
+    <meta name="description" content="用 Spring 8 年，但 IoC 深处（三级缓存、Bean 生命周期、AOP 代理时机）一直是复习时最容易”答不全”的地方。这篇把骨架讲透。  一、IoC：把创建交给容器控制反转（IoC）：对象的创建和管理交给 Spring 容器，用依赖注入（DI）把依赖装配好，而不是到处 new。 几个关键点：  Bean 创建时机：ApplicationContext 的 refresh() 触发——扫">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Spring IoC 与 Bean 生命周期：AOP 代理到底在哪一步生成">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/01/05/2022-01-05-Spring-IoC%E4%B8%8EBean%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F-AOP%E4%BB%A3%E7%90%86%E5%9C%A8%E5%93%AA%E4%B8%80%E6%AD%A5/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="用 Spring 8 年，但 IoC 深处（三级缓存、Bean 生命周期、AOP 代理时机）一直是复习时最容易”答不全”的地方。这篇把骨架讲透。  一、IoC：把创建交给容器控制反转（IoC）：对象的创建和管理交给 Spring 容器，用依赖注入（DI）把依赖装配好，而不是到处 new。 几个关键点：  Bean 创建时机：ApplicationContext 的 refresh() 触发——">
+<meta property="og:description" content="用 Spring 8 年，但 IoC 深处（三级缓存、Bean 生命周期、AOP 代理时机）一直是复习时最容易”答不全”的地方。这篇把骨架讲透。  一、IoC：把创建交给容器控制反转（IoC）：对象的创建和管理交给 Spring 容器，用依赖注入（DI）把依赖装配好，而不是到处 new。 几个关键点：  Bean 创建时机：ApplicationContext 的 refresh() 触发——扫">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-01-05T01:00:00.000Z">
+<meta property="article:published_time" content="2022-01-05T12:44:36.000Z">
 <meta property="article:modified_time" content="2026-08-27T09:53:40.829Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="AOP">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-01-05 09:00" pubdate>
-          2022年1月5日 上午
+        <time datetime="2022-01-05 20:44" pubdate>
+          2022年1月5日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<blockquote>
+                <blockquote>
 <p>用 Spring 8 年，但 IoC 深处（三级缓存、Bean 生命周期、AOP 代理时机）一直是复习时最容易”答不全”的地方。这篇把骨架讲透。</p>
 </blockquote>
 <h2 id="一、IoC：把创建交给容器"><a href="#一、IoC：把创建交给容器" class="headerlink" title="一、IoC：把创建交给容器"></a>一、IoC：把创建交给容器</h2><p>控制反转（IoC）：<strong>对象的创建和管理交给 Spring 容器</strong>，用依赖注入（DI）把依赖装配好，而不是到处 <code>new</code>。</p>

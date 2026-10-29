@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="开篇：一个线程池耗尽引发的血案2023年秋天，凌晨三点，手机警报响了。 告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。 登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handl">
+    <meta name="description" content="开篇：一个线程池耗尽引发的血案2023年秋天，凌晨三点，手机警报响了。 告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。 登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handle">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-09-实战：SyncTask引擎的超时控制与幂等设计——V2版本的工程修复">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/05/30/2024-05-30-DDIA-09-SyncTask%E8%B6%85%E6%97%B6%E5%B9%82%E7%AD%89/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="开篇：一个线程池耗尽引发的血案2023年秋天，凌晨三点，手机警报响了。 告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。 登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handl">
+<meta property="og:description" content="开篇：一个线程池耗尽引发的血案2023年秋天，凌晨三点，手机警报响了。 告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。 登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handle">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-05-30T01:00:00.000Z">
+<meta property="article:published_time" content="2024-05-30T12:56:05.000Z">
 <meta property="article:modified_time" content="2026-08-04T11:12:09.752Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-05-30 09:00" pubdate>
-          2024年5月30日 上午
+        <time datetime="2024-05-30 20:56" pubdate>
+          2024年5月30日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="开篇：一个线程池耗尽引发的血案"><a href="#开篇：一个线程池耗尽引发的血案" class="headerlink" title="开篇：一个线程池耗尽引发的血案"></a>开篇：一个线程池耗尽引发的血案</h2><p>2023年秋天，凌晨三点，手机警报响了。</p>
+                <h2 id="开篇：一个线程池耗尽引发的血案"><a href="#开篇：一个线程池耗尽引发的血案" class="headerlink" title="开篇：一个线程池耗尽引发的血案"></a>开篇：一个线程池耗尽引发的血案</h2><p>2023年秋天，凌晨三点，手机警报响了。</p>
 <p>告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。</p>
 <p>登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handler，对方接口响应超时，HTTP 连接池的连接全部耗尽，但我们的代码里<strong>没有设置超时时间</strong>。</p>
 <p>一行 <code>RestTemplate</code> 调用，没有 <code>setConnectTimeout</code>，没有 <code>setReadTimeout</code>，也没有任何超时后的 fallback 机制。</p>
@@ -509,15 +508,15 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/SyncTask/" class="print-no-link">#SyncTask</a>
+        <a href="/tags/%E5%B9%82%E7%AD%89/" class="print-no-link">#幂等</a>
       
         <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
         <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
       
-        <a href="/tags/%E8%B6%85%E6%97%B6/" class="print-no-link">#超时</a>
+        <a href="/tags/SyncTask/" class="print-no-link">#SyncTask</a>
       
-        <a href="/tags/%E5%B9%82%E7%AD%89/" class="print-no-link">#幂等</a>
+        <a href="/tags/%E8%B6%85%E6%97%B6/" class="print-no-link">#超时</a>
       
     </div>
   

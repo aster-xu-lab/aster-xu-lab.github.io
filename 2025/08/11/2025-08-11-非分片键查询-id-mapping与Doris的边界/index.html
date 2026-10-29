@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="分片键定了单号，那”按用户查订单”怎么办？这是分库分表面试的经典深水区：你的分片键是 order_no，那按 user_id 拉某个用户的所有订单，怎么办？ 很多人第一反应是”上 ES”或”上索引”，但这是方案先行的坏习惯。我踩过的坑告诉我，正确顺序是：先问业务要不要这个查询。 一、先立原则：分片后只支持业务真实需要的查询分库分表的前提是：只支持业务真实需要的查询，不是所有”可能发生的查询”。">
+    <meta name="description" content="分片键定了单号，那”按用户查订单”怎么办？这是分库分表面试的经典深水区：你的分片键是 order_no，那按 user_id 拉某个用户的所有订单，怎么办？ 很多人第一反应是”上 ES”或”上索引”，但这是方案先行的坏习惯。我踩过的坑告诉我，正确顺序是：先问业务要不要这个查询。 一、先立原则：分片后只支持业务真实需要的查询分库分表的前提是：只支持业务真实需要的查询，不是所有”可能发生的查询”。 我">
 <meta property="og:type" content="article">
 <meta property="og:title" content="非分片键查询怎么办：id-mapping索引表、Doris与ES的边界">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/08/11/2025-08-11-%E9%9D%9E%E5%88%86%E7%89%87%E9%94%AE%E6%9F%A5%E8%AF%A2-id-mapping%E4%B8%8EDoris%E7%9A%84%E8%BE%B9%E7%95%8C/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="分片键定了单号，那”按用户查订单”怎么办？这是分库分表面试的经典深水区：你的分片键是 order_no，那按 user_id 拉某个用户的所有订单，怎么办？ 很多人第一反应是”上 ES”或”上索引”，但这是方案先行的坏习惯。我踩过的坑告诉我，正确顺序是：先问业务要不要这个查询。 一、先立原则：分片后只支持业务真实需要的查询分库分表的前提是：只支持业务真实需要的查询，不是所有”可能发生的查询”。">
+<meta property="og:description" content="分片键定了单号，那”按用户查订单”怎么办？这是分库分表面试的经典深水区：你的分片键是 order_no，那按 user_id 拉某个用户的所有订单，怎么办？ 很多人第一反应是”上 ES”或”上索引”，但这是方案先行的坏习惯。我踩过的坑告诉我，正确顺序是：先问业务要不要这个查询。 一、先立原则：分片后只支持业务真实需要的查询分库分表的前提是：只支持业务真实需要的查询，不是所有”可能发生的查询”。 我">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2025-08-11T01:00:00.000Z">
+<meta property="article:published_time" content="2025-08-11T15:16:40.000Z">
 <meta property="article:modified_time" content="2026-08-27T09:53:40.849Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Doris">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2025-08-11 09:00" pubdate>
-          2025年8月11日 上午
+        <time datetime="2025-08-11 23:16" pubdate>
+          2025年8月11日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="分片键定了单号，那”按用户查订单”怎么办？"><a href="#分片键定了单号，那”按用户查订单”怎么办？" class="headerlink" title="分片键定了单号，那”按用户查订单”怎么办？"></a>分片键定了单号，那”按用户查订单”怎么办？</h2><p>这是分库分表面试的经典深水区：<strong>你的分片键是 order_no，那按 user_id 拉某个用户的所有订单，怎么办？</strong></p>
+                <h2 id="分片键定了单号，那”按用户查订单”怎么办？"><a href="#分片键定了单号，那”按用户查订单”怎么办？" class="headerlink" title="分片键定了单号，那”按用户查订单”怎么办？"></a>分片键定了单号，那”按用户查订单”怎么办？</h2><p>这是分库分表面试的经典深水区：<strong>你的分片键是 order_no，那按 user_id 拉某个用户的所有订单，怎么办？</strong></p>
 <p>很多人第一反应是”上 ES”或”上索引”，但这是<strong>方案先行</strong>的坏习惯。我踩过的坑告诉我，正确顺序是：<strong>先问业务要不要这个查询。</strong></p>
 <h2 id="一、先立原则：分片后只支持业务真实需要的查询"><a href="#一、先立原则：分片后只支持业务真实需要的查询" class="headerlink" title="一、先立原则：分片后只支持业务真实需要的查询"></a>一、先立原则：分片后只支持业务真实需要的查询</h2><p>分库分表的前提是：<strong>只支持业务真实需要的查询，不是所有”可能发生的查询”。</strong></p>
 <p>我的订单中台真实访问模式：</p>
@@ -489,13 +488,13 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/Doris/" class="print-no-link">#Doris</a>
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#数据库</a>
       
         <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" class="print-no-link">#分库分表</a>
       
-        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#数据库</a>
-      
         <a href="/tags/ES/" class="print-no-link">#ES</a>
+      
+        <a href="/tags/Doris/" class="print-no-link">#Doris</a>
       
         <a href="/tags/%E7%B4%A2%E5%BC%95%E8%A1%A8/" class="print-no-link">#索引表</a>
       

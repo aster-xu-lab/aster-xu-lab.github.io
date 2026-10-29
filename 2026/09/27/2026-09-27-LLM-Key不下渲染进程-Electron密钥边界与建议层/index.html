@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="桌面应用里接 LLM，绕不开一个问题：API Key 放哪？放渲染进程最方便，也最危险。这篇文章讲 Electron 里的密钥边界怎么划，以及为什么”模型建议”必须和”采集证据”分开。  一、为什么 Key 不能进渲染进程回顾一下上一篇讲过的进程模型：渲染进程不被信任，它是个可能被远程内容污染的浏览器环境。而我们还内嵌了一个远程的商家后台页面。 如果 Key 出现在渲染进程里，就意味着：  任">
+    <meta name="description" content="桌面应用里接 LLM，绕不开一个问题：API Key 放哪？放渲染进程最方便，也最危险。这篇文章讲 Electron 里的密钥边界怎么划，以及为什么”模型建议”必须和”采集证据”分开。  一、为什么 Key 不能进渲染进程回顾一下上一篇讲过的进程模型：渲染进程不被信任，它是个可能被远程内容污染的浏览器环境。而我们还内嵌了一个远程的商家后台页面。 如果 Key 出现在渲染进程里，就意味着：  任何">
 <meta property="og:type" content="article">
 <meta property="og:title" content="LLM Key 不下渲染进程：Electron 里的密钥边界">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/27/2026-09-27-LLM-Key%E4%B8%8D%E4%B8%8B%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B-Electron%E5%AF%86%E9%92%A5%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%BB%BA%E8%AE%AE%E5%B1%82/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="桌面应用里接 LLM，绕不开一个问题：API Key 放哪？放渲染进程最方便，也最危险。这篇文章讲 Electron 里的密钥边界怎么划，以及为什么”模型建议”必须和”采集证据”分开。  一、为什么 Key 不能进渲染进程回顾一下上一篇讲过的进程模型：渲染进程不被信任，它是个可能被远程内容污染的浏览器环境。而我们还内嵌了一个远程的商家后台页面。 如果 Key 出现在渲染进程里，就意味着：  任">
+<meta property="og:description" content="桌面应用里接 LLM，绕不开一个问题：API Key 放哪？放渲染进程最方便，也最危险。这篇文章讲 Electron 里的密钥边界怎么划，以及为什么”模型建议”必须和”采集证据”分开。  一、为什么 Key 不能进渲染进程回顾一下上一篇讲过的进程模型：渲染进程不被信任，它是个可能被远程内容污染的浏览器环境。而我们还内嵌了一个远程的商家后台页面。 如果 Key 出现在渲染进程里，就意味着：  任何">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2026-09-27T01:00:00.000Z">
+<meta property="article:published_time" content="2026-09-27T15:09:32.000Z">
 <meta property="article:modified_time" content="2026-10-09T03:19:30.776Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2026-09-27 09:00" pubdate>
-          2026年9月27日 上午
+        <time datetime="2026-09-27 23:09" pubdate>
+          2026年9月27日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<blockquote>
+                <blockquote>
 <p>桌面应用里接 LLM，绕不开一个问题：API Key 放哪？放渲染进程最方便，也最危险。这篇文章讲 Electron 里的密钥边界怎么划，以及为什么”模型建议”必须和”采集证据”分开。</p>
 </blockquote>
 <h2 id="一、为什么-Key-不能进渲染进程"><a href="#一、为什么-Key-不能进渲染进程" class="headerlink" title="一、为什么 Key 不能进渲染进程"></a>一、为什么 Key 不能进渲染进程</h2><p>回顾一下上一篇讲过的进程模型：<strong>渲染进程不被信任</strong>，它是个可能被远程内容污染的浏览器环境。而我们还内嵌了一个远程的商家后台页面。</p>
@@ -590,7 +589,7 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2026/09/25/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/" title="把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型">
+                      <a href="/2026/09/26/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/" title="把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型">
                         <span class="hidden-mobile">把商家后台嵌进桌面端：WebContentsView 与登录闸门的安全模型</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>

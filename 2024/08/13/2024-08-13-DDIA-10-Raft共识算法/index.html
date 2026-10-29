@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="引言：主从复制的终极矛盾——谁说了算在分布式系统的演进中，主从复制（Leader-Follower Replication）解决了读写分离和备份容灾的问题。但它留下了一个根本性矛盾：Leader挂了谁顶上？ 传统方案是让运维手动切主，或者写一个外部管理器（MHA、Orchestrator等）去监控切换。但这本质上是把”分布式一致性”外包给了一个非分布式的外部组件。外部管理器成了新的单点——它自己">
+    <meta name="description" content="引言：主从复制的终极矛盾——谁说了算在分布式系统的演进中，主从复制（Leader-Follower Replication）解决了读写分离和备份容灾的问题。但它留下了一个根本性矛盾：Leader挂了谁顶上？ 传统方案是让运维手动切主，或者写一个外部管理器（MHA、Orchestrator等）去监控切换。但这本质上是把”分布式一致性”外包给了一个非分布式的外部组件。外部管理器成了新的单点——它自己也">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-10-Raft共识算法图解：选主+日志复制+安全性">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/08/13/2024-08-13-DDIA-10-Raft%E5%85%B1%E8%AF%86%E7%AE%97%E6%B3%95/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="引言：主从复制的终极矛盾——谁说了算在分布式系统的演进中，主从复制（Leader-Follower Replication）解决了读写分离和备份容灾的问题。但它留下了一个根本性矛盾：Leader挂了谁顶上？ 传统方案是让运维手动切主，或者写一个外部管理器（MHA、Orchestrator等）去监控切换。但这本质上是把”分布式一致性”外包给了一个非分布式的外部组件。外部管理器成了新的单点——它自己">
+<meta property="og:description" content="引言：主从复制的终极矛盾——谁说了算在分布式系统的演进中，主从复制（Leader-Follower Replication）解决了读写分离和备份容灾的问题。但它留下了一个根本性矛盾：Leader挂了谁顶上？ 传统方案是让运维手动切主，或者写一个外部管理器（MHA、Orchestrator等）去监控切换。但这本质上是把”分布式一致性”外包给了一个非分布式的外部组件。外部管理器成了新的单点——它自己也">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-08-13T01:00:00.000Z">
+<meta property="article:published_time" content="2024-08-13T12:00:45.000Z">
 <meta property="article:modified_time" content="2026-08-04T11:12:09.755Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
@@ -344,8 +344,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-08-13 09:00" pubdate>
-          2024年8月13日 上午
+        <time datetime="2024-08-13 20:00" pubdate>
+          2024年8月13日 晚上
         </time>
       </span>
     
@@ -411,8 +411,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="引言：主从复制的终极矛盾——谁说了算"><a href="#引言：主从复制的终极矛盾——谁说了算" class="headerlink" title="引言：主从复制的终极矛盾——谁说了算"></a>引言：主从复制的终极矛盾——谁说了算</h2><p>在分布式系统的演进中，主从复制（Leader-Follower Replication）解决了读写分离和备份容灾的问题。但它留下了一个根本性矛盾：<strong>Leader挂了谁顶上？</strong></p>
+                <h2 id="引言：主从复制的终极矛盾——谁说了算"><a href="#引言：主从复制的终极矛盾——谁说了算" class="headerlink" title="引言：主从复制的终极矛盾——谁说了算"></a>引言：主从复制的终极矛盾——谁说了算</h2><p>在分布式系统的演进中，主从复制（Leader-Follower Replication）解决了读写分离和备份容灾的问题。但它留下了一个根本性矛盾：<strong>Leader挂了谁顶上？</strong></p>
 <p>传统方案是让运维手动切主，或者写一个外部管理器（MHA、Orchestrator等）去监控切换。但这本质上是把”分布式一致性”外包给了一个非分布式的外部组件。外部管理器成了新的单点——它自己也可能挂，它做决策时也可能出现网络分区导致脑裂。</p>
 <p>共识算法（Consensus Algorithm）就是为此而生的。它不是”更好的切主脚本”，而是<strong>让一群节点在没有人工干预和外部组件的条件下，就某个值达成一致的能力</strong>。在分布式系统中，”某个值”通常是：<strong>谁当主</strong>。</p>
 <p>这篇文章我们聚焦Raft——它被设计出来就是为了解决Paxos”太难懂”的问题。我见过不少面试者背Raft的三个阶段，但一问”为什么Leader只能提交当前Term的日志”就答不上来。读完本文，你不仅能答上来这个问题，还能把它和订单中心的真实架构联系起来。</p>
@@ -716,7 +715,7 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2024/08/23/2024-08-23-DDIA-10-%E4%B8%80%E8%87%B4%E6%80%A7%E6%A8%A1%E5%9E%8B%E9%98%B6%E6%A2%AF/" title="DDIA-10-从线性一致性到因果一致性：一致性模型的阶梯">
+                      <a href="/2024/08/24/2024-08-23-DDIA-10-%E4%B8%80%E8%87%B4%E6%80%A7%E6%A8%A1%E5%9E%8B%E9%98%B6%E6%A2%AF/" title="DDIA-10-从线性一致性到因果一致性：一致性模型的阶梯">
                         <i class="iconfont icon-arrowleft"></i>
                         <span class="hidden-mobile">DDIA-10-从线性一致性到因果一致性：一致性模型的阶梯</span>
                         <span class="visible-mobile">上一篇</span>
@@ -726,7 +725,7 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2024/08/02/2024-08-02-DDIA-10-Choreography%E4%B8%80%E8%87%B4%E6%80%A7/" title="DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍">
+                      <a href="/2024/08/03/2024-08-02-DDIA-10-Choreography%E4%B8%80%E8%87%B4%E6%80%A7/" title="DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍">
                         <span class="hidden-mobile">DDIA-10-实战：afterExecute编排下的一致性问题——Choreography模式的取舍</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>

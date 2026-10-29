@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但网络是不可靠的——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。 坑 1：空回滚场景：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。 后果：直接回滚会报错&#x2F;误删——“没 Try">
+    <meta name="description" content="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但网络是不可靠的——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。 坑 1：空回滚场景：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。 后果：直接回滚会报错&#x2F;误删——“没 Try 过">
 <meta property="og:type" content="article">
 <meta property="og:title" content="TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/01/11/2023-01-11-TCC%E6%B7%B1%E6%B0%B4%E5%8C%BA-%E7%A9%BA%E5%9B%9E%E6%BB%9A%E6%82%AC%E6%8C%82%E5%B9%82%E7%AD%89%E4%B8%8ESeata-AT%E5%9B%9E%E6%BB%9A%E6%9C%BA%E5%88%B6/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但网络是不可靠的——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。 坑 1：空回滚场景：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。 后果：直接回滚会报错&#x2F;误删——“没 Try">
+<meta property="og:description" content="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但网络是不可靠的——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。 坑 1：空回滚场景：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。 后果：直接回滚会报错&#x2F;误删——“没 Try 过">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2023-01-11T01:00:00.000Z">
+<meta property="article:published_time" content="2023-01-11T12:26:02.000Z">
 <meta property="article:modified_time" content="2026-08-27T09:53:40.853Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Seata">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2023-01-11 09:00" pubdate>
-          2023年1月11日 上午
+        <time datetime="2023-01-11 20:26" pubdate>
+          2023年1月11日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="一、TCC-的三个坑：都在解决”网络不可靠下的状态错乱”"><a href="#一、TCC-的三个坑：都在解决”网络不可靠下的状态错乱”" class="headerlink" title="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”"></a>一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”</h2><p>TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但<strong>网络是不可靠的</strong>——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。</p>
+                <h2 id="一、TCC-的三个坑：都在解决”网络不可靠下的状态错乱”"><a href="#一、TCC-的三个坑：都在解决”网络不可靠下的状态错乱”" class="headerlink" title="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”"></a>一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”</h2><p>TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但<strong>网络是不可靠的</strong>——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。</p>
 <h3 id="坑-1：空回滚"><a href="#坑-1：空回滚" class="headerlink" title="坑 1：空回滚"></a>坑 1：空回滚</h3><p><strong>场景</strong>：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。</p>
 <p><strong>后果</strong>：直接回滚会报错&#x2F;误删——“没 Try 过，怎么 Cancel”。</p>
 <p><strong>解决</strong>：Try 前<strong>幂等判断 + 记录”是否有预留记录”</strong>；Cancel 时先查有没有 Try 成功的预留，<strong>没有就直接成功返回（不做实际回滚）</strong>——防止”没有 Try 却回滚”。</p>

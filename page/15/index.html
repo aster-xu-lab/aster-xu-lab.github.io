@@ -371,7 +371,7 @@
       
       <a class="index-excerpt index-excerpt__noimg" href="/2023/10/29/2023-10-29-DDIA-04-%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E9%80%89%E5%9E%8B/" target="_self">
         <div>
-          前言上一篇文章我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊存储引擎。 坦白说，2019年我第一次读DDIA这部分时，只觉得是”数据库内部的机械结构”，跟我的日常工作有什么关系？我又不写数据库。 现在回头看，这个想法错得离谱。 过去几年，我经历了三种典型的存储场景：订单核心的读写混合（InnoDB扛了五
+          前言上一篇文章我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊存储引擎。 坦白说，2019年我第一次读DDIA这部分时，只觉得是”数据库内部的机械结构”，跟我的日常工作有什么关系？我又不写数据库。 现在回头看，这个想法错得离谱。 过去几年，我经历了三种典型的存储场景：订单核心的读写混合（InnoDB扛了五年
         </div>
       </a>
 
@@ -379,7 +379,7 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-10-29 09:00" pubdate>
+            <time datetime="2023-10-29 16:11" pubdate>
               2023-10-29
             </time>
           </div>
@@ -423,15 +423,15 @@
             
               <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">#存储引擎</a>
             
-              <a href="/tags/%E9%80%89%E5%9E%8B/">#选型</a>
+              <a href="/tags/LSM-Tree/">#LSM-Tree</a>
             
               <a href="/tags/RocksDB/">#RocksDB</a>
             
-              <a href="/tags/MyRocks/">#MyRocks</a>
-            
-              <a href="/tags/LSM-Tree/">#LSM-Tree</a>
-            
               <a href="/tags/B-Tree/">#B+Tree</a>
+            
+              <a href="/tags/%E9%80%89%E5%9E%8B/">#选型</a>
+            
+              <a href="/tags/MyRocks/">#MyRocks</a>
             
           </div>
         
@@ -461,7 +461,7 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-10-18 09:00" pubdate>
+            <time datetime="2023-10-18 22:00" pubdate>
               2023-10-18
             </time>
           </div>
@@ -494,8 +494,6 @@
             
               <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">#存储引擎</a>
-            
               <a href="/tags/%E5%88%97%E5%BC%8F%E5%AD%98%E5%82%A8/">#列式存储</a>
             
               <a href="/tags/OLAP/">#OLAP</a>
@@ -503,6 +501,8 @@
               <a href="/tags/ClickHouse/">#ClickHouse</a>
             
               <a href="/tags/Parquet/">#Parquet</a>
+            
+              <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">#存储引擎</a>
             
               <a href="/tags/%E5%8E%8B%E7%BC%A9%E7%AE%97%E6%B3%95/">#压缩算法</a>
             
@@ -526,7 +526,7 @@
       
       <a class="index-excerpt index-excerpt__noimg" href="/2023/10/07/2023-10-07-DDIA-04-LSM-Tree%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" target="_self">
         <div>
-          为什么需要 LSM-Tree？假设你现在要设计一个简单的键值存储引擎，能想到的最朴素的方式是什么？ 一个带索引的追加写文件。 写入时，在文件末尾追加 key,value，同时维护一个内存哈希表记录 key -&gt; 文件偏移量。读的时候，先用哈希表定位偏移量，再 fseek 读那一行。这其实就是 Bitcask 的核心思路，Riak 的默认存储引擎。 但问题也很明显：内存哈希表必须能装下所有
+          为什么需要 LSM-Tree？假设你现在要设计一个简单的键值存储引擎，能想到的最朴素的方式是什么？ 一个带索引的追加写文件。 写入时，在文件末尾追加 key,value，同时维护一个内存哈希表记录 key -&gt; 文件偏移量。读的时候，先用哈希表定位偏移量，再 fseek 读那一行。这其实就是 Bitcask 的核心思路，Riak 的默认存储引擎。 但问题也很明显：内存哈希表必须能装下所有 k
         </div>
       </a>
 
@@ -534,7 +534,7 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-10-07 09:00" pubdate>
+            <time datetime="2023-10-07 15:08" pubdate>
               2023-10-07
             </time>
           </div>
@@ -569,9 +569,9 @@
             
               <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/">#存储引擎</a>
             
-              <a href="/tags/RocksDB/">#RocksDB</a>
-            
               <a href="/tags/LSM-Tree/">#LSM-Tree</a>
+            
+              <a href="/tags/RocksDB/">#RocksDB</a>
             
               <a href="/tags/LevelDB/">#LevelDB</a>
             
@@ -589,13 +589,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/09/27/2023-09-27-DDIA-04-B-Tree%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD/" target="_self">
+        <a href="/2023/09/28/2023-09-27-DDIA-04-B-Tree%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD/" target="_self">
           DDIA-04-B-Tree：数据库索引的基础设施，为什么它60岁了还在用
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/09/27/2023-09-27-DDIA-04-B-Tree%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/09/28/2023-09-27-DDIA-04-B-Tree%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD/" target="_self">
         <div>
           深度拆解B-Tree的设计哲学、B+Tree的范围查询优化、InnoDB索引实现细节，并结合日均慢SQL 1124→6条的实战经验，讲透索引优化的核心思想。
         </div>
@@ -605,8 +605,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-09-27 09:00" pubdate>
-              2023-09-27
+            <time datetime="2023-09-28 01:07" pubdate>
+              2023-09-28
             </time>
           </div>
         
@@ -636,11 +636,11 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/MySQL/">#MySQL</a>
+              <a href="/tags/DDIA/">#DDIA</a>
             
               <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
             
-              <a href="/tags/DDIA/">#DDIA</a>
+              <a href="/tags/MySQL/">#MySQL</a>
             
               <a href="/tags/B-Tree/">#B-Tree</a>
             
@@ -678,7 +678,7 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-09-16 09:00" pubdate>
+            <time datetime="2023-09-16 10:11" pubdate>
               2023-09-16
             </time>
           </div>
@@ -709,11 +709,11 @@
           <div class="post-meta">
             <i class="iconfont icon-tags"></i>
             
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
-            
               <a href="/tags/DDIA/">#DDIA</a>
             
               <a href="/tags/%E6%9E%B6%E6%9E%84/">#架构</a>
+            
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
             
               <a href="/tags/%E5%AE%9E%E6%88%98/">#实战</a>
             
@@ -737,7 +737,7 @@
       
       <a class="index-excerpt index-excerpt__noimg" href="/2023/09/05/2023-09-05-DDIA-03-%E5%A4%9A%E5%AF%B9%E5%A4%9A%E5%85%B3%E7%B3%BB%E5%BB%BA%E6%A8%A1/" target="_self">
         <div>
-          一个让你血压飙升的查询去年年底，产品经理提了一个需求：给定一个供应商，查出它关联的所有订单的履约状态。听起来简单，对吧？ 但我们的数据链路是这样的：供应商→仓库→库存→商品→订单。五跳。 运营同学在后台点了一下查询，我去接水。水接完了，页面还在转圈。SQL执行了36秒。 这就是多对多关系建模不当的真实后果。今天我们来把这件事说透——不堆理论，只讲实战。 为什么多对多关系是最难的数据建模问题一对一
+          一个让你血压飙升的查询去年年底，产品经理提了一个需求：给定一个供应商，查出它关联的所有订单的履约状态。听起来简单，对吧？ 但我们的数据链路是这样的：供应商→仓库→库存→商品→订单。五跳。 运营同学在后台点了一下查询，我去接水。水接完了，页面还在转圈。SQL执行了36秒。 这就是多对多关系建模不当的真实后果。今天我们来把这件事说透——不堆理论，只讲实战。 为什么多对多关系是最难的数据建模问题一对一、
         </div>
       </a>
 
@@ -745,7 +745,7 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-09-05 09:00" pubdate>
+            <time datetime="2023-09-05 20:41" pubdate>
               2023-09-05
             </time>
           </div>
@@ -781,7 +781,7 @@
       
       <a class="index-excerpt index-excerpt__noimg" href="/2023/08/26/2023-08-26-DDIA-03-%E5%A3%B0%E6%98%8E%E5%BC%8F%E6%9F%A5%E8%AF%A2vs-ORM/" target="_self">
         <div>
-          本文是《Designing Data-Intensive Applications》（DDIA）读书笔记系列第3篇。前两篇我们聊了数据模型和存储引擎，今天来聊一个每个Java后端工程师每天都在用、但很少认真思考的话题：声明式查询与命令式查询的分野，以及ORM到底在帮你还是在害你。  两种范式：你要什么 vs 你怎么做SQL 和 Java 代码代表了两种截然不同的编程范式。 声明式（Declara
+          本文是《Designing Data-Intensive Applications》（DDIA）读书笔记系列第3篇。前两篇我们聊了数据模型和存储引擎，今天来聊一个每个Java后端工程师每天都在用、但很少认真思考的话题：声明式查询与命令式查询的分野，以及ORM到底在帮你还是在害你。  两种范式：你要什么 vs 你怎么做SQL 和 Java 代码代表了两种截然不同的编程范式。 声明式（Declarat
         </div>
       </a>
 
@@ -789,7 +789,7 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-08-26 09:00" pubdate>
+            <time datetime="2023-08-26 22:25" pubdate>
               2023-08-26
             </time>
           </div>
@@ -838,13 +838,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/08/15/2023-08-15-DDIA-03-%E5%9B%BE%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" target="_self">
+        <a href="/2023/08/16/2023-08-15-DDIA-03-%E5%9B%BE%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" target="_self">
           DDIA-03-图数据模型：当你的订单关联比二叉树还复杂
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/08/15/2023-08-15-DDIA-03-%E5%9B%BE%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/08/16/2023-08-15-DDIA-03-%E5%9B%BE%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" target="_self">
         <div>
           供应链中台实战：为什么SQL JOIN不是万能的，以及图数据库什么时候值得放进工具箱。
         </div>
@@ -854,8 +854,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-08-15 09:00" pubdate>
-              2023-08-15
+            <time datetime="2023-08-16 01:03" pubdate>
+              2023-08-16
             </time>
           </div>
         
@@ -894,9 +894,9 @@
             
               <a href="/tags/DDIA/">#DDIA</a>
             
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/">#数据模型</a>
-            
               <a href="/tags/%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/">#图数据库</a>
+            
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/">#数据模型</a>
             
           </div>
         
@@ -910,13 +910,13 @@
     <article class="col-12 col-md-12 mx-auto index-info">
       <h2 class="index-header">
         
-        <a href="/2023/08/04/2023-08-04-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/" target="_self">
+        <a href="/2023/08/05/2023-08-04-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/" target="_self">
           DDIA-03-关系模型vs文档模型：电商订单该存MySQL还是MongoDB
         </a>
       </h2>
 
       
-      <a class="index-excerpt index-excerpt__noimg" href="/2023/08/04/2023-08-04-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/" target="_self">
+      <a class="index-excerpt index-excerpt__noimg" href="/2023/08/05/2023-08-04-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/" target="_self">
         <div>
           从130万日订单实战出发，深度对比关系模型与文档模型在电商订单场景中的选型逻辑。不是二选一，是场景匹配。
         </div>
@@ -926,8 +926,8 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-08-04 09:00" pubdate>
-              2023-08-04
+            <time datetime="2023-08-05 01:57" pubdate>
+              2023-08-05
             </time>
           </div>
         
@@ -959,13 +959,13 @@
             
               <a href="/tags/MongoDB/">#MongoDB</a>
             
-              <a href="/tags/MySQL/">#MySQL</a>
-            
-              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
-            
               <a href="/tags/DDIA/">#DDIA</a>
             
               <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/">#数据模型</a>
+            
+              <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/">#数据库</a>
+            
+              <a href="/tags/MySQL/">#MySQL</a>
             
               <a href="/tags/%E8%AE%A2%E5%8D%95%E7%B3%BB%E7%BB%9F/">#订单系统</a>
             
@@ -999,7 +999,7 @@
         
           <div class="post-meta mr-3">
             <i class="iconfont icon-date"></i>
-            <time datetime="2023-07-25 09:00" pubdate>
+            <time datetime="2023-07-25 21:55" pubdate>
               2023-07-25
             </time>
           </div>
@@ -1036,11 +1036,11 @@
             
               <a href="/tags/%E6%9E%B6%E6%9E%84/">#架构</a>
             
-              <a href="/tags/%E5%8F%AF%E7%94%A8%E6%80%A7/">#可用性</a>
+              <a href="/tags/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/">#系统设计</a>
             
               <a href="/tags/%E9%9D%9E%E5%8A%9F%E8%83%BD%E9%9C%80%E6%B1%82/">#非功能需求</a>
             
-              <a href="/tags/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/">#系统设计</a>
+              <a href="/tags/%E5%8F%AF%E7%94%A8%E6%80%A7/">#可用性</a>
             
           </div>
         

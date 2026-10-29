@@ -26,7 +26,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="订单中心读写分离实战：从慢SQL拖垮主库到ShardingSphere-JDBC落地的完整记录，包含路由设计、延迟监控、迁移流程。">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-02-02T01:00:00.000Z">
+<meta property="article:published_time" content="2024-02-02T15:12:06.000Z">
 <meta property="article:modified_time" content="2026-08-27T09:54:18.739Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
@@ -344,8 +344,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-02-02 09:00" pubdate>
-          2024年2月2日 上午
+        <time datetime="2024-02-02 23:12" pubdate>
+          2024年2月2日 晚上
         </time>
       </span>
     
@@ -411,8 +411,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="一、事故：一条慢SQL引发的血案"><a href="#一、事故：一条慢SQL引发的血案" class="headerlink" title="一、事故：一条慢SQL引发的血案"></a>一、事故：一条慢SQL引发的血案</h2><p>那天凌晨两点，我接到了告警电话。</p>
+                <h2 id="一、事故：一条慢SQL引发的血案"><a href="#一、事故：一条慢SQL引发的血案" class="headerlink" title="一、事故：一条慢SQL引发的血案"></a>一、事故：一条慢SQL引发的血案</h2><p>那天凌晨两点，我接到了告警电话。</p>
 <p>订单中心的接口响应时间从正常的 30ms 飙升到 8s，主库 CPU 负载直接打满 100%。排查后发现，运营同事白天在 BI 后台跑了一个报表查询——一个关联了 6 张表的 <code>LEFT JOIN</code>，扫描 1200 万行数据。这条 SQL 没有被限流，直接跑在主库上，把连接池和 CPU 全部吃光。</p>
 <p>更让我后背发凉的是，这居然不是个例。翻了一下慢查询日志，前一天<strong>一天之内出现了 1124 条慢 SQL</strong>。它们大部分长这样：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 后台导出一个月的订单明细，关联订单、订单项、退款单、物流单</span><br><span class="hljs-keyword">SELECT</span> o.<span class="hljs-operator">*</span>, oi.<span class="hljs-operator">*</span>, r.<span class="hljs-operator">*</span>, l.<span class="hljs-operator">*</span><br><span class="hljs-keyword">FROM</span> t_order o<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_order_item oi <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> oi.order_id<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_refund r <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> r.order_id<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_logistics l <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> l.order_id<br><span class="hljs-keyword">WHERE</span> o.create_time <span class="hljs-keyword">BETWEEN</span> <span class="hljs-string">&#x27;2024-06-01&#x27;</span> <span class="hljs-keyword">AND</span> <span class="hljs-string">&#x27;2024-06-30&#x27;</span><br>  <span class="hljs-keyword">AND</span> o.status <span class="hljs-keyword">IN</span> (<span class="hljs-number">10</span>, <span class="hljs-number">20</span>, <span class="hljs-number">30</span>, <span class="hljs-number">40</span>, <span class="hljs-number">50</span>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> o.create_time <span class="hljs-keyword">DESC</span>;<br></code></pre></td></tr></table></figure>
@@ -648,9 +647,9 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
-      
         <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
+      
+        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
       
         <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
       

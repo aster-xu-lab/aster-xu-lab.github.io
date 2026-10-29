@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="JOIN 在分片下的尴尬分库分表后，JOIN 是个老大难。以订单为例：or_sales_info 和 or_sales_item 都在分片，按 order_id 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生笛卡尔积——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。 绑定表：解决分片表 JOIN绑定表的本质是">
+    <meta name="description" content="JOIN 在分片下的尴尬分库分表后，JOIN 是个老大难。以订单为例：or_sales_info 和 or_sales_item 都在分片，按 order_id 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生笛卡尔积——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。 绑定表：解决分片表 JOIN绑定表的本质是：">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ShardingSphere 绑定表与广播表：JOIN 与配置表的两大解法">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/03/12/2025-03-12-ShardingSphere%E7%BB%91%E5%AE%9A%E8%A1%A8%E4%B8%8E%E5%B9%BF%E6%92%AD%E8%A1%A8/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="JOIN 在分片下的尴尬分库分表后，JOIN 是个老大难。以订单为例：or_sales_info 和 or_sales_item 都在分片，按 order_id 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生笛卡尔积——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。 绑定表：解决分片表 JOIN绑定表的本质是">
+<meta property="og:description" content="JOIN 在分片下的尴尬分库分表后，JOIN 是个老大难。以订单为例：or_sales_info 和 or_sales_item 都在分片，按 order_id 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生笛卡尔积——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。 绑定表：解决分片表 JOIN绑定表的本质是：">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2025-03-12T01:00:00.000Z">
+<meta property="article:published_time" content="2025-03-12T14:46:09.000Z">
 <meta property="article:modified_time" content="2026-08-04T11:12:09.761Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JOIN">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2025-03-12 09:00" pubdate>
-          2025年3月12日 上午
+        <time datetime="2025-03-12 22:46" pubdate>
+          2025年3月12日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="JOIN-在分片下的尴尬"><a href="#JOIN-在分片下的尴尬" class="headerlink" title="JOIN 在分片下的尴尬"></a>JOIN 在分片下的尴尬</h2><p>分库分表后，JOIN 是个老大难。以订单为例：<code>or_sales_info</code> 和 <code>or_sales_item</code> 都在分片，按 <code>order_id</code> 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生<strong>笛卡尔积</strong>——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。</p>
+                <h2 id="JOIN-在分片下的尴尬"><a href="#JOIN-在分片下的尴尬" class="headerlink" title="JOIN 在分片下的尴尬"></a>JOIN 在分片下的尴尬</h2><p>分库分表后，JOIN 是个老大难。以订单为例：<code>or_sales_info</code> 和 <code>or_sales_item</code> 都在分片，按 <code>order_id</code> 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生<strong>笛卡尔积</strong>——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。</p>
 <h2 id="绑定表：解决分片表-JOIN"><a href="#绑定表：解决分片表-JOIN" class="headerlink" title="绑定表：解决分片表 JOIN"></a>绑定表：解决分片表 JOIN</h2><p>绑定表的本质是：<strong>告诉 ShardingSphere，这两张表按相同的分片键路由</strong>，JOIN 只在各自对应的分片内进行。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 主表和明细表用同一个分片键 order_id、同一算法</span><br>shardingRuleConfig.getBindingTableGroups().add(<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">ShardingTableReferenceRuleConfiguration</span>(<br>                <span class="hljs-string">&quot;sales_binding&quot;</span>, <span class="hljs-string">&quot;t_bt_sales_info,t_bt_sales_item&quot;</span>));<br></code></pre></td></tr></table></figure>
 

@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、@Transactional 靠什么生效@Transactional 的实现是 AOP 代理：TransactionInterceptor 在方法前后织入 begin &#x2F; commit &#x2F; rollback。 这个前提极其重要——一切失效场景，本质都是”代理没生效”或”事务感知不到异常”。 二、6 个失效场景① 非 public 方法@Transactional 只对 public 方法生效">
+    <meta name="description" content="一、@Transactional 靠什么生效@Transactional 的实现是 AOP 代理：TransactionInterceptor 在方法前后织入 begin &#x2F; commit &#x2F; rollback。 这个前提极其重要——一切失效场景，本质都是”代理没生效”或”事务感知不到异常”。 二、6 个失效场景① 非 public 方法@Transactional 只对 public 方法生效（">
 <meta property="og:type" content="article">
 <meta property="og:title" content="@Transactional 失效的 6 个场景与事务传播行为">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/01/12/2022-01-12-Spring%E4%BA%8B%E5%8A%A1%E5%A4%B1%E6%95%88%E5%9C%BA%E6%99%AF%E4%B8%8E%E4%BC%A0%E6%92%AD%E8%A1%8C%E4%B8%BA/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、@Transactional 靠什么生效@Transactional 的实现是 AOP 代理：TransactionInterceptor 在方法前后织入 begin &#x2F; commit &#x2F; rollback。 这个前提极其重要——一切失效场景，本质都是”代理没生效”或”事务感知不到异常”。 二、6 个失效场景① 非 public 方法@Transactional 只对 public 方法生效">
+<meta property="og:description" content="一、@Transactional 靠什么生效@Transactional 的实现是 AOP 代理：TransactionInterceptor 在方法前后织入 begin &#x2F; commit &#x2F; rollback。 这个前提极其重要——一切失效场景，本质都是”代理没生效”或”事务感知不到异常”。 二、6 个失效场景① 非 public 方法@Transactional 只对 public 方法生效（">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-01-12T01:00:00.000Z">
+<meta property="article:published_time" content="2022-01-12T12:44:34.000Z">
 <meta property="article:modified_time" content="2026-08-28T05:47:35.805Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="AOP">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-01-12 09:00" pubdate>
-          2022年1月12日 上午
+        <time datetime="2022-01-12 20:44" pubdate>
+          2022年1月12日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="一、-Transactional-靠什么生效"><a href="#一、-Transactional-靠什么生效" class="headerlink" title="一、@Transactional 靠什么生效"></a>一、@Transactional 靠什么生效</h2><p><code>@Transactional</code> 的实现是 <strong>AOP 代理</strong>：<code>TransactionInterceptor</code> 在方法前后织入 <code>begin / commit / rollback</code>。</p>
+                <h2 id="一、-Transactional-靠什么生效"><a href="#一、-Transactional-靠什么生效" class="headerlink" title="一、@Transactional 靠什么生效"></a>一、@Transactional 靠什么生效</h2><p><code>@Transactional</code> 的实现是 <strong>AOP 代理</strong>：<code>TransactionInterceptor</code> 在方法前后织入 <code>begin / commit / rollback</code>。</p>
 <p>这个前提极其重要——<strong>一切失效场景，本质都是”代理没生效”或”事务感知不到异常”</strong>。</p>
 <h2 id="二、6-个失效场景"><a href="#二、6-个失效场景" class="headerlink" title="二、6 个失效场景"></a>二、6 个失效场景</h2><p><strong>① 非 public 方法</strong><br><code>@Transactional</code> 只对 public 方法生效（Spring 代理的限制，private&#x2F;protected 不织入）。</p>
 <p><strong>② this 自调用</strong><br>同类里 <code>this.methodB()</code> 直接调当前对象的方法，<strong>不走代理</strong>，事务拦截器不触发：</p>
@@ -519,11 +518,11 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E4%BA%8B%E5%8A%A1/" class="print-no-link">#事务</a>
-      
         <a href="/tags/Spring/" class="print-no-link">#Spring</a>
       
         <a href="/tags/AOP/" class="print-no-link">#AOP</a>
+      
+        <a href="/tags/%E4%BA%8B%E5%8A%A1/" class="print-no-link">#事务</a>
       
         <a href="/tags/%E4%BA%8B%E5%8A%A1%E5%A4%B1%E6%95%88/" class="print-no-link">#事务失效</a>
       
@@ -584,7 +583,7 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/02/02/2022-02-02-Redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB-%E5%8D%95%E7%BA%BF%E7%A8%8B%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF%E4%B8%8E6.0%E5%A4%9A%E7%BA%BF%E7%A8%8B/" title="Redis 为什么快：单线程事件循环，与 6.0 的多线程到底在哪">
+                      <a href="/2022/02/03/2022-02-02-Redis%E4%B8%BA%E4%BB%80%E4%B9%88%E5%BF%AB-%E5%8D%95%E7%BA%BF%E7%A8%8B%E4%BA%8B%E4%BB%B6%E5%BE%AA%E7%8E%AF%E4%B8%8E6.0%E5%A4%9A%E7%BA%BF%E7%A8%8B/" title="Redis 为什么快：单线程事件循环，与 6.0 的多线程到底在哪">
                         <i class="iconfont icon-arrowleft"></i>
                         <span class="hidden-mobile">Redis 为什么快：单线程事件循环，与 6.0 的多线程到底在哪</span>
                         <span class="visible-mobile">上一篇</span>

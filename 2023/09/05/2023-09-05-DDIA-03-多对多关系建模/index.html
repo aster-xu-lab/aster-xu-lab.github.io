@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一个让你血压飙升的查询去年年底，产品经理提了一个需求：给定一个供应商，查出它关联的所有订单的履约状态。听起来简单，对吧？ 但我们的数据链路是这样的：供应商→仓库→库存→商品→订单。五跳。 运营同学在后台点了一下查询，我去接水。水接完了，页面还在转圈。SQL执行了36秒。 这就是多对多关系建模不当的真实后果。今天我们来把这件事说透——不堆理论，只讲实战。 为什么多对多关系是最难的数据建模问题一对一">
+    <meta name="description" content="一个让你血压飙升的查询去年年底，产品经理提了一个需求：给定一个供应商，查出它关联的所有订单的履约状态。听起来简单，对吧？ 但我们的数据链路是这样的：供应商→仓库→库存→商品→订单。五跳。 运营同学在后台点了一下查询，我去接水。水接完了，页面还在转圈。SQL执行了36秒。 这就是多对多关系建模不当的真实后果。今天我们来把这件事说透——不堆理论，只讲实战。 为什么多对多关系是最难的数据建模问题一对一、">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-03-多对多关系的数据库建模：从中间表到图遍历">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/09/05/2023-09-05-DDIA-03-%E5%A4%9A%E5%AF%B9%E5%A4%9A%E5%85%B3%E7%B3%BB%E5%BB%BA%E6%A8%A1/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一个让你血压飙升的查询去年年底，产品经理提了一个需求：给定一个供应商，查出它关联的所有订单的履约状态。听起来简单，对吧？ 但我们的数据链路是这样的：供应商→仓库→库存→商品→订单。五跳。 运营同学在后台点了一下查询，我去接水。水接完了，页面还在转圈。SQL执行了36秒。 这就是多对多关系建模不当的真实后果。今天我们来把这件事说透——不堆理论，只讲实战。 为什么多对多关系是最难的数据建模问题一对一">
+<meta property="og:description" content="一个让你血压飙升的查询去年年底，产品经理提了一个需求：给定一个供应商，查出它关联的所有订单的履约状态。听起来简单，对吧？ 但我们的数据链路是这样的：供应商→仓库→库存→商品→订单。五跳。 运营同学在后台点了一下查询，我去接水。水接完了，页面还在转圈。SQL执行了36秒。 这就是多对多关系建模不当的真实后果。今天我们来把这件事说透——不堆理论，只讲实战。 为什么多对多关系是最难的数据建模问题一对一、">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2023-09-05T01:00:00.000Z">
+<meta property="article:published_time" content="2023-09-05T12:41:16.000Z">
 <meta property="article:modified_time" content="2026-08-04T11:12:09.745Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
@@ -343,8 +343,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2023-09-05 09:00" pubdate>
-          2023年9月5日 上午
+        <time datetime="2023-09-05 20:41" pubdate>
+          2023年9月5日 晚上
         </time>
       </span>
     
@@ -410,8 +410,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="一个让你血压飙升的查询"><a href="#一个让你血压飙升的查询" class="headerlink" title="一个让你血压飙升的查询"></a>一个让你血压飙升的查询</h2><p>去年年底，产品经理提了一个需求：给定一个供应商，查出它关联的所有订单的履约状态。听起来简单，对吧？</p>
+                <h2 id="一个让你血压飙升的查询"><a href="#一个让你血压飙升的查询" class="headerlink" title="一个让你血压飙升的查询"></a>一个让你血压飙升的查询</h2><p>去年年底，产品经理提了一个需求：给定一个供应商，查出它关联的所有订单的履约状态。听起来简单，对吧？</p>
 <p>但我们的数据链路是这样的：供应商→仓库→库存→商品→订单。五跳。</p>
 <p>运营同学在后台点了一下查询，我去接水。水接完了，页面还在转圈。SQL执行了36秒。</p>
 <p>这就是多对多关系建模不当的真实后果。今天我们来把这件事说透——不堆理论，只讲实战。</p>

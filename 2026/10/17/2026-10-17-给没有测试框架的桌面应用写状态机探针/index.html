@@ -19,15 +19,15 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="这个项目没有测试框架，也没有 pnpm test。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是怎么避免探针自己假通过。  一、为什么是「状态机探针」桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态：  更新检查有 8 种决策：禁用、已最新、有更新、待生效强制、已生效强制、已撤回、业务失败、策略非法；">
+    <meta name="description" content="这个项目没有测试框架，也没有 pnpm test。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是怎么避免探针自己假通过。  一、为什么是「状态机探针」桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态：  更新检查有 8 种决策：禁用、已最新、有更新、待生效强制、已生效强制、已撤回、业务失败、策略非法； 每">
 <meta property="og:type" content="article">
 <meta property="og:title" content="给没有测试框架的桌面应用写状态机探针">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E7%BB%99%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E5%86%99%E7%8A%B6%E6%80%81%E6%9C%BA%E6%8E%A2%E9%92%88/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="这个项目没有测试框架，也没有 pnpm test。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是怎么避免探针自己假通过。  一、为什么是「状态机探针」桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态：  更新检查有 8 种决策：禁用、已最新、有更新、待生效强制、已生效强制、已撤回、业务失败、策略非法；">
+<meta property="og:description" content="这个项目没有测试框架，也没有 pnpm test。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是怎么避免探针自己假通过。  一、为什么是「状态机探针」桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态：  更新检查有 8 种决策：禁用、已最新、有更新、待生效强制、已生效强制、已撤回、业务失败、策略非法； 每">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2026-10-17T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-17T08:19:17.415Z">
+<meta property="article:published_time" content="2026-10-17T12:25:23.000Z">
+<meta property="article:modified_time" content="2026-10-21T03:47:56.938Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CDP">
 <meta property="article:tag" content="Electron">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2026-10-17 09:00" pubdate>
-          2026年10月17日 上午
+        <time datetime="2026-10-17 20:25" pubdate>
+          2026年10月17日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<blockquote>
+                <blockquote>
 <p>这个项目没有测试框架，也没有 <code>pnpm test</code>。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是<strong>怎么避免探针自己假通过</strong>。</p>
 </blockquote>
 <h2 id="一、为什么是「状态机探针」"><a href="#一、为什么是「状态机探针」" class="headerlink" title="一、为什么是「状态机探针」"></a>一、为什么是「状态机探针」</h2><p>桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态：</p>
@@ -565,9 +564,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2026/10/17/2026-10-17-364MB%E5%AE%89%E8%A3%85%E5%8C%85%E4%B8%8A%E4%BC%A0%E5%A4%B1%E8%B4%A5-%E4%BB%8Emultipart%E4%B8%8A%E9%99%90%E5%88%B0%E5%A0%86%E5%86%85OOM/" title="一个 364MB 的安装包传不上去：从 multipart 上限排到堆内 OOM">
+                      <a href="/2026/10/17/2026-10-17-%E7%AD%BE%E5%90%8D%E5%92%8C%E5%85%AC%E8%AF%81%E7%9C%9F%E7%9A%84%E5%81%9A%E4%BA%86%E4%BB%A5%E5%90%8E/" title="签名和公证真的做了以后：从概念到 Squirrel 装不上的那 88 个文件">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">一个 364MB 的安装包传不上去：从 multipart 上限排到堆内 OOM</span>
+                        <span class="hidden-mobile">签名和公证真的做了以后：从概念到 Squirrel 装不上的那 88 个文件</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -575,8 +574,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2026/10/17/2026-10-17-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E4%B8%8D%E6%98%AF%E4%B8%80%E6%9D%A1%E5%91%BD%E4%BB%A4/" title="跨平台构建不是一条命令：Windows 与 macOS 出包的边界">
-                        <span class="hidden-mobile">跨平台构建不是一条命令：Windows 与 macOS 出包的边界</span>
+                      <a href="/2026/10/17/2026-10-17-364MB%E5%AE%89%E8%A3%85%E5%8C%85%E4%B8%8A%E4%BC%A0%E5%A4%B1%E8%B4%A5-%E4%BB%8Emultipart%E4%B8%8A%E9%99%90%E5%88%B0%E5%A0%86%E5%86%85OOM/" title="一个 364MB 的安装包传不上去：从 multipart 上限排到堆内 OOM">
+                        <span class="hidden-mobile">一个 364MB 的安装包传不上去：从 multipart 上限排到堆内 OOM</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>

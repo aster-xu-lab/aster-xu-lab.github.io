@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是有取舍。 冗余的本质：为查询性能牺牲写复杂度每张反向索引表 &#x3D; 一条订单要多写一份数据。如果建 3 张索引表，写一条订单就要写 4 处（主表 + 3 索引）。这份冗余是真实成本，所以必须克制。 业界取舍：不是”每维度建表”，而是这三招招1：只在”最高频”维">
+    <meta name="description" content="分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是有取舍。 冗余的本质：为查询性能牺牲写复杂度每张反向索引表 &#x3D; 一条订单要多写一份数据。如果建 3 张索引表，写一条订单就要写 4 处（主表 + 3 索引）。这份冗余是真实成本，所以必须克制。 业界取舍：不是”每维度建表”，而是这三招招1：只在”最高频”维度">
 <meta property="og:type" content="article">
 <meta property="og:title" content="订单表反向索引的取舍：会不会表太多、写逻辑太冗余？">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/07/31/2025-07-31-%E8%AE%A2%E5%8D%95%E8%A1%A8%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E5%8F%96%E8%88%8D-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E8%A1%A8%E5%A4%AA%E5%A4%9A%E5%86%99%E5%86%97%E4%BD%99/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是有取舍。 冗余的本质：为查询性能牺牲写复杂度每张反向索引表 &#x3D; 一条订单要多写一份数据。如果建 3 张索引表，写一条订单就要写 4 处（主表 + 3 索引）。这份冗余是真实成本，所以必须克制。 业界取舍：不是”每维度建表”，而是这三招招1：只在”最高频”维">
+<meta property="og:description" content="分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是有取舍。 冗余的本质：为查询性能牺牲写复杂度每张反向索引表 &#x3D; 一条订单要多写一份数据。如果建 3 张索引表，写一条订单就要写 4 处（主表 + 3 索引）。这份冗余是真实成本，所以必须克制。 业界取舍：不是”每维度建表”，而是这三招招1：只在”最高频”维度">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2025-07-31T01:00:00.000Z">
+<meta property="article:published_time" content="2025-07-31T13:40:57.000Z">
 <meta property="article:modified_time" content="2026-08-04T11:12:09.764Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="C端B端">
@@ -347,8 +347,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2025-07-31 09:00" pubdate>
-          2025年7月31日 上午
+        <time datetime="2025-07-31 21:40" pubdate>
+          2025年7月31日 晚上
         </time>
       </span>
     
@@ -414,8 +414,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<p>分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是<strong>有取舍</strong>。</p>
+                <p>分片后，一个很实际的疑问：”每次查询维度都建反向索引表，会不会表太多、写逻辑太冗余？” 这个直觉是对的——答案不是无限建索引表，而是<strong>有取舍</strong>。</p>
 <h2 id="冗余的本质：为查询性能牺牲写复杂度"><a href="#冗余的本质：为查询性能牺牲写复杂度" class="headerlink" title="冗余的本质：为查询性能牺牲写复杂度"></a>冗余的本质：为查询性能牺牲写复杂度</h2><p>每张反向索引表 &#x3D; 一条订单要多写一份数据。如果建 3 张索引表，写一条订单就要写 4 处（主表 + 3 索引）。这份冗余是真实成本，所以<strong>必须克制</strong>。</p>
 <h2 id="业界取舍：不是”每维度建表”，而是这三招"><a href="#业界取舍：不是”每维度建表”，而是这三招" class="headerlink" title="业界取舍：不是”每维度建表”，而是这三招"></a>业界取舍：不是”每维度建表”，而是这三招</h2><h3 id="招1：只在”最高频”维度建反向索引表"><a href="#招1：只在”最高频”维度建反向索引表" class="headerlink" title="招1：只在”最高频”维度建反向索引表"></a>招1：只在”最高频”维度建反向索引表</h3><p>订单表真正高频的归属维度其实就 <strong>1~2 个</strong>：</p>
 <ul>
@@ -522,11 +521,11 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
+        <a href="/tags/OLAP/" class="print-no-link">#OLAP</a>
+      
         <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
       
         <a href="/tags/JDBC/" class="print-no-link">#JDBC</a>
-      
-        <a href="/tags/OLAP/" class="print-no-link">#OLAP</a>
       
         <a href="/tags/%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95/" class="print-no-link">#反向索引</a>
       

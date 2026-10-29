@@ -19,12 +19,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="虚拟机栈概述出现背景由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。 优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。 初步印象有不少Java开发人员一提到Java内存结构，就会非常粗粒度地将JVM中的内存区理解为仅有Java堆（heap）和Java栈（stack）？为什么？ 内存中的栈与堆首先栈是运">
+    <meta name="description" content="虚拟机栈概述出现背景由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。 优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。 初步印象有不少Java开发人员一提到Java内存结构，就会非常粗粒度地将JVM中的内存区理解为仅有Java堆（heap）和Java栈（stack）？为什么？ 内存中的栈与堆首先栈是运行">
 <meta property="og:type" content="article">
 <meta property="og:title" content="虚拟机栈">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/03/03/2021-03-03-%E8%99%9A%E6%8B%9F%E6%9C%BA%E6%A0%88/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="虚拟机栈概述出现背景由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。 优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。 初步印象有不少Java开发人员一提到Java内存结构，就会非常粗粒度地将JVM中的内存区理解为仅有Java堆（heap）和Java栈（stack）？为什么？ 内存中的栈与堆首先栈是运">
+<meta property="og:description" content="虚拟机栈概述出现背景由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。 优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。 初步印象有不少Java开发人员一提到Java内存结构，就会非常粗粒度地将JVM中的内存区理解为仅有Java堆（heap）和Java栈（stack）？为什么？ 内存中的栈与堆首先栈是运行">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/565f30614560bbf0c51a5930c9a74a93.png%2523pic_center">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4cab42dffce8484cbb196e2bcfe18ac.png%2523pic_center">
@@ -50,8 +50,8 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/88ddee00463e30c8eb89b83947b2b6cb.png%2523pic_center">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8b0e68f38f827c0784a93fb3fac62f40.png#pic_center">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2a21a02d1d5110b9db7f895bd63c929d.png#pic_center">
-<meta property="article:published_time" content="2021-03-03T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-10-09T06:51:24.796Z">
+<meta property="article:published_time" content="2021-03-03T14:14:11.000Z">
+<meta property="article:modified_time" content="2026-10-09T08:31:44.946Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JVM">
 <meta property="article:tag" content="Java虚拟机">
@@ -369,8 +369,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2021-03-03 09:00" pubdate>
-          2021年3月3日 上午
+        <time datetime="2021-03-03 22:14" pubdate>
+          2021年3月3日 晚上
         </time>
       </span>
     
@@ -436,8 +436,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h1 id="虚拟机栈概述"><a href="#虚拟机栈概述" class="headerlink" title="虚拟机栈概述"></a>虚拟机栈概述</h1><h2 id="出现背景"><a href="#出现背景" class="headerlink" title="出现背景"></a>出现背景</h2><p>由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。 优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。</p>
+                <h1 id="虚拟机栈概述"><a href="#虚拟机栈概述" class="headerlink" title="虚拟机栈概述"></a>虚拟机栈概述</h1><h2 id="出现背景"><a href="#出现背景" class="headerlink" title="出现背景"></a>出现背景</h2><p>由于跨平台性的设计，Java的指令都是根据栈来设计的。不同平台CPU架构不同，所以不能设计为基于寄存器的。 优点是跨平台，指令集小，编译器容易实现，缺点是性能下降，实现同样的功能需要更多的指令。</p>
 <h2 id="初步印象"><a href="#初步印象" class="headerlink" title="初步印象"></a>初步印象</h2><p>有不少Java开发人员一提到Java内存结构，就会非常粗粒度地将JVM中的内存区理解为仅有Java堆（heap）和Java栈（stack）？为什么？</p>
 <h2 id="内存中的栈与堆"><a href="#内存中的栈与堆" class="headerlink" title="内存中的栈与堆"></a>内存中的栈与堆</h2><p>首先栈是运行时的单位，而堆是存储的单位</p>
 <ul>

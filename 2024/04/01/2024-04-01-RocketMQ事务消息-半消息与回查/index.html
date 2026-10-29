@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：  先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发">
+    <meta name="description" content="先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：  先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发消">
 <meta property="og:type" content="article">
 <meta property="og:title" content="RocketMQ事务消息：半消息与回查，怎么做到&quot;业务成功消息必达&quot;">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/01/2024-04-01-RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF-%E5%8D%8A%E6%B6%88%E6%81%AF%E4%B8%8E%E5%9B%9E%E6%9F%A5/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：  先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发">
+<meta property="og:description" content="先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：  先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发消">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-04-01T01:00:00.000Z">
+<meta property="article:published_time" content="2024-04-01T15:51:33.000Z">
 <meta property="article:modified_time" content="2026-08-27T09:53:40.837Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="RocketMQ">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-04-01 09:00" pubdate>
-          2024年4月1日 上午
+        <time datetime="2024-04-01 23:51" pubdate>
+          2024年4月1日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="先抛一个问题：业务成功了，消息却没发出去"><a href="#先抛一个问题：业务成功了，消息却没发出去" class="headerlink" title="先抛一个问题：业务成功了，消息却没发出去"></a>先抛一个问题：业务成功了，消息却没发出去</h2><p>订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。</p>
+                <h2 id="先抛一个问题：业务成功了，消息却没发出去"><a href="#先抛一个问题：业务成功了，消息却没发出去" class="headerlink" title="先抛一个问题：业务成功了，消息却没发出去"></a>先抛一个问题：业务成功了，消息却没发出去</h2><p>订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。</p>
 <p>最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞：</p>
 <ul>
 <li><strong>先发消息再提交业务</strong>：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——<strong>消息是幽灵消息</strong>；</li>
@@ -493,9 +492,9 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="print-no-link">#消息队列</a>
-      
         <a href="/tags/RocketMQ/" class="print-no-link">#RocketMQ</a>
+      
+        <a href="/tags/%E6%B6%88%E6%81%AF%E9%98%9F%E5%88%97/" class="print-no-link">#消息队列</a>
       
         <a href="/tags/%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF/" class="print-no-link">#事务消息</a>
       
@@ -558,7 +557,7 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/" title="分布式任务引擎的可靠性设计：防重、断点续传与四级告警">
+                      <a href="/2024/04/03/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/" title="分布式任务引擎的可靠性设计：防重、断点续传与四级告警">
                         <i class="iconfont icon-arrowleft"></i>
                         <span class="hidden-mobile">分布式任务引擎的可靠性设计：防重、断点续传与四级告警</span>
                         <span class="visible-mobile">上一篇</span>
@@ -568,7 +567,7 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2024/03/29/2024-03-29-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" title="双层权重调度：分层时间轮在业务调度中的应用">
+                      <a href="/2024/03/30/2024-03-29-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" title="双层权重调度：分层时间轮在业务调度中的应用">
                         <span class="hidden-mobile">双层权重调度：分层时间轮在业务调度中的应用</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>

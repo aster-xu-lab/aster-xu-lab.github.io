@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、一个真实的痛点2019年，我负责公司订单中台的订单履约模块。整个订单生命周期——从用户下单、支付、发货到签收——涉及十几个下游系统：发货系统、WMS、财务结算、积分中心、售后客服、数据平台等等。 我们当时的做法简单粗暴：写一个定时任务，每5分钟跑一次，SELECT * FROM orders WHERE gmt_modified &gt;&#x3D; NOW() - INTERVAL 5 MINUTE">
+    <meta name="description" content="一、一个真实的痛点2019年，我负责公司订单中台的订单履约模块。整个订单生命周期——从用户下单、支付、发货到签收——涉及十几个下游系统：发货系统、WMS、财务结算、积分中心、售后客服、数据平台等等。 我们当时的做法简单粗暴：写一个定时任务，每5分钟跑一次，SELECT * FROM orders WHERE gmt_modified &gt;&#x3D; NOW() - INTERVAL 5 MINUTE，">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-12-实战：订单状态变更的实时流——从定时扫表到CDC事件驱动">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/10/16/2024-10-16-DDIA-12-CDC%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8%E5%AE%9E%E6%88%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、一个真实的痛点2019年，我负责公司订单中台的订单履约模块。整个订单生命周期——从用户下单、支付、发货到签收——涉及十几个下游系统：发货系统、WMS、财务结算、积分中心、售后客服、数据平台等等。 我们当时的做法简单粗暴：写一个定时任务，每5分钟跑一次，SELECT * FROM orders WHERE gmt_modified &gt;&#x3D; NOW() - INTERVAL 5 MINUTE">
+<meta property="og:description" content="一、一个真实的痛点2019年，我负责公司订单中台的订单履约模块。整个订单生命周期——从用户下单、支付、发货到签收——涉及十几个下游系统：发货系统、WMS、财务结算、积分中心、售后客服、数据平台等等。 我们当时的做法简单粗暴：写一个定时任务，每5分钟跑一次，SELECT * FROM orders WHERE gmt_modified &gt;&#x3D; NOW() - INTERVAL 5 MINUTE，">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2024-10-16T01:00:00.000Z">
+<meta property="article:published_time" content="2024-10-16T13:42:18.000Z">
 <meta property="article:modified_time" content="2026-08-04T11:12:09.756Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CDC">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2024-10-16 09:00" pubdate>
-          2024年10月16日 上午
+        <time datetime="2024-10-16 21:42" pubdate>
+          2024年10月16日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="一、一个真实的痛点"><a href="#一、一个真实的痛点" class="headerlink" title="一、一个真实的痛点"></a>一、一个真实的痛点</h2><p>2019年，我负责公司订单中台的订单履约模块。整个订单生命周期——从用户下单、支付、发货到签收——涉及十几个下游系统：发货系统、WMS、财务结算、积分中心、售后客服、数据平台等等。</p>
+                <h2 id="一、一个真实的痛点"><a href="#一、一个真实的痛点" class="headerlink" title="一、一个真实的痛点"></a>一、一个真实的痛点</h2><p>2019年，我负责公司订单中台的订单履约模块。整个订单生命周期——从用户下单、支付、发货到签收——涉及十几个下游系统：发货系统、WMS、财务结算、积分中心、售后客服、数据平台等等。</p>
 <p>我们当时的做法简单粗暴：写一个定时任务，每5分钟跑一次，<code>SELECT * FROM orders WHERE gmt_modified &gt;= NOW() - INTERVAL 5 MINUTE</code>，扫出来一批”可能变更过”的订单，逐条判断状态是否变化，变了就推给下游。</p>
 <p>这个方案运行了两年，问题也伴随了两年。</p>
 <h2 id="二、定时扫表的三个致命缺陷"><a href="#二、定时扫表的三个致命缺陷" class="headerlink" title="二、定时扫表的三个致命缺陷"></a>二、定时扫表的三个致命缺陷</h2><h3 id="2-1-延迟——下游最长等5分钟"><a href="#2-1-延迟——下游最长等5分钟" class="headerlink" title="2.1 延迟——下游最长等5分钟"></a>2.1 延迟——下游最长等5分钟</h3><p>用户支付完成后，订单状态从 <code>UNPAID</code> 变成 <code>PAID</code>。发货系统的理想行为是”支付成功，立刻生成发货单”。但我们的定时任务间隔5分钟，意味着：</p>
@@ -605,15 +604,15 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
+        <a href="/tags/Kafka/" class="print-no-link">#Kafka</a>
+      
         <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
         <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
       
-        <a href="/tags/CDC/" class="print-no-link">#CDC</a>
-      
-        <a href="/tags/Kafka/" class="print-no-link">#Kafka</a>
-      
         <a href="/tags/%E5%AE%9E%E6%97%B6/" class="print-no-link">#实时</a>
+      
+        <a href="/tags/CDC/" class="print-no-link">#CDC</a>
       
     </div>
   

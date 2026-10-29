@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题：     RDB 快照 AOF 日志    内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof）   恢复 快（直接加载快照） 慢（逐条重放命令）   丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度）   文件 小、二进制 大、文本，可重写   RDB：某一时刻的完">
+    <meta name="description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题：     RDB 快照 AOF 日志    内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof）   恢复 快（直接加载快照） 慢（逐条重放命令）   丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度）   文件 小、二进制 大、文本，可重写   RDB：某一时刻的完整">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Redis 持久化：RDB 与 AOF 的取舍，fork+COW 为什么不停顿">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/02/13/2022-02-13-Redis%E6%8C%81%E4%B9%85%E5%8C%96-RDB%E4%B8%8EAOF%E7%9A%84%E5%8F%96%E8%88%8D/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题：     RDB 快照 AOF 日志    内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof）   恢复 快（直接加载快照） 慢（逐条重放命令）   丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度）   文件 小、二进制 大、文本，可重写   RDB：某一时刻的完">
+<meta property="og:description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题：     RDB 快照 AOF 日志    内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof）   恢复 快（直接加载快照） 慢（逐条重放命令）   丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度）   文件 小、二进制 大、文本，可重写   RDB：某一时刻的完整">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2022-02-13T01:00:00.000Z">
+<meta property="article:published_time" content="2022-02-13T02:08:34.000Z">
 <meta property="article:modified_time" content="2026-08-27T09:53:40.828Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="AOF">
@@ -346,7 +346,7 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2022-02-13 09:00" pubdate>
+        <time datetime="2022-02-13 10:08" pubdate>
           2022年2月13日 上午
         </time>
       </span>
@@ -413,8 +413,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="一、两种持久化，两套取舍"><a href="#一、两种持久化，两套取舍" class="headerlink" title="一、两种持久化，两套取舍"></a>一、两种持久化，两套取舍</h2><p>Redis 持久化两种方式，解决不同的问题：</p>
+                <h2 id="一、两种持久化，两套取舍"><a href="#一、两种持久化，两套取舍" class="headerlink" title="一、两种持久化，两套取舍"></a>一、两种持久化，两套取舍</h2><p>Redis 持久化两种方式，解决不同的问题：</p>
 <table>
 <thead>
 <tr>
@@ -527,8 +526,6 @@
       
         <a href="/tags/Redis/" class="print-no-link">#Redis</a>
       
-        <a href="/tags/%E6%8C%81%E4%B9%85%E5%8C%96/" class="print-no-link">#持久化</a>
-      
         <a href="/tags/RDB/" class="print-no-link">#RDB</a>
       
         <a href="/tags/AOF/" class="print-no-link">#AOF</a>
@@ -536,6 +533,8 @@
         <a href="/tags/fork/" class="print-no-link">#fork</a>
       
         <a href="/tags/%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6/" class="print-no-link">#写时复制</a>
+      
+        <a href="/tags/%E6%8C%81%E4%B9%85%E5%8C%96/" class="print-no-link">#持久化</a>
       
     </div>
   
@@ -592,7 +591,7 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/03/02/2022-03-02-IO%E6%A8%A1%E5%9E%8B%E6%BC%94%E8%BF%9B-%E4%BB%8EBIO%E5%88%B0epoll/" title="IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密">
+                      <a href="/2022/03/03/2022-03-02-IO%E6%A8%A1%E5%9E%8B%E6%BC%94%E8%BF%9B-%E4%BB%8EBIO%E5%88%B0epoll/" title="IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密">
                         <i class="iconfont icon-arrowleft"></i>
                         <span class="hidden-mobile">IO模型演进：从BIO到epoll，Redis单线程扛高并发的秘密</span>
                         <span class="visible-mobile">上一篇</span>

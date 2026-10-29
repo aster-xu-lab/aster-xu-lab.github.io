@@ -26,7 +26,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="学习 ShardingSphere 分片后，一个很现实的问题是：分片之后排序和分页怎么办？ 单表一条 LIMIT 搞定，分片后却要先改写、再归并，深分页更是性能灾难。本文讲透原理和几种解法。 本地单表：最朴素1234SELECT * FROM or_sales_infoWHERE trade_time BETWEEN ...ORDER BY trade_time DESCLIMIT 0, 10">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2025-06-22T01:00:00.000Z">
+<meta property="article:published_time" content="2025-06-22T12:58:09.000Z">
 <meta property="article:modified_time" content="2026-08-04T11:12:09.763Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ORDER BY">
@@ -346,8 +346,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2025-06-22 09:00" pubdate>
-          2025年6月22日 上午
+        <time datetime="2025-06-22 20:58" pubdate>
+          2025年6月22日 晚上
         </time>
       </span>
     
@@ -413,8 +413,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<p>学习 ShardingSphere 分片后，一个很现实的问题是：<strong>分片之后排序和分页怎么办？</strong> 单表一条 LIMIT 搞定，分片后却要先改写、再归并，深分页更是性能灾难。本文讲透原理和几种解法。</p>
+                <p>学习 ShardingSphere 分片后，一个很现实的问题是：<strong>分片之后排序和分页怎么办？</strong> 单表一条 LIMIT 搞定，分片后却要先改写、再归并，深分页更是性能灾难。本文讲透原理和几种解法。</p>
 <h2 id="本地单表：最朴素"><a href="#本地单表：最朴素" class="headerlink" title="本地单表：最朴素"></a>本地单表：最朴素</h2><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> or_sales_info<br><span class="hljs-keyword">WHERE</span> trade_time <span class="hljs-keyword">BETWEEN</span> ...<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> trade_time <span class="hljs-keyword">DESC</span><br>LIMIT <span class="hljs-number">0</span>, <span class="hljs-number">10</span><br></code></pre></td></tr></table></figure>
 
 <p>单表最简单——MySQL 走索引排序 + 分页，一次查询搞定，<code>ORDER BY</code> + <code>LIMIT</code> 天然配合。</p>
@@ -600,7 +599,7 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2025/06/10/2025-06-10-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/" title="ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）">
+                      <a href="/2025/06/11/2025-06-10-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/" title="ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）">
                         <span class="hidden-mobile">ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>

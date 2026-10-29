@@ -19,14 +19,14 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="问题的起点cloud-order 的 or_sales_info 表已经逼近 6000 万条，单表查询越来越慢，DBA 天天催着拆分。但分库分表一直是个”听起来很厉害，做起来很痛”的事——手写路由、改所有 DAO、跨分片聚合…… 直到引入了 ShardingSphere-JDBC。 本文记录我对 ShardingSphere-JDBC 的学习笔记，从最核心的概念讲起。 核心概念：逻辑表 vs 物">
+    <meta name="description" content="问题的起点cloud-order 的 or_sales_info 表已经逼近 6000 万条，单表查询越来越慢，DBA 天天催着拆分。但分库分表一直是个”听起来很厉害，做起来很痛”的事——手写路由、改所有 DAO、跨分片聚合…… 直到引入了 ShardingSphere-JDBC。 本文记录我对 ShardingSphere-JDBC 的学习笔记，从最核心的概念讲起。 核心概念：逻辑表 vs 物理">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ShardingSphere-JDBC 快速入门与核心概念">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/02/27/2025-02-27-ShardingSphere%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8%E4%B8%8E%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="问题的起点cloud-order 的 or_sales_info 表已经逼近 6000 万条，单表查询越来越慢，DBA 天天催着拆分。但分库分表一直是个”听起来很厉害，做起来很痛”的事——手写路由、改所有 DAO、跨分片聚合…… 直到引入了 ShardingSphere-JDBC。 本文记录我对 ShardingSphere-JDBC 的学习笔记，从最核心的概念讲起。 核心概念：逻辑表 vs 物">
+<meta property="og:description" content="问题的起点cloud-order 的 or_sales_info 表已经逼近 6000 万条，单表查询越来越慢，DBA 天天催着拆分。但分库分表一直是个”听起来很厉害，做起来很痛”的事——手写路由、改所有 DAO、跨分片聚合…… 直到引入了 ShardingSphere-JDBC。 本文记录我对 ShardingSphere-JDBC 的学习笔记，从最核心的概念讲起。 核心概念：逻辑表 vs 物理">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2025-02-27T01:00:00.000Z">
+<meta property="article:published_time" content="2025-02-27T13:33:42.000Z">
 <meta property="article:modified_time" content="2026-08-04T11:12:09.761Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JDBC">
@@ -345,8 +345,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2025-02-27 09:00" pubdate>
-          2025年2月27日 上午
+        <time datetime="2025-02-27 21:33" pubdate>
+          2025年2月27日 晚上
         </time>
       </span>
     
@@ -412,8 +412,7 @@
             
               <div class="markdown-body">
                 
-                <hr>
-<h2 id="问题的起点"><a href="#问题的起点" class="headerlink" title="问题的起点"></a>问题的起点</h2><p><code>cloud-order</code> 的 <code>or_sales_info</code> 表已经逼近 6000 万条，单表查询越来越慢，DBA 天天催着拆分。但分库分表一直是个”听起来很厉害，做起来很痛”的事——手写路由、改所有 DAO、跨分片聚合…… 直到引入了 ShardingSphere-JDBC。</p>
+                <h2 id="问题的起点"><a href="#问题的起点" class="headerlink" title="问题的起点"></a>问题的起点</h2><p><code>cloud-order</code> 的 <code>or_sales_info</code> 表已经逼近 6000 万条，单表查询越来越慢，DBA 天天催着拆分。但分库分表一直是个”听起来很厉害，做起来很痛”的事——手写路由、改所有 DAO、跨分片聚合…… 直到引入了 ShardingSphere-JDBC。</p>
 <p>本文记录我对 ShardingSphere-JDBC 的学习笔记，从最核心的概念讲起。</p>
 <h2 id="核心概念：逻辑表-vs-物理表"><a href="#核心概念：逻辑表-vs-物理表" class="headerlink" title="核心概念：逻辑表 vs 物理表"></a>核心概念：逻辑表 vs 物理表</h2><p>ShardingSphere 最巧妙的一点，就是<strong>应用层永远只认识一张”逻辑表”</strong>，SQL 发来后在底层被改写路由到真实的”物理表”。</p>
 <figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs lasso">应用写的SQL:  INSERT <span class="hljs-keyword">INTO</span> t_order (<span class="hljs-params">...</span>) VALUES (<span class="hljs-params">...</span>)<br>              ↓ ShardingSphere 解析路由改写<br>实际执行的:    INSERT <span class="hljs-keyword">INTO</span> t_order_2 (<span class="hljs-params">...</span>) VALUES (<span class="hljs-params">...</span>)<br></code></pre></td></tr></table></figure>
@@ -473,13 +472,13 @@
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
-      
         <a href="/tags/%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/" class="print-no-link">#分库分表</a>
       
-        <a href="/tags/JDBC/" class="print-no-link">#JDBC</a>
+        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
       
         <a href="/tags/%E8%B7%AF%E7%94%B1/" class="print-no-link">#路由</a>
+      
+        <a href="/tags/JDBC/" class="print-no-link">#JDBC</a>
       
         <a href="/tags/SQL%E6%94%B9%E5%86%99/" class="print-no-link">#SQL改写</a>
       
@@ -548,7 +547,7 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2025/02/14/2025-02-14-ShardingSphere%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5%E5%AE%9E%E6%88%98-5%E7%A7%8D%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E9%80%89/" title="ShardingSphere 分片策略实战：5 种算法怎么选">
+                      <a href="/2025/02/15/2025-02-14-ShardingSphere%E5%88%86%E7%89%87%E7%AD%96%E7%95%A5%E5%AE%9E%E6%88%98-5%E7%A7%8D%E7%AE%97%E6%B3%95%E6%80%8E%E4%B9%88%E9%80%89/" title="ShardingSphere 分片策略实战：5 种算法怎么选">
                         <span class="hidden-mobile">ShardingSphere 分片策略实战：5 种算法怎么选</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
