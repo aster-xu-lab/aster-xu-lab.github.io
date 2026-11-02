@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="定位：学习笔记。MCP（Model Context Protocol）是 2024 年底由 Anthropic 提出的工具调用标准化协议。我为了搞懂它，自己实现了一个最小版 Server&#x2F;Client。  一、MCP 解决什么问题在 MCP 之前，每个 LLM 应用连工具都是自己造的轮子：协议自己定、格式自己定、连自己的 Agent 是这套、换一个框架又得重写。 MCP 的定位一句话：">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6aaaea775a54b74a6a1614d6c8a4c12d.png#pic_center">
 <meta property="article:published_time" content="2026-02-10T12:53:28.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.832Z">
+<meta property="article:modified_time" content="2026-11-02T10:34:18.986Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Agent">
 <meta property="article:tag" content="JSON-RPC">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="协议">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6aaaea775a54b74a6a1614d6c8a4c12d.png#pic_center">
   
   
   
@@ -420,7 +422,8 @@
 <p>JDBC 干的事，是让任何 Java 程序用同一套接口连任何数据库（换个驱动即可）。MCP 干的事，是让任何 LLM&#x2F;Agent 用同一套协议连任何工具（换一个”驱动”即可）。</p>
 <figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs css">没有 MCP：  Agent <span class="hljs-selector-tag">A</span> ──自定义──▶ 工具<span class="hljs-number">1</span>     Agent <span class="hljs-selector-tag">B</span> ──另自定义──▶ 工具<span class="hljs-number">2</span><br>有 MCP：    Agent <span class="hljs-selector-tag">A</span> ──┐                 Agent <span class="hljs-selector-tag">B</span> ──┐<br>                     ├── MCP 统一协议 ────────────▶ 工具<span class="hljs-number">1</span> / 工具<span class="hljs-number">2</span><br></code></pre></td></tr></table></figure>
 
-<h2 id="二、协议核心：JSON-RPC-2-0-over-stdio"><a href="#二、协议核心：JSON-RPC-2-0-over-stdio" class="headerlink" title="二、协议核心：JSON-RPC 2.0 over stdio"></a>二、协议核心：JSON-RPC 2.0 over stdio</h2><p>MCP 的传输层用 <strong>JSON-RPC 2.0</strong>，传输通道用 <strong>stdio</strong>（标准输入输出）。关键就两个方法：</p>
+<h2 id="二、协议核心：JSON-RPC-2-0-over-stdio"><a href="#二、协议核心：JSON-RPC-2-0-over-stdio" class="headerlink" title="二、协议核心：JSON-RPC 2.0 over stdio"></a>二、协议核心：JSON-RPC 2.0 over stdio</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6aaaea775a54b74a6a1614d6c8a4c12d.png#pic_center" srcset="/img/loading.gif" lazyload alt="MCP：工具调用的 JDBC"></p>
+<p>MCP 的传输层用 <strong>JSON-RPC 2.0</strong>，传输通道用 <strong>stdio</strong>（标准输入输出）。关键就两个方法：</p>
 <ul>
 <li><strong><code>tools/list</code></strong>：列出所有可用工具（名字、描述、输入 schema）；</li>
 <li><strong><code>tools/call</code></strong>：调用指定工具，传参数，拿结果。</li>
