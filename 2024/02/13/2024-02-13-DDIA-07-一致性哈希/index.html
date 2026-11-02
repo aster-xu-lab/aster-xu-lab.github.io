@@ -26,14 +26,17 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="引言：一次扩容引发的血案凌晨两点，告警群炸了。 Redis 缓存命中率从 98% 直线掉到 12%，MySQL 连接池瞬间打满，订单查询超时，用户端白屏。值班同学紧急回滚扩容操作，15 分钟后恢复。事后复盘，根因只有一句话：缓存 key 用 hash(key) % N 计算分片，加了一台 Redis 后 N 从 10 变成 11，90% 的缓存 key 指向了错误节点，缓存集体失效，DB 被穿透。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d0c0fb0a33401c6be8cc21a5a4c60308.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9256ec0125fdf0c9d25be91789689e7a.png#pic_center">
 <meta property="article:published_time" content="2024-02-13T15:12:14.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.749Z">
+<meta property="article:modified_time" content="2026-11-02T08:52:28.993Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="Redis">
 <meta property="article:tag" content="一致性哈希">
 <meta property="article:tag" content="分片">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d0c0fb0a33401c6be8cc21a5a4c60308.png#pic_center">
   
   
   
@@ -464,11 +467,21 @@
 </ul>
 <p>这就是它和取模的本质区别：<strong>取模是”点到点的静态映射”；一致性哈希是”点到节点的动态寻址”。</strong></p>
 <h3 id="2-2-加节点：只影响相邻节点"><a href="#2-2-加节点：只影响相邻节点" class="headerlink" title="2.2 加节点：只影响相邻节点"></a>2.2 加节点：只影响相邻节点</h3><p>假设环上有三个节点 A、B、C：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs text">        A<br>      /   \<br>     /     \<br>    C ----- B<br><br>数据分布：<br>- hash 落在 A→B 弧段的 → 存到 B<br>- hash 落在 B→C 弧段的 → 存到 C<br>- hash 落在 C→A 弧段的 → 存到 A<br></code></pre></td></tr></table></figure>
-
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d0c0fb0a33401c6be8cc21a5a4c60308.png#pic_center" srcset="/img/loading.gif" lazyload alt="一致性哈希环：加节点 D 前后对比"></p>
+<p>数据分布：</p>
+<ul>
+<li>hash 落在 A→B 弧段的 → 存到 B</li>
+<li>hash 落在 B→C 弧段的 → 存到 C</li>
+<li>hash 落在 C→A 弧段的 → 存到 A</li>
+</ul>
 <p>现在在 A 和 B 之间加一个新节点 D：</p>
-<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs text">        A<br>      /   \<br>     /  D  \<br>    C ----- B<br><br>变化：<br>- A→D 弧段的 key 现在落在 D（原来在 B）<br>- D→B 弧段的 key 仍然落在 B<br>- B→C 弧段不受影响<br>- C→A 弧段不受影响<br></code></pre></td></tr></table></figure>
-
+<p>变化：</p>
+<ul>
+<li>A→D 弧段的 key 现在落在 D（原来在 B）</li>
+<li>D→B 弧段的 key 仍然落在 B</li>
+<li>B→C 弧段不受影响</li>
+<li>C→A 弧段不受影响</li>
+</ul>
 <p>如果把环上的数据量近似为均匀分布，加一个节点只需要迁移 <strong>1&#x2F;N</strong> 的数据。</p>
 <table>
 <thead>
@@ -504,6 +517,7 @@
 <h3 id="3-2-虚拟节点-打散重分布"><a href="#3-2-虚拟节点-打散重分布" class="headerlink" title="3.2 虚拟节点 &#x3D; 打散重分布"></a>3.2 虚拟节点 &#x3D; 打散重分布</h3><p>解决方案很优雅：<strong>每个物理节点映射到环上的多个位置。</strong></p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">物理节点 A → 虚拟节点 A#1, A#2, ..., A#200<br>物理节点 B → 虚拟节点 B#1, B#2, ..., B#200<br>物理节点 C → 虚拟节点 C#1, C#2, ..., C#200<br></code></pre></td></tr></table></figure>
 
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9256ec0125fdf0c9d25be91789689e7a.png#pic_center" srcset="/img/loading.gif" lazyload alt="虚拟节点：把物理节点打散到环上"></p>
 <p>200 个虚拟节点分布在环上的不同位置。当 600 个虚拟节点（3 物理 × 200 虚拟）近乎均匀地覆盖整个环，每个物理节点负担的数据量就会非常接近 1&#x2F;3。</p>
 <p><strong>一个关键性质：虚拟节点本质是用节点数量换取负载均衡。</strong> 虚拟节点数越多，负载越均匀；但维护成本也越高。经验值是 100-200 个，实际足够覆盖绝大多数场景。</p>
 <h3 id="3-3-为什么是-100-200-个"><a href="#3-3-为什么是-100-200-个" class="headerlink" title="3.3 为什么是 100-200 个"></a>3.3 为什么是 100-200 个</h3><p>这个数字并非臆造。Apache Cassandra 的默认配置 <code>num_tokens=256</code>，elastiCache 和 Twemproxy 也采用了类似的量级。</p>
