@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承 cloud-parentcloud-order">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebbabb3c76b3a32ab7f90ce3e5d374cf.png#pic_center">
 <meta property="article:published_time" content="2025-05-28T16:27:50.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.762Z">
+<meta property="article:modified_time" content="2026-11-02T11:28:03.939Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="BaseMapper">
 <meta property="article:tag" content="MyBatis-Plus">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="SpringBoot">
 <meta property="article:tag" content="分页">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebbabb3c76b3a32ab7f90ce3e5d374cf.png#pic_center">
   
   
   
@@ -423,7 +425,8 @@
 <li><code>mysql-connector-java</code></li>
 </ul>
 <p>这样 Spring Boot 直接启动（实测 4 秒），没有中间件干扰。</p>
-<h2 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h2><figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs nix">sharding-boot-mp<span class="hljs-symbol">/</span><br>├── BootMpApplication        <span class="hljs-comment"># @SpringBootApplication + @MapperScan</span><br>├── MpShardingConfig         <span class="hljs-comment"># ShardingSphere 数据源 + MyBatis-Plus 拦截器</span><br>├── entity<span class="hljs-symbol">/MpOrder</span>           <span class="hljs-comment"># @TableName(&quot;t_mp_order&quot;) 逻辑表</span><br>├── mapper<span class="hljs-symbol">/MpOrderMapper</span>     <span class="hljs-comment"># extends BaseMapper&lt;MpOrder&gt;</span><br>├── service<span class="hljs-symbol">/MpOrderService</span>   <span class="hljs-comment"># extends ServiceImpl&lt;Mapper, Entity&gt;</span><br>└── controller<span class="hljs-operator">/</span>MpOrderController<br></code></pre></td></tr></table></figure>
+<h2 id="结构"><a href="#结构" class="headerlink" title="结构"></a>结构</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebbabb3c76b3a32ab7f90ce3e5d374cf.png#pic_center" srcset="/img/loading.gif" lazyload alt="SpringBoot + MyBatis-Plus + ShardingSphere 接入"></p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs nix">sharding-boot-mp<span class="hljs-symbol">/</span><br>├── BootMpApplication        <span class="hljs-comment"># @SpringBootApplication + @MapperScan</span><br>├── MpShardingConfig         <span class="hljs-comment"># ShardingSphere 数据源 + MyBatis-Plus 拦截器</span><br>├── entity<span class="hljs-symbol">/MpOrder</span>           <span class="hljs-comment"># @TableName(&quot;t_mp_order&quot;) 逻辑表</span><br>├── mapper<span class="hljs-symbol">/MpOrderMapper</span>     <span class="hljs-comment"># extends BaseMapper&lt;MpOrder&gt;</span><br>├── service<span class="hljs-symbol">/MpOrderService</span>   <span class="hljs-comment"># extends ServiceImpl&lt;Mapper, Entity&gt;</span><br>└── controller<span class="hljs-operator">/</span>MpOrderController<br></code></pre></td></tr></table></figure>
 
 <h2 id="核心1：ShardingSphere-数据源作为唯一-DataSource"><a href="#核心1：ShardingSphere-数据源作为唯一-DataSource" class="headerlink" title="核心1：ShardingSphere 数据源作为唯一 DataSource"></a>核心1：ShardingSphere 数据源作为唯一 DataSource</h2><p><code>MpShardingConfig</code> 里把 ShardingSphere 分片数据源注册为唯一 <code>DataSource</code> Bean，MyBatis-Plus 的 SqlSessionFactory 自动用它：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Bean</span><br><span class="hljs-keyword">public</span> DataSource <span class="hljs-title function_">shardingDataSource</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception &#123;<br>    createShardTables();  <span class="hljs-comment">// ★ 必须先建物理表，再构造(否则元数据空)</span><br>    <span class="hljs-type">ShardingRuleConfiguration</span> <span class="hljs-variable">rule</span> <span class="hljs-operator">=</span> ...;  <span class="hljs-comment">// t_mp_order 按 id % 4 分4片</span><br>    <span class="hljs-keyword">return</span> ShardingSphereDataSourceFactory.createDataSource(...);<br>&#125;<br></code></pre></td></tr></table></figure>

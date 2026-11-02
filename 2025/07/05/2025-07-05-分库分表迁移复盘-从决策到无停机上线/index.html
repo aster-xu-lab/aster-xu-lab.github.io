@@ -26,14 +26,16 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="订单销售信息表累计逼近 6000 万行，2025 年上半年完成了分库分表落地。这篇复盘完整过程——从”要不要分”的决策，到分片键选型，到无停机迁移。  一、为什么要分：三个信号分库分表不是一上来就分的。我的判断信号是三个：  单表数据量逼近千万级：订单销售信息表累计接近 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级； 写入成为瓶颈：单库单表写入能力到了上限； 目">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9752f6508e08917fbadd80562d82e981.png#pic_center">
 <meta property="article:published_time" content="2025-07-04T21:42:15.000Z">
-<meta property="article:modified_time" content="2026-08-28T04:31:29.775Z">
+<meta property="article:modified_time" content="2026-11-02T11:34:15.929Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="分库分表">
 <meta property="article:tag" content="复盘">
 <meta property="article:tag" content="迁移">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9752f6508e08917fbadd80562d82e981.png#pic_center">
   
   
   
@@ -433,8 +435,7 @@
 </ul>
 <p><strong>复杂统计查询怎么办</strong>：不硬扛，下沉 Doris（Canal + Kafka 同步）——OLTP 分片只解决”写入 + 分片键单点查询”，复杂查询给 OLAP。</p>
 <h2 id="三、无停机迁移：五步流程"><a href="#三、无停机迁移：五步流程" class="headerlink" title="三、无停机迁移：五步流程"></a>三、无停机迁移：五步流程</h2><p>迁移的核心不是”把数据搬过去”，而是”<strong>搬的过程中业务不能停、不能丢、不能重</strong>“：</p>
-<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">存量回填 → <span class="hljs-keyword">binlog/Canal </span>增量追平 → 对账兜底 → 灰度切流 → 删旧表<br></code></pre></td></tr></table></figure>
-
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9752f6508e08917fbadd80562d82e981.png#pic_center" srcset="/img/loading.gif" lazyload alt="分库分表迁移复盘：6000 万行，无停机上线"></p>
 <ul>
 <li><strong>存量回填</strong>：历史近 6000 万行分批迁移，夜间低峰跑批，日均约 800 万行，<strong>last_id 位点记进度、断点续跑</strong>；</li>
 <li><strong>binlog 增量追平</strong>：回填期间的新写入靠 binlog 增量同步到新分片，<strong>位点对齐</strong>（切流点严格对齐 binlog 位点）；</li>

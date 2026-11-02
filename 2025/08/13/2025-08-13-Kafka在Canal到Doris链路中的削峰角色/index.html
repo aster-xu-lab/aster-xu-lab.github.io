@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="背景：分库分表后，复杂查询去哪儿订单中台的销售信息表做了分库分表（单号主分片，8 片，每片约 750 万行），WHERE order_no &#x3D; ? 这种主路径查询零广播，很舒服。 但分库分表有个必然的代价：按单号分片后，跨分片的复杂统计查询做不了——比如按用户、按时间段的聚合分析，散落在 8 个分片里，没法在 MySQL 层高效完成。 业界的标准解法是读写分离 + 异构存储：把 MySQL 的数据">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/738f4f6147a6ec2e3e821ee4ffd45be8.png#pic_center">
 <meta property="article:published_time" content="2025-08-13T14:50:50.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.827Z">
+<meta property="article:modified_time" content="2026-11-02T11:21:15.753Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Canal">
 <meta property="article:tag" content="Doris">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="分库分表">
 <meta property="article:tag" content="削峰">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/738f4f6147a6ec2e3e821ee4ffd45be8.png#pic_center">
   
   
   
@@ -416,7 +418,8 @@
 <p>但分库分表有个必然的代价：<strong>按单号分片后，跨分片的复杂统计查询做不了</strong>——比如按用户、按时间段的聚合分析，散落在 8 个分片里，没法在 MySQL 层高效完成。</p>
 <p>业界的标准解法是<strong>读写分离 + 异构存储</strong>：把 MySQL 的数据实时同步到分析型数据库（OLAP），复杂查询走 OLAP，MySQL 只扛事务。</p>
 <p>我们用的组合是：<strong>MySQL → Canal → Kafka → Doris</strong>。</p>
-<h2 id="二、链路长什么样"><a href="#二、链路长什么样" class="headerlink" title="二、链路长什么样"></a>二、链路长什么样</h2><figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">MySQL（<span class="hljs-number">8</span>片） ──<span class="hljs-keyword">binlog──▶ </span>Canal ──▶ Kafka ──▶ Doris（宽表）<br>             抓取变更      削峰缓冲      写入<br></code></pre></td></tr></table></figure>
+<h2 id="二、链路长什么样"><a href="#二、链路长什么样" class="headerlink" title="二、链路长什么样"></a>二、链路长什么样</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/738f4f6147a6ec2e3e821ee4ffd45be8.png#pic_center" srcset="/img/loading.gif" lazyload alt="Kafka 在 Canal→Doris 链路中的削峰角色"></p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">MySQL（<span class="hljs-number">8</span>片） ──<span class="hljs-keyword">binlog──▶ </span>Canal ──▶ Kafka ──▶ Doris（宽表）<br>             抓取变更      削峰缓冲      写入<br></code></pre></td></tr></table></figure>
 
 <p>每个环节的职责：</p>
 <ul>
