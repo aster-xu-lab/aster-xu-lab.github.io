@@ -26,14 +26,16 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="引言分布式系统最令人头疼的问题之一就是：不同节点看到的数据不一致。 你刚在淘宝下了一个订单，刷新订单列表，订单没出来——你慌了，又下了一单，结果两个订单同时出现。这是用户体验的噩梦，也是分布式系统工程师的日常挑战。 在《Designing Data-Intensive Applications》第10章从单机到分布式的过渡中，Martin Kleppmann花了大量篇幅讨论一致性与共识。但坦白说，">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4bf07bb348f96897bb4239c01ac31a76.png#pic_center">
 <meta property="article:published_time" content="2024-08-23T17:01:10.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.755Z">
+<meta property="article:modified_time" content="2026-11-02T08:58:52.585Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CAP">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="一致性">
 <meta property="article:tag" content="分布式">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4bf07bb348f96897bb4239c01ac31a76.png#pic_center">
   
   
   
@@ -356,7 +358,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          4.4k 字
+          4.2k 字
         
       </span>
     
@@ -367,7 +369,7 @@
         
         
         
-          37 分钟
+          35 分钟
         
       </span>
     
@@ -417,8 +419,7 @@
 <p>这篇文章的目标很简单：<strong>用一条阶梯，把四种一致性模型串起来，让你一次看懂</strong>。</p>
 <hr>
 <h2 id="一致性模型的阶梯"><a href="#一致性模型的阶梯" class="headerlink" title="一致性模型的阶梯"></a>一致性模型的阶梯</h2><p>想象一座金字塔，从上到下约束越来越弱，性能越来越好：</p>
-<figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs fortran">┌─────────────────┐<br>│  线性一致性      │  ← 最强保证，像单机一样<br>│  Linearizability │<br>├─────────────────┤<br>│  顺序一致性      │  ← 保留全局操作顺序<br>│  <span class="hljs-keyword">Sequential</span>      │<br>├─────────────────┤<br>│  因果一致性      │  ← 有因果的保序，无关的随意<br>│  Causal          │<br>├─────────────────┤<br>│  最终一致性      │  ← 只要等够久，总会一致<br>│  Eventual        │<br>└─────────────────┘<br></code></pre></td></tr></table></figure>
-
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4bf07bb348f96897bb4239c01ac31a76.png#pic_center" srcset="/img/loading.gif" lazyload alt="一致性模型的阶梯：从线性一致性到最终一致性"></p>
 <p>这个阶梯揭示了分布式系统中一个永恒的权衡：<strong>你越想让系统表现得”像单机一样”，你就付出越大的性能和可用性代价</strong>。</p>
 <p>下面我们一层一层来看。</p>
 <hr>

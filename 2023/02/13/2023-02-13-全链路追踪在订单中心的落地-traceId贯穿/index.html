@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。  一、问题：分布式调用链怎么定位瓶颈单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务： 123网关 → 订单服务 → 库存服务            ↘ 仓储服务">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31c2bf8993c4e416b21e06a41148e3ba.png#pic_center">
 <meta property="article:published_time" content="2023-02-13T14:10:59.000Z">
-<meta property="article:modified_time" content="2026-08-31T06:00:27.660Z">
+<meta property="article:modified_time" content="2026-11-02T09:26:53.112Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Sleuth">
 <meta property="article:tag" content="Zipkin">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="全链路追踪">
 <meta property="article:tag" content="可观测性">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31c2bf8993c4e416b21e06a41148e3ba.png#pic_center">
   
   
   
@@ -419,7 +421,8 @@
 <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs">网关 → 订单服务 → 库存服务<br>            ↘ 仓储服务<br>            ↘ 财务服务<br></code></pre></td></tr></table></figure>
 
 <p>接口慢了，是订单服务慢？还是某个下游慢？<strong>没有全链路追踪，只能一个个服务翻日志</strong>——大海捞针。</p>
-<h2 id="二、核心机制：traceId-spanId"><a href="#二、核心机制：traceId-spanId" class="headerlink" title="二、核心机制：traceId + spanId"></a>二、核心机制：traceId + spanId</h2><p>全链路追踪的两个核心概念：</p>
+<h2 id="二、核心机制：traceId-spanId"><a href="#二、核心机制：traceId-spanId" class="headerlink" title="二、核心机制：traceId + spanId"></a>二、核心机制：traceId + spanId</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31c2bf8993c4e416b21e06a41148e3ba.png#pic_center" srcset="/img/loading.gif" lazyload alt="全链路追踪：一个 traceId 串起整条调用链"></p>
+<p>全链路追踪的两个核心概念：</p>
 <ul>
 <li><strong>traceId</strong>：一次请求的全局唯一 ID，<strong>贯穿整个调用链</strong>（所有服务共享同一个）；</li>
 <li><strong>spanId</strong>：每一段调用的 ID（一个服务处理 &#x3D; 一个 span），记录<strong>耗时</strong>。</li>

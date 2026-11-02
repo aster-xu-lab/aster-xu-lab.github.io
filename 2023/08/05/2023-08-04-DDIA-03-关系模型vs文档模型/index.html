@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="从130万日订单实战出发，深度对比关系模型与文档模型在电商订单场景中的选型逻辑。不是二选一，是场景匹配。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57f372a4aae36d9df0636dc091881a04.png#pic_center">
 <meta property="article:published_time" content="2023-08-04T17:57:13.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.744Z">
+<meta property="article:modified_time" content="2026-11-02T10:06:04.562Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="MongoDB">
@@ -37,6 +38,7 @@
 <meta property="article:tag" content="架构选型">
 <meta property="article:tag" content="订单系统">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57f372a4aae36d9df0636dc091881a04.png#pic_center">
   
   
   
@@ -421,6 +423,7 @@
 <p>听起来很诱人。但真相远比直觉复杂。</p>
 <p>这就是本文要讨论的核心：<strong>关系模型和文档模型的本质差异是什么？在电商订单这个具体场景下，你该怎么选？</strong></p>
 <hr>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57f372a4aae36d9df0636dc091881a04.png#pic_center" srcset="/img/loading.gif" lazyload alt="关系模型 vs 文档模型：为关联还是为读一次"></p>
 <h2 id="二、关系模型：为「关联」而生的模型"><a href="#二、关系模型：为「关联」而生的模型" class="headerlink" title="二、关系模型：为「关联」而生的模型"></a>二、关系模型：为「关联」而生的模型</h2><h3 id="2-1-订单不是一条数据，是一张关系网"><a href="#2-1-订单不是一条数据，是一张关系网" class="headerlink" title="2.1 订单不是一条数据，是一张关系网"></a>2.1 订单不是一条数据，是一张关系网</h3><p>电商订单长什么样？一个完整的下单流程涉及至少这些表：</p>
 <figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm"><span class="hljs-keyword">order </span>           -- 订单主表（<span class="hljs-keyword">order_id, </span>user_id, total_amount, status, created_at）<br><span class="hljs-keyword">order_item </span>      -- 订单商品行（item_id, <span class="hljs-keyword">order_id, </span>sku_id, quantity, unit_price）<br><span class="hljs-keyword">order_payment </span>   -- 支付流水（payment_id, <span class="hljs-keyword">order_id, </span>pay_channel, pay_amount, pay_time）<br><span class="hljs-keyword">order_logistics </span> -- 物流信息（logistics_id, <span class="hljs-keyword">order_id, </span>tracking_no, carrier, status）<br><span class="hljs-keyword">order_invoice </span>   -- 发票信息（invoice_id, <span class="hljs-keyword">order_id, </span>invoice_type, tax_no, title）<br></code></pre></td></tr></table></figure>
 

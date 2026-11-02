@@ -26,14 +26,16 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="分片键绝不是随便挑一个字段就行的，它决定了你未来两年的系统容量上限和运维复杂度。本文从查询模式、数据均匀性、扩缩容三个维度拆解分片键选择，并以电商订单系统为实战场景，推演user_id vs order_id的取舍与异构索引补偿方案。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png#pic_center">
 <meta property="article:published_time" content="2024-03-16T13:55:19.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.750Z">
+<meta property="article:modified_time" content="2026-11-02T09:41:23.705Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="分片键">
 <meta property="article:tag" content="数据库设计">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png#pic_center">
   
   
   
@@ -416,7 +418,8 @@
 <p>运营投诉，临时加了一个Elasticsearch索引，Canal同步过去，勉强顶住。但半年后商家端要做”我的订单”功能，查的是merchant_id，又是全分片扫描。这回ES也救不了——商家端的排序、筛选、统计逻辑太复杂，ES的DSL写得团队怀疑人生。</p>
 <p>这不叫方案，这叫事故。根本原因只有一个：<strong>分片键选错了。</strong></p>
 <p>这篇是DDIA系列的第七篇，我们来把分片键这件事彻底讲透。</p>
-<h2 id="二、分片键选择的三个维度"><a href="#二、分片键选择的三个维度" class="headerlink" title="二、分片键选择的三个维度"></a>二、分片键选择的三个维度</h2><p>选分片键之前，先建立评估框架。我把所有考量归纳为三个维度，任何一个维度不及格，这把钥匙就不对。</p>
+<h2 id="二、分片键选择的三个维度"><a href="#二、分片键选择的三个维度" class="headerlink" title="二、分片键选择的三个维度"></a>二、分片键选择的三个维度</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片键选择：查询模式 &#x2F; 数据均匀 &#x2F; 扩缩容"></p>
+<p>选分片键之前，先建立评估框架。我把所有考量归纳为三个维度，任何一个维度不及格，这把钥匙就不对。</p>
 <h3 id="2-1-维度一：查询模式——WHERE条件决定了分片命中率"><a href="#2-1-维度一：查询模式——WHERE条件决定了分片命中率" class="headerlink" title="2.1 维度一：查询模式——WHERE条件决定了分片命中率"></a>2.1 维度一：查询模式——WHERE条件决定了分片命中率</h3><p>这是最重要的维度。分片的本质是把数据按规则散列到不同的物理节点，查询时如果知道分片键的值，路由器就能精准定位到唯一的分片；不知道，就只能广播到所有分片，然后在内存中合并结果。</p>
 <p>判断标准很直接：把你的系统中TOP 5高频查询的WHERE条件列出来，看哪个字段出现频率最高。</p>
 <p>对于电商订单系统：</p>

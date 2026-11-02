@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="写了七年 Java 后端，我的第一个桌面项目是 Electron。后端的直觉在这里一半有用、一半是坑。这篇文章讲 Electron 三个进程的边界怎么划，以及从后端视角最容易踩的几个点。  一、先建立心智模型Electron 不是”一个进程里跑前端”，它天然是三层的。用后端的语言类比，会瞬间清晰：    Electron 层 类比 能力    main（主进程） 后端服务 有 Node、能开窗口">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b41e4a44a118cd86ad23770ab62d2632.png#pic_center">
 <meta property="article:published_time" content="2026-09-14T16:22:16.000Z">
-<meta property="article:modified_time" content="2026-10-09T03:19:30.775Z">
+<meta property="article:modified_time" content="2026-11-02T09:19:27.905Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="IPC">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="桌面端">
 <meta property="article:tag" content="进程模型">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b41e4a44a118cd86ad23770ab62d2632.png#pic_center">
   
   
   
@@ -440,6 +442,7 @@
 <td>只管界面，<strong>没有 Node</strong>，跑在沙箱里</td>
 </tr>
 </tbody></table>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b41e4a44a118cd86ad23770ab62d2632.png#pic_center" srcset="/img/loading.gif" lazyload alt="Electron 的三个进程边界：能力只从 preload 过"></p>
 <p>关键心智转变是：<strong>渲染进程不被信任</strong>。它不是你的前端代码，它是”一个可能被远程内容污染的浏览器标签”。所以任何”能力”都不能直接从 renderer 拿——必须经过 preload 这道窄门，由 main 执行。</p>
 <h2 id="二、安全边界是硬约束，不是可选项"><a href="#二、安全边界是硬约束，不是可选项" class="headerlink" title="二、安全边界是硬约束，不是可选项"></a>二、安全边界是硬约束，不是可选项</h2><p>主窗口的配置基本是定死的：</p>
 <figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-attr">webPreferences</span>: &#123;<br>  <span class="hljs-attr">contextIsolation</span>: <span class="hljs-literal">true</span>,   <span class="hljs-comment">// 渲染页与 preload 的 JS 上下文隔离</span><br>  <span class="hljs-attr">sandbox</span>: <span class="hljs-literal">true</span>,            <span class="hljs-comment">// 渲染进程沙箱</span><br>  <span class="hljs-attr">nodeIntegration</span>: <span class="hljs-literal">false</span>    <span class="hljs-comment">// 渲染页里没有 Node</span><br>&#125;<br></code></pre></td></tr></table></figure>

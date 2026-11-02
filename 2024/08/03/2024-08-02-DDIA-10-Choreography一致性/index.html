@@ -26,8 +26,10 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="引言：从一场故障说起2024年双十一前夕，凌晨3点，我们的商品同步链路突然卡住了。 排查日志发现：任务A（供应商商品数据拉取）执行成功，写入了临时表；任务B（数据清洗与标准化）依赖任务A的输出，但由于临时表中某个JSON字段格式异常，B的解析逻辑抛了NPE，整条链路中断。问题修复后重跑数据，却发现部分重复记录已经入库——因为任务A没有”下游失败就不提交”的感知能力。 这不只是我一个人的痛。当你用C">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a267b3ff41903aa0de552040ee68e2a3.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9a864e5e2d8da1e7d207eb31cbe335e8.png#pic_center">
 <meta property="article:published_time" content="2024-08-02T16:47:13.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.754Z">
+<meta property="article:modified_time" content="2026-11-02T09:05:06.663Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Choreography">
 <meta property="article:tag" content="DDIA">
@@ -35,6 +37,7 @@
 <meta property="article:tag" content="一致性">
 <meta property="article:tag" content="实战">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a267b3ff41903aa0de552040ee68e2a3.png#pic_center">
   
   
   
@@ -427,6 +430,7 @@
 <p>与之对应的是Orchestration（管弦乐队）：DAG调度器持有全局视角，统一指挥每一步的执行、回滚、重试。</p>
 <h2 id="一致性挑战：当”接力棒”掉落时"><a href="#一致性挑战：当”接力棒”掉落时" class="headerlink" title="一致性挑战：当”接力棒”掉落时"></a>一致性挑战：当”接力棒”掉落时</h2><p>在Choreography模式下，一致性问题的本质是：<strong>没有中心协调者来感知全局状态和做补偿决策</strong>。</p>
 <p>举个例子：价格同步链路包含三个Handler——<code>PricePullHandler</code>（拉取新价格）→<code>PriceValidateHandler</code>（校验价格波动）→<code>PriceApplyHandler</code>（写入生效）。如果前两个成功，第三个失败，谁来通知第一个”你的数据已经部分生效，需要回滚”？</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a267b3ff41903aa0de552040ee68e2a3.png#pic_center" srcset="/img/loading.gif" lazyload alt="Choreography 的接力链路：失败发生在中途"></p>
 <h3 id="失败场景矩阵"><a href="#失败场景矩阵" class="headerlink" title="失败场景矩阵"></a>失败场景矩阵</h3><p>我们梳理了所有可能的失败场景：</p>
 <table>
 <thead>
@@ -470,6 +474,7 @@
 <p>最棘手的是场景1：A已经提交了数据库事务，B失败后，A的数据成为”孤儿数据”——没有后续Handler会处理它，也没有机制清理它。</p>
 <h3 id="核心矛盾"><a href="#核心矛盾" class="headerlink" title="核心矛盾"></a>核心矛盾</h3><p>Choreography模式天然缺少一个”全局事务协调器”。在Orchestration模式下，DAG引擎可以维护一个全局事务上下文，一旦B失败，引擎可以回调A的补偿方法。但Choreography模式下，A根本不知道B是否成功——两个人背对背跳舞。</p>
 <h2 id="SyncTask的解决方案：五层防御"><a href="#SyncTask的解决方案：五层防御" class="headerlink" title="SyncTask的解决方案：五层防御"></a>SyncTask的解决方案：五层防御</h2><p>面对一致性挑战，我们没有选择”加一个DAG引擎”的简单方案，而是在Choreography模式的约束下，构建了五层防御体系。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9a864e5e2d8da1e7d207eb31cbe335e8.png#pic_center" srcset="/img/loading.gif" lazyload alt="Choreography 的五层防御"></p>
 <h3 id="第一层：状态机管理"><a href="#第一层：状态机管理" class="headerlink" title="第一层：状态机管理"></a>第一层：状态机管理</h3><p>每个TaskHandler执行前后，引擎会严格维护其状态机：</p>
 <figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-attribute">PENDING</span> → RUNNING → SUCCESS<br>                  → FAILED<br>                  → SKIPPED<br></code></pre></td></tr></table></figure>
 

@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="两阶段提交(2PC)和Raft&#x2F;Paxos共识算法看起来都涉及多节点协调，但它们的本质完全不同。本文从电商库存扣减场景切入，厘清原子提交与共识的边界。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4696969d4800cfb81b51cd08d1750f0.png#pic_center">
 <meta property="article:published_time" content="2024-07-22T12:11:55.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.753Z">
+<meta property="article:modified_time" content="2026-11-02T09:45:24.786Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="2PC">
 <meta property="article:tag" content="DDIA">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="共识">
 <meta property="article:tag" content="分布式事务">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4696969d4800cfb81b51cd08d1750f0.png#pic_center">
   
   
   
@@ -416,7 +418,8 @@
 <p>这个场景对我们来说是再熟悉不过的现场了——跨库操作、分布式事务、故障恢复，全是课后留堂的经典题目。当时团队讨论了一个看似合理的问题：<strong>能不能用Raft把订单库和库存库做成一个复制组，让它自动脑裂恢复，然后就不用管2PC了？</strong></p>
 <p>这个问题听起来有理有据。Raft提供强一致性、自动故障切换，Log Replication保证了复制组内所有节点的操作顺序完全一致。如果让订单和库存都在同一个Raft组里，提交就变成了一次分布式日志追加——这和2PC的”所有人同意才提交”听起来是一回事。</p>
 <p>但这个直觉是错的。Raft和2PC解决的是完全不同层次的问题，把其中一个当另一个的替代品，就像用电焊修水管——工具很牛，但用错了地方。今天这篇文章，就从这个边界开始聊起。</p>
-<h2 id="二、2PC的本质：原子提交，不是共识"><a href="#二、2PC的本质：原子提交，不是共识" class="headerlink" title="二、2PC的本质：原子提交，不是共识"></a>二、2PC的本质：原子提交，不是共识</h2><p>很多人（包括当年的我）把2PC理解为一个投票协议——协调者（Coordinator）问所有参与者（Participant）：准备好没？所有人都说OK就提交，有人说不OK就回滚。这个理解不算错，但它掩盖了2PC最核心的本质：<strong>2PC是一个原子提交协议（Atomic Commit Protocol），它要做的是让一组参与者对一个”要么全部提交、要么全部回滚”的决定达成一致。</strong></p>
+<h2 id="二、2PC的本质：原子提交，不是共识"><a href="#二、2PC的本质：原子提交，不是共识" class="headerlink" title="二、2PC的本质：原子提交，不是共识"></a>二、2PC的本质：原子提交，不是共识</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4696969d4800cfb81b51cd08d1750f0.png#pic_center" srcset="/img/loading.gif" lazyload alt="2PC 与共识：两个层次的边界"></p>
+<p>很多人（包括当年的我）把2PC理解为一个投票协议——协调者（Coordinator）问所有参与者（Participant）：准备好没？所有人都说OK就提交，有人说不OK就回滚。这个理解不算错，但它掩盖了2PC最核心的本质：<strong>2PC是一个原子提交协议（Atomic Commit Protocol），它要做的是让一组参与者对一个”要么全部提交、要么全部回滚”的决定达成一致。</strong></p>
 <p>关键词是”原子提交”，不是”共识”。</p>
 <p>我们看2PC的执行流程：</p>
 <ol>

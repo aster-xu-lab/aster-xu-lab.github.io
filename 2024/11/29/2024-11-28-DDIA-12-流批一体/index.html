@@ -26,14 +26,16 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="引子：两拨人的对立在大数据团队里，向来有两拨人。 一拨人写离线批处理。他们每天凌晨跑 MapReduce 或 Spark SQL，把前一天的数据全量算一遍，早上出报表。等数小时是常态，延迟以天计，但数据靠谱——只要隔天早上结果一致，没人找他们麻烦。 另一拨人写实时流处理。他们接 Kafka，写 Storm 或 Spark Streaming，秒级延迟，大屏上数字跳得飞起。但数据老是对不齐——不是多">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3a7057146b172e412c9e8316a99ebac7.png#pic_center">
 <meta property="article:published_time" content="2024-11-28T17:31:36.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.758Z">
+<meta property="article:modified_time" content="2026-11-02T09:54:21.703Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="Flink">
 <meta property="article:tag" content="Lambda架构">
 <meta property="article:tag" content="流批一体">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3a7057146b172e412c9e8316a99ebac7.png#pic_center">
   
   
   
@@ -416,7 +418,8 @@
 <p>另一拨人写实时流处理。他们接 Kafka，写 Storm 或 Spark Streaming，秒级延迟，大屏上数字跳得飞起。但数据老是对不齐——不是多算就是少算，凌晨一看，和离线报表差了好几个百分点。</p>
 <p>两拨人用两套引擎、两套代码、两套口径。<strong>离线工程师不懂流，流工程师嫌批太慢。</strong> Data Infra 团队更痛苦——要维护两套集群，两套监控，两套运维体系。</p>
 <p>Flink 想做的事很疯狂：<strong>让这两拨人用同一套东西。</strong></p>
-<h2 id="DDIA-的论断：批处理是流处理的特殊形式"><a href="#DDIA-的论断：批处理是流处理的特殊形式" class="headerlink" title="DDIA 的论断：批处理是流处理的特殊形式"></a>DDIA 的论断：批处理是流处理的特殊形式</h2><p>Martin Kleppmann 在《Designing Data-Intensive Applications》第12章”流处理的未来”中，写下了一个至今读来仍然犀利的论断：</p>
+<h2 id="DDIA-的论断：批处理是流处理的特殊形式"><a href="#DDIA-的论断：批处理是流处理的特殊形式" class="headerlink" title="DDIA 的论断：批处理是流处理的特殊形式"></a>DDIA 的论断：批处理是流处理的特殊形式</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3a7057146b172e412c9e8316a99ebac7.png#pic_center" srcset="/img/loading.gif" lazyload alt="流批一体：批是流的一种特例"></p>
+<p>Martin Kleppmann 在《Designing Data-Intensive Applications》第12章”流处理的未来”中，写下了一个至今读来仍然犀利的论断：</p>
 <blockquote>
 <p>批处理引擎和流处理引擎之间的区别正在模糊。批处理不过是**处理有界数据（Bounded Data）**的流处理。</p>
 </blockquote>

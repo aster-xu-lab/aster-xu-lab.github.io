@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="哈希分片扩容的痛：同单号落片变了反向索引表按单号 outer_order_no 哈希分片。假设从 8 片扩到 16 片： 12旧: 单号 X → X % 8  &#x3D; 3新: 单号 X → X % 16 &#x3D; 11    ← 路由变了！  片数一变，同一个单号在新旧两套落到了不同分片。取模分片扩容 &#x3D; 推倒重来，不能直接加片数。 扩容难点取决于分片方案扩容难度和分片方案强相关（or_sales">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9e8af76c72c997bb721c24f348356f7a.png#pic_center">
 <meta property="article:published_time" content="2025-07-05T10:41:50.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.763Z">
+<meta property="article:modified_time" content="2026-11-02T09:12:52.310Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="rehash">
@@ -36,6 +37,7 @@
 <meta property="article:tag" content="扩容">
 <meta property="article:tag" content="灰度">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9e8af76c72c997bb721c24f348356f7a.png#pic_center">
   
   
   
@@ -425,7 +427,8 @@
 <li><strong>单号分片</strong>：业务事件精准路由，但扩容（8→16片）需<strong>重列全部分片数据</strong></li>
 </ul>
 <p>交易系统（订单）通常选<strong>单号主分片</strong>（业务事件是主维度），所以<strong>扩容走下面的双写+灰度流程</strong>——这是单号分片的必要代价，换来所有事件的精准路由。</p>
-<h2 id="无感扩容：双写-回填-对账-灰度切流"><a href="#无感扩容：双写-回填-对账-灰度切流" class="headerlink" title="无感扩容：双写 + 回填 + 对账 + 灰度切流"></a>无感扩容：双写 + 回填 + 对账 + 灰度切流</h2><p>业界标准四步（全程不停服）：</p>
+<h2 id="无感扩容：双写-回填-对账-灰度切流"><a href="#无感扩容：双写-回填-对账-灰度切流" class="headerlink" title="无感扩容：双写 + 回填 + 对账 + 灰度切流"></a>无感扩容：双写 + 回填 + 对账 + 灰度切流</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9e8af76c72c997bb721c24f348356f7a.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片扩容不重来：双写 + 回填 + 对账 + 灰度切流"></p>
+<p>业界标准四步（全程不停服）：</p>
 <h3 id="1-双写（保证在线数据两边一致）"><a href="#1-双写（保证在线数据两边一致）" class="headerlink" title="1. 双写（保证在线数据两边一致）"></a>1. 双写（保证在线数据两边一致）</h3><p>新增单号同时写旧8片 + 新16片：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java">writeOldIndex(orderNo);   <span class="hljs-comment">// 旧分片</span><br>writeNewIndex(orderNo);   <span class="hljs-comment">// 新分片(幂等)</span><br></code></pre></td></tr></table></figure>
 

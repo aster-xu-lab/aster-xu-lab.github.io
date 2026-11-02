@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="前言上一篇文章我们聊了单主复制的实现细节——一个 Leader 负责所有写入，若干 Follower 异步追赶日志。这是绝大多数关系型数据库的默认模式，简单、可靠、符合直觉。 但现实世界的需求远比”一主多从”复杂。如果你的用户分布在全球，纽约和东京的同事需要同时编辑同一份文档怎么办？如果你不想承受主从切换的中断时间怎么办？如果你的数据库挂了一台节点，另几台还在跑，但数据不完整，该不该让它继续对外服">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7df76cdb765b23692fb1ec521b94cd54.png#pic_center">
 <meta property="article:published_time" content="2024-01-22T16:57:01.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.749Z">
+<meta property="article:modified_time" content="2026-11-02T09:36:36.804Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CAP">
 <meta property="article:tag" content="DDIA">
@@ -37,6 +38,7 @@
 <meta property="article:tag" content="多主复制">
 <meta property="article:tag" content="无主复制">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7df76cdb765b23692fb1ec521b94cd54.png#pic_center">
   
   
   
@@ -419,6 +421,7 @@
 <p>这些问题，单主复制回答不了。它们属于多主复制和无主复制的领地——也是 CAP 定理真正拳拳到肉的博弈现场。</p>
 <p>这一篇，我会从多主复制的冲突地狱讲起，穿过无主复制的 Quorum 修复机制，最后回到电商场景，看看为什么订单选了单主，购物车可以多主，而 SyncTask 的任务状态存储明明无主复制就够用，却还是用了 MySQL。</p>
 <hr>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7df76cdb765b23692fb1ec521b94cd54.png#pic_center" srcset="/img/loading.gif" lazyload alt="单主、多主、无主：CAP 下的三种复制模型"></p>
 <h2 id="一、多主复制：多个-Leader-的美丽与危险"><a href="#一、多主复制：多个-Leader-的美丽与危险" class="headerlink" title="一、多主复制：多个 Leader 的美丽与危险"></a>一、多主复制：多个 Leader 的美丽与危险</h2><h3 id="1-1-为什么要多个-Leader"><a href="#1-1-为什么要多个-Leader" class="headerlink" title="1.1 为什么要多个 Leader"></a>1.1 为什么要多个 Leader</h3><p>单主复制最大的痛点，不是性能，是<strong>可用性</strong>。一旦 Leader 宕机，写入就被阻塞，直到选出一个新 Leader。这个切换过程即使优化到极致（比如 Raft 的 Leader 选举在亚秒级完成），也有一个不可避免的停顿窗口。</p>
 <p>多主复制（Multi-Leader Replication）的设计意图很直接：每个节点都可以接受写入，写入后异步同步到其他节点。客户端写到最近的数据中心，延迟低；一个数据中心挂了，其他照常写入，可用性高。</p>
 <p>典型场景：</p>

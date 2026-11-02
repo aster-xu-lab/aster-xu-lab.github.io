@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="知其然也要知其所以然。前面用 ShardingSphere 把分片跑通了，我进一步读了源码，搞清楚一条 SQL 在 ShardingSphere 内部到底经历了什么。本文基于 5.4.1 源码，拆解调用链。 总入口：ShardingSQLRouter所有分片路由的门口是 ShardingSQLRouter.createRouteContext()： 1234567891011@org.apache">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0ad034bcc24b9f711f4161e36b839441.png#pic_center">
 <meta property="article:published_time" content="2025-05-15T13:51:08.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.762Z">
+<meta property="article:modified_time" content="2026-11-02T09:14:05.942Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="SQL改写">
 <meta property="article:tag" content="ShardingSQLRouter">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="源码">
 <meta property="article:tag" content="路由">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0ad034bcc24b9f711f4161e36b839441.png#pic_center">
   
   
   
@@ -439,6 +441,7 @@
 <p>它<strong>不直接改 SQL</strong>，而是标记出”逻辑表在 SQL 文本中的位置”，然后改写引擎按 RouteContext 的映射替换。</p>
 <figure class="highlight vbnet"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs vbnet">原始: <span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> order_id = <span class="hljs-number">12345</span><br><span class="hljs-symbol">TableToken:</span> 位置<span class="hljs-number">14</span>~<span class="hljs-number">20</span> 是 <span class="hljs-string">&quot;t_order&quot;</span> → 换成 <span class="hljs-string">&quot;t_order_1&quot;</span><br>改写: <span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> t_order_1 <span class="hljs-keyword">WHERE</span> order_id = <span class="hljs-number">12345</span><br></code></pre></td></tr></table></figure>
 
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0ad034bcc24b9f711f4161e36b839441.png#pic_center" srcset="/img/loading.gif" lazyload alt="一条 SQL 的 ShardingSphere 路由链路"></p>
 <h2 id="精准路由-vs-广播路由对比"><a href="#精准路由-vs-广播路由对比" class="headerlink" title="精准路由 vs 广播路由对比"></a>精准路由 vs 广播路由对比</h2><p><strong>精准路由</strong>（带分片键）：</p>
 <figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">SELECT * <span class="hljs-keyword">FROM</span> t_order WHERE order_id = 12345<br>→ 提取 <span class="hljs-attribute">order_id</span>=12345 → 12345%<span class="hljs-attribute">4</span>=1 → t_order_1 → 只执行1条<br></code></pre></td></tr></table></figure>
 

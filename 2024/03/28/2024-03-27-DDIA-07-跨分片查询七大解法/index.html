@@ -26,14 +26,16 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="引言当单表数据量突破千万级，分库分表几乎是所有中台系统的必经之路。在一个日订单130万的电商中台里，订单表按 user_id 做了 64 分片，单库单表可以扛住日常写入。但有一天，运营提了一个需求：”商家后台里，按商家ID查订单列表，还要支持按金额排序和分页。”——你盯着代码，发现 merchant_id 并不是分片键。 这就是跨分片查询的起点。DDIA第6章花了大量篇幅讨论分区（partitio">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b913e8810cc67096725d390d8d485dc1.png#pic_center">
 <meta property="article:published_time" content="2024-03-27T16:19:26.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:54:18.731Z">
+<meta property="article:modified_time" content="2026-11-02T09:43:28.549Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="分页">
 <meta property="article:tag" content="聚合">
 <meta property="article:tag" content="跨分片查询">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b913e8810cc67096725d390d8d485dc1.png#pic_center">
   
   
   
@@ -416,7 +418,8 @@
 <h2 id="一、跨分片查询的本质困境"><a href="#一、跨分片查询的本质困境" class="headerlink" title="一、跨分片查询的本质困境"></a>一、跨分片查询的本质困境</h2><p>在分库分表架构中，数据路由的关键是分片键。一条 SQL 带上分片键，中间件能精确定位到目标分片；不带上分片键，就需要”广播”到所有分片，再把结果聚合。广播查询的代价随分片数线性增长——64个分片就需要查64次。</p>
 <p>但业务查询的维度往往是多维的：买家端按 <code>user_id</code> 查订单是天然的分片键命中；商家端按 <code>merchant_id</code> 查、运营后台按 <code>order_status</code> 查、财务按 <code>payment_time</code> 对账——这些查询全都会变成广播。</p>
 <p>本质上，这是一个”用写入冗余换查询效率”还是”用查询开销忍耐多维度访问”的权衡。下面七种解法，就是从不同角度对这个权衡的回答。</p>
-<h2 id="二、跨分片查询的七大解法"><a href="#二、跨分片查询的七大解法" class="headerlink" title="二、跨分片查询的七大解法"></a>二、跨分片查询的七大解法</h2><h3 id="解法1：分片键查询"><a href="#解法1：分片键查询" class="headerlink" title="解法1：分片键查询"></a>解法1：分片键查询</h3><p>最基础也最优先考虑的方式。设计分片键时，把最高频的查询维度作为分片键，让核心链路不需要跨片。</p>
+<h2 id="二、跨分片查询的七大解法"><a href="#二、跨分片查询的七大解法" class="headerlink" title="二、跨分片查询的七大解法"></a>二、跨分片查询的七大解法</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b913e8810cc67096725d390d8d485dc1.png#pic_center" srcset="/img/loading.gif" lazyload alt="跨分片查询的七大解法：按成本分层"></p>
+<h3 id="解法1：分片键查询"><a href="#解法1：分片键查询" class="headerlink" title="解法1：分片键查询"></a>解法1：分片键查询</h3><p>最基础也最优先考虑的方式。设计分片键时，把最高频的查询维度作为分片键，让核心链路不需要跨片。</p>
 <p>以订单系统为例：买家端的”我的订单”是C端最高频场景，所以 <code>user_id</code> 作为分片键是合理的。所有买家查询订单的链路——列表、详情、物流查询——都不需要跨片，性能最优。</p>
 <figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-comment">-- 命中分片键，直接路由到单个分片</span><br><span class="hljs-keyword">SELECT</span> * <span class="hljs-keyword">FROM</span> t_order <span class="hljs-keyword">WHERE</span> user_id = <span class="hljs-number">12345</span> <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> create_time <span class="hljs-keyword">DESC</span> <span class="hljs-keyword">LIMIT</span> <span class="hljs-number">20</span>;<br></code></pre></td></tr></table></figure>
 

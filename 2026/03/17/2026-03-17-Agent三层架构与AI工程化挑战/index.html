@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="一、Agent 是什么Function Calling 解决了”让模型调用单个工具”，Agent 更进一步：让模型自己决定”接下来做什么”——把一个大任务拆成多步，每步调一个工具，观察结果，再决定下一步，直到完成。 1用户目标 → Planner 拆解 → Tool 调用 → 观察结果 → 再拆解 → ... → 完成  和传统程序的区别：传统程序的执行路径是写死的；Agent 的执行路径是模型在">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be42a5d682978e864db19cd15a5ed856.png#pic_center">
 <meta property="article:published_time" content="2026-03-17T14:22:01.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.828Z">
+<meta property="article:modified_time" content="2026-11-02T09:18:05.253Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="AI工程化">
 <meta property="article:tag" content="Agent">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="ReAct">
 <meta property="article:tag" content="Spring AI">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be42a5d682978e864db19cd15a5ed856.png#pic_center">
   
   
   
@@ -416,7 +418,8 @@
 <figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">用户目标 → Planner 拆解 → Tool 调用 → 观察结果 → 再拆解 → <span class="hljs-string">...</span> → 完成<br></code></pre></td></tr></table></figure>
 
 <p>和传统程序的区别：传统程序的执行路径是<strong>写死的</strong>；Agent 的执行路径是<strong>模型在运行时动态决策的</strong>。这是它的能力，也是它难工程化的根源。</p>
-<h2 id="二、三层架构：Planner-Tool-Memory"><a href="#二、三层架构：Planner-Tool-Memory" class="headerlink" title="二、三层架构：Planner &#x2F; Tool &#x2F; Memory"></a>二、三层架构：Planner &#x2F; Tool &#x2F; Memory</h2><p>标准的 Agent 架构分三层：</p>
+<h2 id="二、三层架构：Planner-Tool-Memory"><a href="#二、三层架构：Planner-Tool-Memory" class="headerlink" title="二、三层架构：Planner &#x2F; Tool &#x2F; Memory"></a>二、三层架构：Planner &#x2F; Tool &#x2F; Memory</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be42a5d682978e864db19cd15a5ed856.png#pic_center" srcset="/img/loading.gif" lazyload alt="Agent 的三层架构：Planner &#x2F; Tool &#x2F; Memory"></p>
+<p>标准的 Agent 架构分三层：</p>
 <p><strong>Planner（规划层）</strong>：任务拆解、规划步骤。把”帮我分析这批订单”拆成”拉数据 → 汇总 → 出报告”几步，决定每一步做什么。</p>
 <p><strong>Tool（工具层）</strong>：实际执行能力，靠 Function Calling 接上——查订单、算库存、发消息，都是一个个工具。<strong>工具是 Agent 能力的边界</strong>：工具越多越强，也越容易选错。</p>
 <p><strong>Memory（记忆层）</strong>：</p>

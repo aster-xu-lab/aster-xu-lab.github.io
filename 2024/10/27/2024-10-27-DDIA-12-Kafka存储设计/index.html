@@ -26,14 +26,16 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="一、引言：当消息队列遇见存储引擎在《数据密集型应用系统设计》（DDIA）的第11章，我们深入探讨了日志结构存储引擎（LSM-Tree）的设计哲学——将随机写转化为顺序写，用不可变文件构建高吞吐的写入路径。到了第12章，话题转向流处理和消息系统，Kafka 作为主角登场。初看之下，消息队列和存储引擎似乎是两个世界的产物：一个负责”传输”，一个负责”落地”。但当我们揭开 Kafka 的存储层，会发现一">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4682d334a970de4d4ee5639ec4bfb6e0.png#pic_center">
 <meta property="article:published_time" content="2024-10-26T21:35:24.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.756Z">
+<meta property="article:modified_time" content="2026-11-02T09:49:58.348Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="Kafka">
 <meta property="article:tag" content="存储引擎">
 <meta property="article:tag" content="消息队列">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4682d334a970de4d4ee5639ec4bfb6e0.png#pic_center">
   
   
   
@@ -413,7 +415,8 @@
                 
                 <h2 id="一、引言：当消息队列遇见存储引擎"><a href="#一、引言：当消息队列遇见存储引擎" class="headerlink" title="一、引言：当消息队列遇见存储引擎"></a>一、引言：当消息队列遇见存储引擎</h2><p>在《数据密集型应用系统设计》（DDIA）的第11章，我们深入探讨了日志结构存储引擎（LSM-Tree）的设计哲学——将随机写转化为顺序写，用不可变文件构建高吞吐的写入路径。到了第12章，话题转向流处理和消息系统，Kafka 作为主角登场。初看之下，消息队列和存储引擎似乎是两个世界的产物：一个负责”传输”，一个负责”落地”。但当我们揭开 Kafka 的存储层，会发现一个惊人的事实——<strong>Kafka 本质上就是一个日志结构存储引擎，只不过它的”查询接口”是消费者，而不是 SQL 或 Key-Value API</strong>。</p>
 <p>本文将从存储设计的视角拆解 Kafka，揭示它如何将 LSM-Tree 的核心思想复现在消息队列领域，以及这种设计选择的工程深意。</p>
-<h2 id="二、Kafka-的存储骨架：Segment-顺序写-零拷贝"><a href="#二、Kafka-的存储骨架：Segment-顺序写-零拷贝" class="headerlink" title="二、Kafka 的存储骨架：Segment + 顺序写 + 零拷贝"></a>二、Kafka 的存储骨架：Segment + 顺序写 + 零拷贝</h2><h3 id="2-1-分区即日志"><a href="#2-1-分区即日志" class="headerlink" title="2.1 分区即日志"></a>2.1 分区即日志</h3><p>Kafka 最核心的抽象是：<strong>一个分区（Partition）就是一个不可变的、有序的消息日志</strong>。每条消息被追加到分区尾部，获得一个单调递增的 offset——这和 LSM-Tree 中 WAL（Write-Ahead Log）追加写入日志条目的模式完全一致。</p>
+<h2 id="二、Kafka-的存储骨架：Segment-顺序写-零拷贝"><a href="#二、Kafka-的存储骨架：Segment-顺序写-零拷贝" class="headerlink" title="二、Kafka 的存储骨架：Segment + 顺序写 + 零拷贝"></a>二、Kafka 的存储骨架：Segment + 顺序写 + 零拷贝</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4682d334a970de4d4ee5639ec4bfb6e0.png#pic_center" srcset="/img/loading.gif" lazyload alt="Kafka 存储：分区即日志，Segment 即不可变文件"></p>
+<h3 id="2-1-分区即日志"><a href="#2-1-分区即日志" class="headerlink" title="2.1 分区即日志"></a>2.1 分区即日志</h3><p>Kafka 最核心的抽象是：<strong>一个分区（Partition）就是一个不可变的、有序的消息日志</strong>。每条消息被追加到分区尾部，获得一个单调递增的 offset——这和 LSM-Tree 中 WAL（Write-Ahead Log）追加写入日志条目的模式完全一致。</p>
 <figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs prolog"><span class="hljs-symbol">Partition</span> <span class="hljs-number">0</span>: [msg0] [msg1] [msg2] [msg3] [msg4] ...<br>             offset=<span class="hljs-number">0</span>  <span class="hljs-number">1</span>       <span class="hljs-number">2</span>       <span class="hljs-number">3</span>       <span class="hljs-number">4</span>  → 时间轴<br></code></pre></td></tr></table></figure>
 
 <p>在磁盘上，一个分区对应一个目录，目录内是一组分段文件（Segment）：</p>
