@@ -19,15 +19,16 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。  一、EXIT_1 不是一种错误采集进程退出码 1，日志里只留">
+    <meta name="description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。   一、EXIT_1 不是一种错误采集进程退出码 1，日志里只">
 <meta property="og:type" content="article">
 <meta property="og:title" content="长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。  一、EXIT_1 不是一种错误采集进程退出码 1，日志里只留">
+<meta property="og:description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。   一、EXIT_1 不是一种错误采集进程退出码 1，日志里只">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9658e2d8f783446f3d1ef522858bfb06.png#pic_center">
 <meta property="article:published_time" content="2026-11-03T12:14:37.000Z">
-<meta property="article:modified_time" content="2026-11-03T06:18:25.370Z">
+<meta property="article:modified_time" content="2026-11-03T07:09:44.326Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="GC">
@@ -36,6 +37,7 @@
 <meta property="article:tag" content="排障">
 <meta property="article:tag" content="长任务">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9658e2d8f783446f3d1ef522858bfb06.png#pic_center">
   
   
   
@@ -416,6 +418,7 @@
                 <blockquote>
 <p>一条 1000 条的采集任务，跑到一百多条就开始 <code>BROWSER4_EXIT_1</code>。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。</p>
 </blockquote>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9658e2d8f783446f3d1ef522858bfb06.png#pic_center" srcset="/img/loading.gif" lazyload alt="长跑采集内存的三层归因：失败分类、真正的垃圾源、残余可达性"></p>
 <h2 id="一、EXIT-1-不是一种错误"><a href="#一、EXIT-1-不是一种错误" class="headerlink" title="一、EXIT_1 不是一种错误"></a>一、EXIT_1 不是一种错误</h2><p>采集进程退出码 1，日志里只留一行截断到 600 字符的 stderr。把所有 <code>EXIT_1</code> 都当成同一件事，会得到两个错误结论：要么以为全是风控，要么以为全是内存泄漏。</p>
 <p>实际至少要分成三类：</p>
 <table>

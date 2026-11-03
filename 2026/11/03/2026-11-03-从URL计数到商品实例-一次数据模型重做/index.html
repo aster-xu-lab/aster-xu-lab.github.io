@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="旧模型里，一条 URL 对应一个商品，抓取失败就造一个占位商品。变体一展开，计数、归属和后续守卫全部失真。这一轮把「平台身份」和「任务内实例」拆成两层，失败只留在 URL 行。这篇讲模型为什么必须重做，以及迁移为什么选择一次性重置。  一、旧模型的三个失真最初的模型很直观：一行输入 URL，一行商品；抓取成功就更新商品，失败就写一条失败商品占位。 在「一条链接 &#x3D; 一个商品」的前提下，">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bc4072f39fb3eb185bcb56b5793256c6.png#pic_center">
 <meta property="article:published_time" content="2026-11-03T15:06:55.000Z">
-<meta property="article:modified_time" content="2026-11-03T06:22:31.954Z">
+<meta property="article:modified_time" content="2026-11-03T07:09:46.435Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="SQLite">
 <meta property="article:tag" content="数据建模">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="状态机">
 <meta property="article:tag" content="迁移">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bc4072f39fb3eb185bcb56b5793256c6.png#pic_center">
   
   
   
@@ -458,6 +460,7 @@
 </tr>
 </tbody></table>
 <p>原来需要在一行里同时回答的三个问题，现在分开存。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bc4072f39fb3eb185bcb56b5793256c6.png#pic_center" srcset="/img/loading.gif" lazyload alt="商品实例模型：输入层、归属层、实例层，以及两种键的职责"></p>
 <h2 id="三、两个键，职责不同"><a href="#三、两个键，职责不同" class="headerlink" title="三、两个键，职责不同"></a>三、两个键，职责不同</h2><p>模型里有两个容易混淆的键。</p>
 <p><strong><code>source_key</code> 是平台身份：</strong></p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">platform:productId[:variantId]<br></code></pre></td></tr></table></figure>
