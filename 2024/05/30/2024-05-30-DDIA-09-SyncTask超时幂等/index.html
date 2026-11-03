@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="开篇：一个线程池耗尽引发的血案2023年秋天，凌晨三点，手机警报响了。 告警内容很简单：订单同步积压。看监控，任务调度一切正常，xxl-job 的调度日志显示每次触发都成功了。但任务就是卡住不动，所有新提交的 Handler 都在排队。 登录服务器一看，线程池队列已经堆满，所有工作线程都在运行状态。再看堆栈，8 个线程全部卡在同一个 Handler 上——那个负责调用第三方物流接口的 Handle">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/306e3f36088dc9059be5ab44e83c8462.png#pic_center">
 <meta property="article:published_time" content="2024-05-30T12:56:05.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.752Z">
+<meta property="article:modified_time" content="2026-11-03T03:55:20.563Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="SyncTask">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="幂等">
 <meta property="article:tag" content="超时">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/306e3f36088dc9059be5ab44e83c8462.png#pic_center">
   
   
   
@@ -418,7 +420,8 @@
 <p>一行 <code>RestTemplate</code> 调用，没有 <code>setConnectTimeout</code>，没有 <code>setReadTimeout</code>，也没有任何超时后的 fallback 机制。</p>
 <p>一个 Handler 卡住，线程池 8 个线程全部阻塞，所有 49 个 Handler 的后续任务全部排队，系统不可用。</p>
 <p>这就是 DDIA 第九章说的那句话：<strong>“在一个由许多部件组成的系统中，某个部件出问题是常态，而不是例外。你的系统必须能容忍部分失效。”</strong> 而我们 V1 版本的 SyncTask 引擎，显然做不到。</p>
-<h2 id="V1-的问题全景"><a href="#V1-的问题全景" class="headerlink" title="V1 的问题全景"></a>V1 的问题全景</h2><p>SyncTask 引擎寄居在 xxl-job 之上，V1 版本的设计很简单：一个固定的线程池，轮询待执行的任务，逐个调用 <code>handler.execute()</code>。伪代码大体是这样：</p>
+<h2 id="V1-的问题全景"><a href="#V1-的问题全景" class="headerlink" title="V1 的问题全景"></a>V1 的问题全景</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/306e3f36088dc9059be5ab44e83c8462.png#pic_center" srcset="/img/loading.gif" lazyload alt="SyncTask 超时与幂等：一个 Handler 不该拖垮全部"></p>
+<p>SyncTask 引擎寄居在 xxl-job 之上，V1 版本的设计很简单：一个固定的线程池，轮询待执行的任务，逐个调用 <code>handler.execute()</code>。伪代码大体是这样：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// V1 版本——简化示意</span><br>List&lt;Task&gt; tasks = taskStore.fetchPendingTasks();<br><span class="hljs-keyword">for</span> (Task task : tasks) &#123;<br>    threadPool.submit(() -&gt; &#123;<br>        <span class="hljs-type">SyncTaskHandler</span> <span class="hljs-variable">handler</span> <span class="hljs-operator">=</span> registry.getHandler(task.getHandlerName());<br>        handler.execute(task);  <span class="hljs-comment">// 没有超时，没有隔离</span><br>    &#125;);<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p>看起来很干净。但在我们的场景里，93 个 Handler 对接了 10 多个外部系统：金蝶 ERP、聚水潭 WMS、华为商品中心、企业微信通知、多个第三方物流接口……每一个外部系统都可能在某个时刻变慢、超时、或完全不可用。</p>

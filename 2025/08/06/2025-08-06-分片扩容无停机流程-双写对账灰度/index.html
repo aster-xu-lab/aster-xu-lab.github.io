@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="一、为什么 hash 分片扩容要 rehash单号哈希分片的落片公式是： 1落片 &#x3D; hash(order_no) % 片数  片数从 8 扩到 16，% 16 的结果和 % 8 不一样了——原来落在 0 号片的数据，现在可能该落 2 号片。所以扩一倍的片数，意味着大约一半的数据要换物理分片。这就是 rehash。 这也是”单号 hash 分片”对比”时间&#x2F;区间分片”的一个代价：时间分片">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b548a024e33854d414e53e71e6bdef58.png#pic_center">
 <meta property="article:published_time" content="2025-08-06T15:20:01.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.847Z">
+<meta property="article:modified_time" content="2026-11-03T03:53:01.470Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="分库分表">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="对账">
 <meta property="article:tag" content="扩容">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b548a024e33854d414e53e71e6bdef58.png#pic_center">
   
   
   
@@ -418,7 +420,8 @@
 <p>片数从 8 扩到 16，<strong><code>% 16</code> 的结果和 <code>% 8</code> 不一样了</strong>——原来落在 0 号片的数据，现在可能该落 2 号片。所以扩一倍的片数，意味着<strong>大约一半的数据要换物理分片</strong>。这就是 rehash。</p>
 <p>这也是”单号 hash 分片”对比”时间&#x2F;区间分片”的一个代价：时间分片扩容无感（新数据进新区间），但 hash 分片扩容必须迁移。</p>
 <p>那怎么迁？<strong>一次对外无感的迁移</strong>，是分库分表最见功力的地方。</p>
-<h2 id="二、无停机迁移的五步流程"><a href="#二、无停机迁移的五步流程" class="headerlink" title="二、无停机迁移的五步流程"></a>二、无停机迁移的五步流程</h2><p>迁移的核心不是”把数据搬过去”，而是”<strong>搬的过程中业务不能停、不能丢、不能重</strong>“。我的流程是五步：</p>
+<h2 id="二、无停机迁移的五步流程"><a href="#二、无停机迁移的五步流程" class="headerlink" title="二、无停机迁移的五步流程"></a>二、无停机迁移的五步流程</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b548a024e33854d414e53e71e6bdef58.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片扩容 8→16：无停机 rehash 流程"></p>
+<p>迁移的核心不是”把数据搬过去”，而是”<strong>搬的过程中业务不能停、不能丢、不能重</strong>“。我的流程是五步：</p>
 <figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">存量回填 → <span class="hljs-keyword">binlog/Canal </span>增量追平 → 对账兜底 → 灰度切流 → 删旧表<br></code></pre></td></tr></table></figure>
 
 <p>逐段解释：</p>
