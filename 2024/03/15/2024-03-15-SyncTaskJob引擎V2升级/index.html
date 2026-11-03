@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="SyncTaskJob 引擎 V2 升级：从 CountDownLatch 到 CompletableFuture背景SyncTaskJob 是我们订单中心和仓储系统的核心同步任务编排引擎，管理着 93 个 Handler 的执行调度。V1 版本使用 CountDownLatch 做并行控制，存在几个明显痛点：  无超时控制——一个 Handler 卡住，整个批次永远等不到完成 粒度太粗——锁和状">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9c4f5a1e9e0e2cf27347baff65e1a46e.png#pic_center">
 <meta property="article:published_time" content="2024-03-15T13:24:50.000Z">
-<meta property="article:modified_time" content="2026-10-09T08:31:44.959Z">
+<meta property="article:modified_time" content="2026-11-03T03:34:13.146Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CompletableFuture">
 <meta property="article:tag" content="Java">
@@ -36,6 +37,7 @@
 <meta property="article:tag" content="并发编程">
 <meta property="article:tag" content="性能优化">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9c4f5a1e9e0e2cf27347baff65e1a46e.png#pic_center">
   
   
   
@@ -429,7 +431,8 @@
 <li>每条 task 独立开线程，100 条就要 100 个线程，线程池瞬间打满</li>
 <li>每条 task 执行完都单独 update DB，100 条 &#x3D; 100 次 DB 交互</li>
 </ul>
-<h2 id="二、CompletableFuture-并行-批次聚合"><a href="#二、CompletableFuture-并行-批次聚合" class="headerlink" title="二、CompletableFuture 并行 + 批次聚合"></a>二、CompletableFuture 并行 + 批次聚合</h2><p>V2 核心改造：</p>
+<h2 id="二、CompletableFuture-并行-批次聚合"><a href="#二、CompletableFuture-并行-批次聚合" class="headerlink" title="二、CompletableFuture 并行 + 批次聚合"></a>二、CompletableFuture 并行 + 批次聚合</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9c4f5a1e9e0e2cf27347baff65e1a46e.png#pic_center" srcset="/img/loading.gif" lazyload alt="SyncTaskJob V2：从 CountDownLatch 到 CompletableFuture"></p>
+<p>V2 核心改造：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// V2: CompletableFuture 分批并行 + orTimeout 超时控制</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">executeBatch</span><span class="hljs-params">(List&lt;SyncTask&gt; tasks)</span> &#123;<br>    <span class="hljs-type">int</span> <span class="hljs-variable">batchSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">50</span>;<br>    List&lt;List&lt;SyncTask&gt;&gt; batches = partition(tasks, batchSize);<br>    <br>    List&lt;CompletableFuture&lt;BatchResult&gt;&gt; futures = batches.stream()<br>        .map(batch -&gt; CompletableFuture<br>            .supplyAsync(() -&gt; handleBatch(batch), executor)<br>            .orTimeout(<span class="hljs-number">30</span>, TimeUnit.SECONDS)   <span class="hljs-comment">// 核心：超时兜底</span><br>            .exceptionally(ex -&gt; &#123;<br>                log.error(<span class="hljs-string">&quot;Batch failed&quot;</span>, ex);<br>                <span class="hljs-keyword">return</span> BatchResult.failed(batch, ex);<br>            &#125;))<br>        .collect(toList());<br>    <br>    <span class="hljs-comment">// 等待所有批次完成，整体超时 5 分钟</span><br>    CompletableFuture.allOf(futures.toArray(<span class="hljs-keyword">new</span> <span class="hljs-title class_">CompletableFuture</span>[<span class="hljs-number">0</span>]))<br>        .orTimeout(<span class="hljs-number">5</span>, TimeUnit.MINUTES)<br>        .join();<br>    <br>    <span class="hljs-comment">// 聚合结果</span><br>    List&lt;BatchResult&gt; results = futures.stream()<br>        .map(CompletableFuture::join)<br>        .collect(toList());<br>    <br>    <span class="hljs-comment">// 批次级状态更新</span><br>    batchUpdateStatus(results);<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <h3 id="关键改进点"><a href="#关键改进点" class="headerlink" title="关键改进点"></a>关键改进点</h3><p><strong>1. 分批处理</strong>：100 条任务拆成 2 批 × 50 条，线程数从 100 降到 2</p>

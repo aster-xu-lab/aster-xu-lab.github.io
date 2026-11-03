@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="订单链路是分布式事务最典型的战场：扣库存、减积分、记账、下发下游，跨多个服务。踩过坑后的结论是：没有一套方案能打天下，要在”强一致”和”最终一致”之间按场景分流。这篇讲我订单中台里的组合实践。  一、先分清楚两类场景订单链路里的分布式事务，本质是两类完全不同的诉求：     强一致场景 最终一致场景    例子 发货确认、库存扣减、预占 订单下发下游、状态回传、同步   要求 不能错一分，失败必">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4ebc0c23a489e64add89cf8079061d15.png#pic_center">
 <meta property="article:published_time" content="2026-08-20T12:28:03.000Z">
-<meta property="article:modified_time" content="2026-08-31T03:33:43.319Z">
+<meta property="article:modified_time" content="2026-11-03T03:25:54.792Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="TCC">
 <meta property="article:tag" content="分布式事务">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="本地消息表">
 <meta property="article:tag" content="订单中台">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4ebc0c23a489e64add89cf8079061d15.png#pic_center">
   
   
   
@@ -460,7 +462,8 @@
 
 <p><strong>为什么用本地消息表而不是直接发 MQ</strong>：直接发 MQ 有个经典漏洞——“业务提交了但消息没发出去”（本地事务和发消息不原子）。本地消息表把”发消息”纳入本地事务，<strong>业务成功 ⟹ 消息一定在表里</strong>，定时任务保证最终发出去。</p>
 <p><strong>为什么不用 RocketMQ 事务消息</strong>：也能解决，但本地消息表不依赖特定 MQ 特性、更通用，且和 SyncTask 引擎的扫描机制天然配合。选型看场景，两者都是”最终一致 + 幂等”的路子。</p>
-<h2 id="四、组合的关键：按”一致性等级”分流"><a href="#四、组合的关键：按”一致性等级”分流" class="headerlink" title="四、组合的关键：按”一致性等级”分流"></a>四、组合的关键：按”一致性等级”分流</h2><p>订单链路的完整方案：</p>
+<h2 id="四、组合的关键：按”一致性等级”分流"><a href="#四、组合的关键：按”一致性等级”分流" class="headerlink" title="四、组合的关键：按”一致性等级”分流"></a>四、组合的关键：按”一致性等级”分流</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4ebc0c23a489e64add89cf8079061d15.png#pic_center" srcset="/img/loading.gif" lazyload alt="分布式事务组合实践：TCC + 本地消息表"></p>
+<p>订单链路的完整方案：</p>
 <figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs arcade">下单 → 预占库存（TCC <span class="hljs-keyword">Try</span>，宽松）<br>     → 写本地消息表（订单下发下游）<br>     → 发货确认（TCC Confirm，强一致）<br>     → 状态回传（本地消息表 + 幂等）<br></code></pre></td></tr></table></figure>
 
 <p><strong>分流原则</strong>：</p>

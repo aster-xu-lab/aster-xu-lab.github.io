@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="问题的起点最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？ 答案是有相似的内核，但设计目标完全不同。本文以订单中心 cloud-order 项目中的实际代码为例，深入对比三种持久化机制。 订单中心">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8d7ae975db6fee834901d1e514e71f.png#pic_center">
 <meta property="article:published_time" content="2024-04-23T12:32:06.000Z">
-<meta property="article:modified_time" content="2026-10-09T08:31:44.960Z">
+<meta property="article:modified_time" content="2026-11-03T03:45:03.670Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Kafka">
 <meta property="article:tag" content="RocketMQ">
@@ -37,6 +38,7 @@
 <meta property="article:tag" content="持久化">
 <meta property="article:tag" content="本地消息表">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8d7ae975db6fee834901d1e514e71f.png#pic_center">
   
   
   
@@ -416,7 +418,8 @@
                 
                 <h2 id="问题的起点"><a href="#问题的起点" class="headerlink" title="问题的起点"></a>问题的起点</h2><p>最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：<strong>SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？</strong></p>
 <p>答案是有相似的内核，但设计目标完全不同。本文以订单中心 <code>cloud-order</code> 项目中的实际代码为例，深入对比三种持久化机制。</p>
-<h2 id="订单中心的三种持久化机制"><a href="#订单中心的三种持久化机制" class="headerlink" title="订单中心的三种持久化机制"></a>订单中心的三种持久化机制</h2><figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs scss">┌──────────────────────────────────────────────────────────────────┐<br>│                        持久化金字塔                                │<br>│                                                                  │<br>│   SyncTask Job        RocketMQ Consumer        日志治理系统        │<br>│   (业务状态持久化)     (消息数据持久化)          (运维诊断持久化)    │<br>│                                                                  │<br>│   写 DB → 查 DB        Broker 写 CommitLog      本地内存聚合        │<br>│   → 状态机流转         → Consumer pull           → Redis pipeline  │<br>│   → 完成               → 处理 + <span class="hljs-attribute">offset</span> commit    → MySQL 落表      │<br>└──────────────────────────────────────────────────────────────────┘<br></code></pre></td></tr></table></figure>
+<h2 id="订单中心的三种持久化机制"><a href="#订单中心的三种持久化机制" class="headerlink" title="订单中心的三种持久化机制"></a>订单中心的三种持久化机制</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8d7ae975db6fee834901d1e514e71f.png#pic_center" srcset="/img/loading.gif" lazyload alt="三种持久化机制：SyncTask、RocketMQ、日志治理"></p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs scss">┌──────────────────────────────────────────────────────────────────┐<br>│                        持久化金字塔                                │<br>│                                                                  │<br>│   SyncTask Job        RocketMQ Consumer        日志治理系统        │<br>│   (业务状态持久化)     (消息数据持久化)          (运维诊断持久化)    │<br>│                                                                  │<br>│   写 DB → 查 DB        Broker 写 CommitLog      本地内存聚合        │<br>│   → 状态机流转         → Consumer pull           → Redis pipeline  │<br>│   → 完成               → 处理 + <span class="hljs-attribute">offset</span> commit    → MySQL 落表      │<br>└──────────────────────────────────────────────────────────────────┘<br></code></pre></td></tr></table></figure>
 
 <h3 id="SyncTask-Job-—-Transactional-Outbox-模式"><a href="#SyncTask-Job-—-Transactional-Outbox-模式" class="headerlink" title="SyncTask Job — Transactional Outbox 模式"></a>SyncTask Job — Transactional Outbox 模式</h3><p>SyncTask 是订单中心自研的统一同步任务调度引擎，负责订单数据到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS 等）的分发同步。它的核心思路非常朴素：</p>
 <p><strong>表结构</strong> <code>or_sync_task</code>：</p>
