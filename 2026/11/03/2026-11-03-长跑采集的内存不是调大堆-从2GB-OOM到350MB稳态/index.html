@@ -1,0 +1,1061 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。  一、EXIT_1 不是一种错误采集进程退出码 1，日志里只留">
+<meta property="og:type" content="article">
+<meta property="og:title" content="长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。  一、EXIT_1 不是一种错误采集进程退出码 1，日志里只留">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-03T12:14:37.000Z">
+<meta property="article:modified_time" content="2026-11-03T06:18:25.370Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="GC">
+<meta property="article:tag" content="JVM">
+<meta property="article:tag" content="内存">
+<meta property="article:tag" content="排障">
+<meta property="article:tag" content="长任务">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-03 20:14" pubdate>
+          2026年11月3日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          43 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>一条 1000 条的采集任务，跑到一百多条就开始 <code>BROWSER4_EXIT_1</code>。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。</p>
+</blockquote>
+<h2 id="一、EXIT-1-不是一种错误"><a href="#一、EXIT-1-不是一种错误" class="headerlink" title="一、EXIT_1 不是一种错误"></a>一、EXIT_1 不是一种错误</h2><p>采集进程退出码 1，日志里只留一行截断到 600 字符的 stderr。把所有 <code>EXIT_1</code> 都当成同一件事，会得到两个错误结论：要么以为全是风控，要么以为全是内存泄漏。</p>
+<p>实际至少要分成三类：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>典型特征</th>
+<th>处理方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>瞬时 eval &#x2F; CDP 抖动</td>
+<td><code>Ping timeout</code>、<code>WebSocket send timed out</code>、MCP 工具请求超时</td>
+<td>同会话延时 1 秒重试一次</td>
+</tr>
+<tr>
+<td>引擎级故障</td>
+<td><code>Java heap space</code>、<code>Internal Server Error</code>、MCP 端点未就绪</td>
+<td>重启 runtime 后重试</td>
+</tr>
+<tr>
+<td>会话&#x2F;导航失败</td>
+<td>页面把浏览器会话带崩、CLI 自身退出</td>
+<td>清理会话后重建</td>
+</tr>
+</tbody></table>
+<p>分类不是靠错误码本身，而是靠 <code>errorCode + step + detail</code> 三个字段一起判断。<code>step</code> 在流程里被显式标记成 <code>opening / goto / eval / capture</code>，因为同一个 <code>EXIT_1</code> 发生在导航阶段和发生在抽取阶段，含义完全不同。</p>
+<p>瞬时失败的重试只允许一次，而且必须留在同一个 runtime 里：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">if</span> (!transientRetried &amp;&amp; <span class="hljs-title function_">isTransientEvalFailure</span>(errorCode, errorDetail, step)) &#123;<br>  transientRetried = <span class="hljs-literal">true</span><br>  <span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">delay</span>(<span class="hljs-number">1_000</span>, taskId)<br>  <span class="hljs-keyword">continue</span> urlAttempt<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这一步的收益不是「重试成功」，而是<strong>不要把可恢复的抖动升级成 JVM 重启</strong>。一个 URL 重启一次 JVM，1000 条任务的成本会完全失控。</p>
+<p>分类做完，才轮到内存。</p>
+<h2 id="二、第一层：1-27-GB-是-byte"><a href="#二、第一层：1-27-GB-是-byte" class="headerlink" title="二、第一层：1.27 GB 是 byte[]"></a>二、第一层：1.27 GB 是 byte[]</h2><p>跑到 67 条时，JVM 堆已经 1.90 GB，G1 Old Gen 占 1.67 GB。heap dump 出来 1.87 GB，最大的对象类型是 <code>byte[]</code>：</p>
+<ul>
+<li><code>4,385,986</code> 个实例，合计约 <strong>1.27 GB</strong>；</li>
+<li><code>MergedDOMTreeNode</code> 只有 <code>26,231</code> 个实例，约 2.7 MB。</li>
+</ul>
+<p>直觉会往「是不是缓存了太多页面」「是不是图片没释放」上走，但 <code>byte[]</code> 的形态更像序列化后的 DOM 字符串和 JSON 缓冲区。这一步只能得出一个方向：<strong>内存在页面数据的表示层，不在业务对象层</strong>。</p>
+<p>还有一个容易误判的指标：<code>gc.overhead=0</code>。它只说明 GC 没有频繁触发，不代表堆没问题。事实上 G1 在 OOM 之前没有做过一次 full GC——这一点后面还会再出现。</p>
+<h2 id="三、第二层：GC-能回收，所以不是「强引用泄漏」"><a href="#三、第二层：GC-能回收，所以不是「强引用泄漏」" class="headerlink" title="三、第二层：GC 能回收，所以不是「强引用泄漏」"></a>三、第二层：GC 能回收，所以不是「强引用泄漏」</h2><p>下一步是手动触发一次 full GC，看堆能不能掉下来：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th align="right">GC 前</th>
+<th align="right">GC 后</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>跑 45 条</td>
+<td align="right">1.04 GB</td>
+<td align="right">490 MB</td>
+</tr>
+<tr>
+<td>任务取消后</td>
+<td align="right">1.43 GB</td>
+<td align="right">60 MB</td>
+</tr>
+<tr>
+<td>跑 130 条（不回收 session）</td>
+<td align="right">1.70 GB</td>
+<td align="right">1.09 GB</td>
+</tr>
+</tbody></table>
+<p>前两行说明：<strong>这些内存是垃圾，不是泄漏</strong>。任务取消、会话关闭之后，对象图断开，一次 full GC 就能回到 60 MB。</p>
+<p>但第三行暴露了另一半问题：130 条时 GC 后仍有 1.09 GB live，而且从 45 条的 490 MB 到 130 条的 1.09 GB，大约是 <strong>每条 +7 MB</strong> 的 live 增长。也就是说：</p>
+<ul>
+<li>垃圾可以回收；</li>
+<li>但回收之后，仍然有一部分对象是可达的；</li>
+<li>这部分对象不随 GC 消失，只有关闭会话才断开引用。</li>
+</ul>
+<p>这就是「内存泄漏」和「内存回收不及时」的分界。判断标准不是峰值，也不是单次 GC 能掉多少，而是<strong>每次 GC 后的 live 是否持续增长</strong>。</p>
+<h2 id="四、真正的垃圾源：goto-的-accessibility-snapshot"><a href="#四、真正的垃圾源：goto-的-accessibility-snapshot" class="headerlink" title="四、真正的垃圾源：goto 的 accessibility snapshot"></a>四、真正的垃圾源：<code>goto</code> 的 accessibility snapshot</h2><p>沿着「页面表示层」这个方向查，最后落到一个看起来无关痛痒的命令上。</p>
+<p>Browser4 的 CLI <code>goto</code> 在导航完成后，会自动构建一份完整的 accessibility tree，供后续的语义操作使用。对于 Amazon 这种页面，这棵树很大，而且 Browser4 会把它保留在会话里。每次导航都生成一棵，几轮之后就是：</p>
+<ul>
+<li><code>MergedDOMTreeNode</code> 2.8 万个；</li>
+<li><code>byte[]</code> 225 万个；</li>
+<li>20 条数据堆到 1.98 GB。</li>
+</ul>
+<p>改用 <code>eval location.href = url</code> 导航后，同样的 20 条：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th align="right"><code>goto</code></th>
+<th align="right"><code>eval location.href</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>堆</td>
+<td align="right">1.98 GB</td>
+<td align="right"><strong>240 MB</strong></td>
+</tr>
+<tr>
+<td><code>MergedDOMTreeNode</code></td>
+<td align="right">2.8 万</td>
+<td align="right"><strong>36</strong></td>
+</tr>
+<tr>
+<td><code>byte[]</code></td>
+<td align="right">225 万</td>
+<td align="right"><strong>19 万</strong></td>
+</tr>
+<tr>
+<td>成功</td>
+<td align="right">20&#x2F;20</td>
+<td align="right"><strong>20&#x2F;20</strong></td>
+</tr>
+</tbody></table>
+<p>导航本身没有变慢，也没有牺牲正确性。差异只是：<code>eval</code> 不会在命令结束后顺手构建并保留一份 accessibility tree。</p>
+<p>现在的导航流程变成三步：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">runCli</span>(taskId, [<span class="hljs-string">&#x27;-s&#x27;</span>, session, <span class="hljs-string">&#x27;eval&#x27;</span>, <span class="hljs-string">&#x27;location.href&#x27;</span>], <span class="hljs-number">15_000</span>)<br><span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">runCli</span>(taskId, [<span class="hljs-string">&#x27;-s&#x27;</span>, session, <span class="hljs-string">&#x27;eval&#x27;</span>, <span class="hljs-string">`location.href = <span class="hljs-subst">$&#123;<span class="hljs-built_in">JSON</span>.stringify(url)&#125;</span>`</span>])<br><span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">runCli</span>(taskId, [<span class="hljs-string">&#x27;-s&#x27;</span>, session, <span class="hljs-string">&#x27;wait&#x27;</span>, <span class="hljs-string">&#x27;--fn&#x27;</span>, <span class="hljs-string">`location.href !== <span class="hljs-subst">$&#123;<span class="hljs-built_in">JSON</span>.stringify(previousUrl)&#125;</span>`</span>, <span class="hljs-string">&#x27;--timeout&#x27;</span>, <span class="hljs-string">&#x27;15000&#x27;</span>])<br><span class="hljs-keyword">await</span> <span class="hljs-variable language_">this</span>.<span class="hljs-title function_">runCli</span>(taskId, [<span class="hljs-string">&#x27;-s&#x27;</span>, session, <span class="hljs-string">&#x27;wait&#x27;</span>, <span class="hljs-string">&#x27;--load&#x27;</span>, <span class="hljs-string">&#x27;load&#x27;</span>])<br></code></pre></td></tr></table></figure>
+
+<p>先读当前 URL 作为变化基准，再赋值导航，然后等 URL 变化、等 load 完成。这套组合比 <code>goto</code> 多几次 CLI 调用，但把最大的垃圾源直接拿掉了。</p>
+<p><strong>这是一个典型的「工具隐式副作用」问题。</strong> 命令的显式语义是「导航到某个地址」，隐式副作用是「构建一份完整的可访问性快照」。只看命令名，永远找不到它。</p>
+<h2 id="五、残余-live：session-close-才断开引用"><a href="#五、残余-live：session-close-才断开引用" class="headerlink" title="五、残余 live：session close 才断开引用"></a>五、残余 live：session close 才断开引用</h2><p>把 <code>goto</code> 换掉之后，垃圾少了，但 130 条时 GC 后仍有约 1.09 GB live。继续拆：</p>
+<table>
+<thead>
+<tr>
+<th>动作</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>不关 session，直接 GC（195 条时）</td>
+<td>只回落一部分，live 仍在</td>
+</tr>
+<tr>
+<td>先 <code>session close</code>，再 GC</td>
+<td>能压回 80–137 MB</td>
+</tr>
+</tbody></table>
+<p>原因不复杂：CDP 的对象图由会话持有，会话不关闭，Node 侧和 JVM 侧都还有引用链。<strong>GC 只能回收不可达对象，不能替你关闭会话。</strong></p>
+<p>于是加了 session 回收：每 50 条关闭并重建一次平台会话，再触发一次 GC。200 条验证：</p>
+<ul>
+<li>输入 198&#x2F;200 ok，2 条失败都是列表里本来就无效的链接；</li>
+<li>0 OOM、0 次 JVM 重启；</li>
+<li>稳定阶段 PID 不变；</li>
+<li>堆在回收后回落到 258–363 MB。</li>
+</ul>
+<p>但这里又撞上一个 G1 的行为：<strong>占用在 55–60% 时，G1 不会主动做 full GC</strong>。所以「每 50 条回收 session」只完成了一半，另一半必须由外部显式触发 <code>System.gc()</code>。应用进程没法直接让另一个 JVM 执行 GC，<code>jcmd</code> 是诊断工具，不能当产品依赖。</p>
+<h2 id="六、一个-2-KB-的-Java-agent"><a href="#六、一个-2-KB-的-Java-agent" class="headerlink" title="六、一个 2 KB 的 Java agent"></a>六、一个 2 KB 的 Java agent</h2><p>解决方案是一个文件信号 agent：</p>
+<ul>
+<li>应用在关闭并重建会话后，往 <code>&lt;userData&gt;/browser4/gc.request</code> 写一个时间戳；</li>
+<li>JVM 启动时挂上 <code>-javaagent:.../GcAgent.jar -Dbrowser4.gc.request=&lt;该文件&gt;</code>；</li>
+<li>agent 起一个 daemon 线程，每 250 ms 轮询文件，存在就删除并调用一次 <code>System.gc()</code>；</li>
+<li>jar 不存在时，应用回退到原来的「每 50 条重启 runtime」。</li>
+</ul>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>  Thread.sleep(<span class="hljs-number">250</span>)<br>  <span class="hljs-keyword">if</span> (!request.exists()) <span class="hljs-keyword">continue</span><br>  <span class="hljs-title function_">if</span> <span class="hljs-params">(!request.delete()</span>) <span class="hljs-keyword">continue</span><br>  System.gc()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这个设计有几个刻意的取舍：</p>
+<ol>
+<li><strong>用文件信号，不用 RPC。</strong> 应用和 JVM 之间已经有一个 CLI 通道，但为了触发 GC 再走一次 MCP 没有意义；文件是最小侵入的跨进程信号。</li>
+<li><strong>agent 可以缺失。</strong> jar 没打进包，应用退回重启 runtime，功能不坏，只是更贵。</li>
+<li><strong>只在 session 回收后请求。</strong> 注释写得很明确：<code>Call only after the platform session has been closed</code>。会话没关，GC 收不掉那部分 live，触发也白触发。</li>
+<li><strong>agent 不写业务日志。</strong> 它的 stderr 只进 runtime 的排空缓冲，验证以 <code>jstat FGC</code>、PID 和堆为准，避免把诊断信息混进应用日志。</li>
+</ol>
+<p>验证结果：</p>
+<table>
+<thead>
+<tr>
+<th>跑次</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>200 条（无外部 <code>jcmd</code>）</td>
+<td>198 ok &#x2F; 2 failed，0 OOM；agent 在 50&#x2F;100&#x2F;150&#x2F;200 各触发一次 full GC，PID 不变，堆 304–368 MB</td>
+</tr>
+<tr>
+<td>1000 条中途（5 h 14 min）</td>
+<td>输入 839&#x2F;1000 ok、0 failed、0 OOM、0 次 infra 重启；FGC 16，PID 全程不变，检查点堆 353 MB</td>
+</tr>
+</tbody></table>
+<p>1000 条这一跑没有跑完，剩下 161 条不在结论里。但「跑到 839 条、PID 不变、0 次重启」已经足够说明内存形态是稳态，不是缓慢泄漏。</p>
+<h2 id="七、另一条内存链：stdout-管道"><a href="#七、另一条内存链：stdout-管道" class="headerlink" title="七、另一条内存链：stdout 管道"></a>七、另一条内存链：stdout 管道</h2><p>堆之外还有一条更隐蔽的内存路径。</p>
+<p>Browser4 的 JVM 每建立一个 session，会往 stdout 写约 <strong>94 KiB</strong>。Windows 的匿名管道缓冲大约是 <strong>64 KiB</strong>。如果父进程只接了 stderr、没有持续排空 stdout，管道写满后 JVM 的 <code>write()</code> 就会阻塞，所有 MCP 调用随之超时，CLI 退出 1，应用重启 JVM，循环往复。</p>
+<p>当时的症状是「每 2 条崩一次」，墙钟被拉到正常值的 8.6 倍。修法不是调大缓冲，而是把 stdout 和 stderr 都接上并持续排空。</p>
+<p>这条和堆没有关系，但它说明一件事：<strong>进程间缓冲也是内存，而且它的故障形态和 OOM 很像</strong>——都是子进程卡住、调用超时、退出码 1。排查时如果只盯着 heap dump，会漏掉这一类。</p>
+<h2 id="八、数据搬运：别让整页-HTML-走-stdout"><a href="#八、数据搬运：别让整页-HTML-走-stdout" class="headerlink" title="八、数据搬运：别让整页 HTML 走 stdout"></a>八、数据搬运：别让整页 HTML 走 stdout</h2><p>还有一处不是「泄漏」、但会抬高峰值的地方：页面快照的落盘方式。</p>
+<p>原来的做法是让 JVM 把整页 <code>outerHTML</code> 通过 eval 返回到 stdout，Node 再解析 JSON、写文件。平均每次 stdout <strong>2,149,612 B</strong>。这意味着整页 DOM 要在 JVM 里序列化一次、在管道里传一次、在 Node 里再解析一次。</p>
+<p>改成 <code>htmlsnapshot export --file</code> 之后，JVM 直接把文档写到 <code>page.html.tmp</code>，Node 读入后 gzip 成 <code>page.html</code>，再删临时文件。stdout 从 2.15 MB 降到 <strong>135 B</strong>，命令耗时只增加约 <strong>13 ms</strong>（496 ms → 509 ms）。</p>
+<p>旧的 eval 路径保留为兜底，只在 export 不可用时触发。整体仍然是 best-effort：落盘失败不改变抽取结果。</p>
+<h2 id="九、边界"><a href="#九、边界" class="headerlink" title="九、边界"></a>九、边界</h2><ul>
+<li><strong>不是所有 <code>EXIT_1</code> 都是内存。</strong> 先分类，再归因。把瞬时抖动当泄漏去调堆，只会让问题更晚出现。</li>
+<li><strong>调大堆不是方案。</strong> 当前 <code>-Xmx2048m</code> 大约是观测峰值的 2 倍；调到 4 GB 只是把 OOM 推迟到更后面，垃圾源还在。</li>
+<li><strong>平台默认值不同。</strong> Amazon 默认每 50 条回收 session，eBay 默认不回收；这是页面规模和行为差异下的工程取值，不是通用最优解。</li>
+<li><strong>G1 的行为随 JDK 版本变化。</strong> 「55–60% 不主动 full GC」是这次观测到的行为，换版本要重新验证。</li>
+<li><strong>1000 条只跑到 839 条</strong>，中途结论不能当成完整验收。</li>
+<li><strong>外部 <code>jcmd</code> 只是诊断手段</strong>，产品路径依赖的是随包 agent；agent 缺失时回退重启 runtime。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这次排查真正有用的不是「找到一个参数」，而是三层递进：</p>
+<ol>
+<li><strong>先分类</strong>：<code>EXIT_1</code> 混着瞬时抖动、引擎故障和导航失败，混在一起看就会得出错误结论；</li>
+<li><strong>再归因到具体命令</strong>：最大的垃圾源不是业务代码，而是 <code>goto</code> 顺手构建的 accessibility tree；</li>
+<li><strong>最后处理可达性</strong>：GC 能回收垃圾，但收不掉会话持有的对象图；关闭会话 + 外部显式 GC，才能把 live 压住。</li>
+</ol>
+<p>内存问题的终点不是「堆设多大」，而是<strong>你知不知道自己每一层内存是谁持有的、什么时候会断开</strong>。</p>
+<hr>
+<p><em>发表于 2026 年 11 月 · 标签: Electron, 内存, JVM, GC, 长任务, 排障</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="category-chain-item">性能优化</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/JVM/" class="print-no-link">#JVM</a>
+      
+        <a href="/tags/GC/" class="print-no-link">#GC</a>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E9%95%BF%E4%BB%BB%E5%8A%A1/" class="print-no-link">#长任务</a>
+      
+        <a href="/tags/%E6%8E%92%E9%9A%9C/" class="print-no-link">#排障</a>
+      
+        <a href="/tags/%E5%86%85%E5%AD%98/" class="print-no-link">#内存</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态</div>
+      <div>https://aster-xu-lab.github.io/2026/11/03/2026-11-03-长跑采集的内存不是调大堆-从2GB-OOM到350MB稳态/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月3日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/11/03/2026-11-03-%E9%A2%84%E5%A1%AB%E4%B8%8D%E6%98%AF%E5%A1%AB%E7%A9%BA%E9%A2%98-%E5%A4%9A%E6%BA%90%E5%90%88%E5%B9%B6%E6%9D%A5%E6%BA%90%E6%BA%AF%E6%BA%90%E4%B8%8E%E5%8F%AF%E6%92%A4%E9%94%80/" title="预填不是填空题：多源合并、来源溯源与可撤销">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">预填不是填空题：多源合并、来源溯源与可撤销</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/10/22/2026-10-21-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E9%80%89%E5%9E%8B-%E6%B2%A1%E6%9C%89%E9%9B%B6%E4%BB%A3%E4%BB%B7%E7%9A%84%E6%96%B9%E6%A1%88/" title="跨平台选型：没有零代价的方案，只有扛得住的代价">
+                        <span class="hidden-mobile">跨平台选型：没有零代价的方案，只有扛得住的代价</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

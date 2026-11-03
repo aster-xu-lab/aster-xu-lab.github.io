@@ -1,0 +1,971 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="失败率低不代表知道为什么失败。一条失败如果只留下一个错误码，下一次只能重新猜。这篇讲三条失败路径怎么设计：采集页的失败快照、错误码的分层、上传链路的阶段化错误。核心不是「多打日志」，而是让失败在事后仍然可复核、在代码里可分支、在界面上不骗人。  一、先分清「谁的错」同一条链接失败，可能是四种完全不同的事情：    类型 典型原因 恢复动作 成本    瞬时抖动 CDP 超时、WebSocket">
+<meta property="og:type" content="article">
+<meta property="og:title" content="失败要留下证据：采集与上传的失败路径设计">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E5%A4%B1%E8%B4%A5%E8%A6%81%E7%95%99%E4%B8%8B%E8%AF%81%E6%8D%AE-%E9%87%87%E9%9B%86%E4%B8%8E%E4%B8%8A%E4%BC%A0%E7%9A%84%E5%A4%B1%E8%B4%A5%E8%B7%AF%E5%BE%84%E8%AE%BE%E8%AE%A1/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="失败率低不代表知道为什么失败。一条失败如果只留下一个错误码，下一次只能重新猜。这篇讲三条失败路径怎么设计：采集页的失败快照、错误码的分层、上传链路的阶段化错误。核心不是「多打日志」，而是让失败在事后仍然可复核、在代码里可分支、在界面上不骗人。  一、先分清「谁的错」同一条链接失败，可能是四种完全不同的事情：    类型 典型原因 恢复动作 成本    瞬时抖动 CDP 超时、WebSocket">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-03T13:23:08.000Z">
+<meta property="article:modified_time" content="2026-11-03T06:20:25.942Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="发布">
+<meta property="article:tag" content="可观测性">
+<meta property="article:tag" content="失败处理">
+<meta property="article:tag" content="诊断">
+<meta property="article:tag" content="采集">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>失败要留下证据：采集与上传的失败路径设计 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="失败要留下证据：采集与上传的失败路径设计"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-03 21:23" pubdate>
+          2026年11月3日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          30 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">失败要留下证据：采集与上传的失败路径设计</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>失败率低不代表知道为什么失败。一条失败如果只留下一个错误码，下一次只能重新猜。这篇讲三条失败路径怎么设计：采集页的失败快照、错误码的分层、上传链路的阶段化错误。核心不是「多打日志」，而是让失败在事后仍然可复核、在代码里可分支、在界面上不骗人。</p>
+</blockquote>
+<h2 id="一、先分清「谁的错」"><a href="#一、先分清「谁的错」" class="headerlink" title="一、先分清「谁的错」"></a>一、先分清「谁的错」</h2><p>同一条链接失败，可能是四种完全不同的事情：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>典型原因</th>
+<th>恢复动作</th>
+<th>成本</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>瞬时抖动</td>
+<td>CDP 超时、WebSocket 断开、MCP 端点未就绪</td>
+<td>同会话延时重试一次</td>
+<td>约 1 秒</td>
+</tr>
+<tr>
+<td>会话&#x2F;导航失败</td>
+<td>页面把会话带崩、CLI 退出</td>
+<td>重载页面，必要时重建 session</td>
+<td>数秒到数十秒</td>
+</tr>
+<tr>
+<td>页面级拦截</td>
+<td>检查页、错误页、占位页、目录页</td>
+<td>等待、重载、判失败，不硬采</td>
+<td>取决于页面</td>
+</tr>
+<tr>
+<td>持久失败</td>
+<td>连续失败达到阈值</td>
+<td>暂停任务，提示用户</td>
+<td>分钟级</td>
+</tr>
+</tbody></table>
+<p>这四类如果混成一个 <code>EXIT_1</code>，所有恢复策略都会失效：该重试的被重启 JVM，该重建会话的被无限等待，该放弃的被反复重试。</p>
+<p>所以第一件事不是加日志，而是<strong>把失败分类写进代码分支</strong>。分类的输入至少要有三个字段：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">errorCode + step + detail<br></code></pre></td></tr></table></figure>
+
+<p><code>step</code> 在流程里显式标记为 <code>opening / goto / eval / capture</code>。同样是 <code>BROWSER4_EXIT_1</code>，发生在 <code>eval</code> 阶段和发生在 <code>opening</code> 阶段，含义完全不同。</p>
+<h2 id="二、采集失败也要留下证据"><a href="#二、采集失败也要留下证据" class="headerlink" title="二、采集失败也要留下证据"></a>二、采集失败也要留下证据</h2><p>分类之后，还要能回答「当时页面到底长什么样」。</p>
+<p>失败页会被单独落盘到一个目录：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs text">captures/&lt;platform&gt;__&lt;id&gt;__failed__&lt;taskId&gt;/<br>  page.html          # gzip 后的 hydrated DOM<br>  meta.json          # 请求 URL、最终 URL、时间、适配器版本<br>  raw-extract.json   # 抽取脚本返回的原始结果<br>  diagnostic.json    # 分类结果 + 随后观察到的页面状态<br></code></pre></td></tr></table></figure>
+
+<p>几个设计细节值得单独说：</p>
+<p><strong>先写分类，再补观察。</strong> <code>diagnostic.json</code> 先落抽取时的分类结果；随后用一次 15 秒预算的 eval 读取 <code>href / title / readyState / textSnippet</code>，成功才覆盖成带 <code>observed</code> 的版本。这样即使观察 eval 也失败，至少保留了「为什么判失败」这一层。</p>
+<p><strong>失败快照不覆盖成功快照。</strong> 目录名多了 <code>__failed__&lt;taskId&gt;</code> 后缀，和成功目录分开。回归测试里专门断言：先写成功快照，再写失败快照，成功目录的内容一个字节都不能变。</p>
+<p><strong>保留最近一次失败，不是全量历史。</strong> 失败诊断是为了排障，不是为了做归档。每次失败覆盖同一目录即可，避免长任务把磁盘写满。</p>
+<p><strong>落盘是 best-effort。</strong> 磁盘满、权限不足、目录不可写，都不能改变原来的采集错误。诊断是附加证据，不是主流程的一部分。</p>
+<p>这套东西的价值在事后：当用户说「这条链接明明能打开」，你可以把当时保存的 DOM、标题、正文摘要和分类结果一起翻出来，而不是只能说「日志里是 ROBOT_CHECK」。</p>
+<h2 id="三、页面级恢复：把「可等待」和「不可等待」分开"><a href="#三、页面级恢复：把「可等待」和「不可等待」分开" class="headerlink" title="三、页面级恢复：把「可等待」和「不可等待」分开"></a>三、页面级恢复：把「可等待」和「不可等待」分开</h2><p>页面级拦截最容易被处理成两种极端：要么立刻判失败，要么无限等待。实际需要按页面类型分开。</p>
+<p><strong>可等待的检查页。</strong> 有些页面不是最终拦截，而是平台在后台做一次浏览器检查，几秒后会自动跳回商品页。处理方式是同会话每 2 秒重新提取一次，最多 30 次，约 60 秒预算；一旦页面变回商品页，等文档加载完成再提取。等待预算用尽仍不恢复，才按失败处理。</p>
+<p><strong>可重载的错误页。</strong> 有些页面是临时错误页，重新导航可能恢复。处理方式是同会话等待约 2.5 秒后重载，最多 2 次；仍失败则重建该平台会话，再抓本条一次。重建会话很贵，所以放在最后。</p>
+<p><strong>不可采的占位页。</strong> 平台对不存在的商品可能返回一个「Discover」壳页，标题固定、没有商品数据。这种页面的正确动作不是重试，而是识别出来、抛 <code>REMOVED</code>、不物化商品。硬采只会产生一条错误数据。</p>
+<p><strong>需要人工的验证码。</strong> 只有真正的验证码表单才进入人工处理；启发式的「检查您的浏览器」按普通失败处理，交给连续失败熔断。这个边界很重要：把启发式拦截当验证码，会让无人值守任务卡死；把真验证码当普通失败，会让用户永远等不到提示。</p>
+<p>四种页面对应四种动作，判断依据是 URL 路径、标题、是否存在验证码表单，而不是「页面看起来不对」。</p>
+<h2 id="四、错误码要指向根因"><a href="#四、错误码要指向根因" class="headerlink" title="四、错误码要指向根因"></a>四、错误码要指向根因</h2><p>错误码不是给日志看的，是给人和自动化分支用的。一个好的错误码至少要满足两个条件：</p>
+<ol>
+<li><strong>能区分不同的处理动作</strong>；</li>
+<li><strong>能指向根因，而不是现象</strong>。</li>
+</ol>
+<p>举两个真实例子：</p>
+<ul>
+<li>商品链接被平台 302 到目录页，旧错误码是 <code>PRODUCT_ID_MISSING</code>（「未识别到平台商品 ID」），看起来像解析器坏了；新错误码是 <code>PRODUCT_CATALOG_REDIRECT</code>（「链接被转到商品目录页，可能已下架」），直接说明是页面变了。</li>
+<li>检查页被单独报成 <code>EBAY_CHALLENGE_PAGE</code>，不再落到 <code>PRODUCT_ID_MISSING</code>。否则每次风控都像解析失败，排查方向完全错。</li>
+</ul>
+<p>错误码还要带阶段。<code>BROWSER4_EXIT_1:opening</code> 和 <code>BROWSER4_EXIT_1:eval</code> 应该走不同的恢复路径；只保留后者，等于把导航问题当成抽取问题。</p>
+<p>一个反例是「所有失败都写成同一个通用错误」。它的短期成本最低，长期成本最高：每次排障都要重新从日志里拼上下文，而且没法写自动分支。</p>
+<h2 id="五、上传链路：阶段化错误"><a href="#五、上传链路：阶段化错误" class="headerlink" title="五、上传链路：阶段化错误"></a>五、上传链路：阶段化错误</h2><p>采集的失败在页面，上传的失败在链路。上传至少有两个阶段：</p>
+<ol>
+<li><strong>上传图片</strong>；</li>
+<li><strong>提交草稿（batchAdd）</strong>。</li>
+</ol>
+<p>这两个阶段失败的原因、可恢复性和用户动作完全不同，所以错误要带阶段前缀：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">上传图片时出错：HTTP 413：图片过大，上传被拒绝……<br>提交草稿时出错：……<br></code></pre></td></tr></table></figure>
+
+<p>实现上有几个细节：</p>
+<ul>
+<li><strong>非 JSON 响应单独识别。</strong> 网关返回 HTML 错误页、空响应、数组，都不能当成业务信封解析，否则会抛出一个没有信息的 TypeError。统一报 <code>OPENAPI_BAD_RESPONSE:&lt;status&gt;</code>。</li>
+<li><strong>路由不存在单独识别。</strong> 非 JSON 的 404 报 <code>OPENAPI_ENDPOINT_NOT_FOUND</code>，和「业务上找不到资源」区分开。</li>
+<li><strong>上传结果数量要核对。</strong> 上传接口返回的 URL 数量必须和文件数量一致，不一致报 <code>OPENAPI_UPLOAD_URL_MISMATCH</code>，不能带着错位的图片去提交草稿。</li>
+<li><strong>本地&#x2F;配置错误不加阶段前缀。</strong> 参数校验、权限、配置缺失不是「上传失败」，加前缀反而误导。代码里用一个 <code>STAGE_SKIP_CODES</code> 集合把这些码排除。</li>
+<li><strong>结果未知要明说。</strong> 超时、传输中断、坏响应时，请求可能已经在服务端生效。这时不能显示「提交失败」，而要提示「结果未知，请先核对草稿箱」。把不确定说成失败，会诱导用户重复提交。</li>
+</ul>
+<h2 id="六、进度也要走对通道"><a href="#六、进度也要走对通道" class="headerlink" title="六、进度也要走对通道"></a>六、进度也要走对通道</h2><p>发布脚本上传几百 MB 的安装包，最怕的是「看起来卡住了」。</p>
+<p>原来的实现把 curl 的输出和 JSON body 混在 stdout 里，脚本还要从中解析结果。后来把通道分开：</p>
+<ul>
+<li><strong>stdout 只留结构化结果</strong>，供上层解析；</li>
+<li><strong>stderr 走进度和失败详情</strong>；</li>
+<li>TTY 环境用 curl 的进度条；</li>
+<li>非 TTY（CI）每 30 秒打一次心跳，包含已用时间；</li>
+<li>失败时把 curl 退出码、信号、服务端响应 body 都写到 stderr。</li>
+</ul>
+<p>这不是「日志更好看」，而是让自动化能区分「还在传」和「已经失败」。没有心跳的长上传，在 CI 里和挂死没有区别。</p>
+<h2 id="七、失败预算：集中比分散更有信息量"><a href="#七、失败预算：集中比分散更有信息量" class="headerlink" title="七、失败预算：集中比分散更有信息量"></a>七、失败预算：集中比分散更有信息量</h2><p>一次 1000 条的跑次，失败 7 条，7 条全部来自同一个 302 重定向。这个信息比「失败率 0.7%」有用得多：修一处就能显著改善。</p>
+<p>反过来，失败率 0.3% 但分散在 20 个原因，每个都不值得单独修。<strong>失败是否集中在单一原因，比失败率本身更有信息量。</strong></p>
+<p>这也是失败诊断落盘的意义：没有证据，你只能看到失败率；有了证据，才能算出失败预算花在哪。</p>
+<h2 id="八、边界"><a href="#八、边界" class="headerlink" title="八、边界"></a>八、边界</h2><ul>
+<li><strong>真验证码无法按需复现。</strong> 人工处理路径只能靠真实撞到，回归覆盖的是分类逻辑和等待上限，不是验证码本身。</li>
+<li><strong>诊断落盘是 best-effort。</strong> 磁盘满、权限错误时不改变原采集错误，但也就没有证据。</li>
+<li><strong>失败快照只保留最近一次。</strong> 同一商品多次失败会覆盖，不适合做长期趋势分析。</li>
+<li><strong>不是所有失败都能自动恢复。</strong> 有些页面就是不可采，正确动作是判失败并让用户处理，而不是无限重试。</li>
+<li><strong>错误码分类依赖页面特征。</strong> 平台改版后，标题&#x2F;路径判断会失效，需要跟着适配器版本更新。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>失败路径的设计，产物不是「更多日志」，而是三样东西：</p>
+<ol>
+<li><strong>可复核的证据</strong>：失败时页面长什么样，分类依据是什么；</li>
+<li><strong>可分支的错误码</strong>：人和自动化都能据此选择重试、重建、等待还是放弃；</li>
+<li><strong>不骗人的文案</strong>：失败就说失败，未知就说未知，不要让用户把「可能成功」当成「已经失败」再提交一次。</li>
+</ol>
+<p>失败率是结果，失败证据才是下一次修复的输入。</p>
+<hr>
+<p><em>发表于 2026 年 11 月 · 标签: 可观测性, 失败处理, 诊断, 采集, 发布</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B7%A5%E7%A8%8B%E6%96%B9%E6%B3%95%E8%AE%BA/" class="category-chain-item">工程方法论</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/" class="print-no-link">#可观测性</a>
+      
+        <a href="/tags/%E5%8F%91%E5%B8%83/" class="print-no-link">#发布</a>
+      
+        <a href="/tags/%E5%A4%B1%E8%B4%A5%E5%A4%84%E7%90%86/" class="print-no-link">#失败处理</a>
+      
+        <a href="/tags/%E8%AF%8A%E6%96%AD/" class="print-no-link">#诊断</a>
+      
+        <a href="/tags/%E9%87%87%E9%9B%86/" class="print-no-link">#采集</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>失败要留下证据：采集与上传的失败路径设计</div>
+      <div>https://aster-xu-lab.github.io/2026/11/03/2026-11-03-失败要留下证据-采集与上传的失败路径设计/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月3日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/11/03/2026-11-03-%E4%B8%80%E5%A5%97%E8%B5%84%E4%BA%A7%E4%B8%89%E4%B8%AA%E5%AE%BF%E4%B8%BB-Agent%E8%A7%84%E5%88%99%E7%9A%84%E5%8D%95%E4%B8%80%E6%BA%90%E4%B8%8E%E7%94%9F%E6%88%90%E5%85%A5%E5%8F%A3/" title="一套资产，三个宿主：Agent 规则的单一源与生成入口">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">一套资产，三个宿主：Agent 规则的单一源与生成入口</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/11/03/2026-11-03-%E9%A2%84%E5%A1%AB%E4%B8%8D%E6%98%AF%E5%A1%AB%E7%A9%BA%E9%A2%98-%E5%A4%9A%E6%BA%90%E5%90%88%E5%B9%B6%E6%9D%A5%E6%BA%90%E6%BA%AF%E6%BA%90%E4%B8%8E%E5%8F%AF%E6%92%A4%E9%94%80/" title="预填不是填空题：多源合并、来源溯源与可撤销">
+                        <span class="hidden-mobile">预填不是填空题：多源合并、来源溯源与可撤销</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

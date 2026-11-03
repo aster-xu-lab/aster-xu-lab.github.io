@@ -1,0 +1,1053 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="外部页面上的一个字段，往往不是一个值，而是多个来源、多个标签、多种格式的号码。把它们塞进一个输入框，用户看到的是拼接后的字符串，系统丢掉的却是「这个值从哪来」。更麻烦的是删除：用户删掉一个号，下一次重新识别又把它带回来。这篇讲一条预填管线怎么同时解决合并、溯源和撤销。  一、单值字段装不下多源假设目标字段是「零件号」。来源页面上可能同时出现：  OE Part Number Manufactur">
+<meta property="og:type" content="article">
+<meta property="og:title" content="预填不是填空题：多源合并、来源溯源与可撤销">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E9%A2%84%E5%A1%AB%E4%B8%8D%E6%98%AF%E5%A1%AB%E7%A9%BA%E9%A2%98-%E5%A4%9A%E6%BA%90%E5%90%88%E5%B9%B6%E6%9D%A5%E6%BA%90%E6%BA%AF%E6%BA%90%E4%B8%8E%E5%8F%AF%E6%92%A4%E9%94%80/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="外部页面上的一个字段，往往不是一个值，而是多个来源、多个标签、多种格式的号码。把它们塞进一个输入框，用户看到的是拼接后的字符串，系统丢掉的却是「这个值从哪来」。更麻烦的是删除：用户删掉一个号，下一次重新识别又把它带回来。这篇讲一条预填管线怎么同时解决合并、溯源和撤销。  一、单值字段装不下多源假设目标字段是「零件号」。来源页面上可能同时出现：  OE Part Number Manufactur">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-03T12:47:52.000Z">
+<meta property="article:modified_time" content="2026-11-03T06:19:51.020Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="可撤销">
+<meta property="article:tag" content="工程实践">
+<meta property="article:tag" content="数据建模">
+<meta property="article:tag" content="规则版本">
+<meta property="article:tag" content="预填">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>预填不是填空题：多源合并、来源溯源与可撤销 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-list"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-list"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="预填不是填空题：多源合并、来源溯源与可撤销"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-03 20:47" pubdate>
+          2026年11月3日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          46 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">预填不是填空题：多源合并、来源溯源与可撤销</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>外部页面上的一个字段，往往不是一个值，而是多个来源、多个标签、多种格式的号码。把它们塞进一个输入框，用户看到的是拼接后的字符串，系统丢掉的却是「这个值从哪来」。更麻烦的是删除：用户删掉一个号，下一次重新识别又把它带回来。这篇讲一条预填管线怎么同时解决合并、溯源和撤销。</p>
+</blockquote>
+<h2 id="一、单值字段装不下多源"><a href="#一、单值字段装不下多源" class="headerlink" title="一、单值字段装不下多源"></a>一、单值字段装不下多源</h2><p>假设目标字段是「零件号」。来源页面上可能同时出现：</p>
+<ul>
+<li><code>OE Part Number</code></li>
+<li><code>Manufacturer Part Number</code></li>
+<li><code>OEM Equivalent Part Number</code></li>
+<li>换行或逗号分隔的多值</li>
+<li>同一组里带空格、连字符、大小写差异的重复号</li>
+</ul>
+<p>如果目标字段只有一个字符串，最直接的做法是全部拼起来。但这会带来三个问题：</p>
+<ol>
+<li><strong>来源丢失。</strong> 用户看到 <code>12345;67890</code>，不知道哪个来自哪个标签。</li>
+<li><strong>删除粒度错误。</strong> 用户想删一个号，实际删掉的是整个字段。</li>
+<li><strong>重跑复活。</strong> 预填是派生数据；下一次重新识别或模板重建，被删的号又回来了。</li>
+</ol>
+<p>这三个问题不是 UI 问题，是数据模型问题。解决方式是把「一个值」改成「一组来源」。</p>
+<h2 id="二、分组模型"><a href="#二、分组模型" class="headerlink" title="二、分组模型"></a>二、分组模型</h2><p>复核对象里，这类字段被建模成组：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">export</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">ReviewOeGroup</span> &#123;<br>  <span class="hljs-attr">key</span>: <span class="hljs-built_in">string</span><br>  <span class="hljs-attr">label</span>: <span class="hljs-built_in">string</span><br>  <span class="hljs-attr">numbers</span>: <span class="hljs-built_in">string</span>[]<br>  <span class="hljs-attr">origin</span>: <span class="hljs-string">&#x27;source&#x27;</span> | <span class="hljs-string">&#x27;manual&#x27;</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>四个字段各有职责：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>作用</th>
+<th>注意点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>key</code></td>
+<td>稳定身份，用于去重、删除记录、合并</td>
+<td>不能直接用展示文本，否则标签一变就找不到原组</td>
+</tr>
+<tr>
+<td><code>label</code></td>
+<td>展示给用户看的来源名</td>
+<td>可以包含原始页面的写法</td>
+</tr>
+<tr>
+<td><code>numbers</code></td>
+<td>已归一化的号码</td>
+<td>组内去重</td>
+</tr>
+<tr>
+<td><code>origin</code></td>
+<td>来源组还是手工组</td>
+<td>删除语义不同，见后文</td>
+</tr>
+</tbody></table>
+<p>合并规则写得很克制：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> mergeOeGroups = (<span class="hljs-attr">groups</span>: <span class="hljs-title class_">ReviewOeGroup</span>[]): <span class="hljs-function"><span class="hljs-params">string</span> =&gt;</span><br>  <span class="hljs-title function_">dedupeOeNumbers</span>(groups.<span class="hljs-title function_">flatMap</span>(<span class="hljs-function">(<span class="hljs-params">group</span>) =&gt;</span> group.<span class="hljs-property">numbers</span>)).<span class="hljs-title function_">join</span>(<span class="hljs-string">&#x27;;&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>组顺序决定拼接顺序，组内保持页面顺序，跨组首次出现优先。最终目标字段仍然是单个 <code>;</code> 分隔的字符串，但<strong>这个字符串是派生结果，不是真相</strong>。真相是组。</p>
+<p>归一化在入组之前完成：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ts">value<br>  .<span class="hljs-title function_">normalize</span>(<span class="hljs-string">&#x27;NFKC&#x27;</span>)<br>  .<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/[\s\-_/.]+/g</span>, <span class="hljs-string">&#x27;&#x27;</span>)<br>  .<span class="hljs-title function_">toUpperCase</span>()<br></code></pre></td></tr></table></figure>
+
+<p>NFKC 处理全角&#x2F;兼容字符，去分隔符处理空格、连字符、下划线、斜杠、点，最后统一大写。<code>does not apply</code>、<code>unknown</code> 这类占位值在拆分阶段就被丢掉了。</p>
+<p><strong>先归一化再比较</strong>，是为了让「看起来一样」的号真正相等。否则 <code>ABC-123</code>、<code>abc 123</code>、<code>ＡＢＣ１２３</code> 会被当成三个不同的号，组内去重失效。</p>
+<h2 id="三、来源标签是匹配键，不是展示文本"><a href="#三、来源标签是匹配键，不是展示文本" class="headerlink" title="三、来源标签是匹配键，不是展示文本"></a>三、来源标签是匹配键，不是展示文本</h2><p>分组的前提是「哪个来源标签属于哪个组」。这里用的是一个精确匹配键：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> oeLabelKey = (<span class="hljs-attr">value</span>: <span class="hljs-built_in">string</span>): <span class="hljs-function"><span class="hljs-params">string</span> =&gt;</span><br>  value<br>    .<span class="hljs-title function_">normalize</span>(<span class="hljs-string">&#x27;NFKC&#x27;</span>)<br>    .<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/&amp;amp;/gi</span>, <span class="hljs-string">&#x27;&amp;&#x27;</span>)<br>    .<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/&amp;lt;/gi</span>, <span class="hljs-string">&#x27;&lt;&#x27;</span>)<br>    .<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/&amp;gt;/gi</span>, <span class="hljs-string">&#x27;&gt;&#x27;</span>)<br>    .<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/&amp;quot;/gi</span>, <span class="hljs-string">&#x27;&quot;&#x27;</span>)<br>    .<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/&amp;#39;/gi</span>, <span class="hljs-string">&quot;&#x27;&quot;</span>)<br>    .<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/&amp;nbsp;/gi</span>, <span class="hljs-string">&#x27; &#x27;</span>)<br>    .<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/\s+/g</span>, <span class="hljs-string">&#x27; &#x27;</span>)<br>    .<span class="hljs-title function_">trim</span>()<br>    .<span class="hljs-title function_">toLowerCase</span>()<br>    .<span class="hljs-title function_">replace</span>(<span class="hljs-regexp">/:+\s*$/</span>, <span class="hljs-string">&#x27;&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>注意其中六行 HTML entity 解码。这不是防御性编程，是被真实页面逼出来的。</p>
+<p>来源页面的标签可能以转义文本形式出现，例如：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">OE&amp;amp;OEM Part Number<br></code></pre></td></tr></table></figure>
+
+<p>NFKC 会做 Unicode 归一化，但<strong>不会解码 HTML 实体</strong>。如果匹配键里留着 <code>&amp;amp;</code>，它和规则表里的 <code>OE&amp;OEM Part Number</code> 永远不相等，于是整组号码被静默漏掉。表现不是报错，而是「这个来源没有预填」，很容易被当成页面没有这个字段。</p>
+<p>这个坑的教训不是「记得解码实体」，而是：<strong>比较键必须和规则表处在同一个坐标系里</strong>。只要有一层序列化&#x2F;转义没对齐，精确匹配就会退化成永不命中。</p>
+<h2 id="四、撤销：删除必须成为下一次派生的输入"><a href="#四、撤销：删除必须成为下一次派生的输入" class="headerlink" title="四、撤销：删除必须成为下一次派生的输入"></a>四、撤销：删除必须成为下一次派生的输入</h2><p>用户删掉一个来源号码之后，系统要记住「这个号被删过」。如果只修改当前的 <code>numbers</code>，下一次重新识别会重新跑规则，被删的号又回来。</p>
+<p>所以删除记录是独立持久化的：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-attr">oeGroupRemovals</span>?: <span class="hljs-title class_">Record</span>&lt;<span class="hljs-built_in">string</span>, <span class="hljs-built_in">string</span>[]&gt;<br></code></pre></td></tr></table></figure>
+
+<p>结构是「组 key → 已删除的归一化号码」。读取复核时，先归一化删除记录，再对来源组做扣减：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">const</span> removed = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Set</span>(removals[group.<span class="hljs-property">key</span>] || [])<br><span class="hljs-attr">numbers</span>: group.<span class="hljs-property">numbers</span>.<span class="hljs-title function_">filter</span>(<span class="hljs-function">(<span class="hljs-params"><span class="hljs-built_in">number</span></span>) =&gt;</span> !removed.<span class="hljs-title function_">has</span>(<span class="hljs-title function_">normalizeOeNumber</span>(<span class="hljs-built_in">number</span>)))<br></code></pre></td></tr></table></figure>
+
+<p>同类机制一共有三套，分别对应三种派生来源：</p>
+<table>
+<thead>
+<tr>
+<th>删除记录</th>
+<th>作用对象</th>
+<th>消费点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>oeGroupRemovals</code></td>
+<td>来源分组里的号码</td>
+<td>复核归一化时扣减</td>
+</tr>
+<tr>
+<td><code>removedCategoryAttributes</code></td>
+<td>类目模板生成的属性行</td>
+<td>模板重建时过滤</td>
+</tr>
+<tr>
+<td><code>removedSourceAttributes</code></td>
+<td>从来源页面自动写入的属性</td>
+<td>自动写入时过滤</td>
+</tr>
+</tbody></table>
+<p>三个消费点对应三种「会重新生成数据」的时机。只要有一个消费点没接上，删除就会在某个路径上复活。</p>
+<p>几个容易忽略的细节：</p>
+<ul>
+<li><strong>只对 <code>origin === &#39;source&#39;</code> 的删除写 tombstone。</strong> 手工组本来就是用户输入，删了就是删了，不需要防复活。</li>
+<li><strong>「无此字段」要清空 tombstone。</strong> 用户明确表示这个字段没有值，如果还留着删除记录，下次重建会按删除记录再扣一遍，语义就乱了。</li>
+<li><strong>tombstone 的 key 必须稳定。</strong> 类目属性优先用 <code>propertyDetailId</code>，没有才退回名称；来源属性用 <code>source:&lt;name&gt;:&lt;value&gt;</code> 这种稳定 id。用展示文本当 key，改个标签就失配。</li>
+</ul>
+<p>这里有一个更一般的结论：<strong>可撤销不等于「删掉当前值」，而是「把删除作为输入记录下来」。</strong> 只要数据是派生的，删除就必须参与下一次派生。</p>
+<h2 id="五、自动写入：克制比覆盖更重要"><a href="#五、自动写入：克制比覆盖更重要" class="headerlink" title="五、自动写入：克制比覆盖更重要"></a>五、自动写入：克制比覆盖更重要</h2><p>除了显式映射的字段，来源页面上还有大量未映射的结构化属性。一开始的想法很自然：既然有值，就都写成自定义属性。</p>
+<p>实际做下来，必须加一长串排除条件：</p>
+<ul>
+<li>品牌、成色、原产国等已经有专门目标字段的；</li>
+<li>数量、零件号家族等会与目标字段重复的；</li>
+<li>车型、适配信息等走专门结构的；</li>
+<li>价格、库存、物流等交易字段；</li>
+<li>营销词、空值、含汉字的项；</li>
+<li>只接受结构化来源（item specifics &#x2F; product details），不抓正文里的任意文本。</li>
+</ul>
+<p>即使这样，仍然会有同名不同值的情况。处理方式不是覆盖，而是编号：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">Size → Size1 / Size2<br></code></pre></td></tr></table></figure>
+
+<p>每个编号行带一个稳定 id：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">const</span> id = <span class="hljs-string">`source:<span class="hljs-subst">$&#123;nameKey&#125;</span>:<span class="hljs-subst">$&#123;valueKey&#125;</span>`</span><br></code></pre></td></tr></table></figure>
+
+<p>这样它既能被 tombstone 精确删除，也能在页面上保留原始标签：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-attr">sourceLabel</span>: group.<span class="hljs-property">name</span><br></code></pre></td></tr></table></figure>
+
+<p><code>sourceLabel</code> 只存在数据层，不撑进复核表格；表格里显示的是编号后的名称。这样用户看到的是可区分的行，追溯时又能回到原页面的写法。</p>
+<p>自动写入还有一个刻意的限制：<strong>只追加，不修改已有行。</strong> 类目模板已经生成的同名属性，不会被自动写入覆盖或合并。这是保守的选择——自动写入写错一条，用户要删一次；如果它还会改模板行，问题会变成「模板和来源打架」，更难排查。</p>
+<h2 id="六、完成门禁：空值和「未映射」不是一回事"><a href="#六、完成门禁：空值和「未映射」不是一回事" class="headerlink" title="六、完成门禁：空值和「未映射」不是一回事"></a>六、完成门禁：空值和「未映射」不是一回事</h2><p>预填做得再多，也不能保证每个必填项都有值。完成复核时的门禁分两层：</p>
+<p><strong>第一层是空值。</strong> 所有属性行的值为空都阻止完成，不管它是模板必填、模板非必填还是自定义属性。这条看起来严格，但它把「没填」和「填了空字符串」统一成了同一种状态。</p>
+<p><strong>第二层是长度。</strong> 自定义属性名称上限 100，值上限 2000。超长在提交前拦住，而不是等接口报错。</p>
+<p>非必填的模板属性允许删除，但需要二次确认；必填属性不允许删除。删除记录进入 <code>removedCategoryAttributes</code>，类目模板重算时不会恢复。</p>
+<p>这里要区分两个概念：</p>
+<ul>
+<li><strong>发布完整度</strong>：还差哪些字段，用于提示；</li>
+<li><strong>完成阻断</strong>：哪些问题不允许点「完成」，用于门禁。</li>
+</ul>
+<p>两者分开计算。把提示当成阻断，会让用户在小问题上无法收尾；把阻断当成提示，会把不完整的数据送进下一步。</p>
+<h2 id="七、规则版本化：让「为什么预填成这个值」可复盘"><a href="#七、规则版本化：让「为什么预填成这个值」可复盘" class="headerlink" title="七、规则版本化：让「为什么预填成这个值」可复盘"></a>七、规则版本化：让「为什么预填成这个值」可复盘</h2><p>预填规则会变。改了标签匹配、改了合并策略、改了排除词表，历史复核怎么解释？</p>
+<p>做法是给规则包一个显式版本：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> <span class="hljs-variable constant_">EBAY_FIELD_RULE_VERSION</span> = <span class="hljs-string">&#x27;ebay-field-rules-v1.5-oe-merge&#x27;</span><br><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> <span class="hljs-variable constant_">AMAZON_FIELD_RULE_VERSION</span> = <span class="hljs-string">&#x27;amazon-field-rules-v1.2-oe-merge&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>规则结果携带 <code>ruleVersion</code>，复核保存时持久化。旧复核保留旧版本，不回填；新复核写入当前版本。这样至少能回答「这条预填是按哪版规则生成的」。</p>
+<p>版本号本身也承载信息：<code>v1.5-oe-merge</code> 表示这一版引入了多源合并。版本号不是给机器看的自增数字，是给人看的变更摘要。</p>
+<p>配套的验证有两层：</p>
+<ol>
+<li><strong>脱敏样例</strong>：<code>docs/samples/rules/*.json</code> 固定输入与期望输出，断言版本、合并后的值、分组存在、必须省略的旧字段。</li>
+<li><strong>真实函数执行</strong>：<code>check-input-layer.mjs</code> 直接 import 真实的 <code>applyEbayFieldRules</code> &#x2F; <code>applyAmazonFieldRules</code>，跑合并并断言版本与输出。</li>
+</ol>
+<p>第二层很重要。只断言 JSON 结构，可能测的是「fixture 长得对」，而不是「规则真的这么跑」。直接执行真实函数，才能覆盖归一化、分组、去重这些实现细节。</p>
+<p>这两层都挂在 <code>verify:ready</code> 里，规则变更不跑样例就过不了门禁。</p>
+<h2 id="八、任务默认值：快照和「上次填过什么」要分开"><a href="#八、任务默认值：快照和「上次填过什么」要分开" class="headerlink" title="八、任务默认值：快照和「上次填过什么」要分开"></a>八、任务默认值：快照和「上次填过什么」要分开</h2><p>预填还有一类值不是来自来源页面，而是来自任务级默认值。这里有两份数据，职责完全不同：</p>
+<table>
+<thead>
+<tr>
+<th>存储</th>
+<th>写入时机</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>import_task_settings</code></td>
+<td>任务创建时写一次，之后只读</td>
+<td>该任务内所有商品复核的默认值快照</td>
+</tr>
+<tr>
+<td><code>migration_task_defaults</code></td>
+<td>上次成功创建任务时覆盖</td>
+<td>新建任务表单的回显值</td>
+</tr>
+</tbody></table>
+<p>快照用 <code>INSERT OR IGNORE</code>，不可覆写；回显值用 UPSERT，可以覆盖。这样即使用户后来改了默认值，已经创建的任务仍按创建时的快照执行——<strong>任务内的行为不能被之后的表单修改悄悄改写</strong>。</p>
+<p>应用到复核时，默认值只填空字段：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">if</span> (next.<span class="hljs-property">salePrice</span> == <span class="hljs-literal">null</span>) &#123;<br>  next.<span class="hljs-property">salePrice</span> = defaults.<span class="hljs-property">defaultSalePriceUsd</span><br>  marked.<span class="hljs-title function_">add</span>(<span class="hljs-string">&#x27;salePrice&#x27;</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>来源价优先，默认值不覆盖任何已有值。每写一项，把字段名加入 <code>taskDefaultFields</code>，UI 上标记「任务默认」。用户手动改过之后，该字段从标记里移除。</p>
+<p>品牌兜底还有一个额外条件：只处理「缺失」，不处理「待确认」。待确认需要等已认证品牌列表加载后再判定，不能提前写一个看似确定的品牌。</p>
+<p>解析层面也很克制：<code>normalizeMigrationTaskSettings</code> 对任何非法值返回 <code>null</code>，不做静默修复。价格必须大于 0 且最多两位小数。默认值写错会影响一整批任务，宁可让用户重填，也不要猜。</p>
+<h2 id="九、边界"><a href="#九、边界" class="headerlink" title="九、边界"></a>九、边界</h2><ul>
+<li><strong>旧复核没有 <code>oeGroups</code>。</strong> 历史 <code>review_json</code> 仍走单个输入框，没有回填或迁移；分组只对新生成&#x2F;重新识别的复核生效。</li>
+<li><strong>自动写入词表还没用新样本校准。</strong> 当前排除词按已知示例实现，换一批页面可能需要调整，调整时应随规则版本一起升。</li>
+<li><strong>自动写入只追加，不合并同名模板属性。</strong> 是否接受这个行为还需要产品确认。</li>
+<li><strong><code>replacementNo</code> 没有长度上限。</strong> 平台字段长度未知，尚未补校验。</li>
+<li><strong>规则样例的 eBay 部分只做结构自检。</strong> 真实执行由 <code>check-input-layer.mjs</code> 覆盖，两者不能互相替代。</li>
+<li>这些是「未验证&#x2F;未做」，不是「已决定不做」。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>预填的产物不是一个值，而是四样东西：</p>
+<ol>
+<li><strong>值</strong>：归一化、去重、按来源组合并后的结果；</li>
+<li><strong>来源</strong>：每个号来自哪个标签、哪一组；</li>
+<li><strong>可撤销记录</strong>：用户删过什么，下一次派生要扣掉什么；</li>
+<li><strong>规则版本</strong>：这个结果按哪版规则生成。</li>
+</ol>
+<p>只做第一样，得到的是一个「看起来填好了」的表单；四样都做，才得到一条能解释、能修改、能复盘的数据管线。</p>
+<hr>
+<p><em>发表于 2026 年 11 月 · 标签: 数据建模, 预填, 规则版本, 可撤销, 工程实践</em></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" class="print-no-link">#工程实践</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BB%BA%E6%A8%A1/" class="print-no-link">#数据建模</a>
+      
+        <a href="/tags/%E9%A2%84%E5%A1%AB/" class="print-no-link">#预填</a>
+      
+        <a href="/tags/%E8%A7%84%E5%88%99%E7%89%88%E6%9C%AC/" class="print-no-link">#规则版本</a>
+      
+        <a href="/tags/%E5%8F%AF%E6%92%A4%E9%94%80/" class="print-no-link">#可撤销</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>预填不是填空题：多源合并、来源溯源与可撤销</div>
+      <div>https://aster-xu-lab.github.io/2026/11/03/2026-11-03-预填不是填空题-多源合并来源溯源与可撤销/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月3日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/11/03/2026-11-03-%E5%A4%B1%E8%B4%A5%E8%A6%81%E7%95%99%E4%B8%8B%E8%AF%81%E6%8D%AE-%E9%87%87%E9%9B%86%E4%B8%8E%E4%B8%8A%E4%BC%A0%E7%9A%84%E5%A4%B1%E8%B4%A5%E8%B7%AF%E5%BE%84%E8%AE%BE%E8%AE%A1/" title="失败要留下证据：采集与上传的失败路径设计">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">失败要留下证据：采集与上传的失败路径设计</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/" title="长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态">
+                        <span class="hidden-mobile">长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
