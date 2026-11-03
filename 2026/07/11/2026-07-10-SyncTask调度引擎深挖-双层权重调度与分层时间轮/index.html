@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="SyncTask 引擎里最硬核、也最容易被面试官低估的设计，是调度层：怎么让几十种任务在有限的调度资源里各得其所、重试不堵、故障不瘫。答案是双层权重调度——一套没有引入任何延迟队列&#x2F;退避算法的调度方案。  一、要解决的问题订单中台几十个同步任务（下单、发货、回传、对账……），状态多样（INIT 待处理 &#x2F; WAIT 等待 &#x2F; FAIL 失败重试），挂在 XXL-Jo">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/435fbe4205165d0e71ce030a6f9cb940.png#pic_center">
 <meta property="article:published_time" content="2026-07-10T17:56:29.000Z">
-<meta property="article:modified_time" content="2026-08-31T06:03:14.218Z">
+<meta property="article:modified_time" content="2026-11-03T02:16:19.323Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="SyncTask">
 <meta property="article:tag" content="双层权重">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="架构">
 <meta property="article:tag" content="调度引擎">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/435fbe4205165d0e71ce030a6f9cb940.png#pic_center">
   
   
   
@@ -422,7 +424,8 @@
 <li><strong>扫描要全但要省</strong>（几十个任务不能每个都高频扫）。</li>
 </ol>
 <p>如果引入一个专门的延迟队列&#x2F;退避算法，要自己实现”定时 + 优先级 + 容量”——重。我的答案：<strong>不写代码，用调度组合</strong>。</p>
-<h2 id="二、双层权重调度：两层配合"><a href="#二、双层权重调度：两层配合" class="headerlink" title="二、双层权重调度：两层配合"></a>二、双层权重调度：两层配合</h2><h3 id="第一层：Job-内状态配额"><a href="#第一层：Job-内状态配额" class="headerlink" title="第一层：Job 内状态配额"></a>第一层：Job 内状态配额</h3><p>每个调度 Job 拉取任务时，<strong>按状态比例配额</strong>，而不是全量拉：</p>
+<h2 id="二、双层权重调度：两层配合"><a href="#二、双层权重调度：两层配合" class="headerlink" title="二、双层权重调度：两层配合"></a>二、双层权重调度：两层配合</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/435fbe4205165d0e71ce030a6f9cb940.png#pic_center" srcset="/img/loading.gif" lazyload alt="双层权重调度：用 cron 组合替代延迟队列"></p>
+<h3 id="第一层：Job-内状态配额"><a href="#第一层：Job-内状态配额" class="headerlink" title="第一层：Job 内状态配额"></a>第一层：Job 内状态配额</h3><p>每个调度 Job 拉取任务时，<strong>按状态比例配额</strong>，而不是全量拉：</p>
 <figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ruby">每次拉取：<span class="hljs-variable constant_">INIT</span><span class="hljs-symbol">:WAIT</span><span class="hljs-symbol">:FAIL</span> = <span class="hljs-number">4</span><span class="hljs-symbol">:</span><span class="hljs-number">1</span><span class="hljs-symbol">:</span><span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
 
 <ul>

@@ -19,15 +19,16 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="学 Agent 时我最大的优势不是 Python、不是 Prompt，而是 SyncTask 引擎的编排经验。这篇文章讲怎么把任务编排引擎的工程思想真正迁移到 Agent——不是概念对照（那篇讲过），而是具体的工程做法。  一、迁移的前提：Agent 和 SyncTask 是同构的Agent 的本质是 think → act → observe 循环，SyncTask 的本质是”调度 → 执行">
+    <meta name="description" content="学 Agent 时我最大的优势不是 Python、不是 Prompt，而是 SyncTask 引擎的编排经验。这篇文章讲怎么把任务编排引擎的工程思想真正迁移到 Agent——不是概念对照（那篇讲过），而是具体的工程做法。  一、迁移的前提：Agent 和 SyncTask 是同构的 Agent 的本质是 think → act → observe 循环，SyncTask 的本质是”调度 → 执行">
 <meta property="og:type" content="article">
 <meta property="og:title" content="从 SyncTask 到 Agent：编排引擎思想的工程迁移">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/27/2026-08-27-%E4%BB%8ESyncTask%E5%88%B0Agent-%E7%BC%96%E6%8E%92%E5%BC%95%E6%93%8E%E6%80%9D%E6%83%B3%E7%9A%84%E5%B7%A5%E7%A8%8B%E8%BF%81%E7%A7%BB/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="学 Agent 时我最大的优势不是 Python、不是 Prompt，而是 SyncTask 引擎的编排经验。这篇文章讲怎么把任务编排引擎的工程思想真正迁移到 Agent——不是概念对照（那篇讲过），而是具体的工程做法。  一、迁移的前提：Agent 和 SyncTask 是同构的Agent 的本质是 think → act → observe 循环，SyncTask 的本质是”调度 → 执行">
+<meta property="og:description" content="学 Agent 时我最大的优势不是 Python、不是 Prompt，而是 SyncTask 引擎的编排经验。这篇文章讲怎么把任务编排引擎的工程思想真正迁移到 Agent——不是概念对照（那篇讲过），而是具体的工程做法。  一、迁移的前提：Agent 和 SyncTask 是同构的 Agent 的本质是 think → act → observe 循环，SyncTask 的本质是”调度 → 执行">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7d1e0860cba83bfc198a14610bc6b069.png#pic_center">
 <meta property="article:published_time" content="2026-08-27T14:17:23.000Z">
-<meta property="article:modified_time" content="2026-08-31T03:34:15.416Z">
+<meta property="article:modified_time" content="2026-11-03T02:21:15.109Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Agent">
 <meta property="article:tag" content="SyncTask">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="编排">
 <meta property="article:tag" content="迁移">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7d1e0860cba83bfc198a14610bc6b069.png#pic_center">
   
   
   
@@ -415,7 +417,8 @@
                 <blockquote>
 <p>学 Agent 时我最大的优势不是 Python、不是 Prompt，而是 <strong>SyncTask 引擎的编排经验</strong>。这篇文章讲怎么把任务编排引擎的工程思想真正迁移到 Agent——不是概念对照（那篇讲过），而是<strong>具体的工程做法</strong>。</p>
 </blockquote>
-<h2 id="一、迁移的前提：Agent-和-SyncTask-是同构的"><a href="#一、迁移的前提：Agent-和-SyncTask-是同构的" class="headerlink" title="一、迁移的前提：Agent 和 SyncTask 是同构的"></a>一、迁移的前提：Agent 和 SyncTask 是同构的</h2><p>Agent 的本质是 <code>think → act → observe</code> 循环，SyncTask 的本质是”调度 → 执行 → 状态机”。剥掉 LLM 这层”思考”，剩下的是同一套编排骨架：</p>
+<h2 id="一、迁移的前提：Agent-和-SyncTask-是同构的"><a href="#一、迁移的前提：Agent-和-SyncTask-是同构的" class="headerlink" title="一、迁移的前提：Agent 和 SyncTask 是同构的"></a>一、迁移的前提：Agent 和 SyncTask 是同构的</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7d1e0860cba83bfc198a14610bc6b069.png#pic_center" srcset="/img/loading.gif" lazyload alt="从 SyncTask 到 Agent：编排思想的工程迁移"></p>
+<p>Agent 的本质是 <code>think → act → observe</code> 循环，SyncTask 的本质是”调度 → 执行 → 状态机”。剥掉 LLM 这层”思考”，剩下的是同一套编排骨架：</p>
 <table>
 <thead>
 <tr>
