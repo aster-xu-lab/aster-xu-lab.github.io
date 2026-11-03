@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="2025 年下半年分库分表上线，到 2026 年 8 月正好一年。这一篇复盘”上线之后”的事——不是迁移怎么做（那篇讲过），而是稳态运营、对账机制、以及 8→16 扩容的推演。这才是分库分表真正见功夫的地方。  一、稳态现状 当前 8 片，每片约 750 万行，累计 6000 万行； 分片键单号（order_no），写路径零广播； 复杂统计查询下沉 Doris（Canal → Kafka 同步）">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/08dd67bf59a6c5c0c59062977ae26727.png#pic_center">
 <meta property="article:published_time" content="2026-08-24T16:59:50.000Z">
-<meta property="article:modified_time" content="2026-10-09T06:04:14.187Z">
+<meta property="article:modified_time" content="2026-11-03T02:54:22.764Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="分库分表">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="对账">
 <meta property="article:tag" content="扩容">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/08dd67bf59a6c5c0c59062977ae26727.png#pic_center">
   
   
   
@@ -421,7 +423,8 @@
 <li>复杂统计查询下沉 Doris（Canal → Kafka 同步）。</li>
 </ul>
 <p>上线的”那一刻”不难，难的是<strong>一年里每天的对账、监控、扩容规划</strong>。</p>
-<h2 id="二、稳态运营：三件事"><a href="#二、稳态运营：三件事" class="headerlink" title="二、稳态运营：三件事"></a>二、稳态运营：三件事</h2><h3 id="1-对账是常态，不是一次性"><a href="#1-对账是常态，不是一次性" class="headerlink" title="1. 对账是常态，不是一次性"></a>1. 对账是常态，不是一次性</h3><p>分库分表后，正确性不能靠”迁移时对一次账”就完了——<strong>数据每天在变，对账要常态化</strong>。</p>
+<h2 id="二、稳态运营：三件事"><a href="#二、稳态运营：三件事" class="headerlink" title="二、稳态运营：三件事"></a>二、稳态运营：三件事</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/08dd67bf59a6c5c0c59062977ae26727.png#pic_center" srcset="/img/loading.gif" lazyload alt="分库分表上线一周年：稳态运营与扩容规划"></p>
+<h3 id="1-对账是常态，不是一次性"><a href="#1-对账是常态，不是一次性" class="headerlink" title="1. 对账是常态，不是一次性"></a>1. 对账是常态，不是一次性</h3><p>分库分表后，正确性不能靠”迁移时对一次账”就完了——<strong>数据每天在变，对账要常态化</strong>。</p>
 <p>我的对账机制：</p>
 <figure class="highlight q"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs q">定期（夜间低峰）：<br>① 按业务主键遍历两侧（分批，last_id 断点续跑）<br>② 比对 MySQL 分片 <span class="hljs-built_in">vs</span> Doris 宽表<br>③ 差异记录 → 重投（补发同步事件）<br>④ 连续两轮差异为 <span class="hljs-number">0</span> → 确认一致<br></code></pre></td></tr></table></figure>
 

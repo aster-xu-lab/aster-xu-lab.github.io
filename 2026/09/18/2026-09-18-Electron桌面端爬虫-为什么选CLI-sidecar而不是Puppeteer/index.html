@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="在 Electron 里做网页采集，最自然的想法是”直接 npm i playwright 跑”。我没有这么做——随包分发的是一个 CLI + JVM + Chromium 的 sidecar。这篇文章讲这个取舍，以及”随包 sidecar”引出的一堆跨平台构建硬约束。  一、候选方案其实有三条要在一个桌面应用里采集网页，至少有三条路：  应用内直接跑 Playwright &#x2F; Pup">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b5382657d15c189665204f97b41c1840.png#pic_center">
 <meta property="article:published_time" content="2026-09-18T13:07:17.000Z">
-<meta property="article:modified_time" content="2026-10-09T03:19:30.775Z">
+<meta property="article:modified_time" content="2026-11-03T02:59:52.139Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="sidecar">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="架构选型">
 <meta property="article:tag" content="爬虫">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b5382657d15c189665204f97b41c1840.png#pic_center">
   
   
   
@@ -431,7 +433,8 @@
 </ul>
 <p>这些如果从零写，工作量远大于”接一个现成引擎”。随包 CLI 直接提供了会话模型、抽取命令、页面状态分类和诊断输出，我只需要在上面做编排——这也是后面几篇会反复提到的”把失败分类”的前提。</p>
 <p>方案 2 被我直接排除：桌面软件不能把核心能力押在”用户机器上恰好有个可用的 Chrome”上。</p>
-<h2 id="三、sidecar-怎么进包"><a href="#三、sidecar-怎么进包" class="headerlink" title="三、sidecar 怎么进包"></a>三、sidecar 怎么进包</h2><p>随包不是简单地把文件拷进去，而是有一套 staging 流程：</p>
+<h2 id="三、sidecar-怎么进包"><a href="#三、sidecar-怎么进包" class="headerlink" title="三、sidecar 怎么进包"></a>三、sidecar 怎么进包</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b5382657d15c189665204f97b41c1840.png#pic_center" srcset="/img/loading.gif" lazyload alt="桌面端爬虫：为什么随包 CLI sidecar"></p>
+<p>随包不是简单地把文件拷进去，而是有一套 staging 流程：</p>
 <ul>
 <li>一个 <code>stage</code> 脚本从本机抽取<strong>当前平台</strong>的 CLI + 固定版本运行时 + Playwright 系 Chromium（版本来自 <code>playwright-core</code> 的 <code>browsers.json</code>），并生成 <code>manifest.json</code>，里面写清楚每个文件的平台、架构与 <strong>SHA-256 校验和</strong>。</li>
 <li>打包时用 electron-builder 的 <code>extraResources</code> 把整个目录放到 <strong>asar 之外</strong>——因为里面是可执行文件（JVM、Chromium），不能被塞进 asar 归档。</li>

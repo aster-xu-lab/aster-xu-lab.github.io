@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="桌面端要嵌入一个已有的商家后台网页，还要用它当登录闸门。这篇文章讲 WebContentsView 的用法，以及内嵌远程页面时”怎么判定登录状态”这个看似简单、实则全是坑的问题。  一、为什么是 WebContentsView要在 Electron 里显示一个外部网页，历史上有几种做法：&lt;iframe&gt;（跨域限制多）、&lt;webview&gt; 标签（已不推荐）、以及 WebCo">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06df006a559ee32b4b6d18410229815b.png#pic_center">
 <meta property="article:published_time" content="2026-09-25T16:08:18.000Z">
-<meta property="article:modified_time" content="2026-10-09T03:19:30.776Z">
+<meta property="article:modified_time" content="2026-11-03T03:07:28.600Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="IPC">
@@ -35,6 +36,7 @@
 <meta property="article:tag" content="安全">
 <meta property="article:tag" content="登录闸门">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06df006a559ee32b4b6d18410229815b.png#pic_center">
   
   
   
@@ -422,7 +424,8 @@
 <li>登录后，同一个 View 变成商家后台页面。</li>
 </ul>
 <p>关键操作是<strong>改 bounds，不重建</strong>。切换登录状态时只调整这个 View 的位置和大小，而不是销毁再创建。重建会丢会话、丢状态、闪屏。</p>
-<h2 id="二、登录判定：只判-token-存在，绝不读值"><a href="#二、登录判定：只判-token-存在，绝不读值" class="headerlink" title="二、登录判定：只判 token 存在，绝不读值"></a>二、登录判定：只判 token 存在，绝不读值</h2><p>“页面到底登录没有”是这个方案里最讲究的地方。我们最终的规则只有一条：</p>
+<h2 id="二、登录判定：只判-token-存在，绝不读值"><a href="#二、登录判定：只判-token-存在，绝不读值" class="headerlink" title="二、登录判定：只判 token 存在，绝不读值"></a>二、登录判定：只判 token 存在，绝不读值</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06df006a559ee32b4b6d18410229815b.png#pic_center" srcset="/img/loading.gif" lazyload alt="WebContentsView：一个 View 身兼登录闸门与商家后台"></p>
+<p>“页面到底登录没有”是这个方案里最讲究的地方。我们最终的规则只有一条：</p>
 <blockquote>
 <p><strong>只看 <code>localStorage.ACCESS_TOKEN</code> 是否存在，永不读值。</strong></p>
 </blockquote>

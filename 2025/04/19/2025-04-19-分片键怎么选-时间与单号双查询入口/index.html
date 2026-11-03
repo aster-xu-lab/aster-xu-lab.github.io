@@ -26,8 +26,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="本文记录一个分片键选型的重要修正：一开始基于”数据按时间查询”选择了时间主分片，但业务确认所有事件都按单号处理后，修正为单号主分片。这个修正过程本身就是分片键选型的最好案例。  一、初始思考：按时间查 + 按单号查，一个分片键不够or_sales_info 有 6000 万数据，最初看到两个查询入口：  按时间查：WHERE trade_time BETWEEN ... 按平台单号查：WHERE">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/53fac84f70019c6c23bad5b21e999e5f.png#pic_center">
 <meta property="article:published_time" content="2025-04-18T21:30:27.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.761Z">
+<meta property="article:modified_time" content="2026-11-03T02:47:41.140Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="or_sales_info">
@@ -36,6 +37,7 @@
 <meta property="article:tag" content="订单号">
 <meta property="article:tag" content="选型">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/53fac84f70019c6c23bad5b21e999e5f.png#pic_center">
   
   
   
@@ -429,7 +431,8 @@
 <figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs lasso">创建: INSERT <span class="hljs-params">...</span> ORDER_NO 生成 → 后续按单号<br>发货: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br>取消: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br>签收: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br></code></pre></td></tr></table></figure>
 
 <p>这意味着<strong>单号是业务操作的主维度</strong>，比”按时间查报表”高频得多。而如果表按时间分片，<strong>每一次发货&#x2F;取消&#x2F;签收都会广播所有月表——写路径广播比读更严重</strong>（要锁、要事务）。</p>
-<h2 id="三、修正结论：单号主分片"><a href="#三、修正结论：单号主分片" class="headerlink" title="三、修正结论：单号主分片"></a>三、修正结论：单号主分片</h2><p>既然所有事件都按单号，<strong>单号必须是主分片键</strong>：</p>
+<h2 id="三、修正结论：单号主分片"><a href="#三、修正结论：单号主分片" class="headerlink" title="三、修正结论：单号主分片"></a>三、修正结论：单号主分片</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/53fac84f70019c6c23bad5b21e999e5f.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片键选型：从时间主分片修正为单号主分片"></p>
+<p>既然所有事件都按单号，<strong>单号必须是主分片键</strong>：</p>
 <figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs arcade">主分片表  t_sales_info_&#123;单号<span class="hljs-built_in">hash</span>&#125;  分片键=outer_order_no<br>       承载写入 + 所有按单号的业务事件(创建/发货/取消/签收)精准路由零广播<br><br>时间统计  Doris/ES 宽表(OLAP)<br>       按时间/多维度复杂查询(广播在MySQL不可接受, 交给查询库)<br></code></pre></td></tr></table></figure>
 
 <h3 id="写入-事件：全按单号精准路由"><a href="#写入-事件：全按单号精准路由" class="headerlink" title="写入&#x2F;事件：全按单号精准路由"></a>写入&#x2F;事件：全按单号精准路由</h3><figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs lasso">发货/取消/签收: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ? → 精准路由单表, 零广播 ✅<br></code></pre></td></tr></table></figure>

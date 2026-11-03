@@ -26,14 +26,16 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="一、先回答”什么时候该分”分库分表最容易被问倒的第一题是：为什么分？ 我的判断信号有三个，缺一不可：  单表数据量逼近千万级：订单销售信息表累计接近 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级； 写入成为瓶颈：单库单库的写入能力到了上限； 目标是横向扩容，不是优化单点查询。  在到达这个信号之前，我们经历过一段”假分片”：早期是渠道垂直分表——拼多多一张表、京东">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2f029ff1cdf342f472134f9cb5f6dd6f.png#pic_center">
 <meta property="article:published_time" content="2025-08-01T13:26:42.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.848Z">
+<meta property="article:modified_time" content="2026-11-03T02:51:45.259Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="分库分表">
 <meta property="article:tag" content="分片键">
 <meta property="article:tag" content="数据库">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2f029ff1cdf342f472134f9cb5f6dd6f.png#pic_center">
   
   
   
@@ -426,7 +428,8 @@
 <li><strong>核对慢查询与执行计划</strong>：确认主路径是不是 <code>WHERE order_no = ?</code> 单点查询。</li>
 </ol>
 <p>分析结果很明确：<strong>所有业务事件都按订单号定位</strong>。那么分片键的选择就水到渠成了。</p>
-<h2 id="三、为什么是单号，不是时间"><a href="#三、为什么是单号，不是时间" class="headerlink" title="三、为什么是单号，不是时间"></a>三、为什么是单号，不是时间</h2><p>两个候选摆上台面：</p>
+<h2 id="三、为什么是单号，不是时间"><a href="#三、为什么是单号，不是时间" class="headerlink" title="三、为什么是单号，不是时间"></a>三、为什么是单号，不是时间</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2f029ff1cdf342f472134f9cb5f6dd6f.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片键选型算账：为什么单号主分片"></p>
+<p>两个候选摆上台面：</p>
 <p><strong>单号主分片</strong>：订单号唯一、天然均匀 → 按它分片，每条写入和状态流转<strong>精准路由到单物理表</strong> → <strong>写路径零广播</strong>。</p>
 <p><strong>时间主分片</strong>：按创建时间分片，对统计查询友好、按时间扩容天然无感——但有个致命问题：<strong>每条写事件会广播到全部分片</strong>。为什么？因为一个订单从创建到发货到取消，跨越很长时间，按时间分片的话，订单状态流转时它的分片在变，业务方根本不知道去哪查，只能广播所有分片。</p>
 <p><strong>写广播是分片方案里最严重的问题</strong>：分片后写是高频路径，写一条数据若广播到所有分片，等于所有分片都要处理——白分片，还引入跨片一致性难题。所以主分片键<strong>一定选高频查写的那一个</strong>。</p>
