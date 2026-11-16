@@ -8,8 +8,10 @@
 <head>
   <meta charset="UTF-8">
 
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/fluid.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2020/10/17/2020-10-17-命令模式/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
@@ -27,9 +29,8 @@
 <meta property="og:description" content="介绍 命令模式（Command Pattern）：在软件设计中，我们经常需要向某些对象发送请求，但并不需要知道请求的接收者是谁，也不知道被请求的操作是什么 我们只需要在程序执行时指定具体的请求接受者即可，此时，可以使用命令模式来进行设计 命令模式是的请求发送者与请求接收者消除彼此之间的耦合，让对象之间的调用关系更加灵活，实现解耦 在命令模式中，会将一个请求封装为一个对象，以便使用不同的参数表示请求">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-10-16T22:08:58.000Z">
-<meta property="article:modified_time" content="2026-10-09T08:31:44.945Z">
+<meta property="article:modified_time" content="2026-11-16T03:43:42.143Z">
 <meta property="article:author" content="AsterXu">
-<meta property="article:tag" content="GOF">
 <meta property="article:tag" content="命令">
 <meta property="article:tag" content="设计模式">
 <meta name="twitter:card" content="summary_large_image">
@@ -410,13 +411,13 @@
             
               <div class="markdown-body">
                 
-                <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><ol>
+                <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><ol>
 <li>命令模式（Command Pattern）：在软件设计中，我们经常需要向某些对象发送请求，但并不需要知道请求的接收者是谁，也不知道被请求的操作是什么<br> 我们只需要在程序执行时指定具体的请求接受者即可，此时，可以使用命令模式来进行设计</li>
 <li>命令模式是的请求发送者与请求接收者消除彼此之间的耦合，让对象之间的调用关系更加灵活，实现解耦</li>
 <li>在命令模式中，会将一个请求封装为一个对象，以便使用不同的参数表示请求（即命名），同时命令模式也支持可撤销的操作</li>
 <li>通俗易懂的理解： 将军发布命令，士兵去执行。其中有几个角色：将军（命令发布者）、士兵（命令的具体执行者）、命令(连接将军和士兵 )。 Invoker 是调用者（将军），Receiver 是被调用者（士兵），MyCommand是命令，实现了 Command接口，持有接收对象</li>
 </ol>
-<h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><ol>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><ol>
 <li>Invoker 是调用者角色</li>
 <li>Command: 是命令角色，需要执行的所有都在这里可以接口或抽象类</li>
 <li>Receiver: 接受者角色，知道如何实施和执行一个请求相关的操作</li>
@@ -430,7 +431,7 @@
 
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">LightOnCommand</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Command</span> &#123;<br><br>	<span class="hljs-comment">//聚合LightReceiver</span><br>	<br>	LightReceiver light;<br>	<br>	<span class="hljs-comment">//构造器</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-title function_">LightOnCommand</span><span class="hljs-params">(LightReceiver light)</span> &#123;<br>		<span class="hljs-built_in">super</span>();<br>		<span class="hljs-built_in">this</span>.light = light;<br>	&#125;<br>	<br>	<span class="hljs-meta">@Override</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">execute</span><span class="hljs-params">()</span> &#123;<br>		<span class="hljs-comment">// TODO Auto-generated method stub</span><br>		<span class="hljs-comment">//调用接收者的方法</span><br>		light.on();<br>	&#125;<br><br>	<br><br>	<span class="hljs-meta">@Override</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">undo</span><span class="hljs-params">()</span> &#123;<br>		<span class="hljs-comment">// TODO Auto-generated method stub</span><br>		<span class="hljs-comment">//调用接收者的方法</span><br>		light.off();<br>	&#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h2 id="Spring框架的JdbcTemplate就用到了命令模式"><a href="#Spring框架的JdbcTemplate就用到了命令模式" class="headerlink" title="Spring框架的JdbcTemplate就用到了命令模式"></a>Spring框架的JdbcTemplate就用到了命令模式</h2><h1 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h1><ol>
+<h3 id="Spring框架的JdbcTemplate就用到了命令模式"><a href="#Spring框架的JdbcTemplate就用到了命令模式" class="headerlink" title="Spring框架的JdbcTemplate就用到了命令模式"></a>Spring框架的JdbcTemplate就用到了命令模式</h3><h2 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h2><ol>
 <li>发起请求的对象与执行请求的对象解耦，发起请求的对象是调用者，调用者主要命令对象的execute()就可以让接收者工作，而不必知道具体接收者对象是谁，如何实现的，没类对象会负责让接收者执行请求的动作，也就是说，“请求发起者”和“请求执行者”之间的解耦是通过命令对象实现的，命令对象起到了纽带桥梁的作用</li>
 <li>容易设计一个命令队列，只要把命令对象放到队列，就可以多线程执行命令</li>
 <li>容易实现对请求的撤销和重做</li>
@@ -472,8 +473,6 @@
       <i class="iconfont icon-tags"></i>
       
         <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="print-no-link">#设计模式</a>
-      
-        <a href="/tags/GOF/" class="print-no-link">#GOF</a>
       
         <a href="/tags/%E5%91%BD%E4%BB%A4/" class="print-no-link">#命令</a>
       

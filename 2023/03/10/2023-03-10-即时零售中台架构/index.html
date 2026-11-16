@@ -8,8 +8,10 @@
 <head>
   <meta charset="UTF-8">
 
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/fluid.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/03/10/2023-03-10-即时零售中台架构/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
@@ -27,7 +29,7 @@
 <meta property="og:description" content="即时零售中台：从异步批量到事件驱动秒级响应一个新的挑战做了三年订单中台（cloud-order），核心模式是：定时拉取 → 批量处理 → 异步同步。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。 但即时零售（闪购）完全不同：用户期望 30 分钟内送达。延迟从”分钟级可容忍”变成了”秒级就是事故”。 这篇文章聊聊订单中台和即时零售中台在架构上的本质">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-03-10T15:20:06.000Z">
-<meta property="article:modified_time" content="2026-10-09T08:31:44.959Z">
+<meta property="article:modified_time" content="2026-11-16T03:43:42.154Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="事件驱动">
 <meta property="article:tag" content="即时零售">
@@ -413,10 +415,10 @@
             
               <div class="markdown-body">
                 
-                <h1 id="即时零售中台：从异步批量到事件驱动秒级响应"><a href="#即时零售中台：从异步批量到事件驱动秒级响应" class="headerlink" title="即时零售中台：从异步批量到事件驱动秒级响应"></a>即时零售中台：从异步批量到事件驱动秒级响应</h1><h2 id="一个新的挑战"><a href="#一个新的挑战" class="headerlink" title="一个新的挑战"></a>一个新的挑战</h2><p>做了三年订单中台（cloud-order），核心模式是：<strong>定时拉取 → 批量处理 → 异步同步</strong>。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。</p>
+                <h2 id="即时零售中台：从异步批量到事件驱动秒级响应"><a href="#即时零售中台：从异步批量到事件驱动秒级响应" class="headerlink" title="即时零售中台：从异步批量到事件驱动秒级响应"></a>即时零售中台：从异步批量到事件驱动秒级响应</h2><h3 id="一个新的挑战"><a href="#一个新的挑战" class="headerlink" title="一个新的挑战"></a>一个新的挑战</h3><p>做了三年订单中台（cloud-order），核心模式是：<strong>定时拉取 → 批量处理 → 异步同步</strong>。这种模式在电商快递场景下运行得很好——用户下单后 2-3 天收货，同步慢几秒甚至几分钟都不是问题。</p>
 <p>但即时零售（闪购）完全不同：用户期望 <strong>30 分钟内送达</strong>。延迟从”分钟级可容忍”变成了”秒级就是事故”。</p>
 <p>这篇文章聊聊订单中台和即时零售中台在架构上的本质差异，以及如何从异步批量系统演进到事件驱动秒级响应系统。</p>
-<h2 id="一、两种业务模型的本质差异"><a href="#一、两种业务模型的本质差异" class="headerlink" title="一、两种业务模型的本质差异"></a>一、两种业务模型的本质差异</h2><table>
+<h3 id="一、两种业务模型的本质差异"><a href="#一、两种业务模型的本质差异" class="headerlink" title="一、两种业务模型的本质差异"></a>一、两种业务模型的本质差异</h3><table>
 <thead>
 <tr>
 <th>维度</th>
@@ -460,18 +462,18 @@
 <td><strong>极高</strong>（每多 100ms 都是体验损耗）</td>
 </tr>
 </tbody></table>
-<h2 id="二、库存模型的根本变化"><a href="#二、库存模型的根本变化" class="headerlink" title="二、库存模型的根本变化"></a>二、库存模型的根本变化</h2><p>订单中台的库存同步模式：</p>
+<h3 id="二、库存模型的根本变化"><a href="#二、库存模型的根本变化" class="headerlink" title="二、库存模型的根本变化"></a>二、库存模型的根本变化</h3><p>订单中台的库存同步模式：</p>
 <figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs scss">平台订单 → SyncTask 定时拉取(<span class="hljs-number">5s</span>) → 批量推送 WMS → WMS更新库存(异步)<br>   延迟：<span class="hljs-number">5</span>秒到<span class="hljs-number">1</span>分钟，可接受<br></code></pre></td></tr></table></figure>
 
 <p>即时零售的库存模式：</p>
 <figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs arcade">用户下单 → 实时扣减库存 → 库存预留(<span class="hljs-number">15</span><span class="hljs-built_in">min</span>) → 门店拣货 → 扣减确认<br>   延迟：必须 &lt; <span class="hljs-number">200</span>ms，超过就影响下一个用户<br></code></pre></td></tr></table></figure>
 
-<h3 id="实时库存扣减"><a href="#实时库存扣减" class="headerlink" title="实时库存扣减"></a>实时库存扣减</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InstantInventoryService</span> &#123;<br>    <br>    <span class="hljs-comment">// 关键：强一致性，不支持异步</span><br>    <span class="hljs-meta">@Transactional</span><br>    <span class="hljs-keyword">public</span> DeductResult <span class="hljs-title function_">deduct</span><span class="hljs-params">(String skuCode, <span class="hljs-type">int</span> quantity, String orderNo)</span> &#123;<br>        <span class="hljs-comment">// SELECT ... FOR UPDATE 行级锁</span><br>        <span class="hljs-type">Inventory</span> <span class="hljs-variable">inv</span> <span class="hljs-operator">=</span> inventoryMapper.selectForUpdate(skuCode);<br>        <br>        <span class="hljs-keyword">if</span> (inv.getAvailableStock() &lt; quantity) &#123;<br>            <span class="hljs-keyword">return</span> DeductResult.INSUFFICIENT;<br>        &#125;<br>        <br>        <span class="hljs-comment">// 扣减可用库存，增加预留库存</span><br>        inventoryMapper.deduct(skuCode, quantity);      <span class="hljs-comment">// available -= quantity</span><br>        inventoryMapper.reserve(skuCode, quantity, orderNo, <span class="hljs-number">15</span>);  <span class="hljs-comment">// reserved += quantity, 15分钟过期</span><br>        <br>        <span class="hljs-keyword">return</span> DeductResult.SUCCESS;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h4 id="实时库存扣减"><a href="#实时库存扣减" class="headerlink" title="实时库存扣减"></a>实时库存扣减</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Service</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">InstantInventoryService</span> &#123;<br>    <br>    <span class="hljs-comment">// 关键：强一致性，不支持异步</span><br>    <span class="hljs-meta">@Transactional</span><br>    <span class="hljs-keyword">public</span> DeductResult <span class="hljs-title function_">deduct</span><span class="hljs-params">(String skuCode, <span class="hljs-type">int</span> quantity, String orderNo)</span> &#123;<br>        <span class="hljs-comment">// SELECT ... FOR UPDATE 行级锁</span><br>        <span class="hljs-type">Inventory</span> <span class="hljs-variable">inv</span> <span class="hljs-operator">=</span> inventoryMapper.selectForUpdate(skuCode);<br>        <br>        <span class="hljs-keyword">if</span> (inv.getAvailableStock() &lt; quantity) &#123;<br>            <span class="hljs-keyword">return</span> DeductResult.INSUFFICIENT;<br>        &#125;<br>        <br>        <span class="hljs-comment">// 扣减可用库存，增加预留库存</span><br>        inventoryMapper.deduct(skuCode, quantity);      <span class="hljs-comment">// available -= quantity</span><br>        inventoryMapper.reserve(skuCode, quantity, orderNo, <span class="hljs-number">15</span>);  <span class="hljs-comment">// reserved += quantity, 15分钟过期</span><br>        <br>        <span class="hljs-keyword">return</span> DeductResult.SUCCESS;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h3 id="超时释放"><a href="#超时释放" class="headerlink" title="超时释放"></a>超时释放</h3><p>如果 15 分钟内用户未支付或门店未接单，预留库存自动释放：</p>
+<h4 id="超时释放"><a href="#超时释放" class="headerlink" title="超时释放"></a>超时释放</h4><p>如果 15 分钟内用户未支付或门店未接单，预留库存自动释放：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// XXL-JOB 每 30 秒扫描过期预留</span><br><span class="hljs-meta">@XxlJob(&quot;releaseExpiredReserve&quot;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">releaseExpiredReserve</span><span class="hljs-params">()</span> &#123;<br>    List&lt;InventoryReserve&gt; expired = inventoryMapper.selectExpired(<span class="hljs-number">15</span>);<br>    <span class="hljs-keyword">for</span> (InventoryReserve reserve : expired) &#123;<br>        inventoryMapper.release(reserve.getSkuCode(), reserve.getQuantity());<br>        inventoryMapper.markExpired(reserve.getId());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h2 id="三、调度模型：从定时到事件"><a href="#三、调度模型：从定时到事件" class="headerlink" title="三、调度模型：从定时到事件"></a>三、调度模型：从定时到事件</h2><p>订单中台是定时触发：</p>
+<h3 id="三、调度模型：从定时到事件"><a href="#三、调度模型：从定时到事件" class="headerlink" title="三、调度模型：从定时到事件"></a>三、调度模型：从定时到事件</h3><p>订单中台是定时触发：</p>
 <figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">XXL-JOB</span><span class="hljs-params">(<span class="hljs-number">5s</span>)</span></span> → 拉取待处理任务 → 批量处理 → 更新状态<br></code></pre></td></tr></table></figure>
 
 <p>即时零售改为事件驱动：</p>
@@ -479,14 +481,14 @@
 
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 事件驱动的订单处理</span><br><span class="hljs-meta">@EventListener</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">onOrderCreated</span><span class="hljs-params">(OrderCreatedEvent event)</span> &#123;<br>    <span class="hljs-comment">// 1. 实时扣减库存</span><br>    <span class="hljs-type">DeductResult</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> inventoryService.deduct(<br>        event.getSkuCode(), event.getQuantity(), event.getOrderNo());<br>    <br>    <span class="hljs-keyword">if</span> (result.isSuccess()) &#123;<br>        <span class="hljs-comment">// 2. 通知最近门店</span><br>        <span class="hljs-type">Store</span> <span class="hljs-variable">nearest</span> <span class="hljs-operator">=</span> storeService.findNearest(event.getLat(), event.getLng());<br>        eventPublisher.publish(<span class="hljs-keyword">new</span> <span class="hljs-title class_">AssignStoreEvent</span>(event.getOrderNo(), nearest.getId()));<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-comment">// 3. 库存不足，立即通知用户</span><br>        eventPublisher.publish(<span class="hljs-keyword">new</span> <span class="hljs-title class_">OrderFailedEvent</span>(event.getOrderNo(), <span class="hljs-string">&quot;库存不足&quot;</span>));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h2 id="四、超时处理：从可重试到不可重试"><a href="#四、超时处理：从可重试到不可重试" class="headerlink" title="四、超时处理：从可重试到不可重试"></a>四、超时处理：从可重试到不可重试</h2><p>订单中台：同步失败 → 指数退避重试 → 最多等几小时也没问题</p>
+<h3 id="四、超时处理：从可重试到不可重试"><a href="#四、超时处理：从可重试到不可重试" class="headerlink" title="四、超时处理：从可重试到不可重试"></a>四、超时处理：从可重试到不可重试</h3><p>订单中台：同步失败 → 指数退避重试 → 最多等几小时也没问题</p>
 <p>即时零售：<strong>30 分钟内必须完成整个履约流程</strong>。每个环节都有硬性超时：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 订单全生命周期 SLA</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">OrderSLA</span> &#123;<br>    STORE_ACCEPT    (<span class="hljs-number">1</span>, TimeUnit.MINUTES),   <span class="hljs-comment">// 1分钟内门店必须接单</span><br>    PICK_UP         (<span class="hljs-number">10</span>, TimeUnit.MINUTES),  <span class="hljs-comment">// 10分钟内完成拣货</span><br>    DELIVERY        (<span class="hljs-number">20</span>, TimeUnit.MINUTES),  <span class="hljs-comment">// 20分钟内送达</span><br>    TOTAL           (<span class="hljs-number">30</span>, TimeUnit.MINUTES);  <span class="hljs-comment">// 总共30分钟</span><br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p>超时不是重试，而是<strong>降级和退款</strong>：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Scheduled(fixedDelay = 10_000)</span>  <span class="hljs-comment">// 每10秒检查</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">checkSLA</span><span class="hljs-params">()</span> &#123;<br>    List&lt;Order&gt; timeoutOrders = orderMapper.selectSLATimeout();<br>    <span class="hljs-keyword">for</span> (Order order : timeoutOrders) &#123;<br>        <span class="hljs-comment">// 超时 = 自动退款 + 释放库存 + 通知用户 + 补偿优惠券</span><br>        refundService.autoRefund(order.getOrderNo());<br>        inventoryService.releaseReserve(order.getSkuCode(), order.getQuantity());<br>        notifyService.sendTimeoutNotice(order.getUserId(), order.getOrderNo());<br>        couponService.grantCompensation(order.getUserId());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h2 id="五、技术挑战总结"><a href="#五、技术挑战总结" class="headerlink" title="五、技术挑战总结"></a>五、技术挑战总结</h2><table>
+<h3 id="五、技术挑战总结"><a href="#五、技术挑战总结" class="headerlink" title="五、技术挑战总结"></a>五、技术挑战总结</h3><table>
 <thead>
 <tr>
 <th>挑战</th>
@@ -520,7 +522,7 @@
 <td>订单级全链路追踪</td>
 </tr>
 </tbody></table>
-<h2 id="六、不是替代，是升级"><a href="#六、不是替代，是升级" class="headerlink" title="六、不是替代，是升级"></a>六、不是替代，是升级</h2><p>即时零售中台不是要替代订单中台，而是<strong>在订单中台的经验上做架构升级</strong>：</p>
+<h3 id="六、不是替代，是升级"><a href="#六、不是替代，是升级" class="headerlink" title="六、不是替代，是升级"></a>六、不是替代，是升级</h3><p>即时零售中台不是要替代订单中台，而是<strong>在订单中台的经验上做架构升级</strong>：</p>
 <ul>
 <li>SyncTask 引擎的异步编排经验 → 升级为事件驱动</li>
 <li>双层权重调度 → 升级为 SLA 驱动的优先级调度</li>
@@ -528,7 +530,7 @@
 <li>最终一致性 → 升级为强一致性</li>
 </ul>
 <p>底层的技术积累（分库分表、分布式事务、连接池隔离）在新场景下完全适用。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>从订单中台到即时零售中台，本质变化只有一条：<strong>延迟容忍度从分钟级变成了秒级</strong>。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>从订单中台到即时零售中台，本质变化只有一条：<strong>延迟容忍度从分钟级变成了秒级</strong>。</p>
 <p>这带来了一连串的架构变化：库存必须强一致、调度必须事件驱动、失败不能重试只能降级。理解了这个根本差异，就理解了两种中台的架构分野。</p>
 <hr>
 <p><em>发表于 2023 年 3 月 · 标签: 即时零售, 事件驱动, 秒级响应, 库存模型, 架构演进, 闪购</em></p>

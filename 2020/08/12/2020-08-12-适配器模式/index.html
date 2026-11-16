@@ -8,8 +8,10 @@
 <head>
   <meta charset="UTF-8">
 
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/fluid.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2020/08/12/2020-08-12-适配器模式/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
@@ -27,9 +29,8 @@
 <meta property="og:description" content="介绍 适配器模式（Adapter Pattern）将某个类的接口转换成客户端期望的另一个接口表示，主要目的是为了兼容性，让原本接口不匹配不能一起工作的两个类可以协同工作。其别名为包装器（Wrapper）。 适配器模式属于结构性 主要分为三类：类适配器模式、对象适配器模式、接口适配器模式  类适配器： 介绍 Adapter类，通过继承src类，实现dst接口，完成src-&gt;dst的适配 应用实">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-08-12T13:03:44.000Z">
-<meta property="article:modified_time" content="2026-10-09T08:31:44.945Z">
+<meta property="article:modified_time" content="2026-11-16T03:45:54.077Z">
 <meta property="article:author" content="AsterXu">
-<meta property="article:tag" content="GOF">
 <meta property="article:tag" content="设计模式">
 <meta property="article:tag" content="适配器">
 <meta name="twitter:card" content="summary_large_image">
@@ -410,24 +411,24 @@
             
               <div class="markdown-body">
                 
-                <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><ol>
+                <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><ol>
 <li>适配器模式（Adapter Pattern）将某个类的接口转换成客户端期望的另一个接口表示，主要目的是为了兼容性，让原本接口不匹配不能一起工作的两个类可以协同工作。其别名为包装器（Wrapper）。</li>
 <li>适配器模式属于结构性</li>
 <li>主要分为三类：类适配器模式、对象适配器模式、接口适配器模式</li>
 </ol>
-<h2 id="类适配器："><a href="#类适配器：" class="headerlink" title="类适配器："></a>类适配器：</h2><p> 介绍<br> Adapter类，通过继承src类，实现dst接口，完成src-&gt;dst的适配</p>
+<h3 id="类适配器："><a href="#类适配器：" class="headerlink" title="类适配器："></a>类适配器：</h3><p> 介绍<br> Adapter类，通过继承src类，实现dst接口，完成src-&gt;dst的适配</p>
 <p>应用实例<br>充电器本身相当于Adapter，220V交流电相当于src（被实配者），dst（目标）是5V直流电</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//被适配的类</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Voltage220V</span> &#123;<br>	<span class="hljs-comment">//输出220V的电压</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">output220V</span><span class="hljs-params">()</span> &#123;<br>		<span class="hljs-type">int</span> <span class="hljs-variable">src</span> <span class="hljs-operator">=</span> <span class="hljs-number">220</span>;<br>		System.out.println(<span class="hljs-string">&quot;电压=&quot;</span> + src + <span class="hljs-string">&quot;伏&quot;</span>);<br>		<span class="hljs-keyword">return</span> src;<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//适配接口</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">IVoltage5V</span> &#123;<br>	<span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">output5V</span><span class="hljs-params">()</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//适配器类</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">VoltageAdapter</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Voltage220V</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">IVoltage5V</span> &#123;<br><br>	<span class="hljs-meta">@Override</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">output5V</span><span class="hljs-params">()</span> &#123;<br>		<span class="hljs-comment">// TODO Auto-generated method stub</span><br>		<span class="hljs-comment">//获取到220V电压</span><br>		<span class="hljs-type">int</span> <span class="hljs-variable">srcV</span> <span class="hljs-operator">=</span> output220V();<br>		<span class="hljs-type">int</span> <span class="hljs-variable">dstV</span> <span class="hljs-operator">=</span> srcV / <span class="hljs-number">44</span> ; <span class="hljs-comment">//转成 5v</span><br>		<span class="hljs-keyword">return</span> dstV;<br>	&#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
-<h4 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h4><ol>
+<h5 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h5><ol>
 <li>Java是单继承机制，所以类适配器需要继承src类这算是一个缺点，因为这要求dst必须是接口，有一定的局限性</li>
 <li>src类的方法在Adapter中都会暴露出来，也增加了使用的成本</li>
 <li>由于其继承了src类，所以它可以根据需求重写src类的方法，使得Adapter的灵活性增强了</li>
 </ol>
-<h2 id="对象适配器模式"><a href="#对象适配器模式" class="headerlink" title="对象适配器模式"></a>对象适配器模式</h2><p>介绍</p>
+<h3 id="对象适配器模式"><a href="#对象适配器模式" class="headerlink" title="对象适配器模式"></a>对象适配器模式</h3><p>介绍</p>
 <ol>
 <li>基本思路和类的适配器相同，只是将Adapter类做修改，不是继承src类，而是持有src类的实例，以解决兼容性问题。即：持有src类，实现dst接口，完成src-&gt;dst的适配</li>
 <li>根据“合成复用原则”，在系统中尽量使用关联关系代替继承关系</li>
@@ -435,11 +436,11 @@
 </ol>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//适配器类</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">VoltageAdapter</span>  <span class="hljs-keyword">implements</span> <span class="hljs-title class_">IVoltage5V</span> &#123;<br><br>	<span class="hljs-keyword">private</span> Voltage220V voltage220V; <span class="hljs-comment">// 关联关系-聚合</span><br>	<br>	<br>	<span class="hljs-comment">//通过构造器，传入一个 Voltage220V 实例</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-title function_">VoltageAdapter</span><span class="hljs-params">(Voltage220V voltage220v)</span> &#123;<br>		<br>		<span class="hljs-built_in">this</span>.voltage220V = voltage220v;<br>	&#125;<br><br><br><br>	<span class="hljs-meta">@Override</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">output5V</span><span class="hljs-params">()</span> &#123;<br>		<br>		<span class="hljs-type">int</span> <span class="hljs-variable">dst</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>		<span class="hljs-keyword">if</span>(<span class="hljs-literal">null</span> != voltage220V) &#123;<br>			<span class="hljs-type">int</span> <span class="hljs-variable">src</span> <span class="hljs-operator">=</span> voltage220V.output220V();<span class="hljs-comment">//获取220V 电压</span><br>			System.out.println(<span class="hljs-string">&quot;使用对象适配器，进行适配~~&quot;</span>);<br>			dst = src / <span class="hljs-number">44</span>;<br>			System.out.println(<span class="hljs-string">&quot;适配完成，输出的电压为=&quot;</span> + dst);<br>		&#125;<br>		<br>		<span class="hljs-keyword">return</span> dst;<br>		<br>	&#125;<br><br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h4 id="注意事项及细节-1"><a href="#注意事项及细节-1" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h4><ol>
+<h5 id="注意事项及细节-1"><a href="#注意事项及细节-1" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h5><ol>
 <li>对象适配器和类适配器其实算是同一种思想，只不过实现方式不同，根据合成复用原则，使用组合替代继承，所以它解决了类适配器必须继承src的局限性问题，也不再要求dst必须是接口</li>
 <li>使用成本更低且灵活</li>
 </ol>
-<h2 id="接口适配器模式"><a href="#接口适配器模式" class="headerlink" title="接口适配器模式"></a>接口适配器模式</h2><p>介绍</p>
+<h3 id="接口适配器模式"><a href="#接口适配器模式" class="headerlink" title="接口适配器模式"></a>接口适配器模式</h3><p>介绍</p>
 <ol>
 <li>一些书籍称为：缺省适配器模式（Default Adapter Pattern）</li>
 <li>当不需要全部实现接口提供的方法时，可以先设计一个抽象类实现接口，并为该接口中每个方法提供一个默认实现（空方法），那么该抽象类的子类可以有选择地覆盖父类的某些方法来实现需求</li>
@@ -457,7 +458,7 @@
 <li>适配器代替controller执行相应的方法</li>
 <li>扩展Controller时，只需要增加一个适配器类就完成了SpringMVC的扩展了</li>
 </ul>
-<h4 id="注意事项及细节-2"><a href="#注意事项及细节-2" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h4><ol>
+<h5 id="注意事项及细节-2"><a href="#注意事项及细节-2" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h5><ol>
 <li>三种命名方式，是根据src是以怎样的形式给到Adapter（在Adapter里的形式）来命名的</li>
 <li>类适配器：在Adapter里，将src当作一个类，继承<br> 对象适配器：在Adapter里，将src当作一个对象，持有<br> 接口适配器：在Adapter里，将src当作一个接口，实现</li>
 <li>Adapter模式最大的作用还是将原本不兼容的接口融合在一起工作</li>
@@ -497,8 +498,6 @@
       <i class="iconfont icon-tags"></i>
       
         <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="print-no-link">#设计模式</a>
-      
-        <a href="/tags/GOF/" class="print-no-link">#GOF</a>
       
         <a href="/tags/%E9%80%82%E9%85%8D%E5%99%A8/" class="print-no-link">#适配器</a>
       
@@ -557,7 +556,7 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2020/08/21/2020-08-20-%E4%BA%AB%E5%85%83%E6%A8%A1%E5%BC%8F/" title="享元模式">
+                      <a href="/2020/08/20/2020-08-20-%E4%BA%AB%E5%85%83%E6%A8%A1%E5%BC%8F/" title="享元模式">
                         <i class="iconfont icon-arrowleft"></i>
                         <span class="hidden-mobile">享元模式</span>
                         <span class="visible-mobile">上一篇</span>

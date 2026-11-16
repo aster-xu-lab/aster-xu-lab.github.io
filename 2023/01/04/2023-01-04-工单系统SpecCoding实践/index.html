@@ -8,8 +8,10 @@
 <head>
   <meta charset="UTF-8">
 
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/fluid.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/01/04/2023-01-04-工单系统SpecCoding实践/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
@@ -27,13 +29,13 @@
 <meta property="og:description" content="从 0 到 1 交付一个中台：工单履约系统的 Spec Coding 实践先有 Spec，后有代码2024 年，公司决定做一个通用的工单履约管理中台，覆盖 3C 维修、贴膜、回收、导购四条业务线。我被指定为技术负责人，从 0 开始设计整个系统。 传统做法是拿到需求就开始建项目——拉 Spring Boot 脚手架、建表、写 CRUD。这次我换了个方式：先写 Spec，再写代码。这个决策让整个交付过">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-01-04T14:36:57.000Z">
-<meta property="article:modified_time" content="2026-10-09T08:31:44.959Z">
+<meta property="article:modified_time" content="2026-11-16T03:43:42.153Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ADR">
 <meta property="article:tag" content="AI辅助开发">
 <meta property="article:tag" content="Spec Coding">
 <meta property="article:tag" content="从0到1">
-<meta property="article:tag" content="架构设计">
+<meta property="article:tag" content="架构">
 <meta property="article:tag" content="领域驱动设计">
 <meta name="twitter:card" content="summary_large_image">
   
@@ -413,9 +415,9 @@
             
               <div class="markdown-body">
                 
-                <h1 id="从-0-到-1-交付一个中台：工单履约系统的-Spec-Coding-实践"><a href="#从-0-到-1-交付一个中台：工单履约系统的-Spec-Coding-实践" class="headerlink" title="从 0 到 1 交付一个中台：工单履约系统的 Spec Coding 实践"></a>从 0 到 1 交付一个中台：工单履约系统的 Spec Coding 实践</h1><h2 id="先有-Spec，后有代码"><a href="#先有-Spec，后有代码" class="headerlink" title="先有 Spec，后有代码"></a>先有 Spec，后有代码</h2><p>2024 年，公司决定做一个通用的工单履约管理中台，覆盖 3C 维修、贴膜、回收、导购四条业务线。我被指定为技术负责人，从 0 开始设计整个系统。</p>
+                <h2 id="从-0-到-1-交付一个中台：工单履约系统的-Spec-Coding-实践"><a href="#从-0-到-1-交付一个中台：工单履约系统的-Spec-Coding-实践" class="headerlink" title="从 0 到 1 交付一个中台：工单履约系统的 Spec Coding 实践"></a>从 0 到 1 交付一个中台：工单履约系统的 Spec Coding 实践</h2><h3 id="先有-Spec，后有代码"><a href="#先有-Spec，后有代码" class="headerlink" title="先有 Spec，后有代码"></a>先有 Spec，后有代码</h3><p>2024 年，公司决定做一个通用的工单履约管理中台，覆盖 3C 维修、贴膜、回收、导购四条业务线。我被指定为技术负责人，从 0 开始设计整个系统。</p>
 <p>传统做法是拿到需求就开始建项目——拉 Spring Boot 脚手架、建表、写 CRUD。这次我换了个方式：<strong>先写 Spec，再写代码</strong>。这个决策让整个交付过程少走了很多弯路。这篇文章记录我的完整实践。</p>
-<h2 id="一、什么是-Spec-Coding"><a href="#一、什么是-Spec-Coding" class="headerlink" title="一、什么是 Spec Coding"></a>一、什么是 Spec Coding</h2><p>Spec Coding 的核心思想很简单：</p>
+<h3 id="一、什么是-Spec-Coding"><a href="#一、什么是-Spec-Coding" class="headerlink" title="一、什么是 Spec Coding"></a>一、什么是 Spec Coding</h3><p>Spec Coding 的核心思想很简单：</p>
 <blockquote>
 <p>写代码之前，先把”要做什么”写得足够清楚，清楚到可以让 AI 理解并辅助实现。</p>
 </blockquote>
@@ -426,7 +428,7 @@
 <li><strong>API 设计</strong>——接口契约（先定契约再写实现）</li>
 <li><strong>ADR（Architecture Decision Record）</strong>——关键架构决策及理由</li>
 </ol>
-<h2 id="二、第一步：产品分析"><a href="#二、第一步：产品分析" class="headerlink" title="二、第一步：产品分析"></a>二、第一步：产品分析</h2><p>工单系统的核心流程：</p>
+<h3 id="二、第一步：产品分析"><a href="#二、第一步：产品分析" class="headerlink" title="二、第一步：产品分析"></a>二、第一步：产品分析</h3><p>工单系统的核心流程：</p>
 <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs">客户下单 → 生成工单 → 分配门店 → 技师接单 → <br>开始服务 → 完成服务 → 客户确认 → 工单关闭<br></code></pre></td></tr></table></figure>
 
 <p>四条业务线（维修、贴膜、回收、导购）的流程 80% 相同，但 20% 不同：</p>
@@ -437,9 +439,9 @@
 <li>导购需要预约时段</li>
 </ul>
 <p>所以不能用四条业务线做四套代码。需要一个<strong>通用工单引擎 + 业务线差异配置</strong>。</p>
-<h2 id="三、第二步：领域建模"><a href="#三、第二步：领域建模" class="headerlink" title="三、第二步：领域建模"></a>三、第二步：领域建模</h2><h3 id="核心实体"><a href="#核心实体" class="headerlink" title="核心实体"></a>核心实体</h3><figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs nix">工单 (WorkOrder)<br>  ├── <span class="hljs-params">orderNo:</span> String          <span class="hljs-comment"># 工单号</span><br>  ├── <span class="hljs-params">type:</span> WorkOrderType      <span class="hljs-comment"># REPAIR/FILM/RECYCLE/GUIDE</span><br>  ├── <span class="hljs-params">status:</span> OrderStatus      <span class="hljs-comment"># 状态</span><br>  ├── <span class="hljs-params">storeId:</span> Long            <span class="hljs-comment"># 门店</span><br>  ├── <span class="hljs-params">technicianId:</span> Long       <span class="hljs-comment"># 技师</span><br>  └── <span class="hljs-params">items:</span> List<span class="hljs-symbol">&lt;OrderItem&gt;</span>   <span class="hljs-comment"># 工单项</span><br><br>任务 (Task)<br>  ├── <span class="hljs-params">taskNo:</span> String           <span class="hljs-comment"># 任务号</span><br>  ├── <span class="hljs-params">orderNo:</span> String          <span class="hljs-comment"># 关联工单</span><br>  ├── <span class="hljs-params">type:</span> TaskType           <span class="hljs-comment"># 任务类型</span><br>  └── <span class="hljs-params">status:</span> TaskStatus       <span class="hljs-comment"># 任务状态</span><br></code></pre></td></tr></table></figure>
+<h3 id="三、第二步：领域建模"><a href="#三、第二步：领域建模" class="headerlink" title="三、第二步：领域建模"></a>三、第二步：领域建模</h3><h4 id="核心实体"><a href="#核心实体" class="headerlink" title="核心实体"></a>核心实体</h4><figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs nix">工单 (WorkOrder)<br>  ├── <span class="hljs-params">orderNo:</span> String          <span class="hljs-comment"># 工单号</span><br>  ├── <span class="hljs-params">type:</span> WorkOrderType      <span class="hljs-comment"># REPAIR/FILM/RECYCLE/GUIDE</span><br>  ├── <span class="hljs-params">status:</span> OrderStatus      <span class="hljs-comment"># 状态</span><br>  ├── <span class="hljs-params">storeId:</span> Long            <span class="hljs-comment"># 门店</span><br>  ├── <span class="hljs-params">technicianId:</span> Long       <span class="hljs-comment"># 技师</span><br>  └── <span class="hljs-params">items:</span> List<span class="hljs-symbol">&lt;OrderItem&gt;</span>   <span class="hljs-comment"># 工单项</span><br><br>任务 (Task)<br>  ├── <span class="hljs-params">taskNo:</span> String           <span class="hljs-comment"># 任务号</span><br>  ├── <span class="hljs-params">orderNo:</span> String          <span class="hljs-comment"># 关联工单</span><br>  ├── <span class="hljs-params">type:</span> TaskType           <span class="hljs-comment"># 任务类型</span><br>  └── <span class="hljs-params">status:</span> TaskStatus       <span class="hljs-comment"># 任务状态</span><br></code></pre></td></tr></table></figure>
 
-<h3 id="双状态机协同"><a href="#双状态机协同" class="headerlink" title="双状态机协同"></a>双状态机协同</h3><p>这是最核心的设计。工单有工单的状态（待分配→已分配→服务中→待确认→已完成→已关闭），任务有任务的状态（待接收→执行中→已完成→已取消）。</p>
+<h4 id="双状态机协同"><a href="#双状态机协同" class="headerlink" title="双状态机协同"></a>双状态机协同</h4><p>这是最核心的设计。工单有工单的状态（待分配→已分配→服务中→待确认→已完成→已关闭），任务有任务的状态（待接收→执行中→已完成→已取消）。</p>
 <p>两者需要协同：所有任务完成 → 工单进入”待确认”；工单关闭 → 未完成的任务自动取消。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 状态机定义（表驱动）</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">OrderStatus</span> &#123;<br>    PENDING(<span class="hljs-string">&quot;待分配&quot;</span>),<br>    ASSIGNED(<span class="hljs-string">&quot;已分配&quot;</span>, PENDING),      <span class="hljs-comment">// ← 来源</span><br>    SERVICING(<span class="hljs-string">&quot;服务中&quot;</span>, ASSIGNED),<br>    CONFIRMING(<span class="hljs-string">&quot;待确认&quot;</span>, SERVICING),  <span class="hljs-comment">// 所有任务完成后进入</span><br>    COMPLETED(<span class="hljs-string">&quot;已完成&quot;</span>, CONFIRMING),<br>    CLOSED(<span class="hljs-string">&quot;已关闭&quot;</span>, PENDING, ASSIGNED, SERVICING, CONFIRMING);<br>    <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Set&lt;OrderStatus&gt; allowedFrom;<br>&#125;<br></code></pre></td></tr></table></figure>
 
@@ -448,25 +450,25 @@
 <li>工单状态少（6 个），变迁规则简单，表驱动足够</li>
 <li>任务类型多（维修任务、备件任务、质检任务…），每类任务的流转规则不同，实例化更灵活</li>
 </ul>
-<h2 id="四、第三步：API-设计（契约先行）"><a href="#四、第三步：API-设计（契约先行）" class="headerlink" title="四、第三步：API 设计（契约先行）"></a>四、第三步：API 设计（契约先行）</h2><p>在写任何实现代码之前，先定义 API 契约：</p>
+<h3 id="四、第三步：API-设计（契约先行）"><a href="#四、第三步：API-设计（契约先行）" class="headerlink" title="四、第三步：API 设计（契约先行）"></a>四、第三步：API 设计（契约先行）</h3><p>在写任何实现代码之前，先定义 API 契约：</p>
 <figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">POST   /api/v1/orders             创建工单<br>GET    /api/v1/orders/&#123;<span class="hljs-built_in">id</span>&#125;        查询工单<br>POST   /api/v1/orders/&#123;<span class="hljs-built_in">id</span>&#125;/assign 分配门店<br>POST   /api/v1/orders/&#123;<span class="hljs-built_in">id</span>&#125;/start  开始服务<br>POST   /api/v1/orders/&#123;<span class="hljs-built_in">id</span>&#125;/complete 完成服务<br>POST   /api/v1/orders/&#123;<span class="hljs-built_in">id</span>&#125;/confirm  客户确认<br>POST   /api/v1/orders/&#123;<span class="hljs-built_in">id</span>&#125;/close  关闭工单<br></code></pre></td></tr></table></figure>
 
 <p>先把接口文档给到前端同学 review，确认字段设计合理后再动手写 Controller。这个顺序很重要——一旦 API 定了，前后端就能并行开发。</p>
-<h2 id="五、第四步：ADR-架构决策记录"><a href="#五、第四步：ADR-架构决策记录" class="headerlink" title="五、第四步：ADR 架构决策记录"></a>五、第四步：ADR 架构决策记录</h2><p>每个关键决策都写 ADR，记录”当时为什么这么选”。</p>
+<h3 id="五、第四步：ADR-架构决策记录"><a href="#五、第四步：ADR-架构决策记录" class="headerlink" title="五、第四步：ADR 架构决策记录"></a>五、第四步：ADR 架构决策记录</h3><p>每个关键决策都写 ADR，记录”当时为什么这么选”。</p>
 <p><strong>ADR-001: 工单状态机用 COLA StateMachine</strong></p>
 <p>决策：使用阿里 COLA 框架的 StateMachine 组件。<br>理由：(1) 轻量，不依赖 Spring；(2) 支持 UML 风格的状态转换定义；(3) 可视化状态图可以直接生成文档。<br>备选方案：Spring StateMachine（太重，学习成本高）、自研（没必要重复造轮子）。</p>
 <p><strong>ADR-002: 分布式事务用 Seata AT 模式</strong></p>
 <p>决策：Seata AT 模式。<br>理由：工单创建涉及多表写入（工单表 + 任务表 + 通知表），需要保证原子性。AT 模式对业务侵入最小，适合快速上线。<br>后续计划：压测后如果 AT 性能不达标，切换到 TCC（参考 OFS 订单系统的经验）。</p>
 <p><strong>ADR-003: 模板配置使用快照机制</strong></p>
 <p>决策：模板本身存储 JSON，下发时生成快照保存到 <code>template_snapshot</code> 表。<br>理由：模板可能随时被运营修改，但已创建的工单必须绑定创建时的模板内容。快照保证了配置变更不影响历史工单。</p>
-<h2 id="六、AI-加速：把-Spec-喂给-AI"><a href="#六、AI-加速：把-Spec-喂给-AI" class="headerlink" title="六、AI 加速：把 Spec 喂给 AI"></a>六、AI 加速：把 Spec 喂给 AI</h2><p>Spec 写完后，我把整个 Spec 给 Claude：</p>
+<h3 id="六、AI-加速：把-Spec-喂给-AI"><a href="#六、AI-加速：把-Spec-喂给-AI" class="headerlink" title="六、AI 加速：把 Spec 喂给 AI"></a>六、AI 加速：把 Spec 喂给 AI</h3><p>Spec 写完后，我把整个 Spec 给 Claude：</p>
 <ol>
 <li><strong>设计评审</strong>：让 AI 找出 Spec 中的设计漏洞——它找出了状态机里”待确认→已关闭”的边界条件没处理</li>
 <li><strong>代码生成</strong>：根据 API Spec 生成 Controller + Service 框架代码（节省了约 40% 的样板代码时间）</li>
 <li><strong>测试用例</strong>：根据状态机定义生成状态迁移测试矩阵</li>
 </ol>
 <p>AI 不是替代了我的设计工作，而是<strong>加速了设计到代码的转化</strong>。</p>
-<h2 id="七、成果"><a href="#七、成果" class="headerlink" title="七、成果"></a>七、成果</h2><table>
+<h3 id="七、成果"><a href="#七、成果" class="headerlink" title="七、成果"></a>七、成果</h3><table>
 <thead>
 <tr>
 <th>指标</th>
@@ -495,7 +497,7 @@
 </tr>
 </tbody></table>
 <p>最关键的不是代码写得快，而是三个月后新人接手维护时，<strong>他能通过 Spec 理解整个系统的设计意图</strong>。代码告诉你怎么做，Spec 告诉你为什么这么做。</p>
-<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>Spec Coding 的本质：<strong>把决策上下文和代码当作同等重要的交付物</strong>。</p>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>Spec Coding 的本质：<strong>把决策上下文和代码当作同等重要的交付物</strong>。</p>
 <p>不要把所有时间花在写代码上，花 20% 的时间把”为什么这么设计”写清楚。剩下的 80% 可以让 AI 帮你加速实现——但前提是 Spec 要写得足够清晰，AI 才能理解。</p>
 <hr>
 <p><em>发表于 2023 年 1 月 · 标签: Spec Coding, 领域驱动设计, ADR, AI辅助开发, 从0到1, 架构设计</em></p>
@@ -542,7 +544,7 @@
       
         <a href="/tags/%E4%BB%8E0%E5%88%B01/" class="print-no-link">#从0到1</a>
       
-        <a href="/tags/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="print-no-link">#架构设计</a>
+        <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
       
     </div>
   
@@ -609,7 +611,7 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2022/12/15/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/" title="百万订单系统的缓存与降级策略">
+                      <a href="/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/" title="百万订单系统的缓存与降级策略">
                         <span class="hidden-mobile">百万订单系统的缓存与降级策略</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>

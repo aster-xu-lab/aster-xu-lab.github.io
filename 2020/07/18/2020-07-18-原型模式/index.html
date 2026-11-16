@@ -8,8 +8,10 @@
 <head>
   <meta charset="UTF-8">
 
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/fluid.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2020/07/18/2020-07-18-原型模式/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
@@ -27,9 +29,8 @@
 <meta property="og:description" content="介绍 原型模式（Prototype）是指：用原型实例指定创建对象的种类，并且通过拷贝这些原型，创建新的对象 原型模式是一种创建型设计模式，允许一个对象再创建另一个可定制的对象，无需知道如何创建的细节 工作原理是：通过将一个原型对象传给要发动创建的对象，发动创建的对象通过请求原型对象拷贝它们自己来实施创建，即对象.clone()  1234567public class Sheep implemen">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-07-18T10:59:22.000Z">
-<meta property="article:modified_time" content="2026-10-09T08:31:44.944Z">
+<meta property="article:modified_time" content="2026-11-16T03:43:42.142Z">
 <meta property="article:author" content="AsterXu">
-<meta property="article:tag" content="GOF">
 <meta property="article:tag" content="原型">
 <meta property="article:tag" content="设计模式">
 <meta name="twitter:card" content="summary_large_image">
@@ -410,26 +411,26 @@
             
               <div class="markdown-body">
                 
-                <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><ol>
+                <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><ol>
 <li>原型模式（Prototype）是指：用原型实例指定创建对象的种类，并且通过拷贝这些原型，创建新的对象</li>
 <li>原型模式是一种创建型设计模式，允许一个对象再创建另一个可定制的对象，无需知道如何创建的细节</li>
 <li>工作原理是：通过将一个原型对象传给要发动创建的对象，发动创建的对象通过请求原型对象拷贝它们自己来实施创建，即对象.clone()</li>
 </ol>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Sheep</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Cloneable</span> &#123;<br>	<span class="hljs-comment">//克隆该实例，使用默认的clone方法来完成</span><br>	<span class="hljs-meta">@Override</span><br>	<span class="hljs-keyword">protected</span> Object <span class="hljs-title function_">clone</span><span class="hljs-params">()</span>  &#123;<br>		<span class="hljs-keyword">return</span> <span class="hljs-built_in">super</span>.clone();<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>Spring中原型bean的创建，就是原型模式的应用</p>
-<h2 id="浅拷贝介绍"><a href="#浅拷贝介绍" class="headerlink" title="浅拷贝介绍"></a>浅拷贝介绍</h2><ol>
+<h3 id="浅拷贝介绍"><a href="#浅拷贝介绍" class="headerlink" title="浅拷贝介绍"></a>浅拷贝介绍</h3><ol>
 <li>对于数据类型是基本数据类型的成员变量，浅拷贝会直接进行值传递，也就是将该属性值复制一份给新的对象</li>
 <li>对于数据类型是引用数据类型的成员变量，比如说成员变量是某个数组、某个类的对象等，浅拷贝会进行引用传递，也就是只是将该成员变量都指向同一个实例。在这种情况下，在一个对象中修改该成员变量会影响到另一个对象的该成员变量</li>
 <li>浅拷贝是使用默认的clone()方法实现</li>
 </ol>
-<h2 id="深拷贝介绍"><a href="#深拷贝介绍" class="headerlink" title="深拷贝介绍"></a>深拷贝介绍</h2><ol>
+<h3 id="深拷贝介绍"><a href="#深拷贝介绍" class="headerlink" title="深拷贝介绍"></a>深拷贝介绍</h3><ol>
 <li>复制对象的所有基本数据类型的成员变量值</li>
 <li>为所有引用数据类型的成员变量申请存储空间，并复制每个引用数据类型成员变量所引用的对象，知道该对象可达的所有对象。也就是说，对象进行深拷贝要对整个对象进行拷贝</li>
 <li>深拷贝实现方式1：重写clone方法来实现</li>
 <li>深拷贝实现方式2：通过对象序列化实现深拷贝（推荐）</li>
 </ol>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//深拷贝 - 方式2 通过对象的序列化实现 (推荐)</span><br><br><span class="hljs-keyword">public</span> Object <span class="hljs-title function_">deepClone</span><span class="hljs-params">()</span> &#123;<br>	<br>	<span class="hljs-comment">//创建流对象</span><br>	<span class="hljs-type">ByteArrayOutputStream</span> <span class="hljs-variable">bos</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>	<span class="hljs-type">ObjectOutputStream</span> <span class="hljs-variable">oos</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>	<span class="hljs-type">ByteArrayInputStream</span> <span class="hljs-variable">bis</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>	<span class="hljs-type">ObjectInputStream</span> <span class="hljs-variable">ois</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>	<br>	<span class="hljs-keyword">try</span> &#123;<br>		<br>		<span class="hljs-comment">//序列化</span><br>		bos = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ByteArrayOutputStream</span>();<br>		oos = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectOutputStream</span>(bos);<br>		oos.writeObject(<span class="hljs-built_in">this</span>); <span class="hljs-comment">//当前这个对象以对象流的方式输出</span><br>		<br>		<span class="hljs-comment">//反序列化</span><br>		bis = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ByteArrayInputStream</span>(bos.toByteArray());<br>		ois = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ObjectInputStream</span>(bis);<br>		<span class="hljs-type">DeepProtoType</span> <span class="hljs-variable">copyObj</span> <span class="hljs-operator">=</span> (DeepProtoType)ois.readObject();<br>		<br>		<span class="hljs-keyword">return</span> copyObj;<br>		<br>	&#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>		<span class="hljs-comment">// <span class="hljs-doctag">TODO:</span> handle exception</span><br>		e.printStackTrace();<br>		<span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;<br>	&#125; <span class="hljs-keyword">finally</span> &#123;<br>		<span class="hljs-comment">//关闭流</span><br>		<span class="hljs-keyword">try</span> &#123;<br>			bos.close();<br>			oos.close();<br>			bis.close();<br>			ois.close();<br>		&#125; <span class="hljs-keyword">catch</span> (Exception e2) &#123;<br>			<span class="hljs-comment">// <span class="hljs-doctag">TODO:</span> handle exception</span><br>			System.out.println(e2.getMessage());<br>		&#125;<br>	&#125;<br>	<br>&#125;<br></code></pre></td></tr></table></figure>
-<h1 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h1><ol>
+<h2 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h2><ol>
 <li>创建新的对象比较复杂时，可以利用原型模式简化对象的创建过程，同时也能够提高效率</li>
 <li>不用重新初始化对象，而是动态地获得对象运行时的状态</li>
 <li>如果原始对象发生变化（增加或减少属性），其他克隆对象也会发生相应的变化，无需修改代码</li>
@@ -470,8 +471,6 @@
       <i class="iconfont icon-tags"></i>
       
         <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="print-no-link">#设计模式</a>
-      
-        <a href="/tags/GOF/" class="print-no-link">#GOF</a>
       
         <a href="/tags/%E5%8E%9F%E5%9E%8B/" class="print-no-link">#原型</a>
       

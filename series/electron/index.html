@@ -8,8 +8,10 @@
 <head>
   <meta charset="UTF-8">
 
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/fluid.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/series/electron/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
@@ -27,7 +29,7 @@
 <meta property="og:description" content="一个 Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、状态与数据建模、密钥与构建发布。按推荐顺序连读即可。              共 32 篇。前四部分是主线，最后一部分是同一条项目线上的工程方法与复盘，可以穿插阅读。 一、进程与依赖 Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界 写了七年">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-09T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-11-03T06:25:42.251Z">
+<meta property="article:modified_time" content="2026-11-16T06:07:24.538Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
 <meta name="twitter:card" content="summary_large_image">
@@ -368,7 +370,7 @@
 
 <p>共 32 篇。前四部分是主线，最后一部分是同一条项目线上的工程方法与复盘，可以穿插阅读。</p>
 <h2 id="一、进程与依赖"><a href="#一、进程与依赖" class="headerlink" title="一、进程与依赖"></a>一、进程与依赖</h2><ol>
-<li><strong><a href="/2026/09/15/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/">Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界</a></strong><br> 写了七年后端，第一个桌面项目。后端的直觉在这里一半有用、一半是坑。</li>
+<li><strong><a href="/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/">Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界</a></strong><br> 写了七年后端，第一个桌面项目。后端的直觉在这里一半有用、一半是坑。</li>
 <li><strong><a href="/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/">用 node:sqlite 替掉 better-sqlite3：告别原生模块</a></strong><br> 放弃默认答案 better-sqlite3，核心不是性能，而是不想让主进程背上原生模块。</li>
 <li><strong><a href="/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E4%B8%8D%E8%83%BD%E7%95%99%E5%AD%A4%E5%84%BF%E8%BF%9B%E7%A8%8B/">桌面应用不能留孤儿进程：退出时到底该杀谁</a></strong><br> Electron 退出了，随包的 Chromium 和 JVM 还在跑——进程生命周期不能只靠窗口关闭。</li>
 </ol>
@@ -380,8 +382,8 @@
 <li><strong><a href="/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/">长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态</a></strong><br> 最大的垃圾源是一次导航命令顺手构建的 accessibility tree；调参数不是归因。</li>
 </ol>
 <h2 id="三、状态、数据与安全"><a href="#三、状态、数据与安全" class="headerlink" title="三、状态、数据与安全"></a>三、状态、数据与安全</h2><ol start="9">
-<li><strong><a href="/2026/09/24/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/">事件就是状态：用一个事件流驱动 UI 与数据库</a> <span class="label label-primary">必读</span></strong><br> 状态一多就容易”界面和库里对不上”。只让一个事件流当真相，两边都是它的投影。</li>
-<li><strong><a href="/2026/09/26/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/">把商家后台嵌进桌面端：WebContentsView 与登录闸门</a></strong><br>内嵌远程页面还要拿它当登录闸门，”怎么判定登录状态”这个问题看似简单实则全是坑。</li>
+<li><strong><a href="/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/">事件就是状态：用一个事件流驱动 UI 与数据库</a> <span class="label label-primary">必读</span></strong><br> 状态一多就容易”界面和库里对不上”。只让一个事件流当真相，两边都是它的投影。</li>
+<li><strong><a href="/2026/09/25/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/">把商家后台嵌进桌面端：WebContentsView 与登录闸门</a></strong><br>内嵌远程页面还要拿它当登录闸门，”怎么判定登录状态”这个问题看似简单实则全是坑。</li>
 <li><strong><a href="/2026/09/27/2026-09-27-LLM-Key%E4%B8%8D%E4%B8%8B%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B-Electron%E5%AF%86%E9%92%A5%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%BB%BA%E8%AE%AE%E5%B1%82/">LLM Key 不下渲染进程：Electron 里的密钥边界</a></strong><br>API Key 放哪？放渲染进程最方便也最危险。以及为什么”模型建议”必须和”采集证据”分开。</li>
 <li><strong><a href="/2026/11/03/2026-11-03-%E4%BB%8EURL%E8%AE%A1%E6%95%B0%E5%88%B0%E5%95%86%E5%93%81%E5%AE%9E%E4%BE%8B-%E4%B8%80%E6%AC%A1%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B%E9%87%8D%E5%81%9A/">从 URL 计数到商品实例：一次数据模型重做</a></strong><br>平台身份、任务实例、失败事实分属三层；开发期可以一次性重置，发布后必须显式迁移。</li>
 <li><strong><a href="/2026/11/03/2026-11-03-%E9%A2%84%E5%A1%AB%E4%B8%8D%E6%98%AF%E5%A1%AB%E7%A9%BA%E9%A2%98-%E5%A4%9A%E6%BA%90%E5%90%88%E5%B9%B6%E6%9D%A5%E6%BA%90%E6%BA%AF%E6%BA%90%E4%B8%8E%E5%8F%AF%E6%92%A4%E9%94%80/">预填不是填空题：多源合并、来源溯源与可撤销</a></strong><br>预填的产物不是值，而是「值 + 来源 + 删除记录 + 规则版本」。</li>
@@ -398,15 +400,15 @@
 <li><strong><a href="/2026/11/04/2026-11-04-%E5%8C%85%E5%86%85%E5%8C%85%E5%A4%96-%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E4%B8%8D%E8%AF%A5%E4%BB%8EPATH%E6%89%BE%E8%87%AA%E5%B7%B1%E7%9A%84%E5%B7%A5%E5%85%B7/">包内包外：桌面应用不该从 PATH 找自己的工具</a></strong><br>随包分发还是显式配置；<code>cwd</code> 和 <code>PATH</code> 是开发便利，不是产品行为。</li>
 </ol>
 <h2 id="五、工程方法与复盘"><a href="#五、工程方法与复盘" class="headerlink" title="五、工程方法与复盘"></a>五、工程方法与复盘</h2><ol start="23">
-<li><strong><a href="/2026/10/03/2026-10-02-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E9%A1%B9%E7%9B%AE%E6%80%8E%E4%B9%88%E5%81%9A%E8%B4%A8%E9%87%8F%E5%9F%BA%E7%BA%BF/">没有测试框架的项目怎么做质量基线</a></strong><br>没有 <code>pnpm test</code> 不等于没有质量门禁——几道门闩各自能挡住什么、挡不住什么。</li>
+<li><strong><a href="/2026/10/02/2026-10-02-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E9%A1%B9%E7%9B%AE%E6%80%8E%E4%B9%88%E5%81%9A%E8%B4%A8%E9%87%8F%E5%9F%BA%E7%BA%BF/">没有测试框架的项目怎么做质量基线</a></strong><br>没有 <code>pnpm test</code> 不等于没有质量门禁——几道门闩各自能挡住什么、挡不住什么。</li>
 <li><strong><a href="/2026/10/17/2026-10-17-%E7%BB%99%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E5%86%99%E7%8A%B6%E6%80%81%E6%9C%BA%E6%8E%A2%E9%92%88/">给没有测试框架的桌面应用写状态机探针</a></strong><br>用 CDP 驱动真实应用，先断言”被测入口确实被调用过”，避免拿陈旧状态读成通过。</li>
 <li><strong><a href="/2026/10/17/2026-10-17-%E4%B8%80%E6%AC%A1%E5%AD%97%E6%AE%B5%E5%90%8D%E9%94%99%E8%AF%AF%E5%90%9E%E6%8E%89%E6%89%80%E6%9C%89%E5%A4%B1%E8%B4%A5%E5%8E%9F%E5%9B%A0/">一次字段名错误，吞掉了所有失败原因</a></strong><br>服务端返回 <code>rtn_code</code>，客户端读 <code>code</code>；成功路径侥幸命中，所有业务失败退化成一个空原因。</li>
-<li><strong><a href="/2026/10/07/2026-10-06-ADR%E9%A9%B1%E5%8A%A8%E5%86%B3%E7%AD%96-%E6%8A%8A%E4%B8%8D%E5%81%9A%E4%B9%9F%E5%86%99%E6%88%90%E5%8F%AF%E5%A4%8D%E7%9B%98%E7%9A%84%E5%86%B3%E7%AD%96/">ADR 驱动决策：把”不做”也写成可复盘的决策</a></strong><br>一份有用的 ADR 长什么样，为什么它的价值在”为什么不选另一条路”。</li>
+<li><strong><a href="/2026/10/06/2026-10-06-ADR%E9%A9%B1%E5%8A%A8%E5%86%B3%E7%AD%96-%E6%8A%8A%E4%B8%8D%E5%81%9A%E4%B9%9F%E5%86%99%E6%88%90%E5%8F%AF%E5%A4%8D%E7%9B%98%E7%9A%84%E5%86%B3%E7%AD%96/">ADR 驱动决策：把”不做”也写成可复盘的决策</a></strong><br>一份有用的 ADR 长什么样，为什么它的价值在”为什么不选另一条路”。</li>
 <li><strong><a href="/2026/10/08/2026-10-08-%E4%B8%80%E4%B8%AA%E6%9C%88%E4%BB%8E0%E5%88%B0%E6%BC%94%E7%A4%BA-%E6%8E%92%E6%9C%9F%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/">一个月从 0 到演示：排期与降级策略</a></strong><br>演示版和生产版差十倍工期，怎么分开；演示交付里最重要的东西是降级方案。</li>
-<li><strong><a href="/2026/10/10/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/">写文档也是工程：分类目录与”风险单列”</a></strong><br>二十来份文档的目录约定与写作规范，以及最容易被违反的一条原则。</li>
+<li><strong><a href="/2026/10/09/2026-10-09-%E5%86%99%E6%96%87%E6%A1%A3%E4%B9%9F%E6%98%AF%E5%B7%A5%E7%A8%8B-%E5%88%86%E7%B1%BB%E7%9B%AE%E5%BD%95%E4%B8%8E%E9%A3%8E%E9%99%A9%E5%8D%95%E5%88%97/">写文档也是工程：分类目录与”风险单列”</a></strong><br>二十来份文档的目录约定与写作规范，以及最容易被违反的一条原则。</li>
 <li><strong><a href="/2026/10/17/2026-10-17-%E6%8A%8A%E9%87%8D%E5%A4%8D%E5%B7%A5%E4%BD%9C%E6%B5%81%E6%B2%89%E6%B7%80%E6%88%90Skill%E4%B8%8EAgent/">把重复工作流沉淀成 Skill 与 Agent</a></strong><br>哪些流程值得沉淀、触发边界怎么划、Skill 过期为什么比没有更糟。</li>
 <li><strong><a href="/2026/11/03/2026-11-03-%E4%B8%80%E5%A5%97%E8%B5%84%E4%BA%A7%E4%B8%89%E4%B8%AA%E5%AE%BF%E4%B8%BB-Agent%E8%A7%84%E5%88%99%E7%9A%84%E5%8D%95%E4%B8%80%E6%BA%90%E4%B8%8E%E7%94%9F%E6%88%90%E5%85%A5%E5%8F%A3/">一套资产，三个宿主：Agent 规则的单一源与生成入口</a></strong><br>从符号链接换到共享源 + 生成薄入口；单一源不是只有一个文件，而是只有一个可编辑的文件。</li>
-<li><strong><a href="/2026/10/22/2026-10-21-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E9%80%89%E5%9E%8B-%E6%B2%A1%E6%9C%89%E9%9B%B6%E4%BB%A3%E4%BB%B7%E7%9A%84%E6%96%B9%E6%A1%88/">跨平台选型：没有零代价的方案，只有扛得住的代价</a></strong><br>包体积、性能、生态三笔账互相牵制；选型不是找没有缺点的方案，而是找缺点扛得住的方案。</li>
+<li><strong><a href="/2026/10/21/2026-10-21-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E9%80%89%E5%9E%8B-%E6%B2%A1%E6%9C%89%E9%9B%B6%E4%BB%A3%E4%BB%B7%E7%9A%84%E6%96%B9%E6%A1%88/">跨平台选型：没有零代价的方案，只有扛得住的代价</a></strong><br>包体积、性能、生态三笔账互相牵制；选型不是找没有缺点的方案，而是找缺点扛得住的方案。</li>
 <li><strong><a href="/2026/11/03/2026-11-03-%E5%A4%B1%E8%B4%A5%E8%A6%81%E7%95%99%E4%B8%8B%E8%AF%81%E6%8D%AE-%E9%87%87%E9%9B%86%E4%B8%8E%E4%B8%8A%E4%BC%A0%E7%9A%84%E5%A4%B1%E8%B4%A5%E8%B7%AF%E5%BE%84%E8%AE%BE%E8%AE%A1/">失败要留下证据：采集与上传的失败路径设计</a></strong><br>失败快照、错误码分层、阶段化错误；失败率是结果，失败证据才是下一次修复的输入。</li>
 </ol>
 <hr>

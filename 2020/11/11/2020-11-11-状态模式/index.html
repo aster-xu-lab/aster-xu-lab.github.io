@@ -8,8 +8,10 @@
 <head>
   <meta charset="UTF-8">
 
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/fluid.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2020/11/11/2020-11-11-状态模式/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
@@ -27,9 +29,8 @@
 <meta property="og:description" content="介绍 状态模式（State Pattern）：它主要用来解决对象在多种状态转换时，需要对外输出行为的问题。状态和行为是一一对应的，状态之间可以互相转换 当一个对象的内在状态改变时，允许改变其行为，这个对象看起来时改变了其类  原理 Context类为环境角色，用于维护State实例，这个实例定义当前状态 State为抽象状态角色，定义一个接口封装与Context的一个特点接口享元行为 Concre">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-11-11T15:05:59.000Z">
-<meta property="article:modified_time" content="2026-10-09T08:31:44.946Z">
+<meta property="article:modified_time" content="2026-11-16T03:43:42.144Z">
 <meta property="article:author" content="AsterXu">
-<meta property="article:tag" content="GOF">
 <meta property="article:tag" content="状态">
 <meta property="article:tag" content="设计模式">
 <meta name="twitter:card" content="summary_large_image">
@@ -410,11 +411,11 @@
             
               <div class="markdown-body">
                 
-                <h1 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h1><ol>
+                <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><ol>
 <li>状态模式（State Pattern）：它主要用来解决对象在多种状态转换时，需要对外输出行为的问题。状态和行为是一一对应的，状态之间可以互相转换</li>
 <li>当一个对象的内在状态改变时，允许改变其行为，这个对象看起来时改变了其类</li>
 </ol>
-<h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><ol>
+<h2 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h2><ol>
 <li>Context类为环境角色，用于维护State实例，这个实例定义当前状态</li>
 <li>State为抽象状态角色，定义一个接口封装与Context的一个特点接口享元行为</li>
 <li>ConcreteState是具体的状态角色，每个子类实现一个与Context的uohe状态相关行为</li>
@@ -433,7 +434,7 @@
 
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 不能抽奖状态</span><br><span class="hljs-comment"> * <span class="hljs-doctag">@author</span> Administrator</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">NoRaffleState</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">State</span> &#123;<br><br>	 <span class="hljs-comment">// 初始化时传入活动引用，扣除积分后改变其状态</span><br>    RaffleActivity activity;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">NoRaffleState</span><span class="hljs-params">(RaffleActivity activity)</span> &#123;<br>        <span class="hljs-built_in">this</span>.activity = activity;<br>    &#125;<br><br>    <span class="hljs-comment">// 当前状态可以扣积分 , 扣除后，将状态设置成可以抽奖状态</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">deductMoney</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;扣除50积分成功，您可以抽奖了&quot;</span>);<br>        activity.setState(activity.getCanRaffleState());<br>    &#125;<br><br>    <span class="hljs-comment">// 当前状态不能抽奖</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">raffle</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;扣了积分才能抽奖喔！&quot;</span>);<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;<br>    &#125;<br><br>    <span class="hljs-comment">// 当前状态不能发奖品</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">dispensePrize</span><span class="hljs-params">()</span> &#123;<br>        System.out.println(<span class="hljs-string">&quot;不能发放奖品&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h1 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h1><ol>
+<h2 id="注意事项及细节"><a href="#注意事项及细节" class="headerlink" title="注意事项及细节"></a>注意事项及细节</h2><ol>
 <li>代码有很强的可读性。状态模式将每个状态的行为封装到对应的一个类中</li>
 <li>方便维护。将容易产生问题的if-else语句删除了，如果把每个状态的行为都放到一个类中，每次调试方法时都要判断当前是说明状态，不但会产生出很多的if-else语句，而且容易出错</li>
 <li>符合”开闭原则“。容易增删状态</li>
@@ -474,8 +475,6 @@
       <i class="iconfont icon-tags"></i>
       
         <a href="/tags/%E8%AE%BE%E8%AE%A1%E6%A8%A1%E5%BC%8F/" class="print-no-link">#设计模式</a>
-      
-        <a href="/tags/GOF/" class="print-no-link">#GOF</a>
       
         <a href="/tags/%E7%8A%B6%E6%80%81/" class="print-no-link">#状态</a>
       
@@ -534,7 +533,7 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2020/11/20/2020-11-19-%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/" title="策略模式">
+                      <a href="/2020/11/19/2020-11-19-%E7%AD%96%E7%95%A5%E6%A8%A1%E5%BC%8F/" title="策略模式">
                         <i class="iconfont icon-arrowleft"></i>
                         <span class="hidden-mobile">策略模式</span>
                         <span class="visible-mobile">上一篇</span>
@@ -544,7 +543,7 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2020/11/04/2020-11-03-%E6%A8%A1%E6%9D%BF%E6%96%B9%E6%B3%95%E6%A8%A1%E5%BC%8F/" title="模板方法模式">
+                      <a href="/2020/11/03/2020-11-03-%E6%A8%A1%E6%9D%BF%E6%96%B9%E6%B3%95%E6%A8%A1%E5%BC%8F/" title="模板方法模式">
                         <span class="hidden-mobile">模板方法模式</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>

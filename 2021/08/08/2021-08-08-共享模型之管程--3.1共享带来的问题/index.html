@@ -8,8 +8,10 @@
 <head>
   <meta charset="UTF-8">
 
-  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
-  <link rel="icon" href="/img/fluid.png">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/08/08/2021-08-08-共享模型之管程--3.1共享带来的问题/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
@@ -35,9 +37,8 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5ca2d7d4423c741afaa4bb9094650d97.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a9f50f13054a3138f4bc9ba8ac03833b.png">
 <meta property="article:published_time" content="2021-08-08T13:38:04.000Z">
-<meta property="article:modified_time" content="2026-10-09T08:31:44.948Z">
+<meta property="article:modified_time" content="2026-11-16T03:43:42.149Z">
 <meta property="article:author" content="AsterXu">
-<meta property="article:tag" content="JUC">
 <meta property="article:tag" content="Java并发">
 <meta property="article:tag" content="临界区">
 <meta property="article:tag" content="并发安全">
@@ -420,7 +421,7 @@
             
               <div class="markdown-body">
                 
-                <h1 id="1、共享带来的问题"><a href="#1、共享带来的问题" class="headerlink" title="1、共享带来的问题"></a>1、共享带来的问题</h1><h2 id="小故事"><a href="#小故事" class="headerlink" title="小故事"></a>小故事</h2><ul>
+                <h2 id="1、共享带来的问题"><a href="#1、共享带来的问题" class="headerlink" title="1、共享带来的问题"></a>1、共享带来的问题</h2><h3 id="小故事"><a href="#小故事" class="headerlink" title="小故事"></a>小故事</h3><ul>
 <li>老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快</li>
 <li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/226feb641c0b0e9a3a1fb99600d96279.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
 <li>小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用</li>
@@ -441,7 +442,7 @@
 <li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/09c00785ce0ad885cf324f8ce710b8ac.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
 <li>小南和小女都觉得自己没做错，单笔记本里的结果是1而不是0</li>
 </ul>
-<h2 id="Java的体现"><a href="#Java的体现" class="headerlink" title="Java的体现"></a>Java的体现</h2><p>两个线程对初始值为0的静态变量一个做自增，一个做自建，各做5000次，结果是0吗？</p>
+<h3 id="Java的体现"><a href="#Java的体现" class="headerlink" title="Java的体现"></a>Java的体现</h3><p>两个线程对初始值为0的静态变量一个做自增，一个做自建，各做5000次，结果是0吗？</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-variable">counter</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br><br><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">times</span> <span class="hljs-operator">=</span> <span class="hljs-number">5000</span>;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br><br>    <span class="hljs-type">Thread</span> <span class="hljs-variable">t1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; times; i++) &#123;<br>            counter++;<br>        &#125;<br>    &#125;, <span class="hljs-string">&quot;t1&quot;</span>);<br><br>    <span class="hljs-type">Thread</span> <span class="hljs-variable">t2</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; times; i++) &#123;<br>            counter--;<br>        &#125;<br>    &#125;, <span class="hljs-string">&quot;t2&quot;</span>);<br>    t1.start();<br>    t2.start();<br>    t1.join();<br>    t2.join();<br>    log.debug(<span class="hljs-string">&quot;结果：&#123;&#125;&quot;</span>, counter);<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>输出</p>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">2022</span>/<span class="hljs-number">03</span>/<span class="hljs-number">04</span>-<span class="hljs-number">00</span>:<span class="hljs-number">15</span>:<span class="hljs-number">33</span>.<span class="hljs-number">287</span><span class="hljs-meta"> [main] c.Test1 - 结果：332</span><br></code></pre></td></tr></table></figure>
@@ -451,7 +452,7 @@
 <p>而对应<code>i--</code>也是类似的：</p>
 <figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs less"><span class="hljs-selector-tag">getstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 获取静态变量i的值</span><br><span class="hljs-selector-tag">iconst_1</span> <span class="hljs-comment">// 准备常量1</span><br><span class="hljs-selector-tag">isub</span> <span class="hljs-comment">// 自减</span><br><span class="hljs-selector-tag">putstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 将修改后的值存入静态变量i</span><br></code></pre></td></tr></table></figure>
 <p>Java的内存模型如下，完成静态变量的自增、自减需要在主内存和工作内存中进行数据交换（这块会在别的章节进行叙述）：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3b1995e5662821a23c1fec6c9c9e6c0b.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>如果单线程，以上8行代码是顺序执行（不会交错）没有问题：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/dafe09f04fdb03becd8318044ccc3287.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>但多线程下这8航大吗可能交错运行：<br>出现负数的情况：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5ca2d7d4423c741afaa4bb9094650d97.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>出现正数的情况：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a9f50f13054a3138f4bc9ba8ac03833b.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
-<h2 id="临界区-Critical-Section"><a href="#临界区-Critical-Section" class="headerlink" title="临界区 Critical Section"></a>临界区 Critical Section</h2><ul>
+<h3 id="临界区-Critical-Section"><a href="#临界区-Critical-Section" class="headerlink" title="临界区 Critical Section"></a>临界区 Critical Section</h3><ul>
 <li>一个程序运行多个线程本身是没有偶问题的</li>
 <li>问题出在多个线程访问<strong>共享资源</strong><ul>
 <li>多个线程读<strong>共享资源</strong>其实也没有问题</li>
@@ -461,7 +462,7 @@
 <li>一段代码内如果存在对<strong>共享资源</strong>的多线程读写操作，称这段代码为<strong>临界区</strong><br>例如，下面代码中的临界区</li>
 </ul>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-variable">counter</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">increment</span><span class="hljs-params">()</span> <br><span class="hljs-comment">// 临界区</span><br>&#123;<br>	counter++;<br>&#125;<br><span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">decrement</span><span class="hljs-params">()</span> <br><span class="hljs-comment">// 临界区</span><br>&#123;<br>	counter--;<br>&#125;<br></code></pre></td></tr></table></figure>
-<h2 id="竞态条件-Race-Condition"><a href="#竞态条件-Race-Condition" class="headerlink" title="竞态条件 Race Condition"></a>竞态条件 Race Condition</h2><p>多个线程在临界区内执行，由于代码的<strong>执行序列不同</strong>而导致结果无法预测，称之发生了<strong>竞态条件</strong></p>
+<h3 id="竞态条件-Race-Condition"><a href="#竞态条件-Race-Condition" class="headerlink" title="竞态条件 Race Condition"></a>竞态条件 Race Condition</h3><p>多个线程在临界区内执行，由于代码的<strong>执行序列不同</strong>而导致结果无法预测，称之发生了<strong>竞态条件</strong></p>
 
                 
               </div>
@@ -496,8 +497,6 @@
       <i class="iconfont icon-tags"></i>
       
         <a href="/tags/Java%E5%B9%B6%E5%8F%91/" class="print-no-link">#Java并发</a>
-      
-        <a href="/tags/JUC/" class="print-no-link">#JUC</a>
       
         <a href="/tags/%E5%B9%B6%E5%8F%91%E5%AE%89%E5%85%A8/" class="print-no-link">#并发安全</a>
       
