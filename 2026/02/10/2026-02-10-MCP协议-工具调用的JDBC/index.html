@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/02/10/2026-02-10-MCP协议-工具调用的JDBC/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/02/10/2026-02-10-MCP%E5%8D%8F%E8%AE%AE-%E5%B7%A5%E5%85%B7%E8%B0%83%E7%94%A8%E7%9A%84JDBC/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="定位：学习笔记。MCP（Model Context Protocol）是 2024 年底由 Anthropic 提出的工具调用标准化协议。我为了搞懂它，自己实现了一个最小版 Server&#x2F;Client。  一、MCP 解决什么问题在 MCP 之前，每个 LLM 应用连工具都是自己造的轮子：协议自己定、格式自己定、连自己的 Agent 是这套、换一个框架又得重写。 MCP 的定位一句话：">
+    <meta name="description" content="定位：学习笔记。MCP（Model Context Protocol）是 2024 年底由 Anthropic 提出的工具调用标准化协议。我为了搞懂它，自己实现了一个最小版 Server&#x2F;Client。 一、MCP 解决什么问题在 MCP 之前，每个 LLM 应用连工具都是自己造的轮子：协议自己定、格式自己定、连自己的 Agent 是这套、换一个框架又得重写。 MCP 的定位一句话：工具">
 <meta property="og:type" content="article">
 <meta property="og:title" content="MCP：工具调用的&quot;JDBC&quot;——从零看一个 JSON-RPC 协议">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/02/10/2026-02-10-MCP%E5%8D%8F%E8%AE%AE-%E5%B7%A5%E5%85%B7%E8%B0%83%E7%94%A8%E7%9A%84JDBC/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="定位：学习笔记。MCP（Model Context Protocol）是 2024 年底由 Anthropic 提出的工具调用标准化协议。我为了搞懂它，自己实现了一个最小版 Server&#x2F;Client。  一、MCP 解决什么问题在 MCP 之前，每个 LLM 应用连工具都是自己造的轮子：协议自己定、格式自己定、连自己的 Agent 是这套、换一个框架又得重写。 MCP 的定位一句话：">
+<meta property="og:description" content="定位：学习笔记。MCP（Model Context Protocol）是 2024 年底由 Anthropic 提出的工具调用标准化协议。我为了搞懂它，自己实现了一个最小版 Server&#x2F;Client。 一、MCP 解决什么问题在 MCP 之前，每个 LLM 应用连工具都是自己造的轮子：协议自己定、格式自己定、连自己的 Agent 是这套、换一个框架又得重写。 MCP 的定位一句话：工具">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6aaaea775a54b74a6a1614d6c8a4c12d.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6aaaea775a54b74a6a1614d6c8a4c12d.png">
 <meta property="article:published_time" content="2026-02-10T12:53:28.000Z">
-<meta property="article:modified_time" content="2026-11-02T10:34:18.986Z">
+<meta property="article:modified_time" content="2026-02-10T12:53:28.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Agent">
 <meta property="article:tag" content="JSON-RPC">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="协议">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6aaaea775a54b74a6a1614d6c8a4c12d.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6aaaea775a54b74a6a1614d6c8a4c12d.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"MCP：工具调用的\"JDBC\"——从零看一个 JSON-RPC 协议","datePublished":"2026-02-10T12:53:28.000Z","dateModified":"2026-02-10T12:53:28.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/02/10/2026-02-10-MCP%E5%8D%8F%E8%AE%AE-%E5%B7%A5%E5%85%B7%E8%B0%83%E7%94%A8%E7%9A%84JDBC/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          5k 字
+          5.5k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          43 分钟
+          47 分钟
         
       </span>
     
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/agent/">AI / Agent 工程</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">MCP：工具调用的&#34;JDBC&#34;——从零看一个 JSON-RPC 协议</h1>
+            <p id="seo-header">MCP：工具调用的&#34;JDBC&#34;——从零看一个 JSON-RPC 协议</p>
             
             
               <div class="markdown-body">
@@ -432,10 +445,11 @@
 <li><strong><code>tools/call</code></strong>：调用指定工具，传参数，拿结果。</li>
 </ul>
 <p>一次请求&#x2F;响应长这样：</p>
-<figure class="highlight jsonc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs jsonc"><span class="hljs-comment">// 请求：列出工具</span><br><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;jsonrpc&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2.0&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-number">1</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;method&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;tools/list&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;params&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><br><span class="hljs-comment">// 响应</span><br><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;jsonrpc&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2.0&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-number">1</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;result&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;tools&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">[</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;get_current_time&quot;</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><br><br><span class="hljs-comment">// 请求：调用工具</span><br><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;jsonrpc&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2.0&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-number">2</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;method&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;tools/call&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;params&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;get_current_time&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;arguments&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><br><span class="hljs-comment">// 响应</span><br><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;jsonrpc&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2.0&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-number">2</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;result&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;content&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">[</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;text&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;text&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2026-06-21T09:00:00&quot;</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight jsonc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs jsonc"><span class="hljs-comment">// 请求：列出工具</span><br><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;jsonrpc&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2.0&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-number">1</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;method&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;tools/list&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;params&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><br><span class="hljs-comment">// 响应</span><br><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;jsonrpc&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2.0&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-number">1</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;result&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;tools&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">[</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;get_current_time&quot;</span><span class="hljs-punctuation">,</span> ...<span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><br><br><span class="hljs-comment">// 请求：调用工具</span><br><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;jsonrpc&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2.0&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-number">2</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;method&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;tools/call&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;params&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;name&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;get_current_time&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;arguments&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><br><span class="hljs-comment">// 响应</span><br><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;jsonrpc&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2.0&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;id&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-number">2</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;result&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;content&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-punctuation">[</span><span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;text&quot;</span><span class="hljs-punctuation">,</span><span class="hljs-attr">&quot;text&quot;</span><span class="hljs-punctuation">:</span><span class="hljs-string">&quot;2026-02-10T09:00:00&quot;</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
 
 <p>为什么用 <strong>stdio</strong>：MCP Server 通常作为一个<strong>子进程</strong>被 Agent 拉起，两边通过 stdin&#x2F;stdout 交换 JSON 行——不需要开端口、不需要网络配置，进程内通信最简单可靠。</p>
-<h2 id="三、一个最小-MCP-Server（核心逻辑）"><a href="#三、一个最小-MCP-Server（核心逻辑）" class="headerlink" title="三、一个最小 MCP Server（核心逻辑）"></a>三、一个最小 MCP Server（核心逻辑）</h2><p>我的 demo Server 就是”读一行 JSON → 分发 → 写一行 JSON”：</p>
+<p><strong>真实协议在 <code>tools/list</code> 之前还有一个握手</strong>：Client 先发 <code>initialize</code>（协商协议版本、声明 capabilities），Server 返回 <code>initialize</code> 结果；Client 再发 <code>notifications/initialized</code> 通知，之后才能正常调用 <code>tools/list</code>、<code>tools/call</code>。下面为了突出工具调用的骨架，把这段生命周期省掉了——<strong>本文的 demo 不是可互操作的完整 MCP 实现</strong>。</p>
+<h2 id="三、一个最小-MCP-Server（仅示意工具调用，非完整实现）"><a href="#三、一个最小-MCP-Server（仅示意工具调用，非完整实现）" class="headerlink" title="三、一个最小 MCP Server（仅示意工具调用，非完整实现）"></a>三、一个最小 MCP Server（仅示意工具调用，非完整实现）</h2><p>我的 demo Server 就是”读一行 JSON → 分发 → 写一行 JSON”：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">McpServer</span> &#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Map&lt;String, Tool&gt; tools = <span class="hljs-keyword">new</span> <span class="hljs-title class_">LinkedHashMap</span>&lt;&gt;();<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">start</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> IOException &#123;<br>        <span class="hljs-type">BufferedReader</span> <span class="hljs-variable">reader</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">BufferedReader</span>(<span class="hljs-keyword">new</span> <span class="hljs-title class_">InputStreamReader</span>(System.in));<br>        String line;<br>        <span class="hljs-keyword">while</span> ((line = reader.readLine()) != <span class="hljs-literal">null</span>) &#123;<br>            <span class="hljs-keyword">if</span> (line.isBlank()) <span class="hljs-keyword">continue</span>;<br>            Map&lt;String, Object&gt; request = json.readValue(line, Map.class);<br>            <span class="hljs-type">String</span> <span class="hljs-variable">method</span> <span class="hljs-operator">=</span> (String) request.get(<span class="hljs-string">&quot;method&quot;</span>);<br><br>            Map&lt;String, Object&gt; response = <span class="hljs-keyword">new</span> <span class="hljs-title class_">LinkedHashMap</span>&lt;&gt;();<br>            response.put(<span class="hljs-string">&quot;jsonrpc&quot;</span>, <span class="hljs-string">&quot;2.0&quot;</span>);<br>            response.put(<span class="hljs-string">&quot;id&quot;</span>, request.get(<span class="hljs-string">&quot;id&quot;</span>));<br><br>            <span class="hljs-keyword">switch</span> (method) &#123;<br>                <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;tools/list&quot;</span> -&gt; &#123;<br>                    List&lt;Map&lt;String, Object&gt;&gt; toolList = <span class="hljs-comment">/* 遍历 tools，转成 name/description/inputSchema */</span>;<br>                    response.put(<span class="hljs-string">&quot;result&quot;</span>, Map.of(<span class="hljs-string">&quot;tools&quot;</span>, toolList));<br>                &#125;<br>                <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;tools/call&quot;</span> -&gt; &#123;<br>                    Map&lt;String, Object&gt; params = (Map&lt;String, Object&gt;) request.get(<span class="hljs-string">&quot;params&quot;</span>);<br>                    <span class="hljs-type">String</span> <span class="hljs-variable">toolName</span> <span class="hljs-operator">=</span> (String) params.get(<span class="hljs-string">&quot;name&quot;</span>);<br>                    Map&lt;String, Object&gt; arguments = (Map&lt;String, Object&gt;) params.getOrDefault(<span class="hljs-string">&quot;arguments&quot;</span>, Map.of());<br>                    <span class="hljs-type">Tool</span> <span class="hljs-variable">tool</span> <span class="hljs-operator">=</span> tools.get(toolName);<br>                    <span class="hljs-type">String</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> tool.execute(arguments);<br>                    response.put(<span class="hljs-string">&quot;result&quot;</span>, Map.of(<span class="hljs-string">&quot;content&quot;</span>, List.of(Map.of(<span class="hljs-string">&quot;type&quot;</span>, <span class="hljs-string">&quot;text&quot;</span>, <span class="hljs-string">&quot;text&quot;</span>, result))));<br>                &#125;<br>            &#125;<br>            System.out.println(json.writeValueAsString(response));<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p>剥开协议外壳，<strong>核心还是 Tool 接口 + 注册表</strong>——和我在《从零实现 Function Calling》里写的 agent-core 一模一样。MCP 只是在外面包了一层标准化的通信协议。</p>
@@ -469,14 +483,17 @@
 </tr>
 </tbody></table>
 <p>类比：MCP Server 像一个”工具服务”（被调），Agent 像一个”调度大脑”（调用）。<strong>Agent 进程是调用方，MCP Server 是被调用方</strong>——Agent 通过 MCP 协议拿到 MCP Server 暴露的工具。</p>
-<h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><p>我的 demo 只实现了 MCP 的”工具调用”部分（<code>tools/list</code>、<code>tools/call</code>），忽略了资源（resources）、提示词（prompts）等高级特性。MCP 官方协议更完整，还有 Streamable HTTP 等传输方式。但<strong>核心骨架</strong>——JSON-RPC 请求&#x2F;响应 + 工具注册——就是上面这几行，看懂了就理解了这个协议的设计思想。</p>
+<h2 id="六、诚实的边界"><a href="#六、诚实的边界" class="headerlink" title="六、诚实的边界"></a>六、诚实的边界</h2><p>我的 demo 只实现了 MCP 的”工具调用”部分（<code>tools/list</code>、<code>tools/call</code>），跳过了 <code>initialize</code> &#x2F; <code>notifications/initialized</code> 握手，也忽略了资源（resources）、提示词（prompts）等高级特性。MCP 官方协议更完整，还有 Streamable HTTP 等传输方式。<strong>它是理解协议形状的最小演示，不能当成可互操作的 MCP Server 使用。</strong></p>
+<p>但<strong>核心骨架</strong>——JSON-RPC 请求&#x2F;响应 + 工具注册——就是上面这几行，看懂了就理解了这个协议的设计思想。</p>
+<p>还有一个必须明确的<strong>信任边界</strong>：MCP 把”工具提供者”和”调用方”拆成两个进程，Server 暴露什么工具、工具能碰到什么数据，等于把相应权限交给了调用方。接入第三方 MCP Server 时，要把它当成不可信代码——限制它能访问的文件和网络，对写操作和敏感数据做人工确认，不要因为”协议标准化了”就默认它安全。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>MCP &#x3D; <strong>工具调用的 JDBC</strong>，任何 LLM 用统一协议连任何工具；</li>
 <li>协议核心：<strong>JSON-RPC 2.0 over stdio</strong>，两个方法 <code>tools/list</code> + <code>tools/call</code>；</li>
 <li>剥开协议外壳，核心还是 <strong>Tool 接口 + 注册表</strong>，MCP 只是包了层标准化通信；</li>
 <li>Client 与 Server 通过<strong>子进程管道</strong>通信，发一行 JSON 等一行 JSON；</li>
 <li>MCP Server 是”工具提供者”，Agent 是”任务执行者”，角色别混；</li>
-<li>概念年代：MCP 2024 年底提出，这篇是 2026 年 6 月的学习记录。</li>
+<li>概念年代：MCP 2024 年底提出，这篇是 2026 年 2 月的学习记录；</li>
+<li>真实协议需要 <code>initialize</code> + <code>notifications/initialized</code> 握手，本文 demo 省略了，仅为非完整实现。</li>
 </ul>
 <hr>
 <p><em>发表于 2026 年 2 月 · 标签: MCP, JSON-RPC, 协议, Agent, 学习笔记</em></p>
@@ -666,7 +683,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -766,7 +783,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -781,7 +799,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

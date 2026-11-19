@@ -8,32 +8,38 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/10/21/2026-10-21-跨平台选型-没有零代价的方案/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/10/21/2026-10-21-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E9%80%89%E5%9E%8B-%E6%B2%A1%E6%9C%89%E9%9B%B6%E4%BB%A3%E4%BB%B7%E7%9A%84%E6%96%B9%E6%A1%88/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="跨平台十二年，框架换了一茬又一茬，真正没解决的一直是同一件事：你愿意为「省掉一份代码」付出多少。这篇按桌面、移动、小程序三条战线，把 2026 年的主流方案和它们各自的代价摆到一张桌上。  一、用户先看到的是安装包我们自己那个桌面端，因为随包带了 Chromium、JVM 和一套 CLI 运行时，安装包一度到了 GB 级。后来做瘦身、拆产物、清 asar 污染，才压回一个能接受的范围。 这件事">
+    <meta name="description" content="跨平台十二年，框架换了一茬又一茬，真正没解决的一直是同一件事：你愿意为「省掉一份代码」付出多少。这篇按桌面、移动、小程序三条战线，把 2026 年的主流方案和它们各自的代价摆到一张桌上。 一、用户先看到的是安装包我们自己那个桌面端，因为随包带了 Chromium、JVM 和一套 CLI 运行时，安装包一度到了 GB 级。后来做瘦身、拆产物、清 asar 污染，才压回一个能接受的范围。 这件事让我对">
 <meta property="og:type" content="article">
 <meta property="og:title" content="跨平台选型：没有零代价的方案，只有扛得住的代价">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/21/2026-10-21-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E9%80%89%E5%9E%8B-%E6%B2%A1%E6%9C%89%E9%9B%B6%E4%BB%A3%E4%BB%B7%E7%9A%84%E6%96%B9%E6%A1%88/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="跨平台十二年，框架换了一茬又一茬，真正没解决的一直是同一件事：你愿意为「省掉一份代码」付出多少。这篇按桌面、移动、小程序三条战线，把 2026 年的主流方案和它们各自的代价摆到一张桌上。  一、用户先看到的是安装包我们自己那个桌面端，因为随包带了 Chromium、JVM 和一套 CLI 运行时，安装包一度到了 GB 级。后来做瘦身、拆产物、清 asar 污染，才压回一个能接受的范围。 这件事">
+<meta property="og:description" content="跨平台十二年，框架换了一茬又一茬，真正没解决的一直是同一件事：你愿意为「省掉一份代码」付出多少。这篇按桌面、移动、小程序三条战线，把 2026 年的主流方案和它们各自的代价摆到一张桌上。 一、用户先看到的是安装包我们自己那个桌面端，因为随包带了 Chromium、JVM 和一套 CLI 运行时，安装包一度到了 GB 级。后来做瘦身、拆产物、清 asar 污染，才压回一个能接受的范围。 这件事让我对">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/63e92b802ff6779655e23a7aed1e46fa.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/702408f6bc5864f73203289f680520e7.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/afb4e754523a0ea12c7fc44e6b489c95.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/492d720127c7c81ce252ce8aa9f7b90b.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/63e92b802ff6779655e23a7aed1e46fa.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/702408f6bc5864f73203289f680520e7.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/afb4e754523a0ea12c7fc44e6b489c95.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/492d720127c7c81ce252ce8aa9f7b90b.png">
 <meta property="article:published_time" content="2026-10-20T16:00:14.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.537Z">
+<meta property="article:modified_time" content="2026-10-20T16:00:14.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="Tauri">
@@ -41,7 +47,10 @@
 <meta property="article:tag" content="跨平台">
 <meta property="article:tag" content="选型">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/63e92b802ff6779655e23a7aed1e46fa.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/63e92b802ff6779655e23a7aed1e46fa.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"跨平台选型：没有零代价的方案，只有扛得住的代价","datePublished":"2026-10-20T16:00:14.000Z","dateModified":"2026-10-20T16:00:14.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/10/21/2026-10-21-%E8%B7%A8%E5%B9%B3%E5%8F%B0%E9%80%89%E5%9E%8B-%E6%B2%A1%E6%9C%89%E9%9B%B6%E4%BB%A3%E4%BB%B7%E7%9A%84%E6%96%B9%E6%A1%88/"}}</script>
   
   
   
@@ -216,7 +225,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -391,7 +400,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.5k 字
+          3.8k 字
         
       </span>
     
@@ -402,7 +411,7 @@
         
         
         
-          30 分钟
+          33 分钟
         
       </span>
     
@@ -413,9 +422,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">跨平台选型：没有零代价的方案，只有扛得住的代价</h1>
+            <p id="seo-header">跨平台选型：没有零代价的方案，只有扛得住的代价</p>
             
             
               <div class="markdown-body">
@@ -436,7 +449,7 @@
 <p>三笔账的残酷之处在于：<strong>你很难同时把三笔都付清。</strong> 省下体积，往往要拿学习成本或生态缺口来换；买到生态，往往要接受体积和性能的妥协。</p>
 <h2 id="三、桌面端：Electron-和-Tauri-的分界不是「新旧」"><a href="#三、桌面端：Electron-和-Tauri-的分界不是「新旧」" class="headerlink" title="三、桌面端：Electron 和 Tauri 的分界不是「新旧」"></a>三、桌面端：Electron 和 Tauri 的分界不是「新旧」</h2><p>Electron 经常被说成「上一代技术」，但看 2026 年的桌面软件清单，VSCode、Slack、Discord、Notion 这些产品仍然在 Electron 上。原因不复杂：它的生态、招人成本、调试体验和跨平台一致性，短期内没有对手能全面替代。</p>
 <p>它的短板也很明确：安装包大、空闲内存高、冷启动慢。这些是架构决定的，不是优化能抹平的。</p>
-<p>Tauri 换了一个思路：<strong>UI 用系统自带的 WebView，不再自带浏览器；后端用 Rust。</strong> 于是安装包和内存直接降一个量级，权限模型也更收紧——默认不能读文件、不能联网，用多少开多少。</p>
+<p>Tauri 换了一个思路：<strong>UI 用系统自带的 WebView，不再自带浏览器；后端用 Rust。</strong> 于是安装包和内存直接降一个量级，权限模型也更收紧：v2 的 capabilities 默认全关，插件命令要显式授权，官方 HTTP 插件默认连一个允许的 origin 都不给。不过”默认不能联网”这个说法过宽——它约束的是 Tauri 的插件&#x2F;命令层；WebView 自己加载页面、发同源请求的能力，仍由 CSP 和浏览器的同源策略决定，不是被 ACL 一刀切禁掉。</p>
 <p>但 Tauri 的代价同样清楚：</p>
 <ul>
 <li>Rust 的学习曲线，对纯前端团队是实打实的门槛；</li>
@@ -446,14 +459,15 @@
 <p>所以这两者的分界不是「新与旧」，而是<strong>你重的是生态还是体积</strong>。</p>
 <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/afb4e754523a0ea12c7fc44e6b489c95.png#pic_center" srcset="/img/loading.gif" lazyload alt="桌面端的分界：Electron 与 Tauri"></p>
 <p>这里有个容易被忽略的判断：<strong>换框架不一定能省掉你真正重的那部分。</strong> 我们那个桌面端最重的是随包分发的 CLI、JVM 和 Chromium，这部分换成 Tauri 也还在；Tauri 能省掉的只是渲染层自带的那一份 Chromium。如果应用的核心复杂度本来就在运行时和原生依赖上，换框架带来的收益会比预期小很多。</p>
-<p>反过来，如果应用是轻量工具、内部工具，或者对启动速度和安装体积特别敏感，Tauri 的收益就很直接。1Password 这类把安全和性能放在体积前面的产品会走这条路，但它的前提是团队愿意为 Rust 买单。</p>
+<p>反过来，如果应用是轻量工具、内部工具，或者对启动速度和安装体积特别敏感，Tauri 的收益就很直接。但前提是团队愿意为 Rust 买单——省下来的体积，要用学习曲线和自写 Rust 的能力来换。</p>
 <h2 id="四、移动端：三条路线回答的是三个不同的问题"><a href="#四、移动端：三条路线回答的是三个不同的问题" class="headerlink" title="四、移动端：三条路线回答的是三个不同的问题"></a>四、移动端：三条路线回答的是三个不同的问题</h2><p>移动端常被放在一张表里比较，但 Flutter、KMP、React Native 其实在回答三个不同的问题。</p>
 <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/492d720127c7c81ce252ce8aa9f7b90b.png#pic_center" srcset="/img/loading.gif" lazyload alt="移动端三条路线：复用 UI、复用逻辑、复用人与生态"></p>
 <p><strong>Flutter 回答的是「UI 能不能完全一致」。</strong> 它自己画 UI，不依赖系统控件，所以像素级统一、动画性能强。代价是它和系统 UI 是两套体系，系统分享、文件选择器这类能力要额外封装，应用看起来也容易「不像这个平台的应用」。</p>
-<p><strong>KMP &#x2F; Compose Multiplatform 回答的是「业务逻辑能不能只写一遍」。</strong> 它不追求 UI 复用，UI 各端各写原生，共享的是 Kotlin 写的逻辑层。这条路适合已经有成熟原生团队、又不想维护两套业务代码的组织。代价是 iOS 侧仍然需要原生工程能力，团队得同时懂两套构建体系。</p>
+<p><strong>KMP 回答的是「业务逻辑能不能只写一遍」。</strong> Kotlin Multiplatform 共享的是逻辑层（网络、数据、领域模型），UI 仍然各端各写：Android 用 Compose，iOS 用 SwiftUI。这条路适合已经有成熟原生团队、又不想维护两套业务代码的组织。代价是 iOS 侧仍然需要原生工程能力，团队得同时懂两套构建体系。</p>
+<p><strong>Compose Multiplatform 是建在 KMP 之上的 UI 层</strong>，它用 Compose 写界面，可以同时跑 Android、iOS、桌面和 Web（各平台成熟度不同）。所以两者不是同一个东西：KMP 管”逻辑共享”，Compose Multiplatform 管”UI 能不能也共享”；要不要连 UI 一起共享，是第二个独立决策。</p>
 <p><strong>React Native 回答的是「能不能复用现有的人」。</strong> React 生态、前端人才池、npm 依赖，这些是它最大的资产。新架构落地之后，启动、内存和动画的短板补上了不少，但原生模块和版本升级仍然要持续投入。</p>
 <p>所以别问「哪个性能最好」，先问：<strong>你要复用的到底是 UI、逻辑，还是人？</strong> 这三个答案对应的是三条完全不同的路。</p>
-<h2 id="五、小程序派：另一条赛道"><a href="#五、小程序派：另一条赛道" class="headerlink" title="五、小程序派：另一条赛道"></a>五、小程序派：另一条赛道</h2><p>如果业务要同时进微信、支付宝、抖音、百度、京东，再加上 App、H5 和鸿蒙元服务，那问题就不是「选哪个跨平台框架」，而是「一套代码怎么覆盖这么多平台」。uni-app 和 Taro 解决的是这个问题。</p>
+<h2 id="五、小程序派：另一条赛道"><a href="#五、小程序派：另一条赛道" class="headerlink" title="五、小程序派：另一条赛道"></a>五、小程序派：另一条赛道</h2><p>如果业务要同时进微信、支付宝、某短视频平台、百度、京东，再加上 App、H5 和鸿蒙元服务，那问题就不是「选哪个跨平台框架」，而是「一套代码怎么覆盖这么多平台」。uni-app 和 Taro 解决的是这个问题。</p>
 <p><strong>uni-app</strong> 的底子是 Vue，国内占有率高、插件市场丰富、上手快，适合 Vue 团队快速铺多端。新一代的 uni-app x 用 UTS 把代码分别编译成 Kotlin、Swift、ArkTS，思路是不再为了兼容所有平台而只取功能交集。代价是和 HBuilderX 强绑定，路线跟着商业公司的判断走。</p>
 <p><strong>Taro</strong> 的底子是 React，TypeScript 支持和编译时优化做得更深，适合代码量大、对类型安全有要求、需要混编出 RN 或自研 App 壳的工程。弱点是国内社区活跃度不如 uni-app，调试体验更依赖 VS Code。</p>
 <p>鸿蒙是这条赛道 2026 年最大的变量。HarmonyOS NEXT 要求纯血 ArkTS，Taro 走源码级转换，uni-app x 走编译到 ArkTS，两条路都还在快速变化。实操里比较务实的做法是：核心模块用工程能力强的框架写，长尾功能用上手快的框架补，不必强行统一到一个框架里。</p>
@@ -483,7 +497,7 @@
 </tr>
 <tr>
 <td>移动 App、团队是 Kotlin 背景</td>
-<td>KMP &#x2F; Compose Multiplatform</td>
+<td>KMP（共享逻辑）&#x2F; Compose Multiplatform（共享 UI）</td>
 <td>iOS 原生工程能力</td>
 </tr>
 <tr>
@@ -526,7 +540,7 @@
 </ul>
 <p>没有一种方案能把代价收到零。所以选型真正要做的，不是选最酷的那个，而是算清楚：<strong>哪个代价你的团队扛得住，哪个代价你的用户不在意。</strong></p>
 <hr>
-<p><em>发表于 2026 年 10 月 · 标签: 跨平台, Electron, Tauri, 技术选型, 架构决策</em></p>
+<p><em>发表于 2026 年 10 月 · 标签: 跨平台, Electron, Tauri, 选型, 架构决策</em></p>
 
                 
               </div>
@@ -624,9 +638,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/" title="长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态">
+                      <a href="/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/" title="长跑采集的内存不是调大堆：从 2 GB 堆高压到 350 MB 稳态">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态</span>
+                        <span class="hidden-mobile">长跑采集的内存不是调大堆：从 2 GB 堆高压到 350 MB 稳态</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -713,7 +727,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -813,7 +827,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -828,7 +843,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

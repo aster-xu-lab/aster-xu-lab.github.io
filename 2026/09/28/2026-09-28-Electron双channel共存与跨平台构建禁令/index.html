@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/28/2026-09-28-Electron双channel共存与跨平台构建禁令/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/28/2026-09-28-Electron%E5%8F%8Cchannel%E5%85%B1%E5%AD%98%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E7%A6%81%E4%BB%A4/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一个桌面应用要同时发”测试版”和”生产版”，两个版本还得能在同一台机器上并存、互不覆盖。这篇文章讲双 channel 隔离要隔离哪些东西，以及 asar 污染和跨平台构建这两个真踩过的坑。  一、为什么需要双 channel 共存测试版和生产版是两类用户：内部试用 &#x2F; 商家正式使用。理想情况下，同一台机器上：  两个版本能同时安装； 各自有独立的配置、缓存、数据库； 安装一个不会覆盖另">
+    <meta name="description" content="一个桌面应用要同时发”测试版”和”生产版”，两个版本还得能在同一台机器上并存、互不覆盖。这篇文章讲双 channel 隔离要隔离哪些东西，以及 asar 污染和跨平台构建这两个真踩过的坑。 一、为什么需要双 channel 共存测试版和生产版是两类用户：内部试用 &#x2F; 商家正式使用。理想情况下，同一台机器上： 两个版本能同时安装； 各自有独立的配置、缓存、数据库； 安装一个不会覆盖另一个；">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Electron 双 channel 共存与跨平台构建禁令">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/28/2026-09-28-Electron%E5%8F%8Cchannel%E5%85%B1%E5%AD%98%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E7%A6%81%E4%BB%A4/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一个桌面应用要同时发”测试版”和”生产版”，两个版本还得能在同一台机器上并存、互不覆盖。这篇文章讲双 channel 隔离要隔离哪些东西，以及 asar 污染和跨平台构建这两个真踩过的坑。  一、为什么需要双 channel 共存测试版和生产版是两类用户：内部试用 &#x2F; 商家正式使用。理想情况下，同一台机器上：  两个版本能同时安装； 各自有独立的配置、缓存、数据库； 安装一个不会覆盖另">
+<meta property="og:description" content="一个桌面应用要同时发”测试版”和”生产版”，两个版本还得能在同一台机器上并存、互不覆盖。这篇文章讲双 channel 隔离要隔离哪些东西，以及 asar 污染和跨平台构建这两个真踩过的坑。 一、为什么需要双 channel 共存测试版和生产版是两类用户：内部试用 &#x2F; 商家正式使用。理想情况下，同一台机器上： 两个版本能同时安装； 各自有独立的配置、缓存、数据库； 安装一个不会覆盖另一个；">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3b0e47db02abf80f2a4b03e587946707.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3b0e47db02abf80f2a4b03e587946707.png">
 <meta property="article:published_time" content="2026-09-28T12:48:11.000Z">
-<meta property="article:modified_time" content="2026-11-03T03:47:09.345Z">
+<meta property="article:modified_time" content="2026-09-28T12:48:11.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="electron-builder">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="打包">
 <meta property="article:tag" content="跨平台">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3b0e47db02abf80f2a4b03e587946707.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3b0e47db02abf80f2a4b03e587946707.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Electron 双 channel 共存与跨平台构建禁令","datePublished":"2026-09-28T12:48:11.000Z","dateModified":"2026-09-28T12:48:11.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/09/28/2026-09-28-Electron%E5%8F%8Cchannel%E5%85%B1%E5%AD%98%E4%B8%8E%E8%B7%A8%E5%B9%B3%E5%8F%B0%E6%9E%84%E5%BB%BA%E7%A6%81%E4%BB%A4/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.1k 字
+          2.3k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          18 分钟
+          19 分钟
         
       </span>
     
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">Electron 双 channel 共存与跨平台构建禁令</h1>
+            <p id="seo-header">Electron 双 channel 共存与跨平台构建禁令</p>
             
             
               <div class="markdown-body">
@@ -466,8 +479,8 @@
 </tbody></table>
 <p><strong>每一项都要改，漏一个就出问题</strong>：漏了 appId，两个版本可能被系统认成同一个应用；漏了 userData，两个版本共用一个数据库；漏了 partition，两个版本共用登录态。</p>
 <p>安装包文件名也要带 channel（<code>app-test-setup.exe</code> &#x2F; <code>app-production-setup.exe</code>），否则分发时最容易拿错。</p>
-<h2 id="三、Windows-上-userData-落在安装目录旁"><a href="#三、Windows-上-userData-落在安装目录旁" class="headerlink" title="三、Windows 上 userData 落在安装目录旁"></a>三、Windows 上 userData 落在安装目录旁</h2><p>一个和 macOS 不一样的地方：打包后的 Windows 版，数据目录默认在<strong>安装目录旁边</strong>（<code>&lt;installDir&gt;/data</code>），而不是 <code>%APPDATA%</code>。mac 和开发态则还是用标准的应用支持目录 &#x2F; 渠道子目录。</p>
-<p>这个差异带来一个安装器上的要求：<strong>不能默认装到没有写权限的位置</strong>（比如 <code>Program Files</code>）。所以 Windows 安装器用”非一键 + 允许改安装目录”的模式，让数据目录总是可写的。</p>
+<h2 id="三、Windows-上-userData-落在安装目录旁（本项目配置）"><a href="#三、Windows-上-userData-落在安装目录旁（本项目配置）" class="headerlink" title="三、Windows 上 userData 落在安装目录旁（本项目配置）"></a>三、Windows 上 userData 落在安装目录旁（本项目配置）</h2><p>先说默认值，避免把”本项目配置”当成”Electron 行为”：<strong>Electron 在 Windows 上的 userData 默认仍在 <code>%APPDATA%</code> 下的应用目录</strong>（<code>app.getPath(&#39;userData&#39;)</code> 的默认位置，形如 <code>%APPDATA%\&lt;appName&gt;</code>）。<strong>本项目</strong>在 packaged win32 下于启动早期显式把它改到了安装目录旁的 <code>data/</code>（<code>&lt;installDir&gt;/data</code>），目的是让数据和安装目录一起走；mac 和开发态则还是用标准的应用支持目录 &#x2F; 渠道子目录。</p>
+<p>这个项目配置带来一个安装器上的要求：<strong>不能默认装到没有写权限的位置</strong>（比如 <code>Program Files</code>）。所以 Windows 安装器用”非一键 + 允许改安装目录”的模式，让数据目录总是可写的。</p>
 <h2 id="四、真坑一：asar-污染，安装包涨到几个-GB"><a href="#四、真坑一：asar-污染，安装包涨到几个-GB" class="headerlink" title="四、真坑一：asar 污染，安装包涨到几个 GB"></a>四、真坑一：asar 污染，安装包涨到几个 GB</h2><p>这是最贵的一个坑。现象是安装包突然变得巨大。</p>
 <p>根因是打包器<strong>只会自动排除当前构建的输出目录</strong>。当产物按平台分目录时（比如输出到 <code>dist/win-x64-test/</code>），同级的兄弟目录——上一个版本的 <code>.app</code>、<code>.dmg</code>、<code>win-unpacked/</code>——<strong>不会被自动排除</strong>，于是被一起打进了 <code>app.asar</code>。</p>
 <p>结果就是 asar 膨胀到 <strong>约 2.3 GB</strong>，安装包数 GB，NSIS 直接以 exit 1 失败。</p>
@@ -492,7 +505,7 @@
 </ul>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>双 channel 共存要隔离<strong>五样东西</strong>：显示名、appId、可执行文件名、userData、会话 partition，外加安装包文件名；</li>
-<li>Windows 打包版的 userData 在<strong>安装目录旁</strong>，所以不能默认装到无写权限路径；</li>
+<li><strong>本项目</strong> Windows 打包版的 userData 显式设在<strong>安装目录旁</strong>（Electron 默认仍是 <code>%APPDATA%</code>），所以不能默认装到无写权限路径；</li>
 <li><strong>asar 污染</strong>是最大体积坑：打包器只自动排除当前输出目录，必须显式排除整个产物目录，否则安装包能涨到 GB 级；</li>
 <li><strong>不能跨平台构建</strong>：sidecar 按构建机平台嵌入，跨平台打包会导致平台不匹配；</li>
 <li>出包要用<strong>产物校验</strong>（asar 卫生 &#x2F; 可执行位 &#x2F; channel 一致性），<strong>不要信退出码</strong>。</li>
@@ -685,7 +698,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -785,7 +798,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -800,7 +814,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

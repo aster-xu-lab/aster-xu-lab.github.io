@@ -8,36 +8,45 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/12/08/2024-12-08-DDIA-13-事件溯源与CQRS/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/12/08/2024-12-08-DDIA-13-%E4%BA%8B%E4%BB%B6%E6%BA%AF%E6%BA%90%E4%B8%8ECQRS/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="深入理解事件溯源（Event Sourcing）与CQRS的核心思想、实践推演，以及与DDIA第13章&quot;从数据系统到流系统&quot;的内在呼应。">
+    <meta name="description" content="深入理解事件溯源（Event Sourcing）与CQRS的核心思想、实践推演，以及与DDIA流处理和数据系统未来的内在呼应。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-13-事件溯源与CQRS：把数据库当成事件日志来设计">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/12/08/2024-12-08-DDIA-13-%E4%BA%8B%E4%BB%B6%E6%BA%AF%E6%BA%90%E4%B8%8ECQRS/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="深入理解事件溯源（Event Sourcing）与CQRS的核心思想、实践推演，以及与DDIA第13章&quot;从数据系统到流系统&quot;的内在呼应。">
+<meta property="og:description" content="深入理解事件溯源（Event Sourcing）与CQRS的核心思想、实践推演，以及与DDIA流处理和数据系统未来的内在呼应。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c81c31e2b489662a87e8b81dddf9669f.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c81c31e2b489662a87e8b81dddf9669f.png">
 <meta property="article:published_time" content="2024-12-07T22:02:05.000Z">
-<meta property="article:modified_time" content="2026-11-02T09:57:55.140Z">
+<meta property="article:modified_time" content="2024-12-07T22:02:05.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CQRS">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="事件溯源">
 <meta property="article:tag" content="架构模式">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c81c31e2b489662a87e8b81dddf9669f.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c81c31e2b489662a87e8b81dddf9669f.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-13-事件溯源与CQRS：把数据库当成事件日志来设计","datePublished":"2024-12-07T22:02:05.000Z","dateModified":"2024-12-07T22:02:05.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/12/08/2024-12-08-DDIA-13-%E4%BA%8B%E4%BB%B6%E6%BA%AF%E6%BA%90%E4%B8%8ECQRS/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-13-事件溯源与CQRS：把数据库当成事件日志来设计</h1>
+            <p id="seo-header">DDIA-13-事件溯源与CQRS：把数据库当成事件日志来设计</p>
             
             
               <div class="markdown-body">
@@ -462,7 +475,7 @@
 <figure class="highlight basic"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs basic"><span class="hljs-symbol">0 </span>+ <span class="hljs-number">50</span> - <span class="hljs-number">30</span> = <span class="hljs-number">20</span><br></code></pre></td></tr></table></figure>
 
 <p>你不但得到了任意时刻的余额快照，还保留了完整的变更历史。<strong>当前状态不再是”事实”，而是事件流的”衍生结果”</strong>。</p>
-<p>Martin Kleppmann 在 DDIA 第11章举过一个经典的类比：Git 版本控制系统。Git 不存储文件的”当前内容”—— 它存储的是一系列 commit（事件），每个 commit 记录了谁在什么时间做了什么修改。你看到的”当前文件内容”是这些 commit 按序应用的结果。你可以 <code>git checkout</code> 回到任意一个历史版本，可以 <code>git blame</code> 追溯每一行代码的来源，可以 <code>git revert</code> 回滚任意一个操作。这不就是事件溯源吗？</p>
+<p>Martin Kleppmann 在 DDIA 第12章举过一个经典的类比：Git 版本控制系统。Git 不存储文件的”当前内容”—— 它存储的是一系列 commit（事件），每个 commit 记录了谁在什么时间做了什么修改。你看到的”当前文件内容”是这些 commit 按序应用的结果。你可以 <code>git checkout</code> 回到任意一个历史版本，可以 <code>git blame</code> 追溯每一行代码的来源，可以 <code>git revert</code> 回滚任意一个操作。这不就是事件溯源吗？</p>
 <h2 id="三、和传统CRUD的本质区别"><a href="#三、和传统CRUD的本质区别" class="headerlink" title="三、和传统CRUD的本质区别"></a>三、和传统CRUD的本质区别</h2><p>很多人在第一次接触事件溯源时会有一个疑问：这不就是多了几张日志表吗？我在 MySQL 里加一张 <code>account_log</code> 表，每次操作先插日志再更新余额，和事件溯源有什么区别？</p>
 <p>区别在于<strong>谁是真相的来源（Source of Truth）</strong>。</p>
 <p>在传统方案中，”日志表+余额表”的架构下，余额表是真相。日志表只是辅助记录，丢了也不影响业务 —— 你仍然可以从余额表读到正确的余额。日志表是”影”，余额表是”身”。</p>
@@ -482,7 +495,7 @@
 </ul>
 <p>查询余额时，直接从读端查询，零毫秒级响应。</p>
 <p>更重要的是，<strong>一个事件流可以投射出多个读模型</strong>。财务部门需要按月统计收入？监听同一个事件流，构建一个 <code>monthly_revenue</code> 物化视图。风控团队需要实时监测大额交易？再投射一个 <code>large_transaction_alert</code> 视图。事件流是唯一的真相来源，但消费方式是多样的。</p>
-<p>这其实正是DDIA第13章”从数据系统到流系统”的核心思想之一：<strong>把数据库看成流处理器</strong>。传统的数据库是一个”持有当前状态的盒子”；在流式思维下，数据库是一个持续消费事件流并维护物化视图的流处理系统。Kafka Streams、Apache Flink、Materialize 等流处理框架本质上都在做这件事 —— 消费事件，维护状态，响应查询。</p>
+<p>这其实正是DDIA第12章讨论流处理时的核心思想之一：<strong>把数据库看成流处理器</strong>。传统的数据库是一个”持有当前状态的盒子”；在流式思维下，数据库是一个持续消费事件流并维护物化视图的流处理系统。Kafka Streams、Apache Flink、Materialize 等流处理框架本质上都在做这件事 —— 消费事件，维护状态，响应查询。</p>
 <h2 id="五、实战推演：订单状态机"><a href="#五、实战推演：订单状态机" class="headerlink" title="五、实战推演：订单状态机"></a>五、实战推演：订单状态机</h2><p>理论讲完了，我们来看一个实战场景：电商订单的生命周期。</p>
 <p>一个订单的状态变迁路径天然就是一个状态机：</p>
 <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs">待支付 → 已支付 → 已发货 → 已收货<br>                     ↓<br>                   已退款<br></code></pre></td></tr></table></figure>
@@ -516,12 +529,12 @@
 <p><strong>查询复杂度</strong>。简单的聚合查询（如余额）通过回放可以轻松处理，但复杂的跨实体关联查询（如”过去一个月购买了母婴类目商品的用户的平均客单价”）在事件溯源模型下并不直观。这时候读端的物化视图设计就变得至关重要。</p>
 <p><strong>团队认知成本</strong>。事件溯源和CQRS的思维模型与传统的CRUD有根本差异。团队成员需要理解”事件是真相来源””状态是事件的投影”这些概念，否则容易写出”既存事件又存状态”的缝合怪代码。</p>
 <p>Greg Young 说过一句很经典的话：事件溯源不是一种技术选择，而是一种<strong>领域建模的选择</strong>。如果你的领域天然适合事件驱动的思维 —— 如订单流转、合同审批、库存变动、账户交易 —— 事件溯源会让你的系统获得传统CRUD难以企及的灵活性和可追溯性。但如果你的业务就是简单的表单录入和展示，强行引入事件溯源只会增加不必要的复杂度。</p>
-<h2 id="八、与DDIA第13章的呼应"><a href="#八、与DDIA第13章的呼应" class="headerlink" title="八、与DDIA第13章的呼应"></a>八、与DDIA第13章的呼应</h2><p>回到DDIA这本书。第13章的标题是”The Future of Data Systems”，Martin Kleppmann 在这一章中反复强调一个观点：<strong>数据系统正在从”持有状态的被动存储”演化为”处理流数据的主动系统”</strong>。</p>
+<h2 id="八、与DDIA第13章的呼应"><a href="#八、与DDIA第13章的呼应" class="headerlink" title="八、与DDIA第13章的呼应"></a>八、与DDIA第13章的呼应</h2><p>回到DDIA这本书。第13章（Philosophy of Streaming）讨论数据系统的未来，Martin Kleppmann 在这一章中反复强调一个观点：<strong>数据系统正在从”持有状态的被动存储”演化为”处理流数据的主动系统”</strong>。</p>
 <p>传统的数据库是一个被动的状态容器 —— 你往里存数据，它帮你记着。流式数据库（Stream-native Database）则是一个主动的事件处理器 —— 它持续消费事件，维护物化视图，并对外提供查询能力。</p>
 <p>事件溯源+CQRS正是这种演化的实践形态。当你把数据库当成事件日志来设计时，你获得的不只是”当前数据是什么”，而是”数据从哪里来、经过什么变化、到哪里去”的完整画卷。你可以在任意时刻回放历史，可以投射出任意维度的查询视图，可以在逻辑修复后重算全部数据 —— 这些都源于一个根本性的设计决策：<strong>不再把数据库当成状态的最终容器，而是把数据库当成事件日志的投影</strong>。</p>
 <p>这就是DDIA第13章想告诉我们的：<strong>流不是数据的副产品，流就是数据本身</strong>。</p>
 <hr>
-<p><em>延伸阅读：Martin Kleppmann, Designing Data-Intensive Applications, Chapters 11 &amp; 13; Greg Young, CQRS and Event Sourcing; Kafka Streams &#x2F; Apache Flink 流处理框架文档。</em></p>
+<p><em>延伸阅读：Martin Kleppmann, Designing Data-Intensive Applications, Chapters 12 &amp; 13; Greg Young, CQRS and Event Sourcing; Kafka Streams &#x2F; Apache Flink 流处理框架文档。</em></p>
 
                 
               </div>
@@ -706,7 +719,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -806,7 +819,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -821,7 +835,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

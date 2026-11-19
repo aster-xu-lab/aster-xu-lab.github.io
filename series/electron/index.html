@@ -8,6 +8,11 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
@@ -17,20 +22,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一个 Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、状态与数据建模、密钥与构建发布。按推荐顺序连读即可。              共 38 篇。前四部分是主线，最后一部分是同一条项目线上的工程方法与复盘，可以穿插阅读。 一、进程与依赖 Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界写了七年后">
+    <meta name="description" content="进程边界、反爬、密钥与构建">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Electron 桌面实战">
 <meta property="og:url" content="https://aster-xu-lab.github.io/series/electron/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一个 Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、状态与数据建模、密钥与构建发布。按推荐顺序连读即可。              共 38 篇。前四部分是主线，最后一部分是同一条项目线上的工程方法与复盘，可以穿插阅读。 一、进程与依赖 Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界写了七年后">
+<meta property="og:description" content="进程边界、反爬、密钥与构建">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
 <meta name="twitter:card" content="summary_large_image">
+  
   
   
   
@@ -205,7 +212,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -355,23 +362,22 @@
         <div class="markdown-body">
 
 <div class="note note-info">
-            <p>一个 Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、状态与数据建模、密钥与构建发布。按推荐顺序连读即可。</p> 
+            <p>一个 Java 后端第一次做桌面端：进程边界、无原生依赖、CLI sidecar 爬虫、人机协同反爬、状态与数据建模、密钥与构建发布。</p> 
           </div>
 
-<p>共 38 篇。前四部分是主线，最后一部分是同一条项目线上的工程方法与复盘，可以穿插阅读。</p>
 <h2 id="一、进程与依赖"><a href="#一、进程与依赖" class="headerlink" title="一、进程与依赖"></a>一、进程与依赖</h2><ol>
 <li><strong><a href="/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/">Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界</a></strong><br>写了七年后端，第一个桌面项目。后端的直觉在这里一半有用、一半是坑。</li>
-<li><strong><a href="/2026/11/20/2026-11-20-IPC%E4%B8%8D%E8%AF%A5%E6%9C%8945%E7%A7%8D%E5%85%A5%E5%8F%A3-%E5%8D%95%E4%B8%80%E6%B3%A8%E5%86%8C%E7%BC%9D%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%97%B6%E6%A0%A1%E9%AA%8C/">IPC 不该有 45 种入口：单一注册缝与运行时校验</a></strong><br>TypeScript 止于进程边界；45 个通道收进一个注册缝，29 个带参通道全部先解析。</li>
+<li><strong><a href="/2026/11/20/2026-11-20-IPC%E4%B8%8D%E8%AF%A5%E6%9C%8945%E7%A7%8D%E5%85%A5%E5%8F%A3-%E5%8D%95%E4%B8%80%E6%B3%A8%E5%86%8C%E7%BC%9D%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%97%B6%E6%A0%A1%E9%AA%8C/">IPC 不该有 45 种入口：单一注册缝与运行时校验</a></strong><br>TypeScript 止于进程边界；43 个通道收进一个注册缝，27 个带参通道全部先解析。</li>
 <li><strong><a href="/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/">用 node:sqlite 替掉 better-sqlite3：告别原生模块</a></strong><br>放弃默认答案 better-sqlite3，核心不是性能，而是不想让主进程背上原生模块。</li>
 <li><strong><a href="/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E4%B8%8D%E8%83%BD%E7%95%99%E5%AD%A4%E5%84%BF%E8%BF%9B%E7%A8%8B/">桌面应用不能留孤儿进程：退出时到底该杀谁</a></strong><br>Electron 退出了，随包的 Chromium 和 JVM 还在跑——进程生命周期不能只靠窗口关闭。</li>
 </ol>
 <h2 id="二、采集与反爬"><a href="#二、采集与反爬" class="headerlink" title="二、采集与反爬"></a>二、采集与反爬</h2><ol start="5">
 <li><strong><a href="/2026/09/18/2026-09-18-Electron%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%88%AC%E8%99%AB-%E4%B8%BA%E4%BB%80%E4%B9%88%E9%80%89CLI-sidecar%E8%80%8C%E4%B8%8D%E6%98%AFPuppeteer/">Electron 桌面端爬虫：为什么选 CLI sidecar 而不是 Puppeteer</a></strong><br>随包分发一个 CLI + JVM + Chromium，以及这个选择引出的跨平台构建硬约束。</li>
-<li><strong><a href="/2026/09/20/2026-09-20-%E5%8F%8D%E7%88%AC%E5%8F%AF%E7%94%A8%E7%8E%87%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C-Amazon%E4%B8%8EeBay%E7%9A%84%E5%8D%81%E5%80%8D%E5%B7%AE%E8%B7%9D/">反爬可用率对照实验：Amazon 与 eBay 的十倍差距</a> <span class="label label-primary">必读</span></strong><br>同一套代码，Amazon 8%、eBay 90%。十倍差距怎么测出来的，以及哪个”更快的方案”是陷阱。</li>
+<li><strong><a href="/2026/09/20/2026-09-20-%E5%8F%8D%E7%88%AC%E5%8F%AF%E7%94%A8%E7%8E%87%E5%AF%B9%E7%85%A7%E5%AE%9E%E9%AA%8C-Amazon%E4%B8%8EeBay%E7%9A%84%E5%8D%81%E5%80%8D%E5%B7%AE%E8%B7%9D/">反爬可用率对照实验：Amazon 干净 IP 86%、受伤 IP 8–9%，eBay 90% 以上</a> <span class="label label-primary">必读</span></strong><br>同一套代码，Amazon 8%、eBay 90%。十倍差距怎么测出来的，以及哪个”更快的方案”是陷阱。</li>
 <li><strong><a href="/2026/09/22/2026-09-22-%E7%88%AC%E8%99%AB%E7%9A%84%E4%BA%BA%E6%9C%BA%E5%8D%8F%E5%90%8C-%E9%AA%8C%E8%AF%81%E7%A0%81%E5%BC%B9%E6%A1%86%E4%B8%8E%E7%86%94%E6%96%AD%E8%87%AA%E6%84%88/">爬虫的人机协同：验证码弹框，而不是硬刚</a></strong><br>最难受的不是被拦，是不知道被拦了还是代码坏了——失败分类、人工确认、会话自愈。</li>
 <li><strong><a href="/2026/11/20/2026-11-20-%E8%B7%A8%E5%9F%9Fiframe%E9%87%8C%E7%9A%84%E5%95%86%E5%93%81%E6%8F%8F%E8%BF%B0-%E8%AF%BB%E4%B8%8D%E5%88%B0DOM%E6%97%B6%E6%80%8E%E4%B9%88%E5%8F%96/">跨域 iframe 里的商品描述：读不到 DOM 时怎么取</a></strong><br>同源策略决定了 iframe 里的正文永远读不到；换一条公开文档的路径，失败就留空。</li>
 <li><strong><a href="/2026/10/17/2026-10-17-1000%E6%9D%A1%E9%87%87%E9%9B%86%E8%B7%91%E5%AE%8C-99.3%E4%B8%8E%E5%A4%B1%E8%B4%A5%E9%A2%84%E7%AE%97/">1000 条采集跑完：99.3%、4.18 小时，以及 7 条失败全来自一个 302</a></strong><br>完整链路和引擎路径的差额拆账，以及为什么”失败预算”比失败率更有信息量。</li>
-<li><strong><a href="/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/">长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态</a></strong><br>   最大的垃圾源是一次导航命令顺手构建的 accessibility tree；调参数不是归因。</li>
+<li><strong><a href="/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/">长跑采集的内存不是调大堆：从 2 GB 堆高压到 350 MB 稳态</a></strong><br>   最大的垃圾源是一次导航命令顺手构建的 accessibility tree；调参数不是归因。</li>
 </ol>
 <h2 id="三、状态、数据与安全"><a href="#三、状态、数据与安全" class="headerlink" title="三、状态、数据与安全"></a>三、状态、数据与安全</h2><ol start="11">
 <li><strong><a href="/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/">事件就是状态：用一个事件流驱动 UI 与数据库</a> <span class="label label-primary">必读</span></strong><br>   状态一多就容易”界面和库里对不上”。只让一个事件流当真相，两边都是它的投影。</li>
@@ -470,7 +476,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>

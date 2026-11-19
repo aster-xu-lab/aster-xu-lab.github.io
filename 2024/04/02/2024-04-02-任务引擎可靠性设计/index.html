@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/04/02/2024-04-02-任务引擎可靠性设计/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警可靠性不是加分项，是底线任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。 这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。  一、双重防重：分布式锁 + 二次查库为什么需要两层？单靠分布式锁（R">
+    <meta name="description" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警可靠性不是加分项，是底线任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。 这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。 一、双重防重：分布式锁 + 二次查库为什么需要两层？单靠分布式锁（Re">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警可靠性不是加分项，是底线任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。 这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。  一、双重防重：分布式锁 + 二次查库为什么需要两层？单靠分布式锁（R">
+<meta property="og:description" content="分布式任务引擎的可靠性设计：防重、断点续传与四级告警可靠性不是加分项，是底线任务引擎跟普通 CRUD 的最大区别：普通接口挂了返回个 500 就好，任务引擎挂了意味着数据没同步、订单漏处理、库存对不上——这是线上事故。 这篇文章聚焦 SyncTask 引擎的可靠性设计，包括四个核心机制：防重、断点续传、指数退避重试和四级告警。 一、双重防重：分布式锁 + 二次查库为什么需要两层？单靠分布式锁（Re">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/10659597232e3365406fdaad9028a0f7.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/10659597232e3365406fdaad9028a0f7.png">
 <meta property="article:published_time" content="2024-04-01T17:08:23.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.517Z">
+<meta property="article:modified_time" content="2024-04-01T17:08:23.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="SyncTask">
 <meta property="article:tag" content="分布式锁">
@@ -39,7 +45,10 @@
 <meta property="article:tag" content="指数退避">
 <meta property="article:tag" content="断点续传">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/10659597232e3365406fdaad9028a0f7.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/10659597232e3365406fdaad9028a0f7.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"分布式任务引擎的可靠性设计：防重、断点续传与四级告警","datePublished":"2024-04-01T17:08:23.000Z","dateModified":"2024-04-01T17:08:23.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/04/02/2024-04-02-%E4%BB%BB%E5%8A%A1%E5%BC%95%E6%93%8E%E5%8F%AF%E9%9D%A0%E6%80%A7%E8%AE%BE%E8%AE%A1/"}}</script>
   
   
   
@@ -214,7 +223,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -389,7 +398,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          4k 字
+          4.3k 字
         
       </span>
     
@@ -400,7 +409,7 @@
         
         
         
-          34 分钟
+          36 分钟
         
       </span>
     
@@ -411,9 +420,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/synctask/">SyncTask 任务编排</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">分布式任务引擎的可靠性设计：防重、断点续传与四级告警</h1>
+            <p id="seo-header">分布式任务引擎的可靠性设计：防重、断点续传与四级告警</p>
             
             
               <div class="markdown-body">
@@ -429,10 +442,10 @@
 <p>所以两层都要有：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">executeTask</span><span class="hljs-params">(Long taskId)</span> &#123;<br>    <span class="hljs-comment">// 第一层：分布式锁</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">lockKey</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;sync:task:&quot;</span> + taskId;<br>    <span class="hljs-keyword">if</span> (!redisLock.tryLock(lockKey, <span class="hljs-number">10</span>, TimeUnit.SECONDS)) &#123;<br>        <span class="hljs-keyword">return</span>;  <span class="hljs-comment">// 抢不到锁，退出</span><br>    &#125;<br>    <br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 第二层：DB 乐观锁（CAS 状态更新）</span><br>        <span class="hljs-type">int</span> <span class="hljs-variable">updated</span> <span class="hljs-operator">=</span> syncTaskMapper.updateStatusCAS(<br>            taskId, <br>            <span class="hljs-string">&quot;INIT&quot;</span>,       <span class="hljs-comment">// expected (期望值)</span><br>            <span class="hljs-string">&quot;PROCESSING&quot;</span>  <span class="hljs-comment">// target (目标值)</span><br>        );<br>        <br>        <span class="hljs-keyword">if</span> (updated == <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-keyword">return</span>;  <span class="hljs-comment">// 状态已被别的线程改了</span><br>        &#125;<br>        <br>        <span class="hljs-comment">// 确认拿到了执行权，开始处理</span><br>        doExecute(taskId);<br>        <br>    &#125; <span class="hljs-keyword">finally</span> &#123;<br>        redisLock.unlock(lockKey);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">UPDATE</span> sync_task <br><span class="hljs-keyword">SET</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PROCESSING&#x27;</span>, updated_at <span class="hljs-operator">=</span> NOW()<br><span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> ? <span class="hljs-keyword">AND</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;INIT&#x27;</span>;<br><span class="hljs-comment">-- 如果 affected rows = 0，说明状态已变更，放弃执行</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 示例用引擎 v2 标准表名 sync_task；生产 v1 对应表名为 or_sync_task</span><br><span class="hljs-keyword">UPDATE</span> sync_task <br><span class="hljs-keyword">SET</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PROCESSING&#x27;</span>, updated_at <span class="hljs-operator">=</span> NOW()<br><span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> ? <span class="hljs-keyword">AND</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;INIT&#x27;</span>;<br><span class="hljs-comment">-- 如果 affected rows = 0，说明状态已变更，放弃执行</span><br></code></pre></td></tr></table></figure>
 
-<h4 id="锁超时的安全释放"><a href="#锁超时的安全释放" class="headerlink" title="锁超时的安全释放"></a>锁超时的安全释放</h4><p>Redis 锁设置 10 秒超时，配合 <strong>Redisson 的 Watchdog</strong> 自动续期：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// Redisson Watchdog：每 3 秒检查一次，如果任务还在执行就续期</span><br><span class="hljs-type">RLock</span> <span class="hljs-variable">lock</span> <span class="hljs-operator">=</span> redissonClient.getLock(lockKey);<br>lock.lock(<span class="hljs-number">10</span>, TimeUnit.SECONDS);  <br><span class="hljs-comment">// 如果 10 秒内任务没完成，Watchdog 自动续期，直到任务完成或进程挂掉</span><br></code></pre></td></tr></table></figure>
+<h4 id="锁超时的安全释放"><a href="#锁超时的安全释放" class="headerlink" title="锁超时的安全释放"></a>锁超时的安全释放</h4><p>分布式锁必须配合 <strong>Redisson 的 Watchdog</strong> 续期，但有一个容易踩的坑：<strong>只有不指定 leaseTime 的 <code>lock()</code> &#x2F; <code>tryLock()</code> 才会触发 Watchdog；一旦显式传入 leaseTime，Redisson 不会续期，锁到点就释放。</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">RLock</span> <span class="hljs-variable">lock</span> <span class="hljs-operator">=</span> redissonClient.getLock(lockKey);<br><span class="hljs-comment">// 10 秒是最多等待获取锁的时间，不是 leaseTime；不传 leaseTime 才会启用 Watchdog</span><br>lock.tryLock(<span class="hljs-number">10</span>, TimeUnit.SECONDS);<br><span class="hljs-comment">// 默认租约 30 秒，Watchdog 每 10 秒续期一次，直到任务完成或进程挂掉</span><br><br><span class="hljs-comment">// 反例：显式指定 leaseTime，Watchdog 不会续期</span><br><span class="hljs-comment">// lock.lock(10, TimeUnit.SECONDS);</span><br></code></pre></td></tr></table></figure>
 
 <h3 id="二、断点续传：分页拉取-游标"><a href="#二、断点续传：分页拉取-游标" class="headerlink" title="二、断点续传：分页拉取 + 游标"></a>二、断点续传：分页拉取 + 游标</h3><p>Handler 处理数据时，上游系统可能返回 10 万条订单。全量拉取内存扛不住，拉一半挂了也不好恢复。所以必须分页 + 记录游标：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">processWithCheckpoint</span><span class="hljs-params">(String handlerKey)</span> &#123;<br>    <span class="hljs-comment">// 1. 从 sync_task 表获取上次处理到的游标</span><br>    <span class="hljs-type">Long</span> <span class="hljs-variable">lastId</span> <span class="hljs-operator">=</span> getCheckpoint(handlerKey);  <span class="hljs-comment">// 上次处理到的最后一条 ID</span><br>    <br>    <span class="hljs-comment">// 2. 分页拉取</span><br>    <span class="hljs-type">int</span> <span class="hljs-variable">pageSize</span> <span class="hljs-operator">=</span> <span class="hljs-number">500</span>;<br>    List&lt;Order&gt; page;<br>    <span class="hljs-keyword">do</span> &#123;<br>        page = orderService.fetchOrders(lastId, pageSize);<br>        <br>        <span class="hljs-keyword">for</span> (Order order : page) &#123;<br>            processOne(order);<br>            lastId = order.getId();  <span class="hljs-comment">// 逐条更新游标</span><br>        &#125;<br>        <br>        <span class="hljs-comment">// 3. 每处理完一页，持久化游标</span><br>        saveCheckpoint(handlerKey, lastId);<br>        <br>    &#125; <span class="hljs-keyword">while</span> (page.size() == pageSize);  <span class="hljs-comment">// 如果不够一页说明拉完了</span><br>&#125;<br></code></pre></td></tr></table></figure>
@@ -441,8 +454,8 @@
 <h4 id="游标设计的关键细节"><a href="#游标设计的关键细节" class="headerlink" title="游标设计的关键细节"></a>游标设计的关键细节</h4><p>游标必须用<strong>业务主键</strong>而不是 offset。offset 的问题是：分页过程中如果有新数据插入，offset 会错位导致重复或跳过。</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 正确：用自增 ID 作为游标</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> orders <br><span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">&gt;</span> #&#123;lastId&#125; <br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> id <span class="hljs-keyword">ASC</span> <br>LIMIT #&#123;pageSize&#125;;<br><br><span class="hljs-comment">-- 错误：用 OFFSET 会受插入影响</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> orders <br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> id <br>LIMIT #&#123;pageSize&#125; <span class="hljs-keyword">OFFSET</span> #&#123;<span class="hljs-keyword">offset</span>&#125;;<br></code></pre></td></tr></table></figure>
 
-<h3 id="三、指数退避重试"><a href="#三、指数退避重试" class="headerlink" title="三、指数退避重试"></a>三、指数退避重试</h3><p>失败不可避免——下游系统挂了、网络超时、数据格式异常。关键是重试策略。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ExponentialBackoffRetry</span> &#123;<br>    <br>    <span class="hljs-comment">// 基础延迟 5 秒，最大延迟 24 小时</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">BASE_DELAY_MS</span> <span class="hljs-operator">=</span> <span class="hljs-number">5_000</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">MAX_DELAY_MS</span> <span class="hljs-operator">=</span> <span class="hljs-number">86_400_000</span>;<br>    <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">long</span> <span class="hljs-title function_">calculateNextRetryTime</span><span class="hljs-params">(<span class="hljs-type">int</span> retryCount)</span> &#123;<br>        <span class="hljs-comment">// 指数: 5s → 10s → 20s → 40s → 80s → 160s → 320s ...</span><br>        <span class="hljs-type">long</span> <span class="hljs-variable">delay</span> <span class="hljs-operator">=</span> BASE_DELAY_MS * (<span class="hljs-number">1L</span> &lt;&lt; Math.min(retryCount, <span class="hljs-number">14</span>));<br>        <span class="hljs-keyword">return</span> System.currentTimeMillis() + Math.min(delay, MAX_DELAY_MS);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h3 id="三、任务级指数退避重试"><a href="#三、任务级指数退避重试" class="headerlink" title="三、任务级指数退避重试"></a>三、任务级指数退避重试</h3><p>失败不可避免——下游系统挂了、网络超时、数据格式异常。关键是重试策略。这里要明确层次：<strong>下面的指数退避是任务级重试策略（写 <code>next_retry_time</code>）；调度层本身仍是固定频率轮询，不引入调度级退避算法。</strong></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ExponentialBackoffRetry</span> &#123;<br>    <br>    <span class="hljs-comment">// 基础延迟 5 秒；最大延迟按 24h 兜底，但封顶 14 次时实际约 22.7h</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">BASE_DELAY_MS</span> <span class="hljs-operator">=</span> <span class="hljs-number">5_000</span>;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">MAX_DELAY_MS</span> <span class="hljs-operator">=</span> <span class="hljs-number">86_400_000</span>;<br>    <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-type">long</span> <span class="hljs-title function_">calculateNextRetryTime</span><span class="hljs-params">(<span class="hljs-type">int</span> retryCount)</span> &#123;<br>        <span class="hljs-comment">// 指数: 5s → 10s → 20s → 40s → 80s → 160s → 320s ...</span><br>        <span class="hljs-type">long</span> <span class="hljs-variable">delay</span> <span class="hljs-operator">=</span> BASE_DELAY_MS * (<span class="hljs-number">1L</span> &lt;&lt; Math.min(retryCount, <span class="hljs-number">14</span>));<br>        <span class="hljs-keyword">return</span> System.currentTimeMillis() + Math.min(delay, MAX_DELAY_MS);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p>重试次数与延迟对照：</p>
 <table>
@@ -494,9 +507,9 @@
 <td>~85min</td>
 </tr>
 <tr>
-<td align="center">14+</td>
-<td>24h (上限)</td>
-<td>—</td>
+<td align="center">15+</td>
+<td>81920s</td>
+<td>~22.7h（封顶）</td>
 </tr>
 </tbody></table>
 <p>前 5 次重试在 3 分钟内完成（人工基本无感），之后逐步拉长间隔。不会出现疯狂重试打爆下游的情况。</p>
@@ -525,26 +538,26 @@
 <tr>
 <td align="center"><strong>BATCH</strong></td>
 <td>批次失败（整批挂了）</td>
-<td>钉钉群 @负责人</td>
+<td>企业IM群 @负责人</td>
 <td>5分钟内响应</td>
 </tr>
 <tr>
 <td align="center"><strong>MIN</strong></td>
 <td>分钟级失败率 &gt; 10%</td>
-<td>电话 + 钉钉 @所有人</td>
+<td>电话 + 企业IM @所有人</td>
 <td>立即响应</td>
 </tr>
 </tbody></table>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AlertManager</span> &#123;<br>    <br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">BATCH_FAIL_THRESHOLD</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;    <span class="hljs-comment">// 整批失败=立刻告警</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">double</span> <span class="hljs-variable">MIN_FAIL_RATE</span> <span class="hljs-operator">=</span> <span class="hljs-number">0.10</span>;     <span class="hljs-comment">// 失败率&gt;10%</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">MIN_FAIL_WINDOW</span> <span class="hljs-operator">=</span> <span class="hljs-number">60</span>;        <span class="hljs-comment">// 60秒窗口</span><br>    <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">checkAndAlert</span><span class="hljs-params">(String handlerKey, BatchResult result)</span> &#123;<br>        <span class="hljs-comment">// BATCH: 整批挂了</span><br>        <span class="hljs-keyword">if</span> (result.isTotalFailure()) &#123;<br>            alertService.sendDingTalk(<span class="hljs-string">&quot;BATCH&quot;</span>, <br>                String.format(<span class="hljs-string">&quot;Handler %s 整批失败, 批次号=%s&quot;</span>, <br>                    handlerKey, result.getBatchId()));<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <br>        <span class="hljs-comment">// MIN: 失败率超标</span><br>        <span class="hljs-type">double</span> <span class="hljs-variable">failRate</span> <span class="hljs-operator">=</span> result.getFailedCount() / (<span class="hljs-type">double</span>) result.getTotalCount();<br>        <span class="hljs-keyword">if</span> (failRate &gt; MIN_FAIL_RATE) &#123;<br>            alertService.sendDingTalkAndCall(<span class="hljs-string">&quot;MIN&quot;</span>, <br>                String.format(<span class="hljs-string">&quot;Handler %s 失败率 %.1f%%, 已触发电话告警&quot;</span>, <br>                    handlerKey, failRate * <span class="hljs-number">100</span>));<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <h3 id="五、四层保障的协同"><a href="#五、四层保障的协同" class="headerlink" title="五、四层保障的协同"></a>五、四层保障的协同</h3><p>把四个机制串起来看一次完整的任务执行：</p>
-<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs markdown"><span class="hljs-bullet">1.</span> XXL-JOB 触发<br>   ↓<br><span class="hljs-bullet">2.</span> 配额选择器 → 拉取60条 (INIT 40 + WAIT 10 + FAIL 10)<br>   ↓<br><span class="hljs-bullet">3.</span> 分布式锁 + CAS 双重防重 → 获得执行权<br>   ↓<br><span class="hljs-bullet">4.</span> 分页拉取 + 游标断点续传 → 逐页处理<br>   ↓<br><span class="hljs-bullet">5.</span> CompletableFuture 分批并行 → 50条/批<br>   ↓<br><span class="hljs-bullet">6.</span> 成功 → 批次聚合更新状态 → 完成<br>   失败 → 指数退避更新 next<span class="hljs-emphasis">_retry_</span>time → 等待重试<br>   超时 → 标记 TIMEOUT → 归入重试队列<br>   ↓<br><span class="hljs-bullet">7.</span> 告警检查 → 根据失败量级触发对应级别<br></code></pre></td></tr></table></figure>
+<figure class="highlight markdown"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs markdown"><span class="hljs-bullet">1.</span> XXL-JOB 触发<br>   ↓<br><span class="hljs-bullet">2.</span> 状态分层调度 → 高频/中频/低频 Job 分别只拉 INIT/WAIT/FAIL（5s/30s/5min）<br>   ↓<br><span class="hljs-bullet">3.</span> 分布式锁 + CAS 双重防重 → 获得执行权<br>   ↓<br><span class="hljs-bullet">4.</span> 分页拉取 + 游标断点续传 → 逐页处理<br>   ↓<br><span class="hljs-bullet">5.</span> CompletableFuture 分批并行 → 50条/批<br>   ↓<br><span class="hljs-bullet">6.</span> 成功 → 批次聚合更新状态 → 完成<br>   失败 → 指数退避更新 next<span class="hljs-emphasis">_retry_</span>time → 等待重试<br>   超时 → 标记 TIMEOUT → 归入重试队列<br>   ↓<br><span class="hljs-bullet">7.</span> 告警检查 → 根据失败量级触发对应级别<br></code></pre></td></tr></table></figure>
 
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>做任务引擎，业务逻辑只占 30%，剩下的 70% 都是可靠性。四个关键设计：</p>
 <ul>
 <li><strong>双重防重</strong>：Redis 锁 + DB CAS，两层的盲区互相覆盖</li>
 <li><strong>断点续传</strong>：游标用业务 ID 不用 offset，每页持久化一次</li>
-<li><strong>指数退避</strong>：5s 起步，24h 上限，前 5 次 3 分钟内完成</li>
+<li><strong>指数退避</strong>：5s 起步，14 次封顶后单次约 22.7h，前 5 次 3 分钟内完成</li>
 <li><strong>四级告警</strong>：SKIP&#x2F;ONE&#x2F;BATCH&#x2F;MIN，分级响应，避免”狼来了”</li>
 </ul>
 <hr>
@@ -648,9 +661,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2024/04/06/2024-04-06-DDIA-08-2PC%E5%88%B0TCC/" title="DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路">
+                      <a href="/2024/04/06/2024-04-06-DDIA-08-2PC%E5%88%B0TCC/" title="DDIA-08-实战：从2PC到TCC——电商分布式事务的演进与取舍">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路</span>
+                        <span class="hidden-mobile">DDIA-08-实战：从2PC到TCC——电商分布式事务的演进与取舍</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -737,7 +750,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -837,7 +850,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -852,7 +866,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

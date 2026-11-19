@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/10/05/2024-10-05-DDIA-11-日报表批处理实战/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/10/05/2024-10-05-DDIA-11-%E6%97%A5%E6%8A%A5%E8%A1%A8%E6%89%B9%E5%A4%84%E7%90%86%E5%AE%9E%E6%88%98/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、从一个慢查询说起凌晨 3:00，告警响了。 日报表的批处理跑了 11 分钟还没结束，CPU 使用率飙到 90%。运营同事早上 8 点上班要看昨天的销售日报——这张表必须在凌晨算完。这不是一次两次的事，随着订单量突破 200 万&#x2F;天，全量扫描的代价正在指数级增长。 问题出在哪？ 最初的日报表设计很朴素：每天凌晨跑一个存储过程—— 123456789101112INSERT INTO r">
+    <meta name="description" content="一、从一个慢查询说起凌晨 3:00，告警响了。 日报表的批处理跑了 11 分钟还没结束，CPU 使用率飙到 90%。运营同事早上 8 点上班要看昨天的销售日报——这张表必须在凌晨算完。这不是一次两次的事，随着订单量达到 130 万&#x2F;天（历史峰值口径，主口径见订单中台系列），全量扫描的代价正在指数级增长。 问题出在哪？ 最初的日报表设计很朴素：每天凌晨跑一个存储过程—— 123456789">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-11-实战：电商日报表的批处理设计——从MySQL全量扫描到增量快照">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/10/05/2024-10-05-DDIA-11-%E6%97%A5%E6%8A%A5%E8%A1%A8%E6%89%B9%E5%A4%84%E7%90%86%E5%AE%9E%E6%88%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、从一个慢查询说起凌晨 3:00，告警响了。 日报表的批处理跑了 11 分钟还没结束，CPU 使用率飙到 90%。运营同事早上 8 点上班要看昨天的销售日报——这张表必须在凌晨算完。这不是一次两次的事，随着订单量突破 200 万&#x2F;天，全量扫描的代价正在指数级增长。 问题出在哪？ 最初的日报表设计很朴素：每天凌晨跑一个存储过程—— 123456789101112INSERT INTO r">
+<meta property="og:description" content="一、从一个慢查询说起凌晨 3:00，告警响了。 日报表的批处理跑了 11 分钟还没结束，CPU 使用率飙到 90%。运营同事早上 8 点上班要看昨天的销售日报——这张表必须在凌晨算完。这不是一次两次的事，随着订单量达到 130 万&#x2F;天（历史峰值口径，主口径见订单中台系列），全量扫描的代价正在指数级增长。 问题出在哪？ 最初的日报表设计很朴素：每天凌晨跑一个存储过程—— 123456789">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-10-05T04:19:57.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.596Z">
+<meta property="article:modified_time" content="2024-10-05T04:19:57.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="MySQL">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="批处理">
 <meta property="article:tag" content="报表">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-11-实战：电商日报表的批处理设计——从MySQL全量扫描到增量快照","datePublished":"2024-10-05T04:19:57.000Z","dateModified":"2024-10-05T04:19:57.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/10/05/2024-10-05-DDIA-11-%E6%97%A5%E6%8A%A5%E8%A1%A8%E6%89%B9%E5%A4%84%E7%90%86%E5%AE%9E%E6%88%98/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          5.7k 字
+          5.8k 字
         
       </span>
     
@@ -408,25 +417,29 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-11-实战：电商日报表的批处理设计——从MySQL全量扫描到增量快照</h1>
+            <p id="seo-header">DDIA-11-实战：电商日报表的批处理设计——从MySQL全量扫描到增量快照</p>
             
             
               <div class="markdown-body">
                 
                 <h2 id="一、从一个慢查询说起"><a href="#一、从一个慢查询说起" class="headerlink" title="一、从一个慢查询说起"></a>一、从一个慢查询说起</h2><p>凌晨 3:00，告警响了。</p>
-<p>日报表的批处理跑了 11 分钟还没结束，CPU 使用率飙到 90%。运营同事早上 8 点上班要看昨天的销售日报——这张表必须在凌晨算完。这不是一次两次的事，随着订单量突破 200 万&#x2F;天，全量扫描的代价正在指数级增长。</p>
+<p>日报表的批处理跑了 11 分钟还没结束，CPU 使用率飙到 90%。运营同事早上 8 点上班要看昨天的销售日报——这张表必须在凌晨算完。这不是一次两次的事，随着订单量达到 130 万&#x2F;天（历史峰值口径，主口径见订单中台系列），全量扫描的代价正在指数级增长。</p>
 <p>问题出在哪？</p>
 <p>最初的日报表设计很朴素：每天凌晨跑一个存储过程——</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">INSERT INTO</span> report_daily_sales (biz_date, warehouse_id, product_id, total_qty, total_amount)<br><span class="hljs-keyword">SELECT</span> <br>    <span class="hljs-type">DATE</span>(o.pay_time) <span class="hljs-keyword">AS</span> biz_date,<br>    o.warehouse_id,<br>    od.product_id,<br>    <span class="hljs-built_in">SUM</span>(od.qty) <span class="hljs-keyword">AS</span> total_qty,<br>    <span class="hljs-built_in">SUM</span>(od.qty <span class="hljs-operator">*</span> od.unit_price) <span class="hljs-keyword">AS</span> total_amount<br><span class="hljs-keyword">FROM</span> orders o<br><span class="hljs-keyword">JOIN</span> order_detail od <span class="hljs-keyword">ON</span> o.id <span class="hljs-operator">=</span> od.order_id<br><span class="hljs-keyword">WHERE</span> o.status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PAID&#x27;</span><br>  <span class="hljs-keyword">AND</span> <span class="hljs-type">DATE</span>(o.pay_time) <span class="hljs-operator">=</span> CURDATE() <span class="hljs-operator">-</span> <span class="hljs-type">INTERVAL</span> <span class="hljs-number">1</span> <span class="hljs-keyword">DAY</span><br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> biz_date, o.warehouse_id, od.product_id;<br></code></pre></td></tr></table></figure>
 
-<p>每天 SELECT 全量订单表（JOIN 订单详情、商品、用户、仓库），在 Java 应用层聚合计算后写入报表。逻辑简单直观，但当订单量从 10 万涨到 200 万，这个”简单直观”就变成了灾难现场。</p>
+<p>每天 SELECT 全量订单表（JOIN 订单详情、商品、用户、仓库），在 Java 应用层聚合计算后写入报表。逻辑简单直观，但当峰值日订单量从 10 万涨到 130 万（历史口径），这个”简单直观”就变成了灾难现场。</p>
 <h2 id="二、问题拆解：全量扫描为什么不可持续"><a href="#二、问题拆解：全量扫描为什么不可持续" class="headerlink" title="二、问题拆解：全量扫描为什么不可持续"></a>二、问题拆解：全量扫描为什么不可持续</h2><p>先把这个方案的病灶拆开来看。</p>
-<p><strong>第一，全表扫描的成本是 O(n)</strong>。n 是历史总订单数，而不是当天新增订单数。表里有半年的数据，每天却要扫描全部 6000 万行——99.5% 的行跟今天的报表毫无关系。MySQL 的 Buffer Pool 被大量冷数据污染，命中率断崖式下跌。</p>
+<p><strong>第一，全表扫描的成本是 O(n)</strong>。n 是历史总订单数，而不是当天新增订单数。表里累计约 6000 万行，每天却要扫描全部——按峰值日 130 万单估算，绝大部分行跟今天的报表无关。MySQL 的 Buffer Pool 被大量冷数据污染，命中率断崖式下跌。</p>
 <p><strong>第二，批处理跑在主库上</strong>。凌晨 3 点虽然业务低谷，但海外仓订单、异步任务、定时结算仍然在运行。批处理的磁盘 IO 和锁竞争拉高了所有请求的延迟，P99 从 50ms 飙到 200ms。</p>
 <p><strong>第三，没有容错机制</strong>。如果凌晨 4:00 因为网络抖动导致写入失败，整个批处理必须从头重跑——再扫描一遍全表，再等 8 分钟。更糟糕的是，重跑可能产生重复数据，因为 INSERT 不是幂等的。</p>
-<p><strong>第四，数据膨胀不可控</strong>。业务要求保留 3 年数据，6000 万行的主库扛不住。不解决冷热分离的问题，前面的所有优化都只是延缓死刑。</p>
+<p><strong>第四，数据膨胀不可控</strong>。业务要求保留 3 年数据，而当前累计已到 6000 万行级别，主库扛不住未来增长。不解决冷热分离的问题，前面的所有优化都只是延缓死刑。</p>
 <p>这些问题的根源不是”报表逻辑写错了”，而是<strong>批处理的设计模式没有适配数据量级的增长</strong>。DDIA 第 11 章开篇就讲：批处理的本质是读一组输入、做转换、写一组输出，而输出的设计决定了系统的可靠性。我们的输出是追加写（append）、不可幂等、没有分区切分意识——这是所有问题的起点。</p>
 <h2 id="三、改进一：读写分离——先止血"><a href="#三、改进一：读写分离——先止血" class="headerlink" title="三、改进一：读写分离——先止血"></a>三、改进一：读写分离——先止血</h2><p>第一步不是优化算法，而是降低爆炸半径。批处理再慢，不能影响业务主库。</p>
 <p>方案很直接：日报表的所有查询切到从库。</p>
@@ -436,7 +449,7 @@
 <p>但读写分离只是把问题转移了，没有解决问题本身。从库仍然要扫 6000 万行，批处理仍然要跑 8 分钟。而且带来了新的隐患：<strong>主从延迟</strong>。凌晨是主库写入的低谷期，延迟通常在 1 秒以内，暂时不是问题。但在大促期间，主库批量结算可能导致从库延迟 10-30 秒，这意味着日报表可能漏掉刚刚支付的订单。</p>
 <p>这是 DDIA 里说的「读自己的写」问题在批处理场景的变体。对于日报表这个 T+1 场景，30 秒延迟可以接受——我们只要在凌晨 2:30 之后启动批处理，确保前天最后一笔订单已经同步到从库。这个延迟窗口的确认，后续会通过监控主从同步位点来保证。</p>
 <h2 id="四、改进二：增量快照——从百万级到万级"><a href="#四、改进二：增量快照——从百万级到万级" class="headerlink" title="四、改进二：增量快照——从百万级到万级"></a>四、改进二：增量快照——从百万级到万级</h2><p>止血之后，开始治本。</p>
-<p>日报表的输入有个关键特征：<strong>只关心昨天的数据</strong>。每天 200 万订单，正常情况下的日增量只有 200 万行，但我们却要扫描 6000 万行——3000% 的浪费。</p>
+<p>日报表的输入有个关键特征：<strong>只关心昨天的数据</strong>。峰值日 130 万订单，按峰值日估算日增量约 130 万行，但我们却要扫描 6000 万行——绝大部分是重复扫描。</p>
 <p>改全量扫描为增量扫描的核心思想很简单：</p>
 <ol>
 <li><strong>记录水位线（watermark）</strong>：每次批处理完成后，把最后处理的订单 <code>updated_at</code> 存到一张 <code>batch_checkpoint</code> 表。</li>
@@ -445,7 +458,7 @@
 </ol>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 水位线表</span><br><span class="hljs-keyword">CREATE TABLE</span> batch_checkpoint (<br>    batch_name   <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">64</span>) <span class="hljs-keyword">PRIMARY KEY</span>,<br>    last_watermark DATETIME <span class="hljs-keyword">NOT NULL</span>,<br>    updated_at   DATETIME <span class="hljs-keyword">NOT NULL</span><br>);<br><br><span class="hljs-comment">-- 增量查询</span><br><span class="hljs-keyword">SELECT</span> ...<br><span class="hljs-keyword">FROM</span> orders o<br><span class="hljs-keyword">WHERE</span> o.status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PAID&#x27;</span><br>  <span class="hljs-keyword">AND</span> o.updated_at <span class="hljs-operator">&gt;</span> (<span class="hljs-keyword">SELECT</span> last_watermark <br>                      <span class="hljs-keyword">FROM</span> batch_checkpoint <br>                      <span class="hljs-keyword">WHERE</span> batch_name <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;daily_sales_report&#x27;</span>)<br>  <span class="hljs-keyword">AND</span> o.updated_at <span class="hljs-operator">&lt;=</span> NOW();<br></code></pre></td></tr></table></figure>
 
-<p>每天的扫描量从 6000 万行下降到 200-300 万行，批处理耗时从 8 分钟降到 40 秒。</p>
+<p>扫描量从 6000 万行下降到峰值日约 130 万行，批处理耗时从 8 分钟降到 40 秒。</p>
 <p>但这里面有个细节必须处理好：<strong>边界问题</strong>。<code>updated_at &gt; last_watermark</code> 会漏掉在 <code>last_watermark</code> 同一秒内插入&#x2F;更新的订单（MySQL DATETIME 精度到秒）。所以实际实现是：每次把 watermark 往前推 30 秒（overlap window），然后在写入报表时用 <code>ON DUPLICATE KEY UPDATE</code> 或 MERGE 做去重覆盖，保证同一行数据不会因为边界被遗漏。</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 带上 30 秒重叠窗口</span><br><span class="hljs-keyword">SET</span> <span class="hljs-variable">@safe_watermark</span> <span class="hljs-operator">=</span> DATE_SUB(last_watermark, <span class="hljs-type">INTERVAL</span> <span class="hljs-number">30</span> <span class="hljs-keyword">SECOND</span>);<br><br><span class="hljs-keyword">SELECT</span> ...<br><span class="hljs-keyword">FROM</span> orders o<br><span class="hljs-keyword">WHERE</span> o.updated_at <span class="hljs-operator">&gt;</span> <span class="hljs-variable">@safe_watermark</span><br>  <span class="hljs-keyword">AND</span> o.updated_at <span class="hljs-operator">&lt;=</span> NOW();<br></code></pre></td></tr></table></figure>
 
@@ -505,13 +518,13 @@
 </tr>
 <tr>
 <td>增量快照</td>
-<td>200万行</td>
+<td>峰值日 130 万行</td>
 <td>40秒</td>
 <td>无影响</td>
 </tr>
 <tr>
 <td>+HBase归档</td>
-<td>200万行(热表仅600万)</td>
+<td>峰值日 130 万行（热表仅保留近期）</td>
 <td>40秒</td>
 <td>无影响</td>
 </tr>
@@ -704,7 +717,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -804,7 +817,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -819,7 +833,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

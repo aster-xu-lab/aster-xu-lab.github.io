@@ -8,33 +8,42 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/08/26/2023-08-26-DDIA-03-声明式查询vs-ORM/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/08/26/2023-08-26-DDIA-03-%E5%A3%B0%E6%98%8E%E5%BC%8F%E6%9F%A5%E8%AF%A2vs-ORM/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="本文是《Designing Data-Intensive Applications》（DDIA）读书笔记系列第3篇。前两篇我们聊了数据模型和存储引擎，今天来聊一个每个Java后端工程师每天都在用、但很少认真思考的话题：声明式查询与命令式查询的分野，以及ORM到底在帮你还是在害你。  两种范式：你要什么 vs 你怎么做SQL 和 Java 代码代表了两种截然不同的编程范式。 声明式（Declarat">
+    <meta name="description" content="本文是《Designing Data-Intensive Applications》（DDIA）读书笔记系列第3篇。前两篇我们聊了数据模型和存储引擎，今天来聊一个每个Java后端工程师每天都在用、但很少认真思考的话题：声明式查询与命令式查询的分野，以及ORM到底在帮你还是在害你。 两种范式：你要什么 vs 你怎么做SQL 和 Java 代码代表了两种截然不同的编程范式。 声明式（Declarati">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-03-声明式查询的力量：为什么ORM有时候是你的敌人">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/08/26/2023-08-26-DDIA-03-%E5%A3%B0%E6%98%8E%E5%BC%8F%E6%9F%A5%E8%AF%A2vs-ORM/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="本文是《Designing Data-Intensive Applications》（DDIA）读书笔记系列第3篇。前两篇我们聊了数据模型和存储引擎，今天来聊一个每个Java后端工程师每天都在用、但很少认真思考的话题：声明式查询与命令式查询的分野，以及ORM到底在帮你还是在害你。  两种范式：你要什么 vs 你怎么做SQL 和 Java 代码代表了两种截然不同的编程范式。 声明式（Declarat">
+<meta property="og:description" content="本文是《Designing Data-Intensive Applications》（DDIA）读书笔记系列第3篇。前两篇我们聊了数据模型和存储引擎，今天来聊一个每个Java后端工程师每天都在用、但很少认真思考的话题：声明式查询与命令式查询的分野，以及ORM到底在帮你还是在害你。 两种范式：你要什么 vs 你怎么做SQL 和 Java 代码代表了两种截然不同的编程范式。 声明式（Declarati">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-08-26T14:25:22.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.581Z">
+<meta property="article:modified_time" content="2023-08-26T14:25:22.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="ORM">
 <meta property="article:tag" content="SQL">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-03-声明式查询的力量：为什么ORM有时候是你的敌人","datePublished":"2023-08-26T14:25:22.000Z","dateModified":"2023-08-26T14:25:22.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/08/26/2023-08-26-DDIA-03-%E5%A3%B0%E6%98%8E%E5%BC%8F%E6%9F%A5%E8%AF%A2vs-ORM/"}}</script>
   
   
   
@@ -209,7 +218,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -406,9 +415,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-03-声明式查询的力量：为什么ORM有时候是你的敌人</h1>
+            <p id="seo-header">DDIA-03-声明式查询的力量：为什么ORM有时候是你的敌人</p>
             
             
               <div class="markdown-body">
@@ -580,9 +593,9 @@
 <li><strong>线上的每一次慢查询，都是开发时偷的懒在秋后算账。</strong></li>
 </ol>
 <hr>
-<p><em>本文是 DDIA 读书笔记系列第3篇。下一篇我们将聊编码与演化（Chapter 4）——如何让你的数据模式优雅地随时间演变。</em></p>
-<p><em>作者：AsterXu，7年Java后端，电商&#x2F;供应链中台技术主管。日均慢SQL 1124→6条，不是靠什么黑科技，靠的是回到数据库本身。</em></p>
-<p><em>博客：<a target="_blank" rel="noopener" href="https://asterxu.github.io/">AsterXu Lab</a></em></p>
+<p><em>本文是 DDIA 读书笔记系列第3篇。后续我们会聊编码与演化（Chapter 5）——如何让你的数据模式优雅地随时间演变。</em></p>
+<p><em>作者：AsterXu，7年Java后端，电商&#x2F;供应链中台技术主管。曾把日均慢 SQL 从 1124 条降到 6 条，不是靠什么黑科技，靠的是回到数据库本身。</em></p>
+<p><em>博客：<a href="/">AsterXu Lab</a></em></p>
 
                 
               </div>
@@ -765,7 +778,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -865,7 +878,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -880,7 +894,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

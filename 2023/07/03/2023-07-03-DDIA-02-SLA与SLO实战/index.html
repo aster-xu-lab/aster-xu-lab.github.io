@@ -8,34 +8,43 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/07/03/2023-07-03-DDIA-02-SLA与SLO实战/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/07/03/2023-07-03-DDIA-02-SLA%E4%B8%8ESLO%E5%AE%9E%E6%88%98/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="99.9%和99.99%只差一个9，但年度宕机时间从8.76小时降到52.6分钟，差了整整10倍。本文结合日订单130万、QPS 8000+的订单中心实战，讲清楚SLA&#x2F;SLO&#x2F;SLI三兄弟的区别、MTBF&#x2F;MTTR的计算方法、以及可用性从99.9%爬到99.99%到底做了什么。">
+    <meta name="description" content="99.9%和99.99%只差一个9，但年度宕机时间从8.76小时降到52.6分钟，差了整整10倍。本文结合日订单峰值130万、QPS 8000+的订单中心实战，讲清楚SLA&#x2F;SLO&#x2F;SLI三兄弟的区别、MTBF&#x2F;MTTR的计算方法、以及可用性从99.9%爬到99.99%到底做了什么。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-02SLA与SLO实战：从99.9%到99.99%的100倍差距">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/07/03/2023-07-03-DDIA-02-SLA%E4%B8%8ESLO%E5%AE%9E%E6%88%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="99.9%和99.99%只差一个9，但年度宕机时间从8.76小时降到52.6分钟，差了整整10倍。本文结合日订单130万、QPS 8000+的订单中心实战，讲清楚SLA&#x2F;SLO&#x2F;SLI三兄弟的区别、MTBF&#x2F;MTTR的计算方法、以及可用性从99.9%爬到99.99%到底做了什么。">
+<meta property="og:description" content="99.9%和99.99%只差一个9，但年度宕机时间从8.76小时降到52.6分钟，差了整整10倍。本文结合日订单峰值130万、QPS 8000+的订单中心实战，讲清楚SLA&#x2F;SLO&#x2F;SLI三兄弟的区别、MTBF&#x2F;MTTR的计算方法、以及可用性从99.9%爬到99.99%到底做了什么。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-07-03T15:43:40.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.743Z">
+<meta property="article:modified_time" content="2023-07-03T15:43:40.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="SLA">
 <meta property="article:tag" content="SRE">
 <meta property="article:tag" content="可用性">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-02SLA与SLO实战：从99.9%到99.99%的100倍差距","datePublished":"2023-07-03T15:43:40.000Z","dateModified":"2023-07-03T15:43:40.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/07/03/2023-07-03-DDIA-02-SLA%E4%B8%8ESLO%E5%AE%9E%E6%88%98/"}}</script>
   
   
   
@@ -210,7 +219,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -385,7 +394,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          4.8k 字
+          4.9k 字
         
       </span>
     
@@ -407,9 +416,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-02SLA与SLO实战：从99.9%到99.99%的100倍差距</h1>
+            <p id="seo-header">DDIA-02SLA与SLO实战：从99.9%到99.99%的100倍差距</p>
             
             
               <div class="markdown-body">
@@ -420,7 +433,7 @@
 <li><strong>99.99%（四个9）</strong>：年度允许宕机时间 &#x3D; 365 × 24 × 60 × 0.0001 &#x3D; <strong>52.56分钟</strong></li>
 </ul>
 <p>就多了一个9，宕机预算差了10倍。</p>
-<p>这个差距对业务意味着什么？假设你的系统日订单峰值130万、QPS 8000，8.76小时的宕机相当于损失约47万笔订单。而52.56分钟的宕机，损失降到约4.7万笔。两者之间差了42万笔订单，按客单价100块算，那就是4200万的GMV差距。</p>
+<p>这个差距对业务意味着什么？假设你的系统日订单峰值130万（历史峰值口径，主口径见订单中台系列）、QPS 8000，8.76小时的宕机相当于损失约47万笔订单。而52.56分钟的宕机，损失降到约4.7万笔。两者之间差了42万笔订单，按客单价100块算，那就是4200万的GMV差距。</p>
 <p>这不是学术讨论。这是我们订单中心真实走过的路——从99.9%爬到99.99%，花了一年半。</p>
 <p>但做到四个9之前，有件事必须先想清楚：你可别上来就跟老板拍胸脯说”我们要做五个9”。每多一个9，成本翻倍起步，而业务的真实容忍度可能根本不需要那么多9。这里的关键，就是SLA、SLO、SLI这三个概念。</p>
 <h2 id="二、SLA-SLO-SLI：三个兄弟，各管各的事"><a href="#二、SLA-SLO-SLI：三个兄弟，各管各的事" class="headerlink" title="二、SLA &#x2F; SLO &#x2F; SLI：三个兄弟，各管各的事"></a>二、SLA &#x2F; SLO &#x2F; SLI：三个兄弟，各管各的事</h2><p>DDIA第二章讲非功能性需求时，最核心的一组概念就是SLA、SLO、SLI。我见过太多人把这三个词混着用，面试时被追问一下就露馅。</p>
@@ -466,7 +479,7 @@
 </ol>
 <p>整条链路99%的case在3分钟内完成。唯一保留人工介入的场景是从库延迟超过5秒——这种case需要判断是切还是不切，不能盲目切。</p>
 <p>这里有一个教训。自动化切换的第一版我们用过MHA（MySQL High Availability），但MHA的问题是它只管数据库层面的切换，应用层感知不到数据源变化，需要额外一套配置推送机制才能让应用切过来。后来我们干脆把MHA换成了自研的轻量级检测脚本 + Apollo配置推送，逻辑简单透明，出了问题也好排查。</p>
-<h3 id="4-2-限流降级体系：QPS-2000-→-8000-不被冲垮"><a href="#4-2-限流降级体系：QPS-2000-→-8000-不被冲垮" class="headerlink" title="4.2 限流降级体系：QPS 2000 → 8000+不被冲垮"></a>4.2 限流降级体系：QPS 2000 → 8000+不被冲垮</h3><p>可用性不只是”系统不挂”，还包括”系统在高负载下依然能提供核心服务”。</p>
+<h3 id="4-2-限流降级体系：QPS-2000-→-8000-不被冲垮（历史压测口径）"><a href="#4-2-限流降级体系：QPS-2000-→-8000-不被冲垮（历史压测口径）" class="headerlink" title="4.2 限流降级体系：QPS 2000 → 8000+不被冲垮（历史压测口径）"></a>4.2 限流降级体系：QPS 2000 → 8000+不被冲垮（历史压测口径）</h3><p>可用性不只是”系统不挂”，还包括”系统在高负载下依然能提供核心服务”。</p>
 <p>我们订单中心接入了多个上游——APP端、小程序端、ERP端、第三方渠道。在秒杀或大促时，瞬时QPS能从2000飙到8000+。如果不做限流降级，线程池打满 → 所有接口都不可用 → 即使是非秒杀商品的正常下单也受影响。</p>
 <p>我们做了三层：</p>
 <p><strong>第一层：网关限流（Sentinel）</strong><br>在网关层对每个渠道设置独立的QPS上限。比如APP端分配3000，小程序分配2000，ERP分配1000。超过上限的直接返回”系统繁忙请稍后重试”，不让流量进入后端。</p>
@@ -528,7 +541,7 @@
 <li>成熟期（百万日活&#x2F;日订单）：四个9是必须的。每一次故障都在消耗信任和GMV。</li>
 <li>金融&#x2F;通信&#x2F;医疗：五个9是监管要求，不是技术追求。</li>
 </ul>
-<p>我们订单中心做到99.99%之后，内部讨论过要不要挑战五个9。结论是不要。不是做不动，是现阶段ROI太低。我们的日订单量130万，但客单价不高、时效要求不是秒级、交易不是金融级一致性。这种情况下，四个9已经足够——52分钟的年度宕机预算，在实际运营中基本够用。</p>
+<p>我们订单中心做到99.99%之后，内部讨论过要不要挑战五个9。结论是不要。不是做不动，是现阶段ROI太低。我们的日订单峰值130万（历史口径），但客单价不高、时效要求不是秒级、交易不是金融级一致性。这种情况下，四个9已经足够——52分钟的年度宕机预算，在实际运营中基本够用。</p>
 <p><strong>记住一句话：可用性架构的成本是用来买”业务允许出错的额度”，而不是用来追求技术上的完美。</strong></p>
 <h2 id="六、总结"><a href="#六、总结" class="headerlink" title="六、总结"></a>六、总结</h2><p>回到DDIA第二章的核心观点：非功能性需求不是PM写在PRD里的东西，但它是架构师脑子里必须装着的约束条件。</p>
 <p>如果你只记住三件事，我希望是这三件：</p>
@@ -572,9 +585,9 @@
       
         <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
-        <a href="/tags/%E5%8F%AF%E7%94%A8%E6%80%A7/" class="print-no-link">#可用性</a>
-      
         <a href="/tags/SLA/" class="print-no-link">#SLA</a>
+      
+        <a href="/tags/%E5%8F%AF%E7%94%A8%E6%80%A7/" class="print-no-link">#可用性</a>
       
         <a href="/tags/SRE/" class="print-no-link">#SRE</a>
       
@@ -643,8 +656,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2023/06/22/2023-06-22-DDIA-01-%E6%9E%B6%E6%9E%84%E6%9D%83%E8%A1%A1%E6%B2%A1%E6%9C%89%E9%93%B6%E5%BC%B9/" title="DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍">
-                        <span class="hidden-mobile">DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍</span>
+                      <a href="/2023/06/22/2023-06-22-DDIA-01-%E6%9E%B6%E6%9E%84%E6%9D%83%E8%A1%A1%E6%B2%A1%E6%9C%89%E9%93%B6%E5%BC%B9/" title="DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍">
+                        <span class="hidden-mobile">DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -722,7 +735,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -822,7 +835,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -837,7 +851,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

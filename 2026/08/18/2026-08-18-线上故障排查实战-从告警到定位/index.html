@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/08/18/2026-08-18-线上故障排查实战-从告警到定位/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/08/18/2026-08-18-%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98-%E4%BB%8E%E5%91%8A%E8%AD%A6%E5%88%B0%E5%AE%9A%E4%BD%8D/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="线上出问题，最考验功底的不是”会背命令”，而是从告警到定位的完整排查思路。这篇用一次真实的高 CPU 排查，讲透我的排查方法论。  一、告警来了，先别慌凌晨两点，告警群响了：订单服务 CPU 持续 90%+。 我处理线上问题的第一步永远是”保现场 + 看整体“，而不是一头扎进代码： 12345① 保现场：先不重启（重启 &#x3D; 现场没了）② 看整体：top 看进程 → load average 是">
+    <meta name="description" content="线上出问题，最考验功底的不是”会背命令”，而是从告警到定位的完整排查思路。这篇用一次真实的高 CPU 排查，讲透我的排查方法论。 一、告警来了，先别慌凌晨两点，告警群响了：订单服务 CPU 持续 90%+。 我处理线上问题的第一步永远是”保现场 + 看整体“，而不是一头扎进代码： 12345① 保现场：先不重启（重启 &#x3D; 现场没了）② 看整体：top 看进程 → load average 是 CP">
 <meta property="og:type" content="article">
 <meta property="og:title" content="线上故障排查实战：从告警到定位，一次完整的高 CPU 排查">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/18/2026-08-18-%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98-%E4%BB%8E%E5%91%8A%E8%AD%A6%E5%88%B0%E5%AE%9A%E4%BD%8D/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="线上出问题，最考验功底的不是”会背命令”，而是从告警到定位的完整排查思路。这篇用一次真实的高 CPU 排查，讲透我的排查方法论。  一、告警来了，先别慌凌晨两点，告警群响了：订单服务 CPU 持续 90%+。 我处理线上问题的第一步永远是”保现场 + 看整体“，而不是一头扎进代码： 12345① 保现场：先不重启（重启 &#x3D; 现场没了）② 看整体：top 看进程 → load average 是">
+<meta property="og:description" content="线上出问题，最考验功底的不是”会背命令”，而是从告警到定位的完整排查思路。这篇用一次真实的高 CPU 排查，讲透我的排查方法论。 一、告警来了，先别慌凌晨两点，告警群响了：订单服务 CPU 持续 90%+。 我处理线上问题的第一步永远是”保现场 + 看整体“，而不是一头扎进代码： 12345① 保现场：先不重启（重启 &#x3D; 现场没了）② 看整体：top 看进程 → load average 是 CP">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-08-18T14:58:10.000Z">
-<meta property="article:modified_time" content="2026-08-28T04:31:13.518Z">
+<meta property="article:modified_time" content="2026-08-18T14:58:10.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="jstack">
 <meta property="article:tag" content="内存泄漏">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="故障排查">
 <meta property="article:tag" content="高CPU">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"线上故障排查实战：从告警到定位，一次完整的高 CPU 排查","datePublished":"2026-08-18T14:58:10.000Z","dateModified":"2026-08-18T14:58:10.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/08/18/2026-08-18-%E7%BA%BF%E4%B8%8A%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5%E5%AE%9E%E6%88%98-%E4%BB%8E%E5%91%8A%E8%AD%A6%E5%88%B0%E5%AE%9A%E4%BD%8D/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.7k 字
+          1.8k 字
         
       </span>
     
@@ -397,7 +406,7 @@
         
         
         
-          15 分钟
+          16 分钟
         
       </span>
     
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ops/">排查与踩坑</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">线上故障排查实战：从告警到定位，一次完整的高 CPU 排查</h1>
+            <p id="seo-header">线上故障排查实战：从告警到定位，一次完整的高 CPU 排查</p>
             
             
               <div class="markdown-body">
@@ -432,17 +445,17 @@
 <p>拿到烧 CPU 的线程号 22345。</p>
 <p><strong>③ 转十六进制</strong></p>
 <p>jstack 里线程号是十六进制：</p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">printf</span> <span class="hljs-string">&quot;%x&quot;</span> 22345   <span class="hljs-comment"># 5759</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">printf</span> <span class="hljs-string">&quot;%x&quot;</span> 22345   <span class="hljs-comment"># 5749</span><br></code></pre></td></tr></table></figure>
 
 <p><strong>④ 看线程栈</strong></p>
-<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">jstack 12345 | grep -A 20 <span class="hljs-string">&quot;5759&quot;</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">jstack 12345 | grep -A 20 <span class="hljs-string">&quot;nid=0x5749&quot;</span><br></code></pre></td></tr></table></figure>
 
 <p>线程栈里出现了一段<strong>业务代码的循环</strong>——<code>OrderService.processOrder()</code> 里有一个 <code>while</code> 循环。</p>
 <p><strong>⑤ 反查代码</strong></p>
 <p>定位到代码：订单处理里有一个<strong>重试循环没有上限</strong>——某个订单状态异常时，代码会无限重试，把 CPU 烧满。</p>
 <h2 id="三、根因与修复"><a href="#三、根因与修复" class="headerlink" title="三、根因与修复"></a>三、根因与修复</h2><p>根因是：<strong>对某个一直失败的订单，重试逻辑没有设置最大次数和退避</strong>，导致 <code>while(true)</code> 空转。</p>
 <p>修复：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 修复前：无限重试，异常订单烧 CPU</span><br><span class="hljs-keyword">while</span> (!order.isProcessed()) &#123;<br>    process(order);<br>&#125;<br><br><span class="hljs-comment">// 修复后：最大重试次数 + 指数退避</span><br><span class="hljs-type">int</span> <span class="hljs-variable">retries</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br><span class="hljs-keyword">while</span> (!order.isProcessed() &amp;&amp; retries++ &lt; <span class="hljs-number">5</span>) &#123;<br>    process(order);<br>    <span class="hljs-keyword">if</span> (!order.isProcessed()) &#123;<br>        Thread.sleep(<span class="hljs-number">500</span> * (<span class="hljs-number">1L</span> &lt;&lt; retries));   <span class="hljs-comment">// 指数退避</span><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 修复前：无限重试，异常订单烧 CPU</span><br><span class="hljs-keyword">while</span> (!order.isProcessed()) &#123;<br>    process(order);<br>&#125;<br><br><span class="hljs-comment">// 修复后：最大重试次数 + 指数退避</span><br><span class="hljs-type">int</span> <span class="hljs-variable">retries</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br><span class="hljs-keyword">while</span> (!order.isProcessed() &amp;&amp; retries++ &lt; <span class="hljs-number">5</span>) &#123;<br>    process(order);<br>    <span class="hljs-keyword">if</span> (!order.isProcessed()) &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            Thread.sleep(<span class="hljs-number">500</span> * (<span class="hljs-number">1L</span> &lt;&lt; retries));   <span class="hljs-comment">// 指数退避</span><br>        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>            Thread.currentThread().interrupt();    <span class="hljs-comment">// 恢复中断标志并退出</span><br>            <span class="hljs-keyword">break</span>;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p><strong>修复 + 验证 + 复盘</strong>：修复后观察 CPU 回落，然后复盘——这种”无限循环”类 bug 通常出现在<strong>异常处理不完整</strong>的地方，代码审查要重点盯。</p>
 <h2 id="四、排查方法论：四个场景的通用套路"><a href="#四、排查方法论：四个场景的通用套路" class="headerlink" title="四、排查方法论：四个场景的通用套路"></a>四、排查方法论：四个场景的通用套路</h2><p>高 CPU 只是线上问题的一种。我把常见场景整理成套路：</p>
@@ -466,7 +479,7 @@
 <li>熟悉 jstack&#x2F;jstat&#x2F;jmap 的用途（工具熟练度）；</li>
 <li>对订单处理链路熟（业务理解）。</li>
 </ol>
-<p><strong>排查能力不是背命令，是”工具 + 现场 + 业务”三者的结合</strong>——这也是我 99.99% 可用性背后的真实支撑。</p>
+<p><strong>排查能力不是背命令，是”工具 + 现场 + 业务”三者的结合</strong>——这是可用性保障的日常工作之一，99.99% 不在此单独归因。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>排查顺序：<strong>保现场 → 看整体 → 定位进程 → 定位线程 → 定位代码</strong>；</li>
 <li>高 CPU：top → top -Hp → 线程转 hex → jstack；</li>
@@ -509,11 +522,11 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
+        <a href="/tags/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" class="print-no-link">#故障排查</a>
+      
         <a href="/tags/jstack/" class="print-no-link">#jstack</a>
       
         <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
-      
-        <a href="/tags/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" class="print-no-link">#故障排查</a>
       
         <a href="/tags/%E9%AB%98CPU/" class="print-no-link">#高CPU</a>
       
@@ -663,7 +676,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -763,7 +776,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -778,7 +792,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

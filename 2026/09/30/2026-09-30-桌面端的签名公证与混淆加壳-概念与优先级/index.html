@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/30/2026-09-30-桌面端的签名公证与混淆加壳-概念与优先级/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。  一、三个概念先分清    概念 在干什么 实际效果    代码混淆 改 JS 可读性（改名、平坦化、字符串加密） 抬高逆向成本；逻辑仍在客户端   加壳 静态看起来不像明文，运行时解开 容易触发杀软误报、破坏签名和更新；对 Electr">
+    <meta name="description" content="商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。 一、三个概念先分清 概念 在干什么 实际效果 代码混淆 改 JS 可读性（改名、平坦化、字符串加密） 抬高逆向成本；逻辑仍在客户端 加壳 静态看起来不像明文，运行时解开 容易触发杀软误报、破坏签名和更新；对 Electron 收益有限 加固">
 <meta property="og:type" content="article">
 <meta property="og:title" content="桌面端的签名、公证与混淆加壳：先分清这三件事">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。  一、三个概念先分清    概念 在干什么 实际效果    代码混淆 改 JS 可读性（改名、平坦化、字符串加密） 抬高逆向成本；逻辑仍在客户端   加壳 静态看起来不像明文，运行时解开 容易触发杀软误报、破坏签名和更新；对 Electr">
+<meta property="og:description" content="商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。 一、三个概念先分清 概念 在干什么 实际效果 代码混淆 改 JS 可读性（改名、平坦化、字符串加密） 抬高逆向成本；逻辑仍在客户端 加壳 静态看起来不像明文，运行时解开 容易触发杀软误报、破坏签名和更新；对 Electron 收益有限 加固">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/62e37aa608f7ec6b9560780d5fec5763.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/62e37aa608f7ec6b9560780d5fec5763.png">
 <meta property="article:published_time" content="2026-09-30T15:39:05.000Z">
-<meta property="article:modified_time" content="2026-11-03T03:05:14.739Z">
+<meta property="article:modified_time" content="2026-09-30T15:39:05.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="代码签名">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="打包">
 <meta property="article:tag" content="混淆">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/62e37aa608f7ec6b9560780d5fec5763.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/62e37aa608f7ec6b9560780d5fec5763.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"桌面端的签名、公证与混淆加壳：先分清这三件事","datePublished":"2026-09-30T15:39:05.000Z","dateModified":"2026-09-30T15:39:05.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">桌面端的签名、公证与混淆加壳：先分清这三件事</h1>
+            <p id="seo-header">桌面端的签名、公证与混淆加壳：先分清这三件事</p>
             
             
               <div class="markdown-body">
@@ -704,7 +717,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -804,7 +817,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -819,7 +833,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/23/2026-09-23-事件就是状态-用一个事件流驱动UI与数据库/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="采集任务有进度、有失败、有重试、有暂停。状态一多，最容易出的问题是”界面显示的和数据库里存的对不上”。我的做法是：只让一个事件流当真相，UI 和数据库都是它的投影。  一、问题：状态到底从哪来如果界面自己算一套状态、数据库自己存一套状态，那它们迟早会漂移。最典型的一个反例：早期把”失败项”放在内存里，界面重开就没了；数据库里其实有失败的记录，但界面读不到。 根本原因是没有回答一个问题：这个系统的">
+    <meta name="description" content="采集任务有进度、有失败、有重试、有暂停。状态一多，最容易出的问题是”界面显示的和数据库里存的对不上”。我的做法是：只让一个事件流当真相，UI 和数据库都是它的投影。 一、问题：状态到底从哪来如果界面自己算一套状态、数据库自己存一套状态，那它们迟早会漂移。最典型的一个反例：早期把”失败项”放在内存里，界面重开就没了；数据库里其实有失败的记录，但界面读不到。 根本原因是没有回答一个问题：这个系统的状态">
 <meta property="og:type" content="article">
 <meta property="og:title" content="事件就是状态：用一个事件流驱动 UI 与数据库">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="采集任务有进度、有失败、有重试、有暂停。状态一多，最容易出的问题是”界面显示的和数据库里存的对不上”。我的做法是：只让一个事件流当真相，UI 和数据库都是它的投影。  一、问题：状态到底从哪来如果界面自己算一套状态、数据库自己存一套状态，那它们迟早会漂移。最典型的一个反例：早期把”失败项”放在内存里，界面重开就没了；数据库里其实有失败的记录，但界面读不到。 根本原因是没有回答一个问题：这个系统的">
+<meta property="og:description" content="采集任务有进度、有失败、有重试、有暂停。状态一多，最容易出的问题是”界面显示的和数据库里存的对不上”。我的做法是：只让一个事件流当真相，UI 和数据库都是它的投影。 一、问题：状态到底从哪来如果界面自己算一套状态、数据库自己存一套状态，那它们迟早会漂移。最典型的一个反例：早期把”失败项”放在内存里，界面重开就没了；数据库里其实有失败的记录，但界面读不到。 根本原因是没有回答一个问题：这个系统的状态">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c3f023f3c3bf38ddfeb87248a5842a6.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c3f023f3c3bf38ddfeb87248a5842a6.png">
 <meta property="article:published_time" content="2026-09-22T16:25:40.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.534Z">
+<meta property="article:modified_time" content="2026-09-22T16:25:40.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="SQLite">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="架构">
 <meta property="article:tag" content="状态机">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c3f023f3c3bf38ddfeb87248a5842a6.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c3f023f3c3bf38ddfeb87248a5842a6.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"事件就是状态：用一个事件流驱动 UI 与数据库","datePublished":"2026-09-22T16:25:40.000Z","dateModified":"2026-09-22T16:25:40.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/09/23/2026-09-23-%E4%BA%8B%E4%BB%B6%E5%B0%B1%E6%98%AF%E7%8A%B6%E6%80%81-%E7%94%A8%E4%B8%80%E4%B8%AA%E4%BA%8B%E4%BB%B6%E6%B5%81%E9%A9%B1%E5%8A%A8UI%E4%B8%8E%E6%95%B0%E6%8D%AE%E5%BA%93/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.5k 字
+          2.7k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          21 分钟
+          23 分钟
         
       </span>
     
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">事件就是状态：用一个事件流驱动 UI 与数据库</h1>
+            <p id="seo-header">事件就是状态：用一个事件流驱动 UI 与数据库</p>
             
             
               <div class="markdown-body">
@@ -432,7 +445,7 @@
 <li>启动时，界面<strong>拉一次快照</strong>（<code>snapshot()</code>），拿到所有任务的当前状态；</li>
 <li>此后，主进程<strong>只推事件</strong>，界面<strong>只消费事件</strong>；每个事件同时驱动两件事：更新 UI、更新本地数据库。</li>
 </ul>
-<p>于是 UI 和数据库不再是两个”各自算状态”的东西，而是<strong>同一个事件流的两个投影</strong>——它们理论上永远一致。</p>
+<p>于是 UI 和数据库不再是两个”各自算状态”的东西，而是<strong>同一个事件流的两个投影</strong>。但”一致”有一个前提：<strong>事件应用写库必须在同一事务内完成</strong>。如果一次事件要写多张表却分多次提交，中途失败就会留下半套状态——这个缺陷在当时确实存在，后来在<a href="/2026/11/19/2026-11-19-%E5%85%88%E4%BF%AE%E8%A1%8C%E4%B8%BA%E5%86%8D%E8%B0%88%E6%8A%BD%E8%B1%A1-113%E4%B8%AA%E6%96%87%E4%BB%B6%E5%AE%A1%E6%9F%A5%E4%B9%8B%E5%90%8E%E6%80%8E%E4%B9%88%E8%90%BD%E5%9C%B0/">《先修行为，再谈抽象》</a>里补了 <code>BEGIN IMMEDIATE</code> 并验证回滚。</p>
 <p>这条约束有一个必须记住的推论，也是我们真踩过的坑：<strong>给事件加字段时，必须同时改持久化类型和渲染层的事件处理</strong>。只改一处，UI 和数据库就会静默不一致——和后端”改了 DTO 忘了改 DAO”是同一类 bug，只不过这里的一致性检查更弱。</p>
 <h2 id="三、两条轴：任务状态-≠-商品状态"><a href="#三、两条轴：任务状态-≠-商品状态" class="headerlink" title="三、两条轴：任务状态 ≠ 商品状态"></a>三、两条轴：任务状态 ≠ 商品状态</h2><p>状态复杂起来的根源是：<strong>一个采集任务里，每个商品也有自己的生命周期</strong>。这两者不是一回事：</p>
 <table>
@@ -459,6 +472,9 @@
 <p>UI 上因此有两条进度：一条采集进度条，一条处理进度条（我们后来还做成了”三环”）。它们各自独立，不会互相掩盖。</p>
 <h2 id="四、占位行：让”识别中”也能落库"><a href="#四、占位行：让”识别中”也能落库" class="headerlink" title="四、占位行：让”识别中”也能落库"></a>四、占位行：让”识别中”也能落库</h2><p>一个具体的设计：商品还没抓到，界面上却要显示”识别中”。如果这个”识别中”只存在内存里，重启就丢。</p>
 <p>做法是<strong>落一个占位行</strong>：key 形如 <code>recognizing:{taskId}:{lineNo}</code>，等抓取成功 &#x2F; 失败时，再用真实商品行替换它。失败时同理，落一个 <code>failed:{taskId}:{lineNo}</code> 的占位。</p>
+<blockquote>
+<p>这是当时的旧模型。<code>failed:{taskId}:{lineNo}</code> 商品占位后来被废弃，失败只留在 URL 行；数据模型重做的经过见<a href="/2026/11/03/2026-11-03-%E4%BB%8EURL%E8%AE%A1%E6%95%B0%E5%88%B0%E5%95%86%E5%93%81%E5%AE%9E%E4%BE%8B-%E4%B8%80%E6%AC%A1%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B%E9%87%8D%E5%81%9A/">《从 URL 计数到商品实例》</a>。</p>
+</blockquote>
 <p>两个好处：</p>
 <ol>
 <li><strong>重启可恢复</strong>——快照就能读到”识别中”，不依赖内存；</li>
@@ -486,7 +502,7 @@
 <li>核心原则：<strong>事件就是状态</strong>——启动拉一次快照，之后只推事件，UI 与数据库是同一事件流的两个投影；</li>
 <li>推论：<strong>加事件字段必须同时改持久化与渲染层</strong>，否则静默不一致；</li>
 <li><strong>两条轴</strong>：采集状态落任务表，处理状态<strong>从商品状态派生、不落任务表</strong>（避免同步问题）；</li>
-<li><strong>占位行</strong>让”识别中 &#x2F; 失败”也落库，重启可恢复，且与真实商品 key 空间隔离；</li>
+<li><strong>占位行</strong>让”识别中”也能落库，重启可恢复，且与真实商品 key 空间隔离（失败占位后来废弃，改为只记 URL 行）；</li>
 <li>状态的<strong>单一真相源</strong>：落库时由主进程重新派生，并保护终态；<strong>瞬时态不能进终态保护列表</strong>；</li>
 <li>失败要<strong>语义分离</strong>：单条失败 ≠ 任务失败；<code>fetch_status</code> 与 <code>workflow_status</code> 分开；</li>
 <li>已知边界（放弃”曾有问题的”商品后处理环到不了 100%）<strong>写进文档</strong>，而不是留给下一个人当 bug 报。</li>
@@ -525,11 +541,11 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
+        <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
+      
         <a href="/tags/%E7%8A%B6%E6%80%81%E6%9C%BA/" class="print-no-link">#状态机</a>
       
         <a href="/tags/%E4%BA%8B%E4%BB%B6%E9%A9%B1%E5%8A%A8/" class="print-no-link">#事件驱动</a>
-      
-        <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
       
         <a href="/tags/Electron/" class="print-no-link">#Electron</a>
       
@@ -679,7 +695,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -779,7 +795,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -794,7 +811,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

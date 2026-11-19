@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/03/16/2024-03-16-DDIA-07-分片键选择艺术/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/03/16/2024-03-16-DDIA-07-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E6%8B%A9%E8%89%BA%E6%9C%AF/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -28,16 +34,19 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="分片键绝不是随便挑一个字段就行的，它决定了你未来两年的系统容量上限和运维复杂度。本文从查询模式、数据均匀性、扩缩容三个维度拆解分片键选择，并以电商订单系统为实战场景，推演user_id vs order_id的取舍与异构索引补偿方案。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png">
 <meta property="article:published_time" content="2024-03-16T13:55:19.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.589Z">
+<meta property="article:modified_time" content="2024-03-16T13:55:19.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="分片键">
 <meta property="article:tag" content="数据库设计">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合","datePublished":"2024-03-16T13:55:19.000Z","dateModified":"2024-03-16T13:55:19.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/03/16/2024-03-16-DDIA-07-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E6%8B%A9%E8%89%BA%E6%9C%AF/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -387,7 +396,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          9.3k 字
+          9.5k 字
         
       </span>
     
@@ -398,7 +407,7 @@
         
         
         
-          78 分钟
+          80 分钟
         
       </span>
     
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合</h1>
+            <p id="seo-header">DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合</p>
             
             
               <div class="markdown-body">
@@ -421,6 +434,9 @@
 <p>运营投诉，临时加了一个Elasticsearch索引，Canal同步过去，勉强顶住。但半年后商家端要做”我的订单”功能，查的是merchant_id，又是全分片扫描。这回ES也救不了——商家端的排序、筛选、统计逻辑太复杂，ES的DSL写得团队怀疑人生。</p>
 <p>这不叫方案，这叫事故。根本原因只有一个：<strong>分片键选错了。</strong></p>
 <p>这篇是DDIA系列的第七篇，我们来把分片键这件事彻底讲透。</p>
+<blockquote>
+<p>边界说明：本文结论仅针对 C 端订单主表 <code>t_order</code>。订单中台销售信息表 <code>or_sales_info</code> 以 <code>order_no</code> 为主分片键、<code>user_id</code> 只做辅助查询的场景，见 <a href="/2025/04/19/2025-04-19-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/">分片键怎么选：时间与单号双查询入口</a>。</p>
+</blockquote>
 <h2 id="二、分片键选择的三个维度"><a href="#二、分片键选择的三个维度" class="headerlink" title="二、分片键选择的三个维度"></a>二、分片键选择的三个维度</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片键选择：查询模式 &#x2F; 数据均匀 &#x2F; 扩缩容"></p>
 <p>选分片键之前，先建立评估框架。我把所有考量归纳为三个维度，任何一个维度不及格，这把钥匙就不对。</p>
 <h3 id="2-1-维度一：查询模式——WHERE条件决定了分片命中率"><a href="#2-1-维度一：查询模式——WHERE条件决定了分片命中率" class="headerlink" title="2.1 维度一：查询模式——WHERE条件决定了分片命中率"></a>2.1 维度一：查询模式——WHERE条件决定了分片命中率</h3><p>这是最重要的维度。分片的本质是把数据按规则散列到不同的物理节点，查询时如果知道分片键的值，路由器就能精准定位到唯一的分片；不知道，就只能广播到所有分片，然后在内存中合并结果。</p>
@@ -556,9 +572,12 @@
 <p>配套配置：</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">shardingAlgorithms:</span><br>  <span class="hljs-attr">order_db_consistent:</span><br>    <span class="hljs-attr">type:</span> <span class="hljs-string">CLASS_BASED</span><br>    <span class="hljs-attr">props:</span><br>      <span class="hljs-attr">strategy:</span> <span class="hljs-string">standard</span><br>      <span class="hljs-attr">algorithmClassName:</span> <span class="hljs-string">com.asterxu.sharding.ConsistentHashSharding</span><br>      <span class="hljs-attr">sharding-count:</span> <span class="hljs-string">&quot;0,1,2,3,4,5,6,7&quot;</span><br></code></pre></td></tr></table></figure>
 
-<p>一致性哈希的收益在扩容时体现：从8节点扩到16节点，只有约50%的槽需要迁移，而非取模方案的87.5%。</p>
+<p>一致性哈希的收益在扩容时体现：从8节点扩到16节点，约50%的数据需要迁移；取模方案同样约50%，但一致性哈希的迁移只发生在相邻区间，影响面更可控。</p>
 <h2 id="六、总结与选型速查"><a href="#六、总结与选型速查" class="headerlink" title="六、总结与选型速查"></a>六、总结与选型速查</h2><p>回到标题的问题：为什么user_id比order_id更适合做分片键？</p>
-<p>因为<strong>分片键的选择要以查询模式为第一优先级</strong>。在电商订单系统中，user_id覆盖了最核心、最高频的C端查询路径（我的订单、订单详情、购物车关联）。order_id虽然让数据分布更均匀，但导致90%的查询退化成了全分片扫描——这是用正确的技术解决了错误的问题。</p>
+<p>因为<strong>分片键的选择要以查询模式为第一优先级</strong>。对 C 端订单主表 <code>t_order</code> 而言，user_id覆盖了最核心、最高频的C端查询路径（我的订单、订单详情、购物车关联）。order_id虽然让数据分布更均匀，但导致90%的查询退化成了全分片扫描——这是用正确的技术解决了错误的问题。</p>
+<blockquote>
+<p>边界说明：以上结论只适用于 C 端订单主表 <code>t_order</code>。订单中台的销售信息表 <code>or_sales_info</code> 以 <code>order_no</code> 为主分片键，不建 <code>order_no</code> 反向索引表；<code>user_id</code> 查询按低频&#x2F;高频分别走 id-mapping 或 ES&#x2F;Doris。详见 <a href="/2025/04/19/2025-04-19-%E5%88%86%E7%89%87%E9%94%AE%E6%80%8E%E4%B9%88%E9%80%89-%E6%97%B6%E9%97%B4%E4%B8%8E%E5%8D%95%E5%8F%B7%E5%8F%8C%E6%9F%A5%E8%AF%A2%E5%85%A5%E5%8F%A3/">分片键怎么选：时间与单号双查询入口</a>。</p>
+</blockquote>
 <p>选型速查表：</p>
 <table>
 <thead>
@@ -600,7 +619,7 @@
 </tr>
 </tbody></table>
 <p>关于异构索引的普适建议：<strong>MySQL主表负责带分片键的OLTP查询，ES负责灵活维度的OLAP查询</strong>。不要在MySQL里建一堆索引表企图包揽所有场景——那是2005年的架构思维。今天Canal + ES的同步链路已经非常成熟，把搜索类查询卸载到ES上，才是现代架构的合理选择。</p>
-<p>DDIA系列下一篇将深入讨论分布式事务的两阶段提交与TCC模式的实战对比，敬请关注。</p>
+<p>DDIA系列下一篇聊跨分片查询的七大解法。</p>
 <hr>
 <p><em>本文首发于 AsterXu Lab，转载请注明出处。</em></p>
 
@@ -787,7 +806,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -887,7 +906,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -902,7 +922,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

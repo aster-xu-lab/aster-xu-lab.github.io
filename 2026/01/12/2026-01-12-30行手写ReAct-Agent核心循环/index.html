@@ -8,36 +8,45 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/01/12/2026-01-12-30行手写ReAct-Agent核心循环/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/01/12/2026-01-12-30%E8%A1%8C%E6%89%8B%E5%86%99ReAct-Agent%E6%A0%B8%E5%BF%83%E5%BE%AA%E7%8E%AF/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="定位：学习笔记。我把 ReAct 循环亲手写了一遍，整个 Agent 核心就是 30 行 Java——不多不少，每一行我都知道它为什么在这。  一、Agent 的本质是 3 行伪代码 先把”Agent 很神秘”的滤镜摘掉。Agent 的本质就 3 行： 123while (!done) &#123;    think → act → observe&#125;   think：LLM 思考下一步">
+    <meta name="description" content="定位：学习笔记。我把 ReAct 循环亲手写了一遍，整个 Agent 核心就是 30 行 Java——不多不少，每一行我都知道它为什么在这。 一、Agent 的本质是 3 行伪代码 先把”Agent 很神秘”的滤镜摘掉。Agent 的本质就 3 行： 123while (!done) &#123; think → act → observe&#125; think：LLM 思考下一步做什么； ac">
 <meta property="og:type" content="article">
 <meta property="og:title" content="30 行手写一个 ReAct Agent：每一行都看得懂">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/01/12/2026-01-12-30%E8%A1%8C%E6%89%8B%E5%86%99ReAct-Agent%E6%A0%B8%E5%BF%83%E5%BE%AA%E7%8E%AF/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="定位：学习笔记。我把 ReAct 循环亲手写了一遍，整个 Agent 核心就是 30 行 Java——不多不少，每一行我都知道它为什么在这。  一、Agent 的本质是 3 行伪代码 先把”Agent 很神秘”的滤镜摘掉。Agent 的本质就 3 行： 123while (!done) &#123;    think → act → observe&#125;   think：LLM 思考下一步">
+<meta property="og:description" content="定位：学习笔记。我把 ReAct 循环亲手写了一遍，整个 Agent 核心就是 30 行 Java——不多不少，每一行我都知道它为什么在这。 一、Agent 的本质是 3 行伪代码 先把”Agent 很神秘”的滤镜摘掉。Agent 的本质就 3 行： 123while (!done) &#123; think → act → observe&#125; think：LLM 思考下一步做什么； ac">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/589ed8af4d124ed30f60d8a9782f9fc5.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/589ed8af4d124ed30f60d8a9782f9fc5.png">
 <meta property="article:published_time" content="2026-01-11T17:01:19.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.529Z">
+<meta property="article:modified_time" content="2026-01-11T17:01:19.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Agent">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="ReAct">
 <meta property="article:tag" content="学习笔记">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/589ed8af4d124ed30f60d8a9782f9fc5.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/589ed8af4d124ed30f60d8a9782f9fc5.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"30 行手写一个 ReAct Agent：每一行都看得懂","datePublished":"2026-01-11T17:01:19.000Z","dateModified":"2026-01-11T17:01:19.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/01/12/2026-01-12-30%E8%A1%8C%E6%89%8B%E5%86%99ReAct-Agent%E6%A0%B8%E5%BF%83%E5%BE%AA%E7%8E%AF/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -387,7 +396,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.9k 字
+          3.1k 字
         
       </span>
     
@@ -398,7 +407,7 @@
         
         
         
-          24 分钟
+          26 分钟
         
       </span>
     
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/agent/">AI / Agent 工程</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">30 行手写一个 ReAct Agent：每一行都看得懂</h1>
+            <p id="seo-header">30 行手写一个 ReAct Agent：每一行都看得懂</p>
             
             
               <div class="markdown-body">
@@ -442,10 +455,11 @@
 <p>把<strong>完整对话历史 + 工具清单</strong>一起发给 LLM。注意是”完整历史”——每一轮的工具调用结果都要回填，模型才能基于前面的观察做下一步决策。</p>
 <p><strong>④ 两个分支：结束 or 调工具</strong></p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">if</span> (response.isDone()) &#123; <span class="hljs-keyword">return</span> response.text(); &#125;<br><span class="hljs-keyword">if</span> (response.isToolCall()) &#123; ... &#125;<br></code></pre></td></tr></table></figure>
-<p>这就是上一篇文章里 <code>LlmResponse</code> 的两个判定：<code>end_turn</code> &#x3D; 模型认为任务完成，输出最终文本；<code>tool_use</code> &#x3D; 模型想调工具。</p>
+<p>这就是上一篇文章里 <code>LlmResponse</code> 的两个判定：<code>end_turn</code> &#x3D; 模型认为任务完成，输出最终文本；<code>tool_use</code> &#x3D; 模型想调工具。这两个值是 <strong>Anthropic 的 stop_reason 取值</strong>，换成 OpenAI 时字段名和返回结构都不同，框架抽象的意义就在这儿。</p>
 <p><strong>⑤ 执行工具 + 回填结果（关键）</strong></p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> tools.execute(response.toolName(), response.toolInput());<br>history.add(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Message</span>(<span class="hljs-string">&quot;assistant&quot;</span>, <span class="hljs-string">&quot;[调用工具 &quot;</span> + response.toolName() + <span class="hljs-string">&quot;]&quot;</span>));<br>history.add(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Message</span>(<span class="hljs-string">&quot;tool&quot;</span>, result));<br></code></pre></td></tr></table></figure>
 <p><strong>这是 ReAct 循环的闭环</strong>：LLM 说”调用 get_current_time” → 程序执行拿到时间 → 把”工具执行结果”以 <code>tool</code> 角色的消息加回 history → 下一轮 LLM 就能看到这个结果，继续推理。</p>
+<p>真实厂商协议里，这条结果还要带上对应调用的 id：<strong>Anthropic 是 <code>tool_result.tool_use_id</code>，OpenAI 是 <code>tool_call_id</code></strong>。模型靠这个 id 判断结果属于哪次调用；少了它，并行调多个工具时结果会串。这里用简化的 <code>tool</code> 角色表达同一件事。</p>
 <p>没有这一步回填，Agent 就是个”只说话不干活”的对话机器人。</p>
 <h2 id="四、三个设计点"><a href="#四、三个设计点" class="headerlink" title="四、三个设计点"></a>四、三个设计点</h2><p>回头看，30 行里藏着三个关键设计：</p>
 <ol>
@@ -506,9 +520,9 @@
       
         <a href="/tags/%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/" class="print-no-link">#学习笔记</a>
       
-        <a href="/tags/Agent/" class="print-no-link">#Agent</a>
-      
         <a href="/tags/ReAct/" class="print-no-link">#ReAct</a>
+      
+        <a href="/tags/Agent/" class="print-no-link">#Agent</a>
       
     </div>
   
@@ -654,7 +668,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -754,7 +768,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -769,7 +784,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

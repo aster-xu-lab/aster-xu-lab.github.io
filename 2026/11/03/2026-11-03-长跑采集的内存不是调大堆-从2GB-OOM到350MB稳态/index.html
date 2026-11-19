@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/11/03/2026-11-03-长跑采集的内存不是调大堆-从2GB-OOM到350MB稳态/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。   一、EXIT_1 不是一种错误采集进程退出码 1，日志里只">
+    <meta name="description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。 一、EXIT_1 不是一种错误采集进程退出码 1，日志里只留一行">
 <meta property="og:type" content="article">
-<meta property="og:title" content="长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态">
+<meta property="og:title" content="长跑采集的内存不是调大堆：从 2 GB 堆高压到 350 MB 稳态">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。   一、EXIT_1 不是一种错误采集进程退出码 1，日志里只">
+<meta property="og:description" content="一条 1000 条的采集任务，跑到一百多条就开始 BROWSER4_EXIT_1。第一反应是「堆不够」或者「内存泄漏」，但 heap dump 里最大的对象不是业务数据，也不是缓存，而是一次导航命令顺手构建的 accessibility tree。这篇按三层归因讲：先分类错误，再找到具体命令的隐式副作用，最后处理跨进程的对象可达性。 一、EXIT_1 不是一种错误采集进程退出码 1，日志里只留一行">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9658e2d8f783446f3d1ef522858bfb06.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9658e2d8f783446f3d1ef522858bfb06.png">
 <meta property="article:published_time" content="2026-11-03T12:14:37.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.611Z">
+<meta property="article:modified_time" content="2026-11-03T12:14:37.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="GC">
@@ -39,11 +45,14 @@
 <meta property="article:tag" content="故障排查">
 <meta property="article:tag" content="长任务">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9658e2d8f783446f3d1ef522858bfb06.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9658e2d8f783446f3d1ef522858bfb06.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"长跑采集的内存不是调大堆：从 2 GB 堆高压到 350 MB 稳态","datePublished":"2026-11-03T12:14:37.000Z","dateModified":"2026-11-03T12:14:37.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E9%95%BF%E8%B7%91%E9%87%87%E9%9B%86%E7%9A%84%E5%86%85%E5%AD%98%E4%B8%8D%E6%98%AF%E8%B0%83%E5%A4%A7%E5%A0%86-%E4%BB%8E2GB-OOM%E5%88%B0350MB%E7%A8%B3%E6%80%81/"}}</script>
   
   
   
-  <title>长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态 - AsterXu Lab</title>
+  <title>长跑采集的内存不是调大堆：从 2 GB 堆高压到 350 MB 稳态 - AsterXu Lab</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -214,7 +223,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -369,7 +378,7 @@
         <div id="board">
           <header class="ax-post-head">
             <p class="ax-eyebrow">性能优化</p>
-            <h1 class="ax-post-head__title">长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态</h1>
+            <h1 class="ax-post-head__title">长跑采集的内存不是调大堆：从 2 GB 堆高压到 350 MB 稳态</h1>
             <div class="ax-post-head__meta">
               
   <div class="mt-3">
@@ -389,7 +398,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          5.2k 字
+          5.5k 字
         
       </span>
     
@@ -400,7 +409,7 @@
         
         
         
-          43 分钟
+          46 分钟
         
       </span>
     
@@ -411,9 +420,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态</h1>
+            <p id="seo-header">长跑采集的内存不是调大堆：从 2 GB 堆高压到 350 MB 稳态</p>
             
             
               <div class="markdown-body">
@@ -460,7 +473,7 @@
 <li><code>MergedDOMTreeNode</code> 只有 <code>26,231</code> 个实例，约 2.7 MB。</li>
 </ul>
 <p>直觉会往「是不是缓存了太多页面」「是不是图片没释放」上走，但 <code>byte[]</code> 的形态更像序列化后的 DOM 字符串和 JSON 缓冲区。这一步只能得出一个方向：<strong>内存在页面数据的表示层，不在业务对象层</strong>。</p>
-<p>还有一个容易误判的指标：<code>gc.overhead=0</code>。它只说明 GC 没有频繁触发，不代表堆没问题。事实上 G1 在 OOM 之前没有做过一次 full GC——这一点后面还会再出现。</p>
+<p>还有一个容易误判的指标：<code>gc.overhead=0</code>。它只说明 GC 没有频繁触发，不代表堆没问题。事实上 G1 在堆逼近上限之前没有做过一次 full GC——这一点后面还会再出现。</p>
 <h2 id="三、第二层：GC-能回收，所以不是「强引用泄漏」"><a href="#三、第二层：GC-能回收，所以不是「强引用泄漏」" class="headerlink" title="三、第二层：GC 能回收，所以不是「强引用泄漏」"></a>三、第二层：GC 能回收，所以不是「强引用泄漏」</h2><p>下一步是手动触发一次 full GC，看堆能不能掉下来：</p>
 <table>
 <thead>
@@ -579,6 +592,7 @@
 <li><strong>只在 session 回收后请求。</strong> 注释写得很明确：<code>Call only after the platform session has been closed</code>。会话没关，GC 收不掉那部分 live，触发也白触发。</li>
 <li><strong>agent 不写业务日志。</strong> 它的 stderr 只进 runtime 的排空缓冲，验证以 <code>jstat FGC</code>、PID 和堆为准，避免把诊断信息混进应用日志。</li>
 </ol>
+<p>关于 <code>System.gc()</code> 本身要说清楚：它默认触发一次 full GC，G1 下会带来 stop-the-world 停顿，时长取决于当时的 live set，不是”零成本的后台清理”。这次没有逐次记录停顿毫秒数（验证看的是 <code>jstat FGC</code> 次数、PID 和回收后的堆），所以这里只给行为、不给数字。触发频率也被刻意压到”每次 session 回收一次”，而不是按条调用；如果以后要评估 <code>-XX:+ExplicitGCInvokesConcurrent</code> 这类参数，需要单独压测——它会把显式 GC 转成并发周期，缩短停顿但不保证立即完成回收。</p>
 <p>验证结果：</p>
 <table>
 <thead>
@@ -593,7 +607,7 @@
 </tr>
 <tr>
 <td>1000 条中途（5 h 14 min）</td>
-<td>输入 839&#x2F;1000 ok、0 failed、0 OOM、0 次 infra 重启；FGC 16，PID 全程不变，检查点堆 353 MB</td>
+<td>已跑 839 条全部 ok、0 failed、0 OOM、0 次 infra 重启；161 条未跑；FGC 16，PID 全程不变，检查点堆 353 MB</td>
 </tr>
 </tbody></table>
 <p>1000 条这一跑没有跑完，剩下 161 条不在结论里。但「跑到 839 条、PID 不变、0 次重启」已经足够说明内存形态是稳态，不是缓慢泄漏。</p>
@@ -608,7 +622,7 @@
 <h2 id="九、边界"><a href="#九、边界" class="headerlink" title="九、边界"></a>九、边界</h2><ul>
 <li><strong>不是所有 <code>EXIT_1</code> 都是内存。</strong> 先分类，再归因。把瞬时抖动当泄漏去调堆，只会让问题更晚出现。</li>
 <li><strong>调大堆不是方案。</strong> 当前 <code>-Xmx2048m</code> 大约是观测峰值的 2 倍；调到 4 GB 只是把 OOM 推迟到更后面，垃圾源还在。</li>
-<li><strong>平台默认值不同。</strong> Amazon 默认每 50 条回收 session，eBay 默认不回收；这是页面规模和行为差异下的工程取值，不是通用最优解。</li>
+<li><strong>平台默认值不同。</strong> Amazon 默认每 50 条回收 session，eBay 默认不回收；这是页面规模和行为差异下的工程取值，不是通用最优解。早前那次崩溃诊断一度得出”主动回收有害”，只适用于当时的链路，见<a href="/2026/09/22/2026-09-22-%E7%88%AC%E8%99%AB%E7%9A%84%E4%BA%BA%E6%9C%BA%E5%8D%8F%E5%90%8C-%E9%AA%8C%E8%AF%81%E7%A0%81%E5%BC%B9%E6%A1%86%E4%B8%8E%E7%86%94%E6%96%AD%E8%87%AA%E6%84%88/">《爬虫的人机协同》</a>。</li>
 <li><strong>G1 的行为随 JDK 版本变化。</strong> 「55–60% 不主动 full GC」是这次观测到的行为，换版本要重新验证。</li>
 <li><strong>1000 条只跑到 839 条</strong>，中途结论不能当成完整验收。</li>
 <li><strong>外部 <code>jcmd</code> 只是诊断手段</strong>，产品路径依赖的是随包 agent；agent 缺失时回退重启 runtime。</li>
@@ -621,7 +635,7 @@
 </ol>
 <p>内存问题的终点不是「堆设多大」，而是<strong>你知不知道自己每一层内存是谁持有的、什么时候会断开</strong>。</p>
 <hr>
-<p><em>发表于 2026 年 11 月 · 标签: Electron, 内存, JVM, GC, 长任务, 排障</em></p>
+<p><em>发表于 2026 年 11 月 · 标签: Electron, 内存, JVM, GC, 长任务, 故障排查</em></p>
 
                 
               </div>
@@ -654,11 +668,11 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
+        <a href="/tags/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" class="print-no-link">#故障排查</a>
+      
         <a href="/tags/JVM/" class="print-no-link">#JVM</a>
       
         <a href="/tags/GC/" class="print-no-link">#GC</a>
-      
-        <a href="/tags/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" class="print-no-link">#故障排查</a>
       
         <a href="/tags/Electron/" class="print-no-link">#Electron</a>
       
@@ -676,7 +690,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>长跑采集的内存不是调大堆：从 2 GB OOM 到 350 MB 稳态</div>
+      <div>长跑采集的内存不是调大堆：从 2 GB 堆高压到 350 MB 稳态</div>
       <div>https://aster-xu-lab.github.io/2026/11/03/2026-11-03-长跑采集的内存不是调大堆-从2GB-OOM到350MB稳态/</div>
     </div>
     <div class="license-meta">
@@ -810,7 +824,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -910,7 +924,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -925,7 +940,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

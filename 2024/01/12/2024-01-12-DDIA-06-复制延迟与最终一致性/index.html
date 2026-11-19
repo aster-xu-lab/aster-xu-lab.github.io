@@ -8,36 +8,45 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/01/12/2024-01-12-DDIA-06-复制延迟与最终一致性/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/01/12/2024-01-12-DDIA-06-%E5%A4%8D%E5%88%B6%E5%BB%B6%E8%BF%9F%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="引言：一个让人血压飙升的线上事故2024年双11，凌晨0点15分，值班群里炸了——  “用户反馈：明明付了钱，订单页面显示’未支付’，用户连付了三笔。”  这是我职业生涯中遇到的最诡异的一次线上问题。用户端看到的是”未支付”，但支付宝扣款成功的通知已经到了我们的callback接口。数据库里也确实有这笔支付流水。那为什么订单状态还是”未支付”？ 排查了半小时，根因找到了：MySQL主从复制延迟。">
+    <meta name="description" content="引言：一个让人血压飙升的线上事故2024年双11，凌晨0点15分，值班群里炸了—— “用户反馈：明明付了钱，订单页面显示’未支付’，用户连付了三笔。” 这是我职业生涯中遇到的最诡异的一次线上问题。用户端看到的是”未支付”，但支付宝扣款成功的通知已经到了我们的callback接口。数据库里也确实有这笔支付流水。那为什么订单状态还是”未支付”？ 排查了半小时，根因找到了：MySQL主从复制延迟。 支付">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-06-复制延迟与最终一致性：你看到的库存可能不是真实库存">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/01/12/2024-01-12-DDIA-06-%E5%A4%8D%E5%88%B6%E5%BB%B6%E8%BF%9F%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="引言：一个让人血压飙升的线上事故2024年双11，凌晨0点15分，值班群里炸了——  “用户反馈：明明付了钱，订单页面显示’未支付’，用户连付了三笔。”  这是我职业生涯中遇到的最诡异的一次线上问题。用户端看到的是”未支付”，但支付宝扣款成功的通知已经到了我们的callback接口。数据库里也确实有这笔支付流水。那为什么订单状态还是”未支付”？ 排查了半小时，根因找到了：MySQL主从复制延迟。">
+<meta property="og:description" content="引言：一个让人血压飙升的线上事故2024年双11，凌晨0点15分，值班群里炸了—— “用户反馈：明明付了钱，订单页面显示’未支付’，用户连付了三笔。” 这是我职业生涯中遇到的最诡异的一次线上问题。用户端看到的是”未支付”，但支付宝扣款成功的通知已经到了我们的callback接口。数据库里也确实有这笔支付流水。那为什么订单状态还是”未支付”？ 排查了半小时，根因找到了：MySQL主从复制延迟。 支付">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61f4e0efc7973bb7fb1917e9cee451ba.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61f4e0efc7973bb7fb1917e9cee451ba.png">
 <meta property="article:published_time" content="2024-01-12T15:14:22.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.586Z">
+<meta property="article:modified_time" content="2024-01-12T15:14:22.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="复制延迟">
 <meta property="article:tag" content="最终一致性">
 <meta property="article:tag" content="读写分离">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61f4e0efc7973bb7fb1917e9cee451ba.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61f4e0efc7973bb7fb1917e9cee451ba.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-06-复制延迟与最终一致性：你看到的库存可能不是真实库存","datePublished":"2024-01-12T15:14:22.000Z","dateModified":"2024-01-12T15:14:22.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/01/12/2024-01-12-DDIA-06-%E5%A4%8D%E5%88%B6%E5%BB%B6%E8%BF%9F%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%80%A7/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-06-复制延迟与最终一致性：你看到的库存可能不是真实库存</h1>
+            <p id="seo-header">DDIA-06-复制延迟与最终一致性：你看到的库存可能不是真实库存</p>
             
             
               <div class="markdown-body">
@@ -424,7 +437,7 @@
 <p>排查了半小时，根因找到了：<strong>MySQL主从复制延迟</strong>。</p>
 <p>支付成功后，写入的是主库。用户紧接着刷新订单详情页，读请求被负载到了从库。那台从库的binlog同步刚好延迟了1.2秒。在这1.2秒里，用户看到的是旧数据——支付之前的状态。</p>
 <p>这不是bug，这是分布式系统里一个经典到不能再经典的问题：<strong>最终一致性带来的复制延迟</strong>。</p>
-<p><strong>现在，这个问题解决了吗？</strong> 很遗憾，没有。DDIA第二版在这一章没有给出什么”银弹”解法，因为物理定律不会变——光速是有限的，网络是有延迟的，复制是需要时间的。Martin Kleppmann用了一整节来讨论复制延迟引发的不一致问题，以及我们能做什么、不能做什么。</p>
+<p><strong>现在，这个问题解决了吗？</strong> 很遗憾，没有。从第二版公开目录与 early release 材料看，这一章并没有给出什么”银弹”解法，因为物理定律不会变——光速是有限的，网络是有延迟的，复制是需要时间的。书中用了一整节讨论复制延迟引发的不一致问题，以及我们能做什么、不能做什么。</p>
 <p>本文将结合我多年电商后端实战经验，深入剖析复制延迟的4种典型不一致场景，聊聊订单中心和购物车场景的实战解法，最后附上监控和排查手段。</p>
 <hr>
 <h2 id="一、复制延迟的本质：为什么不能立即一致？"><a href="#一、复制延迟的本质：为什么不能立即一致？" class="headerlink" title="一、复制延迟的本质：为什么不能立即一致？"></a>一、复制延迟的本质：为什么不能立即一致？</h2><p>很多人会问：为什么MySQL不做同步复制？主库写成功就等从库也写成功再返回不就行了？</p>
@@ -470,7 +483,7 @@
 <li>路由层判断：从库的同步位点 &gt;&#x3D; 这个时间戳，就允许读从库；否则退回到主库</li>
 </ul>
 <p><strong>优点</strong>：更精细，不是所有写后读都走主库，只有确实还没同步到的才走主库。<br><strong>缺点</strong>：实现复杂度高，需要暴露binlog同步位点给路由层。</p>
-<h3 id="3-3-中心化版本号——DDIA推荐的分区方案"><a href="#3-3-中心化版本号——DDIA推荐的分区方案" class="headerlink" title="3.3 中心化版本号——DDIA推荐的分区方案"></a>3.3 中心化版本号——DDIA推荐的分区方案</h3><p>DDIA在第二版中花了不少篇幅讲一种进阶方案：<strong>使用中心化版本号服务器</strong>。</p>
+<h3 id="3-3-中心化版本号——DDIA推荐的分区方案"><a href="#3-3-中心化版本号——DDIA推荐的分区方案" class="headerlink" title="3.3 中心化版本号——DDIA推荐的分区方案"></a>3.3 中心化版本号——DDIA推荐的分区方案</h3><p>DDIA 第6章讨论复制延迟时强调要显式判断副本是否已经追上。工程上可以把它落成一套<strong>中心化版本号服务</strong>。</p>
 <figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[客户端]</span> → 写入主库 → 返回(版本号V, 数据)<br><span class="hljs-string">[客户端]</span> → 读取 /data?min_version=V → 路由层检查从库版本 → 路由决策<br></code></pre></td></tr></table></figure>
 
 <p>版本号服务器维护了所有副本的同步状态。这里的”版本”可以是逻辑时钟、向量时钟，或者就是binlog的gtid。</p>
@@ -594,7 +607,7 @@
 </ol>
 <p>最后分享一个血泪教训：<strong>不要试图用技术手段掩盖最终一致性的事实。</strong> 如果支付流程确实是异步的，就告诉用户”预计5分钟内到账”——真实、准确的预期管理，比任何补偿重试机制都更能留住用户的信任。</p>
 <hr>
-<p><em>下一篇预告：DDIA-06-实战：订单中心读写分离——主库扛写从库扛读的正确姿势，将深入讨论分库分表场景下的读写分离架构设计。</em></p>
+<p><em>下一篇：DDIA-06-多主复制与CAP——当写入不再只有一个入口。</em></p>
 <hr>
 <blockquote>
 <p>本文是 DDIA（Designing Data-Intensive Applications）读书笔记系列的第6章第3篇，结合作者7年Java后端与电商供应链中台的实战经验撰写。<br>博客：AsterXu Lab | 语言：zh-CN</p>
@@ -783,7 +796,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -883,7 +896,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -898,7 +912,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

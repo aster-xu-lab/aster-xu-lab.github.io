@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/01/06/2023-01-06-分布式事务全景-强一致与最终一致选型/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/01/06/2023-01-06-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E5%85%A8%E6%99%AF-%E5%BC%BA%E4%B8%80%E8%87%B4%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E9%80%89%E5%9E%8B/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -29,7 +35,7 @@
 <meta property="og:description" content="一、为什么需要分布式事务一次业务操作跨多个数据库&#x2F;服务（下单扣库存 + 减积分 + 记账），本地事务管不了。核心矛盾：强一致 vs 最终一致、性能 vs 一致性。 二、2PC：强一致，但三个致命缺陷两阶段提交：**准备阶段（Prepare）**问所有参与者”能提交吗？”，提交&#x2F;回滚阶段全 yes 则 commit，任一 no 则 rollback。 三个致命缺陷（为什么生产少用">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-01-06T12:56:29.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.576Z">
+<meta property="article:modified_time" content="2023-01-06T12:56:29.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="2PC">
 <meta property="article:tag" content="SAGA">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="分布式事务">
 <meta property="article:tag" content="本地消息表">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"分布式事务全景：强一致 vs 最终一致，怎么选","datePublished":"2023-01-06T12:56:29.000Z","dateModified":"2023-01-06T12:56:29.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/01/06/2023-01-06-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1%E5%85%A8%E6%99%AF-%E5%BC%BA%E4%B8%80%E8%87%B4%E4%B8%8E%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E9%80%89%E5%9E%8B/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.6k 字
+          1.7k 字
         
       </span>
     
@@ -397,7 +406,7 @@
         
         
         
-          14 分钟
+          15 分钟
         
       </span>
     
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/consistency/">分布式事务与消息</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">分布式事务全景：强一致 vs 最终一致，怎么选</h1>
+            <p id="seo-header">分布式事务全景：强一致 vs 最终一致，怎么选</p>
             
             
               <div class="markdown-body">
@@ -430,7 +443,7 @@
 <li><strong>Confirm</strong>：确认执行（真正扣，把 Try 预留的落实，<strong>一定能成功</strong>）；</li>
 <li><strong>Cancel</strong>：取消（回滚 Try，释放预留）。</li>
 </ul>
-<p><strong>为什么比 2PC&#x2F;AT 快</strong>：2PC&#x2F;AT 的全局锁把可串行化隔离强加在所有事务上 &#x3D; 把并发全串行化；<strong>TCC 在 Try 用宽松隔离、只在 Confirm 做串行化</strong> → 并发度↑。</p>
+<p><strong>为什么比 2PC&#x2F;AT 快</strong>：2PC&#x2F;AT 靠全局锁保证提交顺序，写冲突的行会被串行化（是<strong>全局写锁&#x2F;冲突行串行化</strong>，不是数据库的可串行化隔离）；<strong>TCC 在 Try 用宽松隔离、只在 Confirm 做短临界区的提交</strong> → 冲突面更小，并发度↑。</p>
 <p><strong>缺点</strong>：侵入性强，业务得自己实现 3 个方法，代码复杂。</p>
 <h2 id="四、最终一致性方案"><a href="#四、最终一致性方案" class="headerlink" title="四、最终一致性方案"></a>四、最终一致性方案</h2><p><strong>本地消息表</strong>（我订单同步的主场景）：</p>
 <ul>
@@ -446,10 +459,10 @@
 </ul>
 <p><strong>我的 SyncTask 编排思想和 SAGA 协同式（Choreography）很像</strong>——自研引擎天然用了事件驱动的最终一致。</p>
 <h2 id="五、Seata：AT-vs-TCC"><a href="#五、Seata：AT-vs-TCC" class="headerlink" title="五、Seata：AT vs TCC"></a>五、Seata：AT vs TCC</h2><ul>
-<li><strong>AT 模式</strong>：自动生成 undo_log 实现回滚，业务无侵入，但<strong>全局锁 → 可串行化 → 并发低</strong>；</li>
-<li><strong>TCC 模式</strong>：业务实现 3 方法，性能高。</li>
+<li><strong>AT 模式</strong>：自动生成 undo_log 实现回滚，业务无侵入，但<strong>全局写锁会让冲突行串行化</strong>，争用高时并发低；</li>
+<li><strong>TCC 模式</strong>：业务实现 3 方法，近似强一致、性能高。</li>
 </ul>
-<p>我的用法：<strong>工单系统用 Seata AT</strong>（低侵入快速落地）；<strong>订单分片后核心链路（发货确认）用 TCC</strong>（避免 AT 全局锁在分片场景开销大）。</p>
+<p>我的用法：<strong>工单系统的跨库链路用 Seata AT</strong>（低侵入快速落地；同库多表直接用本地事务）；<strong>订单核心链路（发货确认）规划用 TCC</strong>（避免 AT 全局锁在分片场景开销大，订单分片为后续落地）。</p>
 <h2 id="六、方案选型总表"><a href="#六、方案选型总表" class="headerlink" title="六、方案选型总表"></a>六、方案选型总表</h2><table>
 <thead>
 <tr>
@@ -469,15 +482,15 @@
 </tr>
 <tr>
 <td><strong>TCC</strong></td>
-<td align="center">强</td>
+<td align="center">近似强</td>
 <td align="center">高</td>
 <td align="center">高（3 方法）</td>
 <td>高并发核心（发货&#x2F;扣库存）</td>
 </tr>
 <tr>
 <td><strong>Seata AT</strong></td>
-<td align="center">强</td>
-<td align="center">中（全局锁）</td>
+<td align="center">强（原子提交）</td>
+<td align="center">中（全局写锁）</td>
 <td align="center">低</td>
 <td>快速落地非高并发</td>
 </tr>
@@ -496,19 +509,19 @@
 <td>订单同步主场景</td>
 </tr>
 </tbody></table>
-<h2 id="七、我的演进路径（真实案例）"><a href="#七、我的演进路径（真实案例）" class="headerlink" title="七、我的演进路径（真实案例）"></a>七、我的演进路径（真实案例）</h2><p>我的分布式事务演进是 <strong>2PC → TCC</strong>：</p>
+<h2 id="七、我的选型路径（真实场景）"><a href="#七、我的选型路径（真实场景）" class="headerlink" title="七、我的选型路径（真实场景）"></a>七、我的选型路径（真实场景）</h2><p>我的分布式事务选型思路是 <strong>2PC → TCC</strong>：</p>
 <ul>
-<li>工单系统先用 Seata AT 低侵入落地；</li>
-<li>订单中心把发货确认、库存扣减这类核心链路改 <strong>TCC</strong>——因为 AT 的全局锁把可串行化强加在所有事务上，把所有并发串行化了；TCC 在 Try 宽松隔离、只在 Confirm 串行化，性能提升 <strong>40%+</strong>；</li>
+<li>工单系统的跨库链路先用 Seata AT 低侵入落地（同库多表用本地事务）；</li>
+<li>订单中心计划把发货确认、库存扣减这类核心链路迁到 <strong>TCC</strong>——因为 AT 的全局写锁会串行化冲突行，争用高时开销大；TCC 在 Try 宽松隔离、只在 Confirm 做短临界区提交，预期在争用高的链路上吞吐更好（迁移与对比放到后续复盘，无统一压测基线，不报具体百分比）；</li>
 <li>订单同步这种能接受延迟的，用<strong>本地消息表 + 最终一致</strong>，配消费幂等和死信队列做补偿。</li>
 </ul>
-<p><strong>按场景选型</strong>：核心链路强一致（TCC）、能接受延迟的最终一致（本地消息表）、低侵入快速落地（AT）。这是分布式事务完整的决策框架。</p>
+<p><strong>按场景选型</strong>：核心链路近似强一致（TCC）、能接受延迟的最终一致（本地消息表）、低侵入快速落地（AT）。这是分布式事务完整的决策框架。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>2PC 三缺陷：<strong>阻塞 + 单点 + 不一致</strong>；</li>
 <li>TCC：Try 预留 &#x2F; Confirm 落实 &#x2F; Cancel 回滚，性能高但侵入强；</li>
 <li>最终一致：本地消息表（订单同步主场景）+ SAGA（长流程，协同式与我 SyncTask 同思想）；</li>
 <li>Seata AT 低侵入但全局锁，TCC 高性能但手动；</li>
-<li>我的演进：<strong>2PC → TCC（40%+ 提升）</strong>，按场景在 TCC&#x2F;AT&#x2F;本地消息表间选型。</li>
+<li>我的选型思路：<strong>2PC → TCC</strong>，按场景在 TCC&#x2F;AT&#x2F;本地消息表间选型。</li>
 </ul>
 <hr>
 <p><em>发表于 2023 年 1 月 · 标签: 分布式事务, 2PC, TCC, SAGA, 本地消息表</em></p>
@@ -698,7 +711,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -798,7 +811,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -813,7 +827,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

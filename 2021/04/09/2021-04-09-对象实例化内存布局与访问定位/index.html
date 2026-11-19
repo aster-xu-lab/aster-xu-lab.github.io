@@ -8,25 +8,31 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/04/09/2021-04-09-对象实例化内存布局与访问定位/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/04/09/2021-04-09-%E5%AF%B9%E8%B1%A1%E5%AE%9E%E4%BE%8B%E5%8C%96%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80%E4%B8%8E%E8%AE%BF%E9%97%AE%E5%AE%9A%E4%BD%8D/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="对象实例化面试题 对象在JVM中是怎么存储的？ 对象头信息里面有哪些东西？ Java对象头有什么？  从对象创建的方式 和 步骤开始说 对象创建方式 new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法 Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器 Constructor的newInstance(X">
+    <meta name="description" content="对象实例化面试题 对象在JVM中是怎么存储的？ 对象头信息里面有哪些东西？ Java对象头有什么？ 从对象创建的方式 和 步骤开始说 对象创建方式 new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法 Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器 Constructor的newInstance(XX">
 <meta property="og:type" content="article">
 <meta property="og:title" content="对象实例化内存布局与访问定位">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/04/09/2021-04-09-%E5%AF%B9%E8%B1%A1%E5%AE%9E%E4%BE%8B%E5%8C%96%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80%E4%B8%8E%E8%AE%BF%E9%97%AE%E5%AE%9A%E4%BD%8D/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="对象实例化面试题 对象在JVM中是怎么存储的？ 对象头信息里面有哪些东西？ Java对象头有什么？  从对象创建的方式 和 步骤开始说 对象创建方式 new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法 Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器 Constructor的newInstance(X">
+<meta property="og:description" content="对象实例化面试题 对象在JVM中是怎么存储的？ 对象头信息里面有哪些东西？ Java对象头有什么？ 从对象创建的方式 和 步骤开始说 对象创建方式 new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法 Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器 Constructor的newInstance(XX">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f6e609d24c9801f4e6879d36f5dd0098.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/17844283941cb36e89731acb0cb4a68a.png">
@@ -35,13 +41,16 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/899dea5272ca6dcad87dae0b19e351d4.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/720b495982884ce83d6ba4a7750fcae9.png">
 <meta property="article:published_time" content="2021-04-09T13:12:23.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.146Z">
+<meta property="article:modified_time" content="2021-04-09T13:12:23.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JVM">
 <meta property="article:tag" content="内存布局">
 <meta property="article:tag" content="对象实例化">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f6e609d24c9801f4e6879d36f5dd0098.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"对象实例化内存布局与访问定位","datePublished":"2021-04-09T13:12:23.000Z","dateModified":"2021-04-09T13:12:23.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/04/09/2021-04-09-%E5%AF%B9%E8%B1%A1%E5%AE%9E%E4%BE%8B%E5%8C%96%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80%E4%B8%8E%E8%AE%BF%E9%97%AE%E5%AE%9A%E4%BD%8D/"}}</script>
   
   
   
@@ -216,7 +225,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -413,9 +422,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/jvm/">JVM</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">对象实例化内存布局与访问定位</h1>
+            <p id="seo-header">对象实例化内存布局与访问定位</p>
             
             
               <div class="markdown-body">
@@ -425,7 +438,7 @@
 <li>对象头信息里面有哪些东西？</li>
 <li>Java对象头有什么？</li>
 </ul>
-<p>从对象创建的方式 和 步骤开始说<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f6e609d24c9801f4e6879d36f5dd0098.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>从对象创建的方式 和 步骤开始说<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f6e609d24c9801f4e6879d36f5dd0098.png" srcset="/img/loading.gif" lazyload alt="对象创建方式与步骤概览图"></p>
 <h2 id="对象创建方式"><a href="#对象创建方式" class="headerlink" title="对象创建方式"></a>对象创建方式</h2><ul>
 <li>new：最常见的方式、单例类中调用getInstance的静态类方法，XXXFactory的静态方法</li>
 <li>Class的newInstance方法：在JDK9里面被标记为过时的方法，因为只能调用空参构造器</li>
@@ -470,7 +483,7 @@
 <li><p>所有属性设置默认值，保证对象实例字段在不赋值可以直接使用</p>
 </li>
 </ul>
-<h2 id="对象内存布局"><a href="#对象内存布局" class="headerlink" title="对象内存布局"></a>对象内存布局</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/17844283941cb36e89731acb0cb4a68a.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h2 id="对象内存布局"><a href="#对象内存布局" class="headerlink" title="对象内存布局"></a>对象内存布局</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/17844283941cb36e89731acb0cb4a68a.png" srcset="/img/loading.gif" lazyload alt="Java对象内存布局结构图"></p>
 <h3 id="对象头"><a href="#对象头" class="headerlink" title="对象头"></a>对象头</h3><p>对象头包含了两部分，分别是 运行时元数据（Mark Word）和 类型指针</p>
 <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">如果是数组，还需要记录数组的长度<br></code></pre></td></tr></table></figure>
 <h4 id="运行时元数据"><a href="#运行时元数据" class="headerlink" title="运行时元数据"></a>运行时元数据</h4><ul>
@@ -484,12 +497,12 @@
 <h4 id="类型指针"><a href="#类型指针" class="headerlink" title="类型指针"></a>类型指针</h4><p>指向类元数据InstanceClass，确定该对象所属的类型。指向的其实是方法区中存放的类元信息</p>
 <h4 id="实例数据（Instance-Data）"><a href="#实例数据（Instance-Data）" class="headerlink" title="实例数据（Instance Data）"></a>实例数据（Instance Data）</h4><p><strong>说明</strong></p>
 <p>不是必须的，也没有特别的含义，仅仅起到占位符的作用</p>
-<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6f921d42da33ce06920ea8868f766252.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6f921d42da33ce06920ea8868f766252.png" srcset="/img/loading.gif" lazyload alt="对象内存布局小结示意图"></p>
 <h2 id="对象的访问定位"><a href="#对象的访问定位" class="headerlink" title="对象的访问定位"></a>对象的访问定位</h2><p><strong>图示</strong></p>
-<p>JVM是如何通过栈帧中的对象引用访问到其内部的对象实例呢？<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3c47ce4a909c1ea5e480c3eb1410c84a.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
-<h3 id="对象访问的两种方式"><a href="#对象访问的两种方式" class="headerlink" title="对象访问的两种方式"></a>对象访问的两种方式</h3><h4 id="句柄访问"><a href="#句柄访问" class="headerlink" title="句柄访问"></a>句柄访问</h4><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/899dea5272ca6dcad87dae0b19e351d4.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>句柄访问就是说栈的局部变量表中，记录的对象的引用，然后在堆空间中开辟了一块空间，也就是句柄池</p>
+<p>JVM是如何通过栈帧中的对象引用访问到其内部的对象实例呢？<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3c47ce4a909c1ea5e480c3eb1410c84a.png" srcset="/img/loading.gif" lazyload alt="栈帧引用访问对象实例示意图"></p>
+<h3 id="对象访问的两种方式"><a href="#对象访问的两种方式" class="headerlink" title="对象访问的两种方式"></a>对象访问的两种方式</h3><h4 id="句柄访问"><a href="#句柄访问" class="headerlink" title="句柄访问"></a>句柄访问</h4><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/899dea5272ca6dcad87dae0b19e351d4.png" srcset="/img/loading.gif" lazyload alt="句柄访问对象结构示意图"><br>句柄访问就是说栈的局部变量表中，记录的对象的引用，然后在堆空间中开辟了一块空间，也就是句柄池</p>
 <h5 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h5><p>reference中存储稳定句柄地址，对象被移动（垃圾收集时移动对象很普遍）时只会改变句柄中实例数据指针即可，reference本身不需要被修改</p>
-<h4 id="直接指针（HotSpot采用）"><a href="#直接指针（HotSpot采用）" class="headerlink" title="直接指针（HotSpot采用）"></a>直接指针（HotSpot采用）</h4><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/720b495982884ce83d6ba4a7750fcae9.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>直接指针是局部变量表中的引用，直接指向堆中的实例，在对象实例中有类型指针，指向的是方法区中的对象类型数据</p>
+<h4 id="直接指针（HotSpot采用）"><a href="#直接指针（HotSpot采用）" class="headerlink" title="直接指针（HotSpot采用）"></a>直接指针（HotSpot采用）</h4><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/720b495982884ce83d6ba4a7750fcae9.png" srcset="/img/loading.gif" lazyload alt="直接指针访问对象结构示意图"><br>直接指针是局部变量表中的引用，直接指向堆中的实例，在对象实例中有类型指针，指向的是方法区中的对象类型数据</p>
 
                 
               </div>
@@ -672,7 +685,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -772,7 +785,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -787,7 +801,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

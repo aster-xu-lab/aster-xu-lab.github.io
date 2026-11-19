@@ -8,34 +8,43 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/08/03/2026-08-03-系统设计方法论-从需求澄清到方案取舍/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/08/03/2026-08-03-%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95%E8%AE%BA-%E4%BB%8E%E9%9C%80%E6%B1%82%E6%BE%84%E6%B8%85%E5%88%B0%E6%96%B9%E6%A1%88%E5%8F%96%E8%88%8D/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="做过订单中台、分库分表、任务编排引擎之后，我发现系统设计有一套可复用的打法。这套方法论从”需求澄清”到”方案取舍”，每一步都有明确的目的——尤其是每个关键选择都要有 trade-off 依据。  一、系统设计看四件事设计一个系统，本质上是在回答四件事：  需求是什么（最重要的第一步：先问清楚再动手）； 规模多大（量级感：QPS、数据量、带宽）； 架构怎么分（分层、组件）； 每个关键选择为什么（t">
+    <meta name="description" content="做过订单中台、分库分表、任务编排引擎之后，我发现系统设计有一套可复用的打法。这套方法论从”需求澄清”到”方案取舍”，每一步都有明确的目的——尤其是每个关键选择都要有 trade-off 依据。 一、系统设计看四件事 定位：这是生产设计版的方法论；面试场景的 5 步速答框架见《系统设计答题框架：5 步走 + 高并发三板斧》。 设计一个系统，本质上是在回答四件事： 需求是什么（最重要的第一步：先问清楚">
 <meta property="og:type" content="article">
 <meta property="og:title" content="系统设计方法论：从需求澄清到方案取舍，一套可复用的打法">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/03/2026-08-03-%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95%E8%AE%BA-%E4%BB%8E%E9%9C%80%E6%B1%82%E6%BE%84%E6%B8%85%E5%88%B0%E6%96%B9%E6%A1%88%E5%8F%96%E8%88%8D/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="做过订单中台、分库分表、任务编排引擎之后，我发现系统设计有一套可复用的打法。这套方法论从”需求澄清”到”方案取舍”，每一步都有明确的目的——尤其是每个关键选择都要有 trade-off 依据。  一、系统设计看四件事设计一个系统，本质上是在回答四件事：  需求是什么（最重要的第一步：先问清楚再动手）； 规模多大（量级感：QPS、数据量、带宽）； 架构怎么分（分层、组件）； 每个关键选择为什么（t">
+<meta property="og:description" content="做过订单中台、分库分表、任务编排引擎之后，我发现系统设计有一套可复用的打法。这套方法论从”需求澄清”到”方案取舍”，每一步都有明确的目的——尤其是每个关键选择都要有 trade-off 依据。 一、系统设计看四件事 定位：这是生产设计版的方法论；面试场景的 5 步速答框架见《系统设计答题框架：5 步走 + 高并发三板斧》。 设计一个系统，本质上是在回答四件事： 需求是什么（最重要的第一步：先问清楚">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-08-03T14:11:57.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.606Z">
+<meta property="article:modified_time" content="2026-08-03T14:11:57.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="工程方法论">
 <meta property="article:tag" content="架构">
 <meta property="article:tag" content="系统设计">
 <meta property="article:tag" content="高并发">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"系统设计方法论：从需求澄清到方案取舍，一套可复用的打法","datePublished":"2026-08-03T14:11:57.000Z","dateModified":"2026-08-03T14:11:57.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/08/03/2026-08-03-%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1%E6%96%B9%E6%B3%95%E8%AE%BA-%E4%BB%8E%E9%9C%80%E6%B1%82%E6%BE%84%E6%B8%85%E5%88%B0%E6%96%B9%E6%A1%88%E5%8F%96%E8%88%8D/"}}</script>
   
   
   
@@ -210,7 +219,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -385,7 +394,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.8k 字
+          1.9k 字
         
       </span>
     
@@ -407,9 +416,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/method/">系统设计方法</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">系统设计方法论：从需求澄清到方案取舍，一套可复用的打法</h1>
+            <p id="seo-header">系统设计方法论：从需求澄清到方案取舍，一套可复用的打法</p>
             
             
               <div class="markdown-body">
@@ -417,7 +430,10 @@
                 <blockquote>
 <p>做过订单中台、分库分表、任务编排引擎之后，我发现系统设计有一套可复用的打法。这套方法论从”需求澄清”到”方案取舍”，每一步都有明确的目的——尤其是每个关键选择都要有 trade-off 依据。</p>
 </blockquote>
-<h2 id="一、系统设计看四件事"><a href="#一、系统设计看四件事" class="headerlink" title="一、系统设计看四件事"></a>一、系统设计看四件事</h2><p>设计一个系统，本质上是在回答四件事：</p>
+<h2 id="一、系统设计看四件事"><a href="#一、系统设计看四件事" class="headerlink" title="一、系统设计看四件事"></a>一、系统设计看四件事</h2><blockquote>
+<p>定位：这是<strong>生产设计版</strong>的方法论；面试场景的 5 步速答框架见《系统设计答题框架：5 步走 + 高并发三板斧》。</p>
+</blockquote>
+<p>设计一个系统，本质上是在回答四件事：</p>
 <ol>
 <li><strong>需求是什么</strong>（最重要的第一步：先问清楚再动手）；</li>
 <li><strong>规模多大</strong>（量级感：QPS、数据量、带宽）；</li>
@@ -448,7 +464,7 @@
 <li><strong>分片上传 + 断点续传</strong>：大图拆 5MB 分片并发上传，失败重传分片而不是整张重传；</li>
 <li><strong>存储选型：OSS 还是自建 MinIO？</strong> 选 OSS——因为图片量大、20TB&#x2F;天，<strong>自建对象存储的运维成本（机架、副本、扩容）远超 OSS 的费用</strong>，且 OSS 天然多副本高可用。自建只在”数据合规&#x2F;私有化”时才值得；</li>
 <li><strong>图片处理：实时处理 vs 预生成</strong>？预生成多尺寸（大促前批量生成缩略图）——因为<strong>实时处理（每次请求压缩）会打爆 CPU 且 CDN 缓存命中率低</strong>；预生成后 CDN 缓存每个尺寸，回源率极低；</li>
-<li><strong>CDN 缓存</strong>：图片不可变 → <strong>永久缓存 + 版本化文件名</strong>（改图 &#x3D; 新文件名），回源率从 30% 降到 1% 以下。</li>
+<li><strong>CDN 缓存</strong>：图片不可变 → <strong>永久缓存 + 版本化文件名</strong>（改图 &#x3D; 新文件名），回源率从约 30% 降到 1% 以下（示例估算，非线上实测）。</li>
 </ul>
 <p><strong>⑤ 扩展与优化</strong></p>
 <ul>
@@ -484,7 +500,7 @@
 <p><strong>架构评审要的是”为什么选这个”</strong>，不是”选了什么”。</p>
 <h2 id="五、真实案例：高并发订单系统"><a href="#五、真实案例：高并发订单系统" class="headerlink" title="五、真实案例：高并发订单系统"></a>五、真实案例：高并发订单系统</h2><p>方法论最稳的用法是<strong>落到自己做的真实系统</strong>。设计高并发订单系统，直接拿订单中台讲：</p>
 <blockquote>
-<p>订单中台日均 15 万单（峰值 50 万），支撑体系是：Caffeine+Redis 二级缓存扛读、MQ 解耦异步、Sentinel 限流熔断降级、慢 SQL 从千条级降到个位数、分库分表（单号主分片、6000 万行）、复杂查询下沉 Doris。</p>
+<p>订单中台日均 15 万单（峰值 50 万），支撑体系是：Caffeine+Redis 二级缓存扛读、MQ 解耦异步、Sentinel 限流熔断降级、慢 SQL 从千条级降到个位数、分库分表（单号主分片，上线时约 6000 万行）、复杂查询下沉 Doris。</p>
 </blockquote>
 <p><strong>真实案例 + 具体数字 + 完整链路</strong>，比任何虚拟设计都更有说服力——因为每个选择都有真实依据。</p>
 <h2 id="六、trade-off-的三条底层原则"><a href="#六、trade-off-的三条底层原则" class="headerlink" title="六、trade-off 的三条底层原则"></a>六、trade-off 的三条底层原则</h2><p>复盘大量设计，trade-off 的底层就三条：</p>
@@ -501,7 +517,7 @@
 <li>底层原则：<strong>先便宜后贵、隔离防雪崩、可回滚优先</strong>。</li>
 </ul>
 <hr>
-<p><em>发表于 2026 年 8 月 · 标签: 系统设计, 方法论, 架构, 高并发</em></p>
+<p><em>发表于 2026 年 8 月 · 标签: 系统设计, 工程方法论, 架构, 高并发</em></p>
 
                 
               </div>
@@ -686,7 +702,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -786,7 +802,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -801,7 +818,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

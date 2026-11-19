@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/07/05/2025-07-05-分片扩容不重来-反向索引表双写灰度扩容/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/07/05/2025-07-05-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E4%B8%8D%E9%87%8D%E6%9D%A5-%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E6%89%A9%E5%AE%B9/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="哈希分片扩容的痛：同单号落片变了反向索引表按单号 outer_order_no 哈希分片。假设从 8 片扩到 16 片： 12旧: 单号 X → X % 8  &#x3D; 3新: 单号 X → X % 16 &#x3D; 11    ← 路由变了！  片数一变，同一个单号在新旧两套落到了不同分片。取模分片扩容 &#x3D; 推倒重来，不能直接加片数。 扩容难点取决于分片方案扩容难度和分片方案强相关（or_sales">
+    <meta name="description" content="哈希分片扩容的痛：同单号落片变了 边界：本项目 or_sales_info 最终采用单号主分片，因此不建 order_no 反向索引表（见《分片键怎么选》）。本文讨论的是备选路线——主表按时间&#x2F;渠道分片、需要单号反向索引时，如何扩容这张索引表；8→16 为推演，生产未执行。索引表的单号物理列统一用 order_no，不要与 outer_order_no 混用。 反向索引表按单号 orde">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分片扩容不重来：反向索引表用双写 + 灰度切流优雅扩容">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/07/05/2025-07-05-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E4%B8%8D%E9%87%8D%E6%9D%A5-%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E6%89%A9%E5%AE%B9/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="哈希分片扩容的痛：同单号落片变了反向索引表按单号 outer_order_no 哈希分片。假设从 8 片扩到 16 片： 12旧: 单号 X → X % 8  &#x3D; 3新: 单号 X → X % 16 &#x3D; 11    ← 路由变了！  片数一变，同一个单号在新旧两套落到了不同分片。取模分片扩容 &#x3D; 推倒重来，不能直接加片数。 扩容难点取决于分片方案扩容难度和分片方案强相关（or_sales">
+<meta property="og:description" content="哈希分片扩容的痛：同单号落片变了 边界：本项目 or_sales_info 最终采用单号主分片，因此不建 order_no 反向索引表（见《分片键怎么选》）。本文讨论的是备选路线——主表按时间&#x2F;渠道分片、需要单号反向索引时，如何扩容这张索引表；8→16 为推演，生产未执行。索引表的单号物理列统一用 order_no，不要与 outer_order_no 混用。 反向索引表按单号 orde">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9e8af76c72c997bb721c24f348356f7a.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9e8af76c72c997bb721c24f348356f7a.png">
 <meta property="article:published_time" content="2025-07-05T10:41:50.000Z">
-<meta property="article:modified_time" content="2026-11-02T09:12:52.310Z">
+<meta property="article:modified_time" content="2025-07-05T10:41:50.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="rehash">
@@ -39,7 +45,10 @@
 <meta property="article:tag" content="扩容">
 <meta property="article:tag" content="灰度">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9e8af76c72c997bb721c24f348356f7a.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9e8af76c72c997bb721c24f348356f7a.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"分片扩容不重来：反向索引表用双写 + 灰度切流优雅扩容","datePublished":"2025-07-05T10:41:50.000Z","dateModified":"2025-07-05T10:41:50.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/07/05/2025-07-05-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E4%B8%8D%E9%87%8D%E6%9D%A5-%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E6%89%A9%E5%AE%B9/"}}</script>
   
   
   
@@ -214,7 +223,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -389,7 +398,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.6k 字
+          1.9k 字
         
       </span>
     
@@ -400,7 +409,7 @@
         
         
         
-          14 分钟
+          16 分钟
         
       </span>
     
@@ -411,14 +420,21 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">分片扩容不重来：反向索引表用双写 + 灰度切流优雅扩容</h1>
+            <p id="seo-header">分片扩容不重来：反向索引表用双写 + 灰度切流优雅扩容</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="哈希分片扩容的痛：同单号落片变了"><a href="#哈希分片扩容的痛：同单号落片变了" class="headerlink" title="哈希分片扩容的痛：同单号落片变了"></a>哈希分片扩容的痛：同单号落片变了</h2><p>反向索引表按单号 <code>outer_order_no</code> 哈希分片。假设从 8 片扩到 16 片：</p>
+                <h2 id="哈希分片扩容的痛：同单号落片变了"><a href="#哈希分片扩容的痛：同单号落片变了" class="headerlink" title="哈希分片扩容的痛：同单号落片变了"></a>哈希分片扩容的痛：同单号落片变了</h2><blockquote>
+<p><strong>边界</strong>：本项目 <code>or_sales_info</code> 最终采用单号主分片，因此不建 <code>order_no</code> 反向索引表（见《分片键怎么选》）。本文讨论的是备选路线——主表按时间&#x2F;渠道分片、需要单号反向索引时，如何扩容这张索引表；8→16 为推演，生产未执行。索引表的单号物理列统一用 <code>order_no</code>，不要与 <code>outer_order_no</code> 混用。</p>
+</blockquote>
+<p>反向索引表按单号 <code>order_no</code> 哈希分片。假设从 8 片扩到 16 片：</p>
 <figure class="highlight tp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs tp">旧: 单号 <span class="hljs-keyword">X</span> → <span class="hljs-keyword">X</span> % <span class="hljs-number">8</span>  = <span class="hljs-number">3</span><br>新: 单号 <span class="hljs-keyword">X</span> → <span class="hljs-keyword">X</span> % <span class="hljs-number">16</span> = <span class="hljs-number">11</span>    ← 路由变了！<br></code></pre></td></tr></table></figure>
 
 <p>片数一变，同一个单号在新旧两套落到了不同分片。<strong>取模分片扩容 &#x3D; 推倒重来</strong>，不能直接加片数。</p>
@@ -427,7 +443,7 @@
 
 <ul>
 <li><strong>时间分片</strong>：扩容 &#x3D; 加月表，天然扩容，但”按单号处理的业务事件”会广播所有月表（写路径广播严重）</li>
-<li><strong>单号分片</strong>：业务事件精准路由，但扩容（8→16片）需<strong>重列全部分片数据</strong></li>
+<li><strong>单号分片</strong>：业务事件精准路由，但扩容（8→16 片）需 <strong>rehash 约一半数据（约 3000 万行换片）</strong></li>
 </ul>
 <p>交易系统（订单）通常选<strong>单号主分片</strong>（业务事件是主维度），所以<strong>扩容走下面的双写+灰度流程</strong>——这是单号分片的必要代价，换来所有事件的精准路由。</p>
 <h2 id="无感扩容：双写-回填-对账-灰度切流"><a href="#无感扩容：双写-回填-对账-灰度切流" class="headerlink" title="无感扩容：双写 + 回填 + 对账 + 灰度切流"></a>无感扩容：双写 + 回填 + 对账 + 灰度切流</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9e8af76c72c997bb721c24f348356f7a.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片扩容不重来：双写 + 回填 + 对账 + 灰度切流"></p>
@@ -448,9 +464,9 @@
 
 <p>灰度比例从 20% → 100%，全程可回滚。</p>
 <h3 id="5-收尾"><a href="#5-收尾" class="headerlink" title="5. 收尾"></a>5. 收尾</h3><p>100% 切走 → 停双写 → 对账确认 → 删旧表。</p>
-<h2 id="实测演示（8片-→-16片）"><a href="#实测演示（8片-→-16片）" class="headerlink" title="实测演示（8片 → 16片）"></a>实测演示（8片 → 16片）</h2><figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">Phase</span> A: 只有旧<span class="hljs-number">8</span>片, <span class="hljs-number">20</span>条历史数据<br><span class="hljs-attribute">Phase</span> B: 开启双写 → 新单号写旧+新<br><span class="hljs-attribute">Phase</span> C: 存量回填 → 新<span class="hljs-number">16</span>片补全<br><span class="hljs-attribute">Phase</span> D: 对账 → 旧<span class="hljs-number">26</span> = 新<span class="hljs-number">26</span> 一致 ✅<br><span class="hljs-attribute">Phase</span> E: 灰度切读(<span class="hljs-number">50</span>%) → 新表命中<span class="hljs-number">14</span>, 旧表兜底<span class="hljs-number">12</span>, 无丢失<br><span class="hljs-attribute">Phase</span> F: <span class="hljs-number">100</span>%切走 → 停双写 → 删旧<span class="hljs-number">8</span>片<br></code></pre></td></tr></table></figure>
+<h2 id="本地演练（8片-→-16片，20-条演示数据）"><a href="#本地演练（8片-→-16片，20-条演示数据）" class="headerlink" title="本地演练（8片 → 16片，20 条演示数据）"></a>本地演练（8片 → 16片，20 条演示数据）</h2><figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">Phase</span> A: 只有旧<span class="hljs-number">8</span>片, <span class="hljs-number">20</span>条历史数据<br><span class="hljs-attribute">Phase</span> B: 开启双写 → 新单号写旧+新<br><span class="hljs-attribute">Phase</span> C: 存量回填 → 新<span class="hljs-number">16</span>片补全<br><span class="hljs-attribute">Phase</span> D: 对账 → 旧<span class="hljs-number">26</span> = 新<span class="hljs-number">26</span> 一致 ✅<br><span class="hljs-attribute">Phase</span> E: 灰度切读(<span class="hljs-number">50</span>%) → 新表命中<span class="hljs-number">14</span>, 旧表兜底<span class="hljs-number">12</span>, 无丢失<br><span class="hljs-attribute">Phase</span> F: <span class="hljs-number">100</span>%切走 → 停双写 → 删旧<span class="hljs-number">8</span>片<br></code></pre></td></tr></table></figure>
 
-<p><strong>全程主表一单没迁</strong>，只迁移了映射表（小、可重建），配合灰度+兜底，切流期间一个查询都不错失。</p>
+<p><strong>全程主表一单没迁</strong>，只迁移了映射表（小、可重建），配合灰度+兜底，切流期间一个查询都不错失。这是反向索引表方案的特点；若扩容的是主表本身，8→16 约 3000 万行需要换片，不是”主表完全不迁”。</p>
 <h2 id="两个关键决策点"><a href="#两个关键决策点" class="headerlink" title="两个关键决策点"></a>两个关键决策点</h2><ol>
 <li><strong>表名带版本号</strong>：<code>t_index_v8_*</code> &#x2F; <code>t_index_v16_*</code>，新旧并存不冲突，可回滚</li>
 <li><strong>查询新旧同查 + 新表兜底</strong>：灰度早期新表 miss 自动回旧表，绝不错数据</li>
@@ -514,13 +530,13 @@
       
         <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
       
+        <a href="/tags/%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95/" class="print-no-link">#反向索引</a>
+      
         <a href="/tags/%E5%8F%8C%E5%86%99/" class="print-no-link">#双写</a>
       
         <a href="/tags/%E6%89%A9%E5%AE%B9/" class="print-no-link">#扩容</a>
       
         <a href="/tags/%E7%81%B0%E5%BA%A6/" class="print-no-link">#灰度</a>
-      
-        <a href="/tags/%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95/" class="print-no-link">#反向索引</a>
       
         <a href="/tags/rehash/" class="print-no-link">#rehash</a>
       
@@ -668,7 +684,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -768,7 +784,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -783,7 +800,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

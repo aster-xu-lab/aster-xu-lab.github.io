@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2020/10/17/2020-10-17-命令模式/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2020/10/17/2020-10-17-%E5%91%BD%E4%BB%A4%E6%A8%A1%E5%BC%8F/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -29,11 +35,14 @@
 <meta property="og:description" content="介绍 命令模式（Command Pattern）：在软件设计中，我们经常需要向某些对象发送请求，但并不需要知道请求的接收者是谁，也不知道被请求的操作是什么 我们只需要在程序执行时指定具体的请求接受者即可，此时，可以使用命令模式来进行设计 命令模式是的请求发送者与请求接收者消除彼此之间的耦合，让对象之间的调用关系更加灵活，实现解耦 在命令模式中，会将一个请求封装为一个对象，以便使用不同的参数表示请求">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2020-10-16T22:08:58.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.143Z">
+<meta property="article:modified_time" content="2020-10-16T22:08:58.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="命令">
 <meta property="article:tag" content="设计模式">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"命令模式","datePublished":"2020-10-16T22:08:58.000Z","dateModified":"2020-10-16T22:08:58.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2020/10/17/2020-10-17-%E5%91%BD%E4%BB%A4%E6%A8%A1%E5%BC%8F/"}}</script>
   
   
   
@@ -208,7 +217,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -405,9 +414,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/patterns/">设计模式</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">命令模式</h1>
+            <p id="seo-header">命令模式</p>
             
             
               <div class="markdown-body">
@@ -620,7 +633,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -720,7 +733,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -735,7 +749,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

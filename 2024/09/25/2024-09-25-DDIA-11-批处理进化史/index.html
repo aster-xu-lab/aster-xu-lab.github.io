@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/09/25/2024-09-25-DDIA-11-批处理进化史/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/09/25/2024-09-25-DDIA-11-%E6%89%B9%E5%A4%84%E7%90%86%E8%BF%9B%E5%8C%96%E5%8F%B2/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -29,13 +35,16 @@
 <meta property="og:description" content="引言：一篇文章，三个时代2004年，Google发表了MapReduce论文，开启了大规模数据处理的纪元。十年后，Spark成为批处理的事实标准。又过了十年，我们站在了数据湖时代的门口。 这不只是一段技术发展史，更是一段关于「架构如何围绕物理瓶颈迭代」的故事。本文将沿着DDIA第11章的脉络，把MapReduce的痛点、Spark的破局、以及现代数据湖的演进串成一条线，并辅以我在供应链中台的实战经">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-09-25T15:12:12.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.596Z">
+<meta property="article:modified_time" content="2024-09-25T15:12:12.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="MapReduce">
 <meta property="article:tag" content="Spark">
 <meta property="article:tag" content="批处理">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-11-从MapReduce到Spark：批处理引擎的进化史","datePublished":"2024-09-25T15:12:12.000Z","dateModified":"2024-09-25T15:12:12.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/09/25/2024-09-25-DDIA-11-%E6%89%B9%E5%A4%84%E7%90%86%E8%BF%9B%E5%8C%96%E5%8F%B2/"}}</script>
   
   
   
@@ -210,7 +219,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -407,9 +416,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-11-从MapReduce到Spark：批处理引擎的进化史</h1>
+            <p id="seo-header">DDIA-11-从MapReduce到Spark：批处理引擎的进化史</p>
             
             
               <div class="markdown-body">
@@ -487,12 +500,12 @@
 <li><strong>引擎和存储解耦</strong>：计算用Spark，存储用Iceberg&#x2F;Hudi，两者独立演进</li>
 </ul>
 <hr>
-<h2 id="五、呼应DDIA：MapReduce是基石，也是墓碑"><a href="#五、呼应DDIA：MapReduce是基石，也是墓碑" class="headerlink" title="五、呼应DDIA：MapReduce是基石，也是墓碑"></a>五、呼应DDIA：MapReduce是基石，也是墓碑</h2><p>DDIA第11章用一句话总结了MapReduce的遗产：</p>
+<h2 id="五、呼应DDIA：MapReduce是基石，也是墓碑"><a href="#五、呼应DDIA：MapReduce是基石，也是墓碑" class="headerlink" title="五、呼应DDIA：MapReduce是基石，也是墓碑"></a>五、呼应DDIA：MapReduce是基石，也是墓碑</h2><p>DDIA第11章对MapReduce的评价，大意（第11章）是：</p>
 <blockquote>
 <p>「MapReduce是批处理的基石，但它的时代已经过去了。」</p>
 </blockquote>
 <p>这句话值得细品。「基石」是因为它奠定了分布式数据处理的基本范式——数据分片、就近计算、故障恢复——这些思想深远地影响了后续所有批处理引擎。「已经过去」是因为它的物理假设（磁盘慢、内存贵、网络是瓶颈）已经不再成立。</p>
-<p>2004年，服务器内存还是GB级，磁盘是主要存储介质。2026年，单机TB级内存、NVMe SSD、RDMA网络已经是公共云标配。当物理约束变了，架构也必须变。MapReduce在磁盘时代是最优解，Spark在内存时代是最优解，数据湖在云原生时代是最优解——每次迭代都是对上一代物理假设的修正。</p>
+<p>2004年，服务器内存还是GB级，磁盘是主要存储介质。今天，单机TB级内存、NVMe SSD、RDMA网络已经是公共云标配。当物理约束变了，架构也必须变。MapReduce在磁盘时代是最优解，Spark在内存时代是最优解，数据湖在云原生时代是最优解——每次迭代都是对上一代物理假设的修正。</p>
 <p>但有一个逻辑始终没变：<strong>架构的竞争力，最终取决于对物理瓶颈的理解深度</strong>。你不需要手写MapReduce，但你需要理解Shuffle为什么慢；你不需要管理HDFS块，但你需要知道谓词下推能省多少I&#x2F;O。这些来自底层原理的认知，决定了你在选型时是照搬文档还是做合理取舍。</p>
 <hr>
 <h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>从MapReduce到Spark再到数据湖，批处理引擎的进化史，本质上是一部「从磁盘到内存、从JOB到DAG、从文件到表」的范式迁移史。如果你正在维护一套供应链报表系统，值得做几件事：</p>
@@ -505,7 +518,7 @@
 <hr>
 <p><em>延伸阅读：</em></p>
 <ul>
-<li>DDIA第11章 MapReduce、第12章 数据流系统</li>
+<li>DDIA第11章 批处理、第12章 流处理</li>
 <li>《Spark技术内幕》</li>
 <li>Apache Iceberg官方文档：表格式与Snapshot设计</li>
 <li>Apache Hudi文档：Copy-on-Write vs Merge-on-Read</li>
@@ -694,7 +707,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -794,7 +807,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -809,7 +823,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

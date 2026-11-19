@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/06/10/2024-06-10-DDIA-09-分布式系统三大问题/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/06/10/2024-06-10-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效 《Designing Data-Intensive Applications》第 9 章「一致性与共识」是全书最硬核的章节之一。但在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：分布式系统为什么会出错？ 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时钟、部分失效。理解这三者，是理解一">
+    <meta name="description" content="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效 《Designing Data-Intensive Applications》第 9 章「分布式系统的麻烦」是全书最硬核的章节之一，第 10 章才进入一致性与共识。在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：分布式系统为什么会出错？ 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/06/10/2024-06-10-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效 《Designing Data-Intensive Applications》第 9 章「一致性与共识」是全书最硬核的章节之一。但在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：分布式系统为什么会出错？ 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时钟、部分失效。理解这三者，是理解一">
+<meta property="og:description" content="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效 《Designing Data-Intensive Applications》第 9 章「分布式系统的麻烦」是全书最硬核的章节之一，第 10 章才进入一致性与共识。在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：分布式系统为什么会出错？ 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-06-10T12:25:04.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.159Z">
+<meta property="article:modified_time" content="2024-06-10T12:25:04.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="分布式">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="故障处理">
 <meta property="article:tag" content="超时">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效","datePublished":"2024-06-10T12:25:04.000Z","dateModified":"2024-06-10T12:25:04.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/06/10/2024-06-10-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -408,15 +417,19 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效</h1>
+            <p id="seo-header">DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效</p>
             
             
               <div class="markdown-body">
                 
                 <h2 id="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效"><a href="#DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效" class="headerlink" title="DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效"></a>DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效</h2><blockquote>
-<p>《Designing Data-Intensive Applications》第 9 章「一致性与共识」是全书最硬核的章节之一。但在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：<strong>分布式系统为什么会出错？</strong> 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时钟、部分失效。理解这三者，是理解一切分布式理论的起点。</p>
+<p>《Designing Data-Intensive Applications》第 9 章「分布式系统的麻烦」是全书最硬核的章节之一，第 10 章才进入一致性与共识。在讨论一致性算法和共识协议之前，Kleppmann 花了大量篇幅铺垫一个更根本的问题：<strong>分布式系统为什么会出错？</strong> 答案藏在三个相互纠缠的概念里——不可靠网络、不可靠时钟、部分失效。理解这三者，是理解一切分布式理论的起点。</p>
 </blockquote>
 <hr>
 <h3 id="一、核心命题：分布式与单机的根本区别"><a href="#一、核心命题：分布式与单机的根本区别" class="headerlink" title="一、核心命题：分布式与单机的根本区别"></a>一、核心命题：分布式与单机的根本区别</h3><p>一个刚接触分布式系统的程序员，最容易犯的错误是：<strong>把分布式系统想象成单机系统的放大版。</strong></p>
@@ -570,17 +583,17 @@
 
 <ul>
 <li>每个 Handler 的执行被包装为 <code>CompletableFuture</code>，放入线程池异步执行。</li>
-<li>主线程用 <code>get(timeout, unit)</code> 整体等待，超时后主动中断未完成任务。</li>
+<li>主线程用 <code>get(timeout, unit)</code> 整体等待，超时后主线程不再阻塞；但它不会自动中断仍在执行的任务线程，需要配合任务自身的超时和线程池隔离。</li>
 <li>超时的 Future 会被标记为 <code>FAILED</code>，对应的批次记录写入 <code>task_execution_log</code> 表，方便后续人工补偿或自动重试。</li>
 </ul>
-<p>这里也暗合了 Kleppmann 提到的「超时不只是一个运维参数，而是设计决策」——我在 V2 中把超时值从常量改为了<strong>按 Handler 可配置的字段</strong>。为什么？因为不同的下游有不同的 SLA，一个调用「华为 ERP」的 Handler 和调用「金蝶财务」的 Handler 的超时阈值绝不可能是同一个数字。</p>
+<p>这里也暗合了书中大意（第9章）：超时不只是运维参数，而是设计决策——我在 V2 中把超时值从常量改为了<strong>按 Handler 可配置的字段</strong>。为什么？因为不同的下游有不同的 SLA，一个调用「某ERP」的 Handler 和调用「某财务系统」的 Handler 的超时阈值绝不可能是同一个数字。</p>
 <h4 id="7-2-幂等设计的落地"><a href="#7-2-幂等设计的落地" class="headerlink" title="7.2 幂等设计的落地"></a>7.2 幂等设计的落地</h4><p>SyncTask 引擎的任务模型天然支持幂等：每个任务有唯一 <code>taskId</code>，关联了 <code>businessKey</code>（业务唯一键）和 <code>taskStatus</code>。关键设计如下——</p>
 <ul>
 <li><strong>状态机保护：</strong> 任务状态流转严格遵循 <code>PENDING → PROCESSING → SUCCESS/FAILED</code>。幂等判断前置在 <code>PROCESSING</code> 之前的 <code>PENDING</code> 状态——如果任务已经在 <code>PROCESSING</code> 状态，重复触发直接返回已有结果。</li>
 <li><strong>分布式锁 + 状态双重保护：</strong> 即使锁因为 Redis 租约过期而释放（5.3 节讨论的问题），状态机的约束也能拦截「拿到了过期锁的僵尸节点」——因为状态已经不是 PENDING 了。</li>
 <li><strong>rentry-safe 的业务执行：</strong> 所有 Handler 的执行都被鼓励设计为可重入的，即如果被中断后重新调度，不会产生副作用。做不到的地方，用 <code>task_execution_log</code> 记录完整上下文，由人工兜底。</li>
 </ul>
-<h4 id="7-3-回看-DDIA-的「真相由多数派决定」"><a href="#7-3-回看-DDIA-的「真相由多数派决定」" class="headerlink" title="7.3 回看 DDIA 的「真相由多数派决定」"></a>7.3 回看 DDIA 的「真相由多数派决定」</h4><p>第 9 章后半部分讨论了 Quorum、两阶段提交、共识算法，Kleppmann 的核心论点是：<strong>在分布式系统中，单个节点不能宣判自己是正确的——真相必须由多数派决定。</strong></p>
+<h4 id="7-3-回看-DDIA-的「真相由多数派决定」"><a href="#7-3-回看-DDIA-的「真相由多数派决定」" class="headerlink" title="7.3 回看 DDIA 的「真相由多数派决定」"></a>7.3 回看 DDIA 的「真相由多数派决定」</h4><p>第 10 章讨论了 Quorum 与共识算法（两阶段提交在第 8 章），Kleppmann 的核心论点是：<strong>在分布式系统中，单个节点不能宣判自己是正确的——真相必须由多数派决定。</strong></p>
 <p>这和 SyncTask 引擎的设计有直接呼应：</p>
 <ul>
 <li><strong>afterExecute 编排模式（Choreography）取代 DAG：</strong> 放弃集中式编排者的原因之一，就是不想把「这个任务链的下一步是什么」的决定权交给单一节点——如果一个节点挂了，整条链的状态就消失了。afterExecute 模式让每个 Handler 自行决定「我完成后把接力棒交给谁」，相当于<strong>每个参与者都参与了决策。</strong></li>
@@ -596,10 +609,10 @@
 <li><strong>对于时钟：</strong> 永远不用墙上时钟做逻辑决策（排序、因果、幂等）。用逻辑时钟（版本向量、事务 ID）替代物理时钟。</li>
 <li><strong>对于部分失效：</strong> 设计系统时默认「任何节点随时可能部分失效」。状态机、租约、fencing token、重试和补偿都是基础设施级的必需品，而不是「可选异常处理」。</li>
 </ol>
-<p>DDIA 第 9 章用一个很妙的话收束了整章：「分布式系统的问题，最终都是<strong>信息问题</strong>。」（原话是说共识问题的本质是「达成一致的过程就是一种信息传递」，我引申一下。）你设计超时、重试、租约、幂等，本质上都是在设计<strong>如何在不完整信息的条件下做出安全决策</strong>。</p>
+<p>DDIA 第 9 章表达过一个大意（第9章）：分布式系统的很多问题，最终都是<strong>信息问题</strong>——你无法确定另一个节点看到了什么。你设计超时、重试、租约、幂等，本质上都是在设计<strong>如何在不完整信息的条件下做出安全决策</strong>。</p>
 <p>理解这一点，比记住任何具体算法都重要。因为具体算法你随时可以查到，但这个思维框架——在不确定性中做安全决策——必须长在骨子里。</p>
 <hr>
-<p><em>下一篇预告：DDIA-09（下）——共识协议与 Raft 的工程直觉。为什么 Kafka 选 ISR、MongoDB 选 Paxos？共识算法的选型比原理更重要。</em></p>
+<p><em>下一篇：DDIA-09-故障排查——从一次线上告警看分布式系统的可观测性。</em></p>
 
                 
               </div>
@@ -786,7 +799,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -886,7 +899,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -901,7 +915,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

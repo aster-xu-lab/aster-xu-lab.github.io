@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/05/02/2025-05-02-6000万订单表迁移分片-双写灰度回补/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/05/02/2025-05-02-6000%E4%B8%87%E8%AE%A2%E5%8D%95%E8%A1%A8%E8%BF%81%E7%A7%BB%E5%88%86%E7%89%87-%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E5%9B%9E%E8%A1%A5/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="迁移的难点：不能停服or_sales_info 有 6000 万存量数据，要从单表改成分片表。最难的不是写分片代码，而是存量数据怎么在业务不停服的情况下迁移过去。 我写了一个综合演练，模拟完整迁移流程（造数 → 双写 → 回补 → 灰度 → 校验 → 性能 → 回滚），下面拆解每一步。 整体流程 1. 造数：生成存量单表数据模拟 6000 万存量（演示用小量，逻辑等价）。or_sales_info">
+    <meta name="description" content="迁移的难点：不能停服or_sales_info 上线前约 6000 万存量数据，要从单表改成分片表。最难的不是写分片代码，而是存量数据怎么在业务不停服的情况下迁移过去。 我写了一个综合演练，模拟完整迁移流程（造数 → 双写 → 回补 → 灰度 → 校验 → 性能 → 回滚），下面拆解每一步。这是本地演练，不是生产执行；生产迁移复盘见《分库分表迁移复盘：从分片键决策到无停机上线》。 整体流程 1.">
 <meta property="og:type" content="article">
 <meta property="og:title" content="6000万订单表迁移到分片：双写 + 灰度 + 回补 + 回滚全流程">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/05/02/2025-05-02-6000%E4%B8%87%E8%AE%A2%E5%8D%95%E8%A1%A8%E8%BF%81%E7%A7%BB%E5%88%86%E7%89%87-%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E5%9B%9E%E8%A1%A5/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="迁移的难点：不能停服or_sales_info 有 6000 万存量数据，要从单表改成分片表。最难的不是写分片代码，而是存量数据怎么在业务不停服的情况下迁移过去。 我写了一个综合演练，模拟完整迁移流程（造数 → 双写 → 回补 → 灰度 → 校验 → 性能 → 回滚），下面拆解每一步。 整体流程 1. 造数：生成存量单表数据模拟 6000 万存量（演示用小量，逻辑等价）。or_sales_info">
+<meta property="og:description" content="迁移的难点：不能停服or_sales_info 上线前约 6000 万存量数据，要从单表改成分片表。最难的不是写分片代码，而是存量数据怎么在业务不停服的情况下迁移过去。 我写了一个综合演练，模拟完整迁移流程（造数 → 双写 → 回补 → 灰度 → 校验 → 性能 → 回滚），下面拆解每一步。这是本地演练，不是生产执行；生产迁移复盘见《分库分表迁移复盘：从分片键决策到无停机上线》。 整体流程 1.">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8857f0c9bb69840e229badf9603659.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8857f0c9bb69840e229badf9603659.png">
 <meta property="article:published_time" content="2025-05-02T15:10:05.000Z">
-<meta property="article:modified_time" content="2026-11-02T08:49:52.407Z">
+<meta property="article:modified_time" content="2025-05-02T15:10:05.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="历史回补">
@@ -39,7 +45,10 @@
 <meta property="article:tag" content="数据迁移">
 <meta property="article:tag" content="灰度切换">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8857f0c9bb69840e229badf9603659.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8857f0c9bb69840e229badf9603659.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"6000万订单表迁移到分片：双写 + 灰度 + 回补 + 回滚全流程","datePublished":"2025-05-02T15:10:05.000Z","dateModified":"2025-05-02T15:10:05.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/05/02/2025-05-02-6000%E4%B8%87%E8%AE%A2%E5%8D%95%E8%A1%A8%E8%BF%81%E7%A7%BB%E5%88%86%E7%89%87-%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E5%9B%9E%E8%A1%A5/"}}</script>
   
   
   
@@ -214,7 +223,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -389,7 +398,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.3k 字
+          1.5k 字
         
       </span>
     
@@ -400,7 +409,7 @@
         
         
         
-          12 分钟
+          13 分钟
         
       </span>
     
@@ -411,21 +420,28 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">6000万订单表迁移到分片：双写 + 灰度 + 回补 + 回滚全流程</h1>
+            <p id="seo-header">6000万订单表迁移到分片：双写 + 灰度 + 回补 + 回滚全流程</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="迁移的难点：不能停服"><a href="#迁移的难点：不能停服" class="headerlink" title="迁移的难点：不能停服"></a>迁移的难点：不能停服</h2><p><code>or_sales_info</code> 有 6000 万存量数据，要从单表改成分片表。最难的<strong>不是写分片代码</strong>，而是<strong>存量数据怎么在业务不停服的情况下迁移过去</strong>。</p>
-<p>我写了一个综合演练，模拟完整迁移流程（造数 → 双写 → 回补 → 灰度 → 校验 → 性能 → 回滚），下面拆解每一步。</p>
+                <h2 id="迁移的难点：不能停服"><a href="#迁移的难点：不能停服" class="headerlink" title="迁移的难点：不能停服"></a>迁移的难点：不能停服</h2><p><code>or_sales_info</code> 上线前约 6000 万存量数据，要从单表改成分片表。最难的<strong>不是写分片代码</strong>，而是<strong>存量数据怎么在业务不停服的情况下迁移过去</strong>。</p>
+<p>我写了一个综合演练，模拟完整迁移流程（造数 → 双写 → 回补 → 灰度 → 校验 → 性能 → 回滚），下面拆解每一步。<strong>这是本地演练，不是生产执行</strong>；生产迁移复盘见《分库分表迁移复盘：从分片键决策到无停机上线》。</p>
 <h2 id="整体流程"><a href="#整体流程" class="headerlink" title="整体流程"></a>整体流程</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8857f0c9bb69840e229badf9603659.png#pic_center" srcset="/img/loading.gif" lazyload alt="6000 万订单表迁移：双写 + 灰度 + 回补 + 回滚全流程"></p>
 <h2 id="1-造数：生成存量单表数据"><a href="#1-造数：生成存量单表数据" class="headerlink" title="1. 造数：生成存量单表数据"></a>1. 造数：生成存量单表数据</h2><p>模拟 6000 万存量（演示用小量，逻辑等价）。or_sales_info 已确认<strong>单号主分片</strong>（业务事件都按单号），迁移到单号 hash 分片表。</p>
 <h2 id="2-双写：新老表同时写入（核心）"><a href="#2-双写：新老表同时写入（核心）" class="headerlink" title="2. 双写：新老表同时写入（核心）"></a>2. 双写：新老表同时写入（核心）</h2><p>迁移期间<strong>新订单要同时写老单表和新分片表</strong>，保证任何时候数据两边都有：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 写老单表 + 写分片表</span><br>writeLegacy(order);   <span class="hljs-comment">// 老表(存量持续增长)</span><br>writeSharded(order);  <span class="hljs-comment">// 分片表(走 ShardingSphere 路由)</span><br></code></pre></td></tr></table></figure>
 
 <p>双写是<strong>迁移安全的核心</strong>——它保证灰度&#x2F;回滚随时可切，数据不丢。</p>
+<blockquote>
+<p>口径说明：本文演练用应用层双写演示流程；生产迁移采用的是 binlog&#x2F;Canal 零侵入增量双写（见迁移复盘），不是应用层双向写。</p>
+</blockquote>
 <h2 id="3-历史回补：存量搬到分片表"><a href="#3-历史回补：存量搬到分片表" class="headerlink" title="3. 历史回补：存量搬到分片表"></a>3. 历史回补：存量搬到分片表</h2><p>用批量 + 幂等（<code>ON DUPLICATE KEY UPDATE</code>）把老表数据搬到分片表：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">sql</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;INSERT INTO t_mig_sales(...) VALUES(...) ON DUPLICATE KEY UPDATE id=id&quot;</span>;<br>preparedStatement.addBatch();  <span class="hljs-comment">// 批量，避免逐条慢</span><br></code></pre></td></tr></table></figure>
 
@@ -474,14 +490,14 @@
 </tr>
 <tr>
 <td>性能</td>
-<td>时间分片只查目标月表</td>
+<td>单号分片只查目标分片（带分片键零广播）</td>
 </tr>
 <tr>
 <td>回滚</td>
 <td>双写让回退零成本</td>
 </tr>
 </tbody></table>
-<p><strong>双写 + 灰度 是”不停服、可回滚”迁移的两大支柱</strong>。时间分片让历史数据不用 rehash，迁移成本大幅降低。</p>
+<p><strong>双写 + 灰度 是”不停服、可回滚”迁移的两大支柱</strong>。本项目是单号 hash 分片，迁移需要 rehash&#x2F;回补；双写 + 灰度让迁移可回滚。</p>
 
                 
               </div>
@@ -670,7 +686,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -770,7 +786,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -785,7 +802,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

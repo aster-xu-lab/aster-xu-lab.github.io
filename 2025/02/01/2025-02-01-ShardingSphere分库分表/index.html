@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/02/01/2025-02-01-ShardingSphere分库分表/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/02/01/2025-02-01-ShardingSphere%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="渠道垂直分表的困局与 ShardingSphere 破局从手工拆表说起订单中心对接 20+ 电商平台（淘宝、京东、拼多多、抖音…），不同渠道的订单量差异巨大。最初的设计是按渠道垂直分表： 123456-- 按渠道垂直分表order_pdd         -- 拼多多订单order_jd           -- 京东订单order_kuaishou     -- 快手订单order_taobao">
+    <meta name="description" content="渠道垂直分表的困局与 ShardingSphere 破局从手工拆表说起订单中心对接 20+ 电商平台（淘宝、京东、拼多多、某短视频平台…），不同渠道的订单量差异巨大。最初的设计是按渠道垂直分表： 123456-- 按渠道垂直分表order_pdd -- 拼多多订单order_jd -- 京东订单order_kuaishou -- 某内容电商平台订单order_taobao -- 淘宝订单... 这">
 <meta property="og:type" content="article">
 <meta property="og:title" content="渠道垂直分表的困局与ShardingSphere破局">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/02/01/2025-02-01-ShardingSphere%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="渠道垂直分表的困局与 ShardingSphere 破局从手工拆表说起订单中心对接 20+ 电商平台（淘宝、京东、拼多多、抖音…），不同渠道的订单量差异巨大。最初的设计是按渠道垂直分表： 123456-- 按渠道垂直分表order_pdd         -- 拼多多订单order_jd           -- 京东订单order_kuaishou     -- 快手订单order_taobao">
+<meta property="og:description" content="渠道垂直分表的困局与 ShardingSphere 破局从手工拆表说起订单中心对接 20+ 电商平台（淘宝、京东、拼多多、某短视频平台…），不同渠道的订单量差异巨大。最初的设计是按渠道垂直分表： 123456-- 按渠道垂直分表order_pdd -- 拼多多订单order_jd -- 京东订单order_kuaishou -- 某内容电商平台订单order_taobao -- 淘宝订单... 这">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1981ddfb371d008cc6afb95191024c8b.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1981ddfb371d008cc6afb95191024c8b.png">
 <meta property="article:published_time" content="2025-02-01T15:37:53.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.160Z">
+<meta property="article:modified_time" content="2025-02-01T15:37:53.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JDBC">
 <meta property="article:tag" content="MySQL">
@@ -39,7 +45,10 @@
 <meta property="article:tag" content="数据库">
 <meta property="article:tag" content="架构演进">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1981ddfb371d008cc6afb95191024c8b.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1981ddfb371d008cc6afb95191024c8b.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"渠道垂直分表的困局与ShardingSphere破局","datePublished":"2025-02-01T15:37:53.000Z","dateModified":"2025-02-01T15:37:53.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/02/01/2025-02-01-ShardingSphere%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/"}}</script>
   
   
   
@@ -214,7 +223,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -389,7 +398,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.9k 字
+          3k 字
         
       </span>
     
@@ -400,7 +409,7 @@
         
         
         
-          25 分钟
+          26 分钟
         
       </span>
     
@@ -411,17 +420,21 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">渠道垂直分表的困局与ShardingSphere破局</h1>
+            <p id="seo-header">渠道垂直分表的困局与ShardingSphere破局</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="渠道垂直分表的困局与-ShardingSphere-破局"><a href="#渠道垂直分表的困局与-ShardingSphere-破局" class="headerlink" title="渠道垂直分表的困局与 ShardingSphere 破局"></a>渠道垂直分表的困局与 ShardingSphere 破局</h2><h3 id="从手工拆表说起"><a href="#从手工拆表说起" class="headerlink" title="从手工拆表说起"></a>从手工拆表说起</h3><p>订单中心对接 20+ 电商平台（淘宝、京东、拼多多、抖音…），不同渠道的订单量差异巨大。最初的设计是按渠道垂直分表：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 按渠道垂直分表</span><br>order_pdd         <span class="hljs-comment">-- 拼多多订单</span><br>order_jd           <span class="hljs-comment">-- 京东订单</span><br>order_kuaishou     <span class="hljs-comment">-- 快手订单</span><br>order_taobao       <span class="hljs-comment">-- 淘宝订单</span><br>...<br></code></pre></td></tr></table></figure>
+                <h2 id="渠道垂直分表的困局与-ShardingSphere-破局"><a href="#渠道垂直分表的困局与-ShardingSphere-破局" class="headerlink" title="渠道垂直分表的困局与 ShardingSphere 破局"></a>渠道垂直分表的困局与 ShardingSphere 破局</h2><h3 id="从手工拆表说起"><a href="#从手工拆表说起" class="headerlink" title="从手工拆表说起"></a>从手工拆表说起</h3><p>订单中心对接 20+ 电商平台（淘宝、京东、拼多多、某短视频平台…），不同渠道的订单量差异巨大。最初的设计是按渠道垂直分表：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 按渠道垂直分表</span><br>order_pdd         <span class="hljs-comment">-- 拼多多订单</span><br>order_jd           <span class="hljs-comment">-- 京东订单</span><br>order_kuaishou     <span class="hljs-comment">-- 某内容电商平台订单</span><br>order_taobao       <span class="hljs-comment">-- 淘宝订单</span><br>...<br></code></pre></td></tr></table></figure>
 
-<p>这在早期（日均 10-20 万单）是够用的。但随着业务增长，拼多多单渠道日订单突破 50 万，单表超过 2000 万行，查询开始明显变慢。</p>
+<p>这在早期（日均 15 万单）是够用的。但随着业务增长，大促峰值日订单达到 50 万，拼多多单渠道占比最高，单表超过 2000 万行，查询开始明显变慢。</p>
 <p><strong>手工垂直分表走到了尽头。</strong></p>
 <h3 id="一、垂直分表的三个困局"><a href="#一、垂直分表的三个困局" class="headerlink" title="一、垂直分表的三个困局"></a>一、垂直分表的三个困局</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1981ddfb371d008cc6afb95191024c8b.png#pic_center" srcset="/img/loading.gif" lazyload alt="渠道垂直分表的困局与 ShardingSphere 破局"></p>
 <h4 id="困局-1：单表数据量无法控制"><a href="#困局-1：单表数据量无法控制" class="headerlink" title="困局 1：单表数据量无法控制"></a>困局 1：单表数据量无法控制</h4><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">order_pdd:</span> <span class="hljs-number">2300</span> <span class="hljs-string">万行</span> <span class="hljs-string">→</span> <span class="hljs-string">还在增长</span><br><span class="hljs-attr">order_jd:</span>  <span class="hljs-number">1800</span> <span class="hljs-string">万行</span> <span class="hljs-string">→</span> <span class="hljs-string">趋近临界</span><br></code></pre></td></tr></table></figure>
@@ -479,8 +492,12 @@
 <li>对业务代码改动最小（改 SQL 注解即可）</li>
 <li>性能损耗最小（JDBC 层直接改写 SQL，没有网络跳转）</li>
 </ul>
-<h3 id="三、改造方案"><a href="#三、改造方案" class="headerlink" title="三、改造方案"></a>三、改造方案</h3><h4 id="按订单号哈希分片"><a href="#按订单号哈希分片" class="headerlink" title="按订单号哈希分片"></a>按订单号哈希分片</h4><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span><br>  <span class="hljs-attr">shardingsphere:</span><br>    <span class="hljs-attr">datasource:</span><br>      <span class="hljs-attr">names:</span> <span class="hljs-string">ds0,</span> <span class="hljs-string">ds1</span><br>    <span class="hljs-attr">rules:</span><br>      <span class="hljs-attr">sharding:</span><br>        <span class="hljs-attr">tables:</span><br>          <span class="hljs-attr">order_main:</span><br>            <span class="hljs-attr">actual-data-nodes:</span> <span class="hljs-string">ds$&#123;0..1&#125;.order_main_$&#123;0..3&#125;</span><br>            <span class="hljs-attr">database-strategy:</span><br>              <span class="hljs-attr">standard:</span><br>                <span class="hljs-attr">sharding-column:</span> <span class="hljs-string">order_no</span><br>                <span class="hljs-attr">sharding-algorithm-name:</span> <span class="hljs-string">database-inline</span><br>            <span class="hljs-attr">table-strategy:</span><br>              <span class="hljs-attr">standard:</span><br>                <span class="hljs-attr">sharding-column:</span> <span class="hljs-string">order_no</span><br>                <span class="hljs-attr">sharding-algorithm-name:</span> <span class="hljs-string">table-inline</span><br>        <span class="hljs-attr">sharding-algorithms:</span><br>          <span class="hljs-attr">database-inline:</span><br>            <span class="hljs-attr">type:</span> <span class="hljs-string">INLINE</span><br>            <span class="hljs-attr">props:</span><br>              <span class="hljs-attr">algorithm-expression:</span> <span class="hljs-string">ds$&#123;Math.abs(order_no.hashCode())</span> <span class="hljs-string">%</span> <span class="hljs-number">2</span><span class="hljs-string">&#125;</span><br>          <span class="hljs-attr">table-inline:</span><br>            <span class="hljs-attr">type:</span> <span class="hljs-string">INLINE</span><br>            <span class="hljs-attr">props:</span><br>              <span class="hljs-attr">algorithm-expression:</span> <span class="hljs-string">order_main_$&#123;Math.abs(order_no.hashCode())</span> <span class="hljs-string">%</span> <span class="hljs-number">4</span><span class="hljs-string">&#125;</span><br></code></pre></td></tr></table></figure>
+<h3 id="三、改造方案"><a href="#三、改造方案" class="headerlink" title="三、改造方案"></a>三、改造方案</h3><h4 id="按订单号哈希分片"><a href="#按订单号哈希分片" class="headerlink" title="按订单号哈希分片"></a>按订单号哈希分片</h4><p>（示例逻辑表用 <code>order_main</code>；生产订单销售信息表对应 <code>or_sales_info</code>，分片键同为 <code>order_no</code>。）</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span><br>  <span class="hljs-attr">shardingsphere:</span><br>    <span class="hljs-attr">datasource:</span><br>      <span class="hljs-attr">names:</span> <span class="hljs-string">ds0,</span> <span class="hljs-string">ds1</span><br>    <span class="hljs-attr">rules:</span><br>      <span class="hljs-bullet">-</span> <span class="hljs-type">!SHARDING</span><br>        <span class="hljs-attr">tables:</span><br>          <span class="hljs-attr">order_main:</span><br>            <span class="hljs-attr">actual-data-nodes:</span> <span class="hljs-string">ds$&#123;0..1&#125;.order_main_$&#123;0..3&#125;</span><br>            <span class="hljs-attr">database-strategy:</span><br>              <span class="hljs-attr">standard:</span><br>                <span class="hljs-attr">sharding-column:</span> <span class="hljs-string">order_no</span><br>                <span class="hljs-attr">sharding-algorithm-name:</span> <span class="hljs-string">database-hash</span><br>            <span class="hljs-attr">table-strategy:</span><br>              <span class="hljs-attr">standard:</span><br>                <span class="hljs-attr">sharding-column:</span> <span class="hljs-string">order_no</span><br>                <span class="hljs-attr">sharding-algorithm-name:</span> <span class="hljs-string">table-hash</span><br>        <span class="hljs-attr">sharding-algorithms:</span><br>          <span class="hljs-attr">database-hash:</span><br>            <span class="hljs-attr">type:</span> <span class="hljs-string">HASH_MOD</span><br>            <span class="hljs-attr">props:</span><br>              <span class="hljs-attr">sharding-count:</span> <span class="hljs-number">2</span><br>          <span class="hljs-attr">table-hash:</span><br>            <span class="hljs-attr">type:</span> <span class="hljs-string">HASH_MOD</span><br>            <span class="hljs-attr">props:</span><br>              <span class="hljs-attr">sharding-count:</span> <span class="hljs-number">4</span><br></code></pre></td></tr></table></figure>
 
+<blockquote>
+<p>以上是<strong>示意配置</strong>：5.x 的 <code>rules</code> 是 <code>- !SHARDING</code> 列表；字符串 <code>order_no</code> 的 <code>HASH_MOD</code> 需走 auto-tables（或自定义 <code>CLASS_BASED</code> 算法），不能直接在 <code>INLINE</code> 表达式里调用 <code>Math.abs(hashCode())</code>。实际落地时按 5.x 规则改写，完整写法见《分片策略实战》。</p>
+</blockquote>
 <p>效果：2 库 × 4 表 &#x3D; 8 个分片，单表数据量从 2300 万降到 ~300 万。</p>
 <h4 id="分片键的选择"><a href="#分片键的选择" class="headerlink" title="分片键的选择"></a>分片键的选择</h4><p>选择 <code>order_no</code>（订单号）作为分片键的原因：</p>
 <ol>
@@ -713,7 +730,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -813,7 +830,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -828,7 +846,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

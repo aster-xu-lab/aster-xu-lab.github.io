@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-安装器升级时哪些东西该保留/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E5%AE%89%E8%A3%85%E5%99%A8%E5%8D%87%E7%BA%A7%E6%97%B6%E5%93%AA%E4%BA%9B%E4%B8%9C%E8%A5%BF%E8%AF%A5%E4%BF%9D%E7%95%99/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="桌面应用升级最容易丢的不是代码，是用户数据。NSIS 卸载器会删整个安装目录，而升级又会先跑旧卸载器——不加保护就是「升一次级丢一次数据」。这篇文章把安装&#x2F;升级拆成三类状态：应用、用户数据、更新元数据，分别讲它们的边界。  一、先复现：升级为什么会删数据这个应用的 Windows 打包版把可写数据放在安装目录下： 1234&lt;installDir&gt;&#x2F;data&#x2F;  import">
+    <meta name="description" content="桌面应用升级最容易丢的不是代码，是用户数据。NSIS 卸载器会删整个安装目录，而升级又会先跑旧卸载器——不加保护就是「升一次级丢一次数据」。这篇文章把安装&#x2F;升级拆成三类状态：应用、用户数据、更新元数据，分别讲它们的边界。 一、先复现：升级为什么会删数据这个应用的 Windows 打包版把可写数据放在安装目录下： 1234&lt;installDir&gt;&#x2F;data&#x2F; imports.s">
 <meta property="og:type" content="article">
 <meta property="og:title" content="安装器升级时，哪些东西该保留：应用、用户数据、更新元数据">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E5%AE%89%E8%A3%85%E5%99%A8%E5%8D%87%E7%BA%A7%E6%97%B6%E5%93%AA%E4%BA%9B%E4%B8%9C%E8%A5%BF%E8%AF%A5%E4%BF%9D%E7%95%99/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="桌面应用升级最容易丢的不是代码，是用户数据。NSIS 卸载器会删整个安装目录，而升级又会先跑旧卸载器——不加保护就是「升一次级丢一次数据」。这篇文章把安装&#x2F;升级拆成三类状态：应用、用户数据、更新元数据，分别讲它们的边界。  一、先复现：升级为什么会删数据这个应用的 Windows 打包版把可写数据放在安装目录下： 1234&lt;installDir&gt;&#x2F;data&#x2F;  import">
+<meta property="og:description" content="桌面应用升级最容易丢的不是代码，是用户数据。NSIS 卸载器会删整个安装目录，而升级又会先跑旧卸载器——不加保护就是「升一次级丢一次数据」。这篇文章把安装&#x2F;升级拆成三类状态：应用、用户数据、更新元数据，分别讲它们的边界。 一、先复现：升级为什么会删数据这个应用的 Windows 打包版把可写数据放在安装目录下： 1234&lt;installDir&gt;&#x2F;data&#x2F; imports.s">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-16T23:15:20.000Z">
-<meta property="article:modified_time" content="2026-10-21T03:47:56.937Z">
+<meta property="article:modified_time" content="2026-10-16T23:15:20.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="NSIS">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="打包">
 <meta property="article:tag" content="数据保留">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"安装器升级时，哪些东西该保留：应用、用户数据、更新元数据","datePublished":"2026-10-16T23:15:20.000Z","dateModified":"2026-10-16T23:15:20.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E5%AE%89%E8%A3%85%E5%99%A8%E5%8D%87%E7%BA%A7%E6%97%B6%E5%93%AA%E4%BA%9B%E4%B8%9C%E8%A5%BF%E8%AF%A5%E4%BF%9D%E7%95%99/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">安装器升级时，哪些东西该保留：应用、用户数据、更新元数据</h1>
+            <p id="seo-header">安装器升级时，哪些东西该保留：应用、用户数据、更新元数据</p>
             
             
               <div class="markdown-body">
@@ -680,7 +693,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -780,7 +793,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -795,7 +809,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

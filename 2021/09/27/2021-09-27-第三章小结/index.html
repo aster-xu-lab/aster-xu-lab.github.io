@@ -8,32 +8,41 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/09/27/2021-09-27-第三章小结/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/09/27/2021-09-27-%E7%AC%AC%E4%B8%89%E7%AB%A0%E5%B0%8F%E7%BB%93/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="写在前面 由于本章较长，所以按照小标题发布了 本章小结 分析多线程访问共享片段时，哪些代码片段属于临界区 使用synchronized互斥解决临界区的线程安全问题 掌握synchronized锁对象语法 掌握synchronized加载成员方法和静态方法语法 掌握wait&#x2F;notify同步方法   使用lock互斥解决代码临界区的线程安全问题 掌握lock的使用细节：可打断、锁超时、公平">
+    <meta name="description" content="写在前面 由于本章较长，所以按照小标题发布了 本章小结 分析多线程访问共享片段时，哪些代码片段属于临界区 使用synchronized互斥解决临界区的线程安全问题 掌握synchronized锁对象语法 掌握synchronized加载成员方法和静态方法语法 掌握wait&#x2F;notify同步方法 使用lock互斥解决代码临界区的线程安全问题 掌握lock的使用细节：可打断、锁超时、公平锁、">
 <meta property="og:type" content="article">
 <meta property="og:title" content="第三章小结">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/09/27/2021-09-27-%E7%AC%AC%E4%B8%89%E7%AB%A0%E5%B0%8F%E7%BB%93/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="写在前面 由于本章较长，所以按照小标题发布了 本章小结 分析多线程访问共享片段时，哪些代码片段属于临界区 使用synchronized互斥解决临界区的线程安全问题 掌握synchronized锁对象语法 掌握synchronized加载成员方法和静态方法语法 掌握wait&#x2F;notify同步方法   使用lock互斥解决代码临界区的线程安全问题 掌握lock的使用细节：可打断、锁超时、公平">
+<meta property="og:description" content="写在前面 由于本章较长，所以按照小标题发布了 本章小结 分析多线程访问共享片段时，哪些代码片段属于临界区 使用synchronized互斥解决临界区的线程安全问题 掌握synchronized锁对象语法 掌握synchronized加载成员方法和静态方法语法 掌握wait&#x2F;notify同步方法 使用lock互斥解决代码临界区的线程安全问题 掌握lock的使用细节：可打断、锁超时、公平锁、">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-09-27T13:54:22.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.150Z">
+<meta property="article:modified_time" content="2021-09-27T13:54:22.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java并发">
 <meta property="article:tag" content="同步模式">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"第三章小结","datePublished":"2021-09-27T13:54:22.000Z","dateModified":"2021-09-27T13:54:22.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/09/27/2021-09-27-%E7%AC%AC%E4%B8%89%E7%AB%A0%E5%B0%8F%E7%BB%93/"}}</script>
   
   
   
@@ -208,7 +217,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -405,9 +414,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/concurrency/">Java 并发</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">第三章小结</h1>
+            <p id="seo-header">第三章小结</p>
             
             
               <div class="markdown-body">
@@ -628,7 +641,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -728,7 +741,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -743,7 +757,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

@@ -8,6 +8,11 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
@@ -17,16 +22,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="String的基本特性 String：字符串，使用一对 ”” 引起来表示 String s1 &#x3D; “mogublog” ; &#x2F;&#x2F; 字面量的定义方式 String s2 &#x3D; new String(“moxi”);   String声明为final的，不可被继承 String实现了Serializable接口：表示字符串是支持序列化的。实现了Comparable">
+    <meta name="description" content="String的基本特性 String：字符串，使用一对 ”” 引起来表示 String s1 &#x3D; “mogublog” ; &#x2F;&#x2F; 字面量的定义方式 String s2 &#x3D; new String(“moxi”); String声明为final的，不可被继承 String实现了Serializable接口：表示字符串是支持序列化的。实现了Comparable接口">
 <meta property="og:type" content="article">
 <meta property="og:title" content="StringTable">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/04/24/2021-04-24-StringTable/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="String的基本特性 String：字符串，使用一对 ”” 引起来表示 String s1 &#x3D; “mogublog” ; &#x2F;&#x2F; 字面量的定义方式 String s2 &#x3D; new String(“moxi”);   String声明为final的，不可被继承 String实现了Serializable接口：表示字符串是支持序列化的。实现了Comparable">
+<meta property="og:description" content="String的基本特性 String：字符串，使用一对 ”” 引起来表示 String s1 &#x3D; “mogublog” ; &#x2F;&#x2F; 字面量的定义方式 String s2 &#x3D; new String(“moxi”); String声明为final的，不可被继承 String实现了Serializable接口：表示字符串是支持序列化的。实现了Comparable接口">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5ffb30b856ae8a5d10ed5067d6ea7921.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1fbaf97f48a8fc29c309886b7ee8d8e8.png">
@@ -36,13 +42,16 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3fb170fe959c7b9c88e6a488966b4a03.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2d7b1709198d09345e5d0e7bd8e3b468.png">
 <meta property="article:published_time" content="2021-04-24T08:33:28.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.146Z">
+<meta property="article:modified_time" content="2021-04-24T08:33:28.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JVM">
 <meta property="article:tag" content="StringTable">
 <meta property="article:tag" content="字符串常量池">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5ffb30b856ae8a5d10ed5067d6ea7921.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"StringTable","datePublished":"2021-04-24T08:33:28.000Z","dateModified":"2021-04-24T08:33:28.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/04/24/2021-04-24-StringTable/"}}</script>
   
   
   
@@ -217,7 +226,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -403,7 +412,7 @@
         
         
         
-          94 分钟
+          95 分钟
         
       </span>
     
@@ -414,9 +423,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/jvm/">JVM</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">StringTable</h1>
+            <p id="seo-header">StringTable</p>
             
             
               <div class="markdown-body">
@@ -464,7 +477,7 @@
 <p>所有的字符串都保存在堆（Heap）中，和其他普通对象一样，这样可以让你在进行调优应用时仅需要调整堆大小就可以了。<br>字符串常量池概念原本使用得比较多，但是这个改动使得我们有足够的理由让我们重新考虑在Java 7中使用string.intern（）。</p>
 </blockquote>
 <p>Java8元空间，字符串常量在堆</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5ffb30b856ae8a5d10ed5067d6ea7921.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1fbaf97f48a8fc29c309886b7ee8d8e8.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5ffb30b856ae8a5d10ed5067d6ea7921.png" srcset="/img/loading.gif" lazyload alt="字符串常量池内存区域变迁图"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1fbaf97f48a8fc29c309886b7ee8d8e8.png" srcset="/img/loading.gif" lazyload alt="字符串常量池位于堆中的结构图"></p>
 <h3 id="为什么StringTable从永久代调整到堆中"><a href="#为什么StringTable从永久代调整到堆中" class="headerlink" title="为什么StringTable从永久代调整到堆中"></a>为什么StringTable从永久代调整到堆中</h3><p>在JDK 7中，interned字符串不再在Java堆的永久生成中分配，而是在Java堆的主要部分(称为年轻代和年老代)中分配，与应用程序创建的其他对象一起分配。此更改将导致驻留在主Java堆中的数据更多，驻留在永久生成中的数据更少，因此可能需要调整堆大小。由于这一变化，大多数应用程序在堆使用方面只会看到相对较小的差异，但加载许多类或大量使用字符串的较大应用程序会出现这种差异。intern()方法会看到更显著的差异。</p>
 <ul>
 <li>永久代的默认比较小</li>
@@ -481,7 +494,7 @@
 <p>从上述的结果我们可以知道：</p>
 <p>如果拼接符号的前后出现了变量，则相当于在堆空间中new String()，具体的内容为拼接的结果</p>
 <p>而调用intern方法，则会判断字符串常量池中是否存在JavaEEhadoop值，如果存在则返回常量池中的值，否者就在常量池中创建</p>
-<h3 id="底层原理"><a href="#底层原理" class="headerlink" title="底层原理"></a>底层原理</h3><p>拼接操作的底层其实使用了StringBuilder<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ce674c042f2175c652cdd133c8516c1f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>s1 + s2的执行细节</p>
+<h3 id="底层原理"><a href="#底层原理" class="headerlink" title="底层原理"></a>底层原理</h3><p>拼接操作的底层其实使用了StringBuilder<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ce674c042f2175c652cdd133c8516c1f.png" srcset="/img/loading.gif" lazyload alt="字符串拼接StringBuilder原理图"><br>s1 + s2的执行细节</p>
 <ul>
 <li>StringBuilder s &#x3D; new StringBuilder();</li>
 <li>s.append(s1);</li>
@@ -576,20 +589,21 @@
 </ul>
 </li>
 </ul>
-<h3 id="intern的使用：JDK6和JDK7"><a href="#intern的使用：JDK6和JDK7" class="headerlink" title="intern的使用：JDK6和JDK7"></a>intern的使用：JDK6和JDK7</h3><h4 id="JDK6中"><a href="#JDK6中" class="headerlink" title="JDK6中"></a>JDK6中</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>);  <span class="hljs-comment">// 在常量池中已经有了</span><br>s.intern(); <span class="hljs-comment">// 将该对象放入到常量池。但是调用此方法没有太多的区别，因为已经存在了1</span><br><span class="hljs-type">String</span> <span class="hljs-variable">s2</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1&quot;</span>;<br>System.out.println(s == s2); <span class="hljs-comment">// false</span><br><br><span class="hljs-type">String</span> <span class="hljs-variable">s3</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>) + <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>);<br>s3.intern();<br><span class="hljs-type">String</span> <span class="hljs-variable">s4</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;11&quot;</span>;<br>System.out.println(s3 == s4); <span class="hljs-comment">// true</span><br></code></pre></td></tr></table></figure>
+<h3 id="intern的使用：JDK6和JDK7"><a href="#intern的使用：JDK6和JDK7" class="headerlink" title="intern的使用：JDK6和JDK7"></a>intern的使用：JDK6和JDK7</h3><h4 id="JDK6中"><a href="#JDK6中" class="headerlink" title="JDK6中"></a>JDK6中</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>);  <span class="hljs-comment">// 常量池中已有 &quot;1&quot;，这里在堆中新建对象</span><br>s.intern(); <span class="hljs-comment">// 常量池中已存在，返回池中对象；返回值没有赋给 s，s 仍指向堆中对象</span><br><span class="hljs-type">String</span> <span class="hljs-variable">s2</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1&quot;</span>;<br>System.out.println(s == s2); <span class="hljs-comment">// false</span><br><br><span class="hljs-type">String</span> <span class="hljs-variable">s3</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>) + <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>); <span class="hljs-comment">// 堆中生成 &quot;11&quot;，常量池中没有</span><br>s3.intern(); <span class="hljs-comment">// JDK6 会把 &quot;11&quot; 复制一份放入常量池</span><br><span class="hljs-type">String</span> <span class="hljs-variable">s4</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;11&quot;</span>;<br>System.out.println(s3 == s4); <span class="hljs-comment">// false</span><br></code></pre></td></tr></table></figure>
 <p>输出结果</p>
-<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs actionscript"><span class="hljs-literal">false</span><br><span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs actionscript"><span class="hljs-literal">false</span><br><span class="hljs-literal">false</span><br></code></pre></td></tr></table></figure>
 <p>为什么对象会不一样呢？</p>
 <ul>
-<li>一个是new创建的对象，一个是常量池中的对象，显然不是同一个<br>如果是下面这样的，那么就是true</li>
+<li>第一组里，s 是 new 创建的堆对象，s2 是常量池中的对象，显然不是同一个</li>
+<li>第二组里，JDK6 的 intern 会把 “11” 复制一份放入常量池，s4 拿到的是复制后的新对象，和 s3 不是同一个</li>
 </ul>
+<p>如果是下面这样，显式接收 intern 的返回值，那么就是 true</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>);<br>s = s.intern();<br><span class="hljs-type">String</span> <span class="hljs-variable">s2</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1&quot;</span>;<br>System.out.println(s == s2); <span class="hljs-comment">// true</span><br></code></pre></td></tr></table></figure>
-<p>而对于下面的来说，因为 s3变量记录的地址是 new String(“11”)，然后这段代码执行完以后，常量池中不存在 “11”，这是JDK6的关系，然后执行 s3.intern()后，就会在常量池中生成 “11”，最后 s4用的就是s3的地址</p>
-<blockquote>
-<p>为什么最后输出的 s3 &#x3D;&#x3D; s4 会为false呢？<br>这是因为在JDK6中创建了一个新的对象 “11”，也就是有了新的地址， s2 &#x3D; 新地址<br>而在JDK7中，在JDK7中，并没有创新一个新对象，而是指向常量池中的新对象</p>
-</blockquote>
-<h4 id="JDK7中"><a href="#JDK7中" class="headerlink" title="JDK7中"></a>JDK7中</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>);<br>s.intern();<br><span class="hljs-type">String</span> <span class="hljs-variable">s2</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1&quot;</span>;<br>System.out.println(s == s2); <span class="hljs-comment">// true</span><br><br><span class="hljs-type">String</span> <span class="hljs-variable">s3</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>) + <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>);<br>s3.intern();<br><span class="hljs-type">String</span> <span class="hljs-variable">s4</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;11&quot;</span>;<br>System.out.println(s3 == s4); <span class="hljs-comment">// true</span><br></code></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/79c3e52507448d58feb034d6597e1d4f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>对于第二组来说，s3 变量记录的地址是堆中的 new String(“11”)，这时常量池中不存在 “11”；执行 s3.intern() 后，JDK6 会在常量池中创建一个新的 “11” 对象，s4 用的就是这个新地址，所以 s3 &#x3D;&#x3D; s4 为 false。JDK7 则不同，它没有创建新对象，而是把堆中 “11” 的引用放入常量池，因此 s3 &#x3D;&#x3D; s4 为 true。</p>
+<h4 id="JDK7中"><a href="#JDK7中" class="headerlink" title="JDK7中"></a>JDK7中</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>);<br>s.intern();<br><span class="hljs-type">String</span> <span class="hljs-variable">s2</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;1&quot;</span>;<br>System.out.println(s == s2); <span class="hljs-comment">// false</span><br><br><span class="hljs-type">String</span> <span class="hljs-variable">s3</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>) + <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>);<br>s3.intern();<br><span class="hljs-type">String</span> <span class="hljs-variable">s4</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;11&quot;</span>;<br>System.out.println(s3 == s4); <span class="hljs-comment">// true</span><br></code></pre></td></tr></table></figure>
+<p>输出结果</p>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs actionscript"><span class="hljs-literal">false</span><br><span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/79c3e52507448d58feb034d6597e1d4f.png" srcset="/img/loading.gif" lazyload alt="JDK7中intern引用复制示意图"></p>
 <h4 id="扩展"><a href="#扩展" class="headerlink" title="扩展"></a>扩展</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">s3</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>) + <span class="hljs-keyword">new</span> <span class="hljs-title class_">String</span>(<span class="hljs-string">&quot;1&quot;</span>);<br><span class="hljs-type">String</span> <span class="hljs-variable">s4</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;11&quot;</span>;  <span class="hljs-comment">// 在常量池中生成的字符串</span><br>s3.intern();  <span class="hljs-comment">// 然后s3就会从常量池中找，发现有了，就什么事情都不做</span><br>System.out.println(s3 == s4);<br></code></pre></td></tr></table></figure>
 <p>我们将 s4的位置向上移动一行，发现变化就会很大，最后得到的是 false</p>
 <h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>总结string的intern（）的使用：</p>
@@ -603,7 +617,7 @@
 <li>如果串池中有，则并不会放入。返回已有的串池中的对象的地址</li>
 <li>如果没有，则会把对象的引用地址复制一份，放入串池，并返回串池中的引用地址</li>
 </ul>
-<p>练习：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c08044b1855698cd9a9a4d6a7ae3b6d3.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>练习：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c08044b1855698cd9a9a4d6a7ae3b6d3.png" srcset="/img/loading.gif" lazyload alt="intern方法练习题及结果示意"></p>
 <ul>
 <li>在JDK6中，在字符串常量池中创建一个字符串 “ab”</li>
 <li>在JDK8中，在字符串常量池中没有创建 “ab”，而是将堆中的地址复制到 串池中。</li>
@@ -611,8 +625,8 @@
 <p>所以上述结果，在JDK6中是：</p>
 <figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs actionscript"><span class="hljs-literal">true</span><br><span class="hljs-literal">false</span><br></code></pre></td></tr></table></figure>
 <p>在JDK8中是</p>
-<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs actionscript"><span class="hljs-literal">false</span><br><span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3fb170fe959c7b9c88e6a488966b4a03.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>针对下面这题，在JDK6和8中表现的是一样的<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2d7b1709198d09345e5d0e7bd8e3b468.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<figure class="highlight actionscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs actionscript"><span class="hljs-literal">true</span><br><span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3fb170fe959c7b9c88e6a488966b4a03.png" srcset="/img/loading.gif" lazyload alt="intern练习结果的内存示意图"><br>针对下面这题，在JDK6和8中表现的是一样的<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2d7b1709198d09345e5d0e7bd8e3b468.png" srcset="/img/loading.gif" lazyload alt="另一道intern练习题示意图"></p>
 <h2 id="StringTable的垃圾回收"><a href="#StringTable的垃圾回收" class="headerlink" title="StringTable的垃圾回收"></a>StringTable的垃圾回收</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * String的垃圾回收</span><br><span class="hljs-comment"> * -Xms15m -Xmx15m -XX:+PrintStringTableStatistics -XX:+PrintGCDetails</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">StringGCTest</span> &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">100000</span>; i++) &#123;<br>            String.valueOf(i).intern();<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <h2 id="G1中的String去重操作"><a href="#G1中的String去重操作" class="headerlink" title="G1中的String去重操作"></a>G1中的String去重操作</h2><p>注意这里说的重复，指的是在堆中的数据，而不是常量池中的，因为常量池中的本身就不会重复</p>
 <h3 id="描述"><a href="#描述" class="headerlink" title="描述"></a>描述</h3><p>背景：对许多Java应用（有大的也有小的）做的测试得出以下结果：</p>
@@ -813,7 +827,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -913,7 +927,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -928,7 +943,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

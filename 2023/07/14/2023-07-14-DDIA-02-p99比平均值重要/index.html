@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/07/14/2023-07-14-DDIA-02-p99比平均值重要/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/07/14/2023-07-14-DDIA-02-p99%E6%AF%94%E5%B9%B3%E5%9D%87%E5%80%BC%E9%87%8D%E8%A6%81/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -29,7 +35,7 @@
 <meta property="og:description" content="引言如果你家楼下早餐店的老板告诉你：”我们平均出餐时间是30秒”，你是不是觉得还挺快的？但如果我告诉你——这家店的油条需要1秒做好，但一碗豆腐脑要等20分钟，你还会觉得快吗？ 这就是平均值的陷阱。 你点的如果是油条（90%的订单），那确实快。但你只要点过一次豆腐脑，你下次大概率就不会再来了。而那个点了豆腐脑就走的顾客，可能恰好是你老板。 在分布式系统里也是一样：平均响应时间看起来很美，但p99（9">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-07-14T15:08:32.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.580Z">
+<meta property="article:modified_time" content="2023-07-14T15:08:32.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="Prometheus">
@@ -38,6 +44,9 @@
 <meta property="article:tag" content="慢SQL">
 <meta property="article:tag" content="监控">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-02-性能指标的迷思：为什么p99比平均值重要得多","datePublished":"2023-07-14T15:08:32.000Z","dateModified":"2023-07-14T15:08:32.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/07/14/2023-07-14-DDIA-02-p99%E6%AF%94%E5%B9%B3%E5%9D%87%E5%80%BC%E9%87%8D%E8%A6%81/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -398,7 +407,7 @@
         
         
         
-          60 分钟
+          61 分钟
         
       </span>
     
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-02-性能指标的迷思：为什么p99比平均值重要得多</h1>
+            <p id="seo-header">DDIA-02-性能指标的迷思：为什么p99比平均值重要得多</p>
             
             
               <div class="markdown-body">
@@ -512,13 +525,13 @@
 </ul>
 <p>注意：下单接口用了p99而不是p95。为什么？因为<strong>下不了单的用户是最愤怒的用户</strong>。一个浏览商品的用户可能不会因为多等200毫秒而离开，但一个卡在支付环节的用户几乎一定会投诉。</p>
 <hr>
-<h2 id="三、实战：订单中心慢SQL治理"><a href="#三、实战：订单中心慢SQL治理" class="headerlink" title="三、实战：订单中心慢SQL治理"></a>三、实战：订单中心慢SQL治理</h2><h3 id="3-1-背景"><a href="#3-1-背景" class="headerlink" title="3.1 背景"></a>3.1 背景</h3><p>我在电商中台负责订单中心时，日均订单峰值约130万。系统表面上看没什么问题——接口平均响应时间在200ms以内，TPS也正常。但老板反馈了一个现象：<strong>偶尔会有用户投诉下单页面卡住十几秒</strong>。</p>
+<h2 id="三、实战：订单中心慢SQL治理"><a href="#三、实战：订单中心慢SQL治理" class="headerlink" title="三、实战：订单中心慢SQL治理"></a>三、实战：订单中心慢SQL治理</h2><h3 id="3-1-背景"><a href="#3-1-背景" class="headerlink" title="3.1 背景"></a>3.1 背景</h3><p>我在电商中台负责订单中心时，日订单峰值约130万（历史峰值口径，主口径见订单中台系列）。系统表面上看没什么问题——接口平均响应时间在200ms以内，TPS也正常。但老板反馈了一个现象：<strong>偶尔会有用户投诉下单页面卡住十几秒</strong>。</p>
 <p>拉出Grafana一看，平均响应时间那条线确实平平稳稳，但一切换到p99——曲线宛如心电图。平均响应200ms，p99却稳定在5-8秒，偶尔飙到15秒以上。</p>
 <p>进一步排查，发现数据库慢查询日志里，<strong>日均慢SQL达到1124条</strong>（阈值设置为1秒）。</p>
 <h3 id="3-2-问题定位：平均值的乐观主义"><a href="#3-2-问题定位：平均值的乐观主义" class="headerlink" title="3.2 问题定位：平均值的乐观主义"></a>3.2 问题定位：平均值的乐观主义</h3><p>我们先来看一个典型场景。订单列表查询的核心SQL大致是这样：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> o.<span class="hljs-operator">*</span>, oi.<span class="hljs-operator">*</span> <br><span class="hljs-keyword">FROM</span> t_order o<br><span class="hljs-keyword">LEFT</span> <span class="hljs-keyword">JOIN</span> t_order_item oi <span class="hljs-keyword">ON</span> o.order_id <span class="hljs-operator">=</span> oi.order_id<br><span class="hljs-keyword">WHERE</span> o.user_id <span class="hljs-operator">=</span> ? <br>  <span class="hljs-keyword">AND</span> o.create_time <span class="hljs-operator">&gt;=</span> ?<br>  <span class="hljs-keyword">AND</span> o.create_time <span class="hljs-operator">&lt;=</span> ?<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> o.create_time <span class="hljs-keyword">DESC</span><br>LIMIT <span class="hljs-number">20</span>;<br></code></pre></td></tr></table></figure>
 
-<p>表说明：<code>t_order</code>约5000万行，<code>t_order_item</code>约2亿行。索引是有的——<code>idx_user_create(user_id, create_time)</code>。在9000次查询中，大部分查询的用户订单很少（几十单），索引命中后几十毫秒就返回。但有一些用户——你猜是谁——是大客户或运营人员，历史订单好几万单。对这种用户，这条SQL需要扫描几万行数据后再JOIN，执行时间轻松超过3秒。</p>
+<p>表说明：当时 <code>t_order</code> 约 5000 万行，<code>t_order_item</code>约2亿行。索引是有的——<code>idx_user_create(user_id, create_time)</code>。在9000次查询中，大部分查询的用户订单很少（几十单），索引命中后几十毫秒就返回。但有一些用户——你猜是谁——是大客户或运营人员，历史订单好几万单。对这种用户，这条SQL需要扫描几万行数据后再JOIN，执行时间轻松超过3秒。</p>
 <p>平均值看不到这个问题，因为”大客户”在用户数量中占比不到1%。但p99把他们抓得明明白白。</p>
 <h3 id="3-3-治理方案"><a href="#3-3-治理方案" class="headerlink" title="3.3 治理方案"></a>3.3 治理方案</h3><p>我们采取的手段按优先级排列如下：</p>
 <p><strong>第一层：慢查询索引优化</strong></p>
@@ -651,7 +664,7 @@
 <p>在实战中，我们不需要这么激进。更常用的做法是<strong>备份请求</strong>：在正常超时时间的90%时，如果没有返回，再发一个请求到另一台服务器。这在不显著增加负载的情况下，大幅降低长尾延迟。</p>
 <hr>
 <h2 id="六、结尾：那个等了8秒的用户"><a href="#六、结尾：那个等了8秒的用户" class="headerlink" title="六、结尾：那个等了8秒的用户"></a>六、结尾：那个等了8秒的用户</h2><p>回想我们优化前，订单中心日均1124条慢SQL，p99达到8秒。这意味着什么？</p>
-<p>日均订单峰值130万，p99就是每天有<strong>13000次请求</strong>（约1.3万次）的用户体验是——点了”提交订单”按钮后，页面转圈转了8秒。</p>
+<p>日订单峰值130万（历史口径），p99就是每天有<strong>13000次请求</strong>（约1.3万次）的用户体验是——点了”提交订单”按钮后，页面转圈转了8秒。</p>
 <p>每天有一万三千次机会，让用户怀疑你的系统是不是挂了。</p>
 <p>每天有一万三千次机会，让用户觉得”下次换个平台吧”。</p>
 <p>每天有一万三千次机会，让某个刚好在老板电脑旁看你系统演示的同事陷入尴尬的沉默。</p>
@@ -660,7 +673,7 @@
 <p>所以，下次团队做技术评审的时候，如果有人把”平均响应时间”拿出来汇报，你只有一个任务——问他：</p>
 <p><strong>“p99是多少？”</strong></p>
 <hr>
-<p><em>下一篇预告：《DDIA-03-可扩展性的本质：为什么你的系统扛不住第二波促销》</em></p>
+<p><em>下一篇：DDIA-02-非功能性需求——可靠、可扩展、可维护的工程落地。</em></p>
 <hr>
 <p><em>参考阅读：</em></p>
 <ul>
@@ -856,7 +869,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -956,7 +969,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -971,7 +985,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

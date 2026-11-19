@@ -8,36 +8,45 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-借道商家会话-桌面端不再自己签API请求/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-%E5%80%9F%E9%81%93%E5%95%86%E5%AE%B6%E4%BC%9A%E8%AF%9D-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E4%B8%8D%E5%86%8D%E8%87%AA%E5%B7%B1%E7%AD%BEAPI%E8%AF%B7%E6%B1%82/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。  一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读">
+    <meta name="description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。 一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读目录">
 <meta property="og:type" content="article">
 <meta property="og:title" content="借道商家会话：桌面端不再自己签 API 请求">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-%E5%80%9F%E9%81%93%E5%95%86%E5%AE%B6%E4%BC%9A%E8%AF%9D-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E4%B8%8D%E5%86%8D%E8%87%AA%E5%B7%B1%E7%AD%BEAPI%E8%AF%B7%E6%B1%82/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。  一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读">
+<meta property="og:description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。 一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读目录">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/153d0fe0e67ce257b638b474bf045856.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/153d0fe0e67ce257b638b474bf045856.png">
 <meta property="article:published_time" content="2026-11-19T13:47:36.000Z">
-<meta property="article:modified_time" content="2026-11-19T08:34:30.098Z">
+<meta property="article:modified_time" content="2026-11-19T13:47:36.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="API 设计">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="一致性">
 <meta property="article:tag" content="会话管理">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/153d0fe0e67ce257b638b474bf045856.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/153d0fe0e67ce257b638b474bf045856.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"借道商家会话：桌面端不再自己签 API 请求","datePublished":"2026-11-19T13:47:36.000Z","dateModified":"2026-11-19T13:47:36.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/11/19/2026-11-19-%E5%80%9F%E9%81%93%E5%95%86%E5%AE%B6%E4%BC%9A%E8%AF%9D-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E4%B8%8D%E5%86%8D%E8%87%AA%E5%B7%B1%E7%AD%BEAPI%E8%AF%B7%E6%B1%82/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -387,7 +396,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          5.4k 字
+          5.6k 字
         
       </span>
     
@@ -398,7 +407,7 @@
         
         
         
-          45 分钟
+          47 分钟
         
       </span>
     
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">借道商家会话：桌面端不再自己签 API 请求</h1>
+            <p id="seo-header">借道商家会话：桌面端不再自己签 API 请求</p>
             
             
               <div class="markdown-body">
@@ -560,6 +573,7 @@
 <h2 id="九、代价与边界"><a href="#九、代价与边界" class="headerlink" title="九、代价与边界"></a>九、代价与边界</h2><p>借道不是免费的：</p>
 <ul>
 <li><strong>强耦合。</strong> 桌面端的接口行为跟着商家前端走。前端改路径、改信封、改刷新逻辑，桌面端都可能受影响。这是选择复用会话的代价，不是意外。</li>
+<li><strong>前提是信任商家页面返回的数据。</strong> 请求在页面里发，主进程拿到的 <code>status</code> &#x2F; <code>text</code> 由页面所在的环境产出。如果商家页面被注入或被篡改，返回值就不再可信，<strong>数据完整性也不再保证</strong>——我们能防的是”主进程不读 token、不把本地能力交给页面”，防不了”页面撒谎”。这和<a href="/2026/09/25/2026-09-25-%E6%8A%8A%E5%95%86%E5%AE%B6%E5%90%8E%E5%8F%B0%E5%B5%8C%E8%BF%9B%E6%A1%8C%E9%9D%A2%E7%AB%AF-WebContentsView%E4%B8%8E%E7%99%BB%E5%BD%95%E9%97%B8%E9%97%A8%E7%9A%84%E5%AE%89%E5%85%A8%E6%A8%A1%E5%9E%8B/">《把商家后台嵌进桌面端》</a>的登录闸门、<a href="/2026/09/27/2026-09-27-LLM-Key%E4%B8%8D%E4%B8%8B%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B-Electron%E5%AF%86%E9%92%A5%E8%BE%B9%E7%95%8C%E4%B8%8E%E5%BB%BA%E8%AE%AE%E5%B1%82/">《LLM Key 不下渲染进程》</a>的密钥边界是同一条信任边界的另一面：前两篇守的是”本地能力不外泄”，这一篇承认的是”业务数据的完整性依赖远程页面”。</li>
 <li><strong>页面是运行前提。</strong> 页面没加载完、导航走了、视图销毁了，请求就应当失败。我们接受这个前提，而不是偷偷绕过它。</li>
 <li><strong>上传要多一次编码。</strong> base64 和分批是明确的内存换安全；如果以后要传更大的文件，需要重新设计这一层。</li>
 <li><strong>服务端的责任没有消失。</strong> 客户端能做的只是「不采用错误结果」和「不谎报成功」。草稿归属、权限校验、重复提交的幂等，仍然必须由服务端自己保证。</li>
@@ -569,6 +583,8 @@
 <li>迟到结果必须用主进程的代次检查兜底，页面里的 <code>abort</code> 只能算尽力而为。</li>
 <li>借道换来的是一致性，付出的是耦合；把未验证的边界写清楚，比把它包装成「已完成」更有用。</li>
 </ol>
+<hr>
+<p><em>发表于 2026 年 11 月 · 标签: Electron, 会话管理, API 设计, 一致性</em></p>
 
                 
               </div>
@@ -753,7 +769,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -853,7 +869,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -868,7 +885,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

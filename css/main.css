@@ -74,6 +74,9 @@ h6:hover > .anchorjs-link {
   cursor: pointer;
   user-select: none;
   -webkit-appearance: none;
+  background-color: transparent;
+  border: 0;
+  font-family: inherit;
   outline: none;
 }
 .copy-btn > i {
@@ -83,12 +86,20 @@ h6:hover > .anchorjs-link {
   opacity: 0;
   transition: opacity 0.2s ease-in-out;
 }
+.copy-btn:focus > i {
+  opacity: 0.9;
+}
+.copy-btn:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 .markdown-body pre:hover > .copy-btn > i {
   opacity: 0.9;
 }
-.markdown-body pre:hover > .copy-btn,
-.markdown-body pre:not(:hover) > .copy-btn {
-  outline: none;
+@media (hover: none) {
+  .markdown-body pre > .copy-btn > i {
+    opacity: 0.9;
+  }
 }
 .license-box {
   background-color: rgba(27,31,35,0.05);
@@ -476,14 +487,16 @@ sup > a::before,
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   pointer-events: none;
+  visibility: hidden;
   opacity: 0;
   transform: translateY(-12px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
   will-change: opacity, transform;
   background-color: var(--navbar-bg-color);
 }
 #mobile-grid-menu.show {
   pointer-events: auto;
+  visibility: visible;
   opacity: 1;
   transform: translateY(0);
 }
@@ -827,12 +840,20 @@ sup > a::before,
   width: 0.7rem;
   text-align: center;
   margin-right: 0.15rem;
+  padding: 0;
+  border: 0;
+  background-color: transparent;
+  font-family: inherit;
   cursor: pointer;
   user-select: none;
   color: var(--text-color);
   font-size: 0.9rem;
   line-height: 1;
   transition: transform 0.2s ease-in-out;
+}
+.toc-toggle:focus-visible {
+  outline: 2px solid var(--link-hover-color);
+  outline-offset: 1px;
 }
 .toc-toggle.toc-toggle-collapsed {
   transform: rotate(0deg);
@@ -1784,7 +1805,7 @@ figure.highlight td.code > pre {
   margin: 1.5rem auto;
   display: block;
   box-shadow: 0 5px 11px 0 rgba(0,0,0,0.18), 0 4px 15px 0 rgba(0,0,0,0.15);
-  border-radius: 4px;
+  border-radius: var(--ax-radius-card);
   background-color: transparent;
 }
 .markdown-body blockquote {
@@ -1944,6 +1965,7 @@ post-custom {
 }
 #seo-header {
   color: var(--post-heading-color);
+  font-size: 2em;
   font-weight: bold;
   margin-top: 0.5em;
   margin-bottom: 0.75em;
@@ -2163,7 +2185,7 @@ mjx-container svg:focus,
 .note {
   padding: 0.75rem;
   border-left: 0.35rem solid;
-  border-radius: 0.25rem;
+  border-radius: var(--ax-radius-card);
   margin: 1.5rem 0;
   color: var(--text-color);
   transition: color 0.2s ease-in-out;
@@ -2207,7 +2229,7 @@ mjx-container svg:focus,
 }
 .label {
   display: inline;
-  border-radius: 3px;
+  border-radius: var(--ax-radius-chip);
   font-size: 85%;
   margin: 0;
   padding: 0.2em 0.4em;
@@ -3536,6 +3558,18 @@ body:has(.ax-404) footer {
 .ax-post-head__meta .post-meta a {
   color: var(--ax-accent);
   text-decoration: none;
+}
+.ax-post-series {
+  margin: 16px 0 0;
+  color: var(--ax-muted);
+  font-size: 0.8125rem;
+}
+.ax-post-series a {
+  color: var(--ax-accent);
+  text-decoration: none;
+}
+.ax-post-series a:hover {
+  text-decoration: underline;
 }
 .ax-post .post-content {
   max-width: 720px;

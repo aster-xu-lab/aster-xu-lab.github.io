@@ -8,6 +8,11 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
@@ -17,20 +22,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="从分片键选型、无停机迁移，到中台接入与上线一周年稳态运营。偏生产复盘，少理论堆砌。              共 30 篇。前 16 篇是选型、迁移和上线之后的账，最后一组是查询、对账和中台侧。 一、选型与接入 渠道垂直分表的困局与 ShardingSphere 破局订单中心对接 20+ 电商平台，最初按渠道垂直分表——这条路为什么走不通。 ShardingSpher">
+    <meta name="description" content="分片键、无停机迁移、查询对账，到订单中台">
 <meta property="og:type" content="website">
 <meta property="og:title" content="分库分表与订单中台">
 <meta property="og:url" content="https://aster-xu-lab.github.io/series/sharding/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="从分片键选型、无停机迁移，到中台接入与上线一周年稳态运营。偏生产复盘，少理论堆砌。              共 30 篇。前 16 篇是选型、迁移和上线之后的账，最后一组是查询、对账和中台侧。 一、选型与接入 渠道垂直分表的困局与 ShardingSphere 破局订单中心对接 20+ 电商平台，最初按渠道垂直分表——这条路为什么走不通。 ShardingSpher">
+<meta property="og:description" content="分片键、无停机迁移、查询对账，到订单中台">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
 <meta name="twitter:card" content="summary_large_image">
+  
   
   
   
@@ -205,7 +212,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -355,10 +362,9 @@
         <div class="markdown-body">
 
 <div class="note note-info">
-            <p>从分片键选型、无停机迁移，到中台接入与上线一周年稳态运营。偏生产复盘，少理论堆砌。</p> 
+            <p>从分片键选型、无停机迁移，到中台接入与上线一周年稳态运营。选型、接入、迁移与生产复盘并存。</p> 
           </div>
 
-<p>共 30 篇。前 16 篇是选型、迁移和上线之后的账，最后一组是查询、对账和中台侧。</p>
 <h2 id="一、选型与接入"><a href="#一、选型与接入" class="headerlink" title="一、选型与接入"></a>一、选型与接入</h2><ol>
 <li><strong><a href="/2025/02/01/2025-02-01-ShardingSphere%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">渠道垂直分表的困局与 ShardingSphere 破局</a></strong><br>订单中心对接 20+ 电商平台，最初按渠道垂直分表——这条路为什么走不通。</li>
 <li><strong><a href="/2025/02/27/2025-02-27-ShardingSphere%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8%E4%B8%8E%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/">ShardingSphere-JDBC 快速入门与核心概念</a></strong><br>6000 万行的表撑不住了。手写路由、改所有 DAO 有多痛，以及核心概念怎么理解。</li>
@@ -391,8 +397,8 @@
 <li><strong><a href="/2025/07/31/2025-07-31-%E8%AE%A2%E5%8D%95%E8%A1%A8%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E5%8F%96%E8%88%8D-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E8%A1%A8%E5%A4%AA%E5%A4%9A%E5%86%99%E5%86%97%E4%BD%99/">订单表反向索引的取舍：会不会表太多、写逻辑太冗余？</a></strong><br>   非分片键查询要不要加反向索引，先算表数量和写入成本。</li>
 <li><strong><a href="/2025/07/05/2025-07-05-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E4%B8%8D%E9%87%8D%E6%9D%A5-%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E6%89%A9%E5%AE%B9/">分片扩容不重来：反向索引表用双写 + 灰度切流优雅扩容</a></strong><br>   反向索引扩容不必把主表迁移再做一遍。</li>
 <li><strong><a href="/2025/07/20/2025-07-20-Doris%E5%90%8C%E6%AD%A5%E9%93%BE%E8%B7%AF%E7%9A%84%E5%AF%B9%E8%B4%A6%E4%B8%8E%E6%BC%8F%E5%8D%95%E5%85%9C%E5%BA%95/">Doris 同步链路的对账与漏单兜底：增量 + 对账的完整闭环</a></strong><br>   增量同步会漏，对账不过就不算完成。</li>
-<li><strong><a href="/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/">订单中心慢SQL治理：从日均1124条到6条的实战总结</a></strong><br>   这一轮慢 SQL 是怎么压下去的。</li>
-<li><strong><a href="/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/">慢 SQL 治理一年复盘：从日均千条级到个位数</a></strong><br>   治理一年之后，剩下的是稳态，不是再找一轮银弹。</li>
+<li><strong><a href="/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/">订单中心慢SQL治理：1124→6 之后的机制化运营</a></strong><br>   这一轮慢 SQL 是怎么压下去的。</li>
+<li><strong><a href="/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/">慢 SQL 治理一年复盘：1124→6 之后的运营机制</a></strong><br>   治理一年之后，剩下的是稳态，不是再找一轮银弹。</li>
 <li><strong><a href="/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/">百万订单系统的缓存与降级策略</a></strong><br>   缓存和降级怎么配，才不会在大促时互相拆台。</li>
 <li><strong><a href="/2023/05/09/2023-05-09-%E5%A4%A7%E4%BF%83%E4%BF%9D%E9%9A%9C%E4%B8%8E%E7%A7%92%E6%9D%80%E8%AE%BE%E8%AE%A1-%E9%99%90%E6%B5%81%E9%99%8D%E7%BA%A7%E7%86%94%E6%96%AD%E7%BC%93%E5%AD%98/">大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳</a></strong><br>   四个手段各自挡住哪一种故障。</li>
 <li><strong><a href="/2025/07/18/2025-07-18-%E5%A4%A7%E5%8E%82%E8%AE%A2%E5%8D%95%E6%9F%A5%E8%AF%A2%E6%9E%B6%E6%9E%84%E5%AF%B9%E9%BD%90/">大厂订单查询架构对齐：淘宝、京东、拼多多、抖音是怎么处理的</a></strong><br>   用公开架构对照自己的查询路径，看差在哪一层。</li>
@@ -462,7 +468,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>

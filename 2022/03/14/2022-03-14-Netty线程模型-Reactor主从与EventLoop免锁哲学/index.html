@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/03/14/2022-03-14-Netty线程模型-Reactor主从与EventLoop免锁哲学/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/03/14/2022-03-14-Netty%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B-Reactor%E4%B8%BB%E4%BB%8E%E4%B8%8EEventLoop%E5%85%8D%E9%94%81%E5%93%B2%E5%AD%A6/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="写在前面：我的简历没有 Netty 实战经历，这是一篇原理学习笔记。但 Netty 离我并不远——订单系统内部 RPC 用的 Dubbo，传输层就是 Netty。所以理解它的线程模型，对理解自己系统里”高并发 IO 到底怎么扛”是必要的。  一、Netty 解决了什么问题回顾上一篇 IO 模型的结论：BIO 一连接一线程，连接多就线程爆炸；epoll 让一个线程可以盯 N 个连接。 Netty">
+    <meta name="description" content="写在前面：我的简历没有 Netty 实战经历，这是一篇原理学习笔记。但 Netty 离我并不远——订单系统内部 RPC 用的 Dubbo，传输层就是 Netty。所以理解它的线程模型，对理解自己系统里”高并发 IO 到底怎么扛”是必要的。 一、Netty 解决了什么问题回顾上一篇 IO 模型的结论：BIO 一连接一线程，连接多就线程爆炸；epoll 让一个线程可以盯 N 个连接。 Netty 就是">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Netty线程模型：Reactor主从与&quot;一连接一EventLoop&quot;的免锁哲学">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/14/2022-03-14-Netty%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B-Reactor%E4%B8%BB%E4%BB%8E%E4%B8%8EEventLoop%E5%85%8D%E9%94%81%E5%93%B2%E5%AD%A6/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="写在前面：我的简历没有 Netty 实战经历，这是一篇原理学习笔记。但 Netty 离我并不远——订单系统内部 RPC 用的 Dubbo，传输层就是 Netty。所以理解它的线程模型，对理解自己系统里”高并发 IO 到底怎么扛”是必要的。  一、Netty 解决了什么问题回顾上一篇 IO 模型的结论：BIO 一连接一线程，连接多就线程爆炸；epoll 让一个线程可以盯 N 个连接。 Netty">
+<meta property="og:description" content="写在前面：我的简历没有 Netty 实战经历，这是一篇原理学习笔记。但 Netty 离我并不远——订单系统内部 RPC 用的 Dubbo，传输层就是 Netty。所以理解它的线程模型，对理解自己系统里”高并发 IO 到底怎么扛”是必要的。 一、Netty 解决了什么问题回顾上一篇 IO 模型的结论：BIO 一连接一线程，连接多就线程爆炸；epoll 让一个线程可以盯 N 个连接。 Netty 就是">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-03-14T14:48:30.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.827Z">
+<meta property="article:modified_time" content="2022-03-14T14:48:30.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ByteBuf">
 <meta property="article:tag" content="EventLoop">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="Pipeline">
 <meta property="article:tag" content="Reactor">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Netty线程模型：Reactor主从与\"一连接一EventLoop\"的免锁哲学","datePublished":"2022-03-14T14:48:30.000Z","dateModified":"2022-03-14T14:48:30.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2022/03/14/2022-03-14-Netty%E7%BA%BF%E7%A8%8B%E6%A8%A1%E5%9E%8B-Reactor%E4%B8%BB%E4%BB%8E%E4%B8%8EEventLoop%E5%85%8D%E9%94%81%E5%93%B2%E5%AD%A6/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.5k 字
+          2.6k 字
         
       </span>
     
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/net/">网络与操作系统</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">Netty线程模型：Reactor主从与&#34;一连接一EventLoop&#34;的免锁哲学</h1>
+            <p id="seo-header">Netty线程模型：Reactor主从与&#34;一连接一EventLoop&#34;的免锁哲学</p>
             
             
               <div class="markdown-body">
@@ -442,7 +455,7 @@
 
 <p>两个要点：</p>
 <p><strong>1. Handler 可插拔可复用</strong>——加一个 Handler 就是加一道处理。编解码器（Codec）本身也是 Handler，比如 <code>LengthFieldBasedFrameDecoder</code> 按长度字段拆帧，直接解决粘包&#x2F;拆包（TCP 是字节流，没有消息边界）。</p>
-<p><strong>2. 这就是责任链模式在 IO 框架里的落地</strong>——和我做的仓储系统拦截器链、金蝶补全责任链是同一思想。看到它第一眼我就认出来了。</p>
+<p><strong>2. 这就是责任链模式在 IO 框架里的落地</strong>——和我做的某仓储系统的拦截器链、某外部系统的责任链是同一思想。看到它第一眼我就认出来了。</p>
 <h2 id="五、ByteBuf：比-byte-聪明在哪"><a href="#五、ByteBuf：比-byte-聪明在哪" class="headerlink" title="五、ByteBuf：比 byte[] 聪明在哪"></a>五、ByteBuf：比 byte[] 聪明在哪</h2><p>Netty 不用 Java 的 <code>byte[] + offset</code> 手写缓冲，而是自带 <code>ByteBuf</code>：</p>
 <ul>
 <li><strong>读写双指针</strong>（readerIndex &#x2F; writerIndex）自动推进，不用手算偏移；</li>
@@ -451,7 +464,7 @@
 <li><strong>零拷贝</strong>：<code>CompositeByteBuf</code> 把多个缓冲<strong>逻辑拼成</strong>一块、<code>slice</code> 逻辑切一段，<strong>都不真的复制数据</strong>——注意这是应用层的”避免内存复制”，跟上一篇 sendfile 那种 OS 层零拷贝是两回事。</li>
 </ul>
 <p>池化减 GC + 零拷贝省复制，两个点合起来就是高吞吐 IO 场景的关键优化。</p>
-<h2 id="六、诚实边界与我的连接"><a href="#六、诚实边界与我的连接" class="headerlink" title="六、诚实边界与我的连接"></a>六、诚实边界与我的连接</h2><p>复习卡 18 里我给自己标了诚实边界：<strong>简历没写 Netty 实战，被问就说”了解原理、项目里没直接硬造 Netty，但 Dubbo&#x2F;网关的传输层常见它，原理我清楚”</strong>。这篇博客同样是这个定位——它是加分深挖项，不是主打项目。</p>
+<h2 id="六、诚实边界与我的连接"><a href="#六、诚实边界与我的连接" class="headerlink" title="六、诚实边界与我的连接"></a>六、诚实边界与我的连接</h2><p>我给自己标了诚实边界：<strong>简历没写 Netty 实战，被问就说”了解原理、项目里没直接硬造 Netty，但 Dubbo&#x2F;网关的传输层常见它，原理我清楚”</strong>。这篇博客同样是这个定位——它是加分深挖项，不是主打项目。</p>
 <p>但有两层真实的连接值得记住：</p>
 <ol>
 <li><strong>Dubbo 传输层 &#x3D; Netty</strong>。订单系统内部 RPC 全是 Dubbo，所以我每天调用的 RPC 底层就是这个模型；</li>
@@ -462,7 +475,7 @@
 <li>EventLoop &#x3D; 线程 + Selector；<strong>一连接绑一 EventLoop → 单连接串行免锁</strong>，多连接并行靠多 EventLoop；</li>
 <li>Pipeline &#x3D; 双向链表责任链，编解码器也是 Handler，解决粘包拆包；</li>
 <li>ByteBuf &#x3D; 双指针 + 池化减 GC + Composite&#x2F;slice 零拷贝；</li>
-<li>底层还是 epoll，和 Redis 单线程事件循环同一套思想。</li>
+<li>底层默认是 Java NIO 的 Selector（Linux 可启用 native epoll transport），和 Redis 单线程事件循环同一套思想。</li>
 </ul>
 <hr>
 <p><em>发表于 2022 年 3 月 · 标签: Netty, Reactor, EventLoop, Pipeline, ByteBuf</em></p>
@@ -563,9 +576,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2022/05/01/2022-05-01-Linux%E6%8E%92%E6%9F%A5%E4%B8%89%E6%9D%BF%E6%96%A7-CPU%E5%86%85%E5%AD%98%E7%A3%81%E7%9B%98%E7%AB%AF%E5%8F%A3%E6%97%A5%E5%BF%97/" title="Linux 排查三板斧：CPU、内存、磁盘、端口、日志">
+                      <a href="/2022/05/01/2022-05-01-Linux%E6%8E%92%E6%9F%A5%E4%B8%89%E6%9D%BF%E6%96%A7-CPU%E5%86%85%E5%AD%98%E7%A3%81%E7%9B%98%E7%AB%AF%E5%8F%A3%E6%97%A5%E5%BF%97/" title="Linux 排查：CPU、内存、磁盘、端口、日志">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Linux 排查三板斧：CPU、内存、磁盘、端口、日志</span>
+                        <span class="hidden-mobile">Linux 排查：CPU、内存、磁盘、端口、日志</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -652,7 +665,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -752,7 +765,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -767,7 +781,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

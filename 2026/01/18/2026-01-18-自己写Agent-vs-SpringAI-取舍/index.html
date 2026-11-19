@@ -8,36 +8,45 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/01/18/2026-01-18-自己写Agent-vs-SpringAI-取舍/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/01/18/2026-01-18-%E8%87%AA%E5%B7%B1%E5%86%99Agent-vs-SpringAI-%E5%8F%96%E8%88%8D/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="定位：学习笔记。同一个 Agent 功能，我写了两遍——一遍自己实现，一遍用 Spring AI。差异本身就是最好的教材。  一、同一个功能，两种实现 我先把 Agent 的核心循环自己实现了一遍（30 行，见上一篇），再用 Spring AI 写了一遍。对比下来：     自己实现 Spring AI    Agent 核心 ~30 行（显式 ReAct 循环） ~8 行（一个方法调用）">
+    <meta name="description" content="定位：学习笔记。同一个 Agent 功能，我写了两遍——一遍自己实现，一遍用 Spring AI。差异本身就是最好的教材。 一、同一个功能，两种实现 我先把 Agent 的核心循环自己实现了一遍（30 行，见上一篇），再用 Spring AI 写了一遍。对比下来： 自己实现 Spring AI Agent 核心 ~30 行（显式 ReAct 循环） ~8 行（一个方法调用） LLM 客户端 ~10">
 <meta property="og:type" content="article">
 <meta property="og:title" content="自己写 Agent vs Spring AI：210 行和 30 行的取舍">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/01/18/2026-01-18-%E8%87%AA%E5%B7%B1%E5%86%99Agent-vs-SpringAI-%E5%8F%96%E8%88%8D/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="定位：学习笔记。同一个 Agent 功能，我写了两遍——一遍自己实现，一遍用 Spring AI。差异本身就是最好的教材。  一、同一个功能，两种实现 我先把 Agent 的核心循环自己实现了一遍（30 行，见上一篇），再用 Spring AI 写了一遍。对比下来：     自己实现 Spring AI    Agent 核心 ~30 行（显式 ReAct 循环） ~8 行（一个方法调用）">
+<meta property="og:description" content="定位：学习笔记。同一个 Agent 功能，我写了两遍——一遍自己实现，一遍用 Spring AI。差异本身就是最好的教材。 一、同一个功能，两种实现 我先把 Agent 的核心循环自己实现了一遍（30 行，见上一篇），再用 Spring AI 写了一遍。对比下来： 自己实现 Spring AI Agent 核心 ~30 行（显式 ReAct 循环） ~8 行（一个方法调用） LLM 客户端 ~10">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b29b7ccaeeeafe4bf13929907af58fa.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b29b7ccaeeeafe4bf13929907af58fa.png">
 <meta property="article:published_time" content="2026-01-18T12:58:27.000Z">
-<meta property="article:modified_time" content="2026-11-02T11:03:42.468Z">
+<meta property="article:modified_time" content="2026-01-18T12:58:27.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Agent">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="Spring AI">
 <meta property="article:tag" content="框架对比">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b29b7ccaeeeafe4bf13929907af58fa.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b29b7ccaeeeafe4bf13929907af58fa.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"自己写 Agent vs Spring AI：210 行和 30 行的取舍","datePublished":"2026-01-18T12:58:27.000Z","dateModified":"2026-01-18T12:58:27.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/01/18/2026-01-18-%E8%87%AA%E5%B7%B1%E5%86%99Agent-vs-SpringAI-%E5%8F%96%E8%88%8D/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -387,7 +396,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.9k 字
+          3.3k 字
         
       </span>
     
@@ -398,7 +407,7 @@
         
         
         
-          24 分钟
+          28 分钟
         
       </span>
     
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/agent/">AI / Agent 工程</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">自己写 Agent vs Spring AI：210 行和 30 行的取舍</h1>
+            <p id="seo-header">自己写 Agent vs Spring AI：210 行和 30 行的取舍</p>
             
             
               <div class="markdown-body">
@@ -442,12 +455,12 @@
 <tr>
 <td><strong>工具注册</strong></td>
 <td>~20 行（ToolRegistry）</td>
-<td>0 行（<code>@Tool</code> 注解自动发现）</td>
+<td>~5 行（<code>ToolCallbacks.from(bean)</code> 显式注册）</td>
 </tr>
 <tr>
 <td><strong>工具定义</strong></td>
 <td>每个 ~30 行（实现 Tool 接口）</td>
-<td>每个 ~8 行（加注解）</td>
+<td>每个 ~8 行（加注解；另需一次性注册）</td>
 </tr>
 <tr>
 <td><strong>总计（2 个工具）</strong></td>
@@ -468,12 +481,15 @@
 <p>Spring AI 只写业务逻辑，schema 从方法签名自动生成：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">DateTool</span> &#123;<br>    <span class="hljs-meta">@Tool(description = &quot;获取当前日期和时间&quot;)</span><br>    <span class="hljs-keyword">public</span> String <span class="hljs-title function_">getCurrentTime</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> LocalDateTime.now().toString();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<p><strong>框架把”元数据（schema）”从你的代码里抹掉了</strong>——代价是你不再感知它，好处是开发快一个数量级。</p>
+<p>注意：<code>@Component</code> 只是让 Spring 管理这个 Bean，<strong>并不会</strong>把它自动变成模型可见的工具。还要显式注册成 <code>ToolCallback</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 方式一：直接转成 ToolCallback 数组</span><br>ToolCallback[] tools = ToolCallbacks.from(dateTool);<br><br><span class="hljs-comment">// 方式二：注册成 Provider，交给 ChatClient 使用</span><br><span class="hljs-meta">@Bean</span><br>ToolCallbackProvider <span class="hljs-title function_">dateToolProvider</span><span class="hljs-params">(DateTool dateTool)</span> &#123;<br>    <span class="hljs-keyword">return</span> MethodToolCallbackProvider.builder().toolObjects(dateTool).build();<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>框架把”元数据（schema）”从你的代码里抹掉了</strong>——代价是你不再感知它，好处是开发快一个数量级；但工具注册这一步不能省。</p>
 <h2 id="四、其他维度"><a href="#四、其他维度" class="headerlink" title="四、其他维度"></a>四、其他维度</h2><ul>
 <li><strong>LLM 调用</strong>：自己实现用 JDK HttpClient 手动拼 JSON、自己管 role；Spring AI 用 <code>ChatModel</code> 接口 + 类型安全的 <code>UserMessage</code>&#x2F;<code>AssistantMessage</code>；</li>
 <li><strong>上下文管理</strong>：自己实现手动维护 <code>List&lt;Message&gt; history</code> 并拼进请求；Spring AI 用 <code>ChatMemory</code> 抽象自动维护；</li>
 <li><strong>可移植性</strong>：自己实现绑死一个厂商的 API；Spring AI 换一个 starter 就能切 OpenAI、Ollama、Anthropic；</li>
-<li><strong>生产就绪</strong>：自己实现要自己加日志、监控、重试、限流；Spring AI 有 <code>@Retryable</code>、Observability、Metrics 开箱即用。</li>
+<li><strong>生产就绪</strong>：自己实现要自己加日志、监控、重试、限流；Spring AI 可配合 Spring Retry（<code>@Retryable</code>）、Observability、Metrics 使用，省掉一部分胶水。</li>
 </ul>
 <h2 id="五、学习价值：这是两者最大的差距"><a href="#五、学习价值：这是两者最大的差距" class="headerlink" title="五、学习价值：这是两者最大的差距"></a>五、学习价值：这是两者最大的差距</h2><table>
 <thead>
@@ -509,7 +525,7 @@
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>同一功能：自己实现 <strong>~210 行</strong>，Spring AI <strong>~30 行</strong>；</li>
 <li>核心差异：<strong>循环显式 vs 隐式</strong>——自己实现可见可控，框架自动编排；</li>
-<li>工具定义：手写 JSON Schema vs <code>@Tool</code> 注解自动生成；</li>
+<li>工具定义：手写 JSON Schema vs <code>@Tool</code> 注解生成 Schema（仍需 <code>ToolCallbacks.from</code> &#x2F; <code>MethodToolCallbackProvider</code> 显式注册）；</li>
 <li>学习价值差最大：<strong>理解原理 vs 快速交付</strong>；</li>
 <li>正确路径：<strong>先手写懂原理，再用框架快交付</strong>——两者是先后关系，不冲突。</li>
 </ul>
@@ -699,7 +715,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -799,7 +815,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -814,7 +831,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

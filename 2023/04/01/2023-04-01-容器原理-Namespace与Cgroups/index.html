@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/04/01/2023-04-01-容器原理-Namespace与Cgroups/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/04/01/2023-04-01-%E5%AE%B9%E5%99%A8%E5%8E%9F%E7%90%86-Namespace%E4%B8%8ECgroups/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="定位：学习笔记。目前我用 Docker 部署，还没系统用 K8s——先把容器原理这一层搞清楚，是我投大厂想补的一块。  一、容器是什么一句话：容器不是”轻量虚拟机”，是”被隔离的进程”。 它靠两个内核机制实现隔离：  Namespace（命名空间）：让容器里的进程”以为自己在独立机器上”； Cgroups（控制组）：限制容器”能占多少资源”。  二、Namespace：隔离”看到什么”容器里的进">
+    <meta name="description" content="定位：学习笔记。目前我用 Docker 部署，还没系统用 K8s——先把容器原理这一层搞清楚，是我投大厂想补的一块。 一、容器是什么一句话：容器不是”轻量虚拟机”，是”被隔离的进程”。 它靠两个内核机制实现隔离： Namespace（命名空间）：让容器里的进程”以为自己在独立机器上”； Cgroups（控制组）：限制容器”能占多少资源”。 二、Namespace：隔离”看到什么”容器里的进程看起来">
 <meta property="og:type" content="article">
 <meta property="og:title" content="容器原理：Namespace 隔离&quot;看到什么&quot;，Cgroups 限制&quot;能用多少&quot;">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/04/01/2023-04-01-%E5%AE%B9%E5%99%A8%E5%8E%9F%E7%90%86-Namespace%E4%B8%8ECgroups/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="定位：学习笔记。目前我用 Docker 部署，还没系统用 K8s——先把容器原理这一层搞清楚，是我投大厂想补的一块。  一、容器是什么一句话：容器不是”轻量虚拟机”，是”被隔离的进程”。 它靠两个内核机制实现隔离：  Namespace（命名空间）：让容器里的进程”以为自己在独立机器上”； Cgroups（控制组）：限制容器”能占多少资源”。  二、Namespace：隔离”看到什么”容器里的进">
+<meta property="og:description" content="定位：学习笔记。目前我用 Docker 部署，还没系统用 K8s——先把容器原理这一层搞清楚，是我投大厂想补的一块。 一、容器是什么一句话：容器不是”轻量虚拟机”，是”被隔离的进程”。 它靠两个内核机制实现隔离： Namespace（命名空间）：让容器里的进程”以为自己在独立机器上”； Cgroups（控制组）：限制容器”能占多少资源”。 二、Namespace：隔离”看到什么”容器里的进程看起来">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-03-31T21:23:46.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.821Z">
+<meta property="article:modified_time" content="2023-03-31T21:23:46.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Cgroups">
 <meta property="article:tag" content="Docker">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="云原生">
 <meta property="article:tag" content="容器">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"容器原理：Namespace 隔离\"看到什么\"，Cgroups 限制\"能用多少\"","datePublished":"2023-03-31T21:23:46.000Z","dateModified":"2023-03-31T21:23:46.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/04/01/2023-04-01-%E5%AE%B9%E5%99%A8%E5%8E%9F%E7%90%86-Namespace%E4%B8%8ECgroups/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/service/">微服务与云原生</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">容器原理：Namespace 隔离&#34;看到什么&#34;，Cgroups 限制&#34;能用多少&#34;</h1>
+            <p id="seo-header">容器原理：Namespace 隔离&#34;看到什么&#34;，Cgroups 限制&#34;能用多少&#34;</p>
             
             
               <div class="markdown-body">
@@ -686,7 +699,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -786,7 +799,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -801,7 +815,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

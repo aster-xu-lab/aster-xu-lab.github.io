@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/08/15/2023-08-15-DDIA-03-图数据模型/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/08/15/2023-08-15-DDIA-03-%E5%9B%BE%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -29,12 +35,15 @@
 <meta property="og:description" content="供应链中台实战：为什么SQL JOIN不是万能的，以及图数据库什么时候值得放进工具箱。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-08-14T17:03:04.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.510Z">
+<meta property="article:modified_time" content="2023-08-14T17:03:04.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="图数据库">
 <meta property="article:tag" content="数据模型">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-03-图数据模型：当你的订单关联比二叉树还复杂","datePublished":"2023-08-14T17:03:04.000Z","dateModified":"2023-08-14T17:03:04.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/08/15/2023-08-15-DDIA-03-%E5%9B%BE%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/"}}</script>
   
   
   
@@ -209,7 +218,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -406,16 +415,20 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-03-图数据模型：当你的订单关联比二叉树还复杂</h1>
+            <p id="seo-header">DDIA-03-图数据模型：当你的订单关联比二叉树还复杂</p>
             
             
               <div class="markdown-body">
                 
                 <h2 id="引言：当-JOIN-变成噩梦"><a href="#引言：当-JOIN-变成噩梦" class="headerlink" title="引言：当 JOIN 变成噩梦"></a>引言：当 JOIN 变成噩梦</h2><p>去年双十一大促复盘时，运营问了一个问题：”最近30天，有多少订单是因为同一辆配送车超载导致拆单的？我们要评估运力不足对用户体验的影响。”</p>
 <p>听起来是个合理的数据查询需求，对吧？</p>
-<p>我打开 cloud-supplychain-planning 的数据模型，画了一张关联图：</p>
+<p>我打开供应链计划系统的数据模型，画了一张关联图：</p>
 <figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs objectivec">订单 → 订单明细 → <span class="hljs-built_in">SKU</span> → 波次 → 配送单 → 车辆 → 装载记录<br>                      ↘ 仓库 → 库位 → 拣货任务<br>                      ↘ 供应商 → 采购单 → 入库单<br></code></pre></td></tr></table></figure>
 
 <p>要回答运营的问题，SQL 需要 JOIN 7 张表，而且还有自关联（一个波次拆出多个配送单，配送单之间互相关联）。写完这个查询，代码审查时同事问：”这 SQL 写了 80 行，能跑吗？”</p>
@@ -447,16 +460,16 @@
 <p>关系数据库做同样的事，每次”走一步”都是一次 JOIN，而 JOIN 需要索引查找、可能跨页——随着跳数增加，代价指数上升。</p>
 <p><strong>场景 2：多跳关联查询</strong></p>
 <p>“这个缺陷零件影响了哪些成品，这些成品发给了哪些客户？”——从零件追溯到成品再追溯到客户，三跳起步。供应链里这种追溯查询非常常见。图数据库的遍历时间复杂度是 O(度数 × 跳数)，而 SQL JOIN 在缺少恰当索引时会退化到 O(n²)。</p>
-<p>关于这个问题，DDIA 第二章引用了 Michael Stonebraker 等人的一篇经典论文《The End of an Architectural Era》，核心观点是：<strong>传统 RDBMS 的架构是为 1970 年代的商业数据处理设计的</strong>，行存储、B+树索引、基于 JOIN 的查询优化器——这些都假设数据以”记录”为单位被访问。而图遍历、列式分析、流处理这些现代场景需要完全不同的架构。图数据库就是这种”专用化”趋势的代表。</p>
+<p>关于这个问题，DDIA 第三章引用了 Michael Stonebraker 等人的一篇经典论文《The End of an Architectural Era》，核心观点是：<strong>传统 RDBMS 的架构是为 1970 年代的商业数据处理设计的</strong>，行存储、B+树索引、基于 JOIN 的查询优化器——这些都假设数据以”记录”为单位被访问。而图遍历、列式分析、流处理这些现代场景需要完全不同的架构。图数据库就是这种”专用化”趋势的代表。</p>
 <p><strong>场景 3：推荐和模式发现</strong></p>
 <p>“买了这个 SKU 的用户还买了什么？”——电商推荐引擎底层是用户-商品二分图。用 Cypher 可以很自然地表达：</p>
 <figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cypher">MATCH (u:User)-[:PURCHASED]-&gt;(:Product &#123;id: 789&#125;)&lt;-[:PURCHASED]-(other:User)-[:PURCHASED]-&gt;(rec:Product)<br>WHERE rec.id &lt;&gt; 789<br>RETURN rec.name, count(*) AS frequency<br>ORDER BY frequency DESC<br>LIMIT 10;<br></code></pre></td></tr></table></figure>
 
 <p>逻辑清晰：找到同样买了这个商品的用户，看他们还买了什么。用 SQL 写要两次自关联 GROUP BY，可读性差一截。</p>
-<h3 id="图数据库不应该做什么"><a href="#图数据库不应该做什么" class="headerlink" title="图数据库不应该做什么"></a>图数据库不应该做什么</h3><p>坦率说，在我们的 130 万日订单场景里，图数据库不是主存储——也不会是。</p>
+<h3 id="图数据库不应该做什么"><a href="#图数据库不应该做什么" class="headerlink" title="图数据库不应该做什么"></a>图数据库不应该做什么</h3><p>坦率说，在我们的 130 万日订单场景里（该数字为历史峰值口径，主口径见订单中台系列），图数据库不是主存储——也不会是。</p>
 <p>原因很简单：订单本身是典型的”记录”模型，订单的核心操作是”增删改查单条记录”，偶尔做范围扫描（”某时间段内的所有订单”）。这些是关系数据库的强项。把订单数据全部灌进图数据库，写入性能不如 MySQL，生态工具也不如 MySQL 成熟。</p>
 <p>所以<strong>图不是替代，是补充</strong>。主链路还是 MySQL + Redis + Elasticsearch，图数据库作为分析工具存在——离线把订单、用户、商品之间的关系导入 Neo4j，让数据团队用它做关联分析和模式发现。</p>
-<h2 id="三、实战：供应链-BOM-关系——递归-CTE-的维护之痛"><a href="#三、实战：供应链-BOM-关系——递归-CTE-的维护之痛" class="headerlink" title="三、实战：供应链 BOM 关系——递归 CTE 的维护之痛"></a>三、实战：供应链 BOM 关系——递归 CTE 的维护之痛</h2><p>回到我们的 cloud-supplychain-planning 项目。</p>
+<h2 id="三、实战：供应链-BOM-关系——递归-CTE-的维护之痛"><a href="#三、实战：供应链-BOM-关系——递归-CTE-的维护之痛" class="headerlink" title="三、实战：供应链 BOM 关系——递归 CTE 的维护之痛"></a>三、实战：供应链 BOM 关系——递归 CTE 的维护之痛</h2><p>回到我们的供应链计划系统项目。</p>
 <p>供应链计划里最核心也最头疼的数据结构之一是 <strong>BOM（Bill of Materials，物料清单）</strong>。一个成品由多个半成品组成，半成品又由其他半成品或原材料组成——形成一棵多层的物料树。</p>
 <figure class="highlight x86asm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs x86asm">成品手机<br>├── 主板<br>│   ├── <span class="hljs-meta">CPU</span><br>│   │   └── 晶圆<br>│   ├── 内存颗粒<br>│   └── PCB板<br>├── 屏幕模组<br>│   ├── 玻璃面板<br>│   ├── 触摸层<br>│   └── OLED面板<br>└── 电池<br>    └── 电芯<br></code></pre></td></tr></table></figure>
 
@@ -532,11 +545,11 @@
 <hr>
 <p><em>DDIA 系列笔记：</em></p>
 <ul>
-<li>第一章：可靠、可扩展、可维护</li>
-<li>第二章：数据模型与查询语言</li>
-<li>第三章（本文）：图数据模型</li>
+<li>第一章：架构权衡</li>
+<li>第二章：可靠、可扩展、可维护与非功能性需求</li>
+<li>第三章（本文）：数据模型与查询语言——图数据模型</li>
 </ul>
-<p><em>下一篇预告：DDIA-04-存储与检索——LSM-Tree 和 B-Tree 的底层故事。</em></p>
+<p><em>后续预告：DDIA-04-存储与检索——LSM-Tree 和 B-Tree 的底层故事。</em></p>
 
                 
               </div>
@@ -571,9 +584,9 @@
       
         <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
-        <a href="/tags/%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#图数据库</a>
-      
         <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" class="print-no-link">#数据模型</a>
+      
+        <a href="/tags/%E5%9B%BE%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#图数据库</a>
       
     </div>
   
@@ -719,7 +732,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -819,7 +832,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -834,7 +848,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

@@ -108,10 +108,6 @@ Fluid.plugins = {
       return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
     }
 
-    var copyTmpl = '';
-    copyTmpl += '<div class="code-widget">';
-    copyTmpl += 'LANG';
-    copyTmpl += '</div>';
     jQuery('.markdown-body pre').each(function() {
       var $pre = jQuery(this);
       if ($pre.find('code.mermaid').length > 0) {
@@ -137,28 +133,34 @@ Fluid.plugins = {
         }
         lang = lang.toUpperCase().replace('NONE', CONFIG.code_language.default);
       }
-      $pre.append(copyTmpl.replace('LANG', lang).replace('code-widget">',
-        getBgClass($pre[0]) + (enableCopy ? ' code-widget copy-btn" data-clipboard-snippet><i class="iconfont icon-copy"></i>' : ' code-widget">')));
 
+      var bgClass = getBgClass($pre[0]);
       if (enableCopy) {
-        var clipboard = new ClipboardJS('.copy-btn', {
-          target: function(trigger) {
-            var nodes = trigger.parentNode.childNodes;
-            for (var i = 0; i < nodes.length; i++) {
-              if (nodes[i].tagName === 'CODE') {
-                return nodes[i];
-              }
-            }
-          }
-        });
-        clipboard.on('success', function(e) {
-          e.clearSelection();
-          e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
-          setTimeout(function() {
-            e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
-          }, 2000);
-        });
+        $pre.append('<button type="button" class="code-widget ' + bgClass + ' copy-btn" data-clipboard-snippet aria-label="Copy code"><i class="iconfont icon-copy"></i>' + lang + '</button>');
+      } else {
+        $pre.append('<div class="code-widget ' + bgClass + '">' + lang + '</div>');
       }
     });
+
+    // Initialize ClipboardJS once for all copy buttons
+    if (enableCopy && !Fluid.plugins._clipboard) {
+      Fluid.plugins._clipboard = new ClipboardJS('.copy-btn', {
+        target: function(trigger) {
+          var nodes = trigger.parentNode.childNodes;
+          for (var i = 0; i < nodes.length; i++) {
+            if (nodes[i].tagName === 'CODE') {
+              return nodes[i];
+            }
+          }
+        }
+      });
+      Fluid.plugins._clipboard.on('success', function(e) {
+        e.clearSelection();
+        e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
+        setTimeout(function() {
+          e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
+        }, 2000);
+      });
+    }
   }
 };

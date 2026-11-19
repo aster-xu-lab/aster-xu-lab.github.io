@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/04/08/2024-04-08-消息不丢三端保障与消费幂等/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/04/08/2024-04-08-%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E4%B8%89%E7%AB%AF%E4%BF%9D%E9%9A%9C%E4%B8%8E%E6%B6%88%E8%B4%B9%E5%B9%82%E7%AD%89/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一条消息从发出到消费，要过三个关口生产端 → Broker → 消费端。任何一个环节都可能丢消息、重消息。所以”消息可靠性”从来不是一个单点问题，而是三端各自的职责：    环节 主要风险 保障手段    生产端 发出去，Broker 没收（网络抖动&#x2F;超时） 同步发送 + Confirm 确认 + 重试；本地消息表 &#x2F; 事务消息   Broker 端 存了但宕机丢（内存没落盘&amp;">
+    <meta name="description" content="一条消息从发出到消费，要过三个关口生产端 → Broker → 消费端。任何一个环节都可能丢消息、重消息。所以”消息可靠性”从来不是一个单点问题，而是三端各自的职责： 环节 主要风险 保障手段 生产端 发出去，Broker 没收（网络抖动&#x2F;超时） 同步发送 + Confirm 确认 + 重试；本地消息表 &#x2F; 事务消息 Broker 端 存了但宕机丢（内存没落盘&#x2F;单副本">
 <meta property="og:type" content="article">
 <meta property="og:title" content="消息不丢的三端保障与消费幂等：分布式系统的最后一公里">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/08/2024-04-08-%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E4%B8%89%E7%AB%AF%E4%BF%9D%E9%9A%9C%E4%B8%8E%E6%B6%88%E8%B4%B9%E5%B9%82%E7%AD%89/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一条消息从发出到消费，要过三个关口生产端 → Broker → 消费端。任何一个环节都可能丢消息、重消息。所以”消息可靠性”从来不是一个单点问题，而是三端各自的职责：    环节 主要风险 保障手段    生产端 发出去，Broker 没收（网络抖动&#x2F;超时） 同步发送 + Confirm 确认 + 重试；本地消息表 &#x2F; 事务消息   Broker 端 存了但宕机丢（内存没落盘&amp;">
+<meta property="og:description" content="一条消息从发出到消费，要过三个关口生产端 → Broker → 消费端。任何一个环节都可能丢消息、重消息。所以”消息可靠性”从来不是一个单点问题，而是三端各自的职责： 环节 主要风险 保障手段 生产端 发出去，Broker 没收（网络抖动&#x2F;超时） 同步发送 + Confirm 确认 + 重试；本地消息表 &#x2F; 事务消息 Broker 端 存了但宕机丢（内存没落盘&#x2F;单副本">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-04-07T17:14:17.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.518Z">
+<meta property="article:modified_time" content="2024-04-07T17:14:17.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="分布式">
 <meta property="article:tag" content="幂等">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="消息可靠性">
 <meta property="article:tag" content="消息队列">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"消息不丢的三端保障与消费幂等：分布式系统的最后一公里","datePublished":"2024-04-07T17:14:17.000Z","dateModified":"2024-04-07T17:14:17.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/04/08/2024-04-08-%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E4%B8%89%E7%AB%AF%E4%BF%9D%E9%9A%9C%E4%B8%8E%E6%B6%88%E8%B4%B9%E5%B9%82%E7%AD%89/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.7k 字
+          2.8k 字
         
       </span>
     
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/consistency/">分布式事务与消息</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">消息不丢的三端保障与消费幂等：分布式系统的最后一公里</h1>
+            <p id="seo-header">消息不丢的三端保障与消费幂等：分布式系统的最后一公里</p>
             
             
               <div class="markdown-body">
@@ -446,7 +459,7 @@
 <p>所以生产端真正的强保证是两个方案：</p>
 <ul>
 <li><strong>本地消息表</strong>：把”要发的消息”和业务操作放在<strong>同一个本地事务</strong>里落库，再靠一个定时任务扫描消息表去发、发成功标记已发送。业务提交成功 ⟹ 消息一定在表里，最终一定发得出去；</li>
-<li><strong>事务消息</strong>（RocketMQ）：半消息 + 回查，把”本地事务成功”和”消息可见”绑定成原子操作。</li>
+<li><strong>事务消息</strong>（RocketMQ）：半消息 + 回查，把”本地事务成功”和”消息可见”串成可回查的最终一致流程。</li>
 </ul>
 <p>两个方案的本质都一样：<strong>把”发消息”这件事纳入一个可回滚、可重试的持久化上下文，而不是依赖一次网络调用成功。</strong></p>
 <h2 id="二、Broker-端：存下来，还要扛得住宕机"><a href="#二、Broker-端：存下来，还要扛得住宕机" class="headerlink" title="二、Broker 端：存下来，还要扛得住宕机"></a>二、Broker 端：存下来，还要扛得住宕机</h2><p>消息到了 Broker，要保证”存下来且不丢”，两道防线：</p>
@@ -607,8 +620,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2024/04/06/2024-04-06-DDIA-08-2PC%E5%88%B0TCC/" title="DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路">
-                        <span class="hidden-mobile">DDIA-08-实战：从2PC到TCC——电商分布式事务的40%性能提升之路</span>
+                      <a href="/2024/04/06/2024-04-06-DDIA-08-2PC%E5%88%B0TCC/" title="DDIA-08-实战：从2PC到TCC——电商分布式事务的演进与取舍">
+                        <span class="hidden-mobile">DDIA-08-实战：从2PC到TCC——电商分布式事务的演进与取舍</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -686,7 +699,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -786,7 +799,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -801,7 +815,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

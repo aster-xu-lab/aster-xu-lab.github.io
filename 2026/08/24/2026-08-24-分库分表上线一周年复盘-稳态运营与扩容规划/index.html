@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/08/24/2026-08-24-分库分表上线一周年复盘-稳态运营与扩容规划/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/08/24/2026-08-24-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E4%B8%8A%E7%BA%BF%E4%B8%80%E5%91%A8%E5%B9%B4%E5%A4%8D%E7%9B%98-%E7%A8%B3%E6%80%81%E8%BF%90%E8%90%A5%E4%B8%8E%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%92/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="2025 年下半年分库分表上线，到 2026 年 8 月正好一年。这一篇复盘”上线之后”的事——不是迁移怎么做（那篇讲过），而是稳态运营、对账机制、以及 8→16 扩容的推演。这才是分库分表真正见功夫的地方。  一、稳态现状 当前 8 片，每片约 750 万行，累计 6000 万行； 分片键单号（order_no），写路径零广播； 复杂统计查询下沉 Doris（Canal → Kafka 同步）">
+    <meta name="description" content="2025 年上半年完成迁移，2025 年下半年灰度到全量上线；到 2026 年 8 月正好一周年。这一篇复盘”上线之后”的事——不是迁移怎么做（那篇讲过），而是稳态运营、对账机制、以及 8→16 扩容的推演。这才是分库分表真正见功夫的地方。 一、稳态现状 当前 8 片；上线时约 6000 万行、每片约 750 万行（这是上线时点存量，不是当前值）； 分片键单号（order_no），写路径零广播；">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分库分表上线一周年复盘：稳态运营、对账与扩容规划">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/08/24/2026-08-24-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E4%B8%8A%E7%BA%BF%E4%B8%80%E5%91%A8%E5%B9%B4%E5%A4%8D%E7%9B%98-%E7%A8%B3%E6%80%81%E8%BF%90%E8%90%A5%E4%B8%8E%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%92/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="2025 年下半年分库分表上线，到 2026 年 8 月正好一年。这一篇复盘”上线之后”的事——不是迁移怎么做（那篇讲过），而是稳态运营、对账机制、以及 8→16 扩容的推演。这才是分库分表真正见功夫的地方。  一、稳态现状 当前 8 片，每片约 750 万行，累计 6000 万行； 分片键单号（order_no），写路径零广播； 复杂统计查询下沉 Doris（Canal → Kafka 同步）">
+<meta property="og:description" content="2025 年上半年完成迁移，2025 年下半年灰度到全量上线；到 2026 年 8 月正好一周年。这一篇复盘”上线之后”的事——不是迁移怎么做（那篇讲过），而是稳态运营、对账机制、以及 8→16 扩容的推演。这才是分库分表真正见功夫的地方。 一、稳态现状 当前 8 片；上线时约 6000 万行、每片约 750 万行（这是上线时点存量，不是当前值）； 分片键单号（order_no），写路径零广播；">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/08dd67bf59a6c5c0c59062977ae26727.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/08dd67bf59a6c5c0c59062977ae26727.png">
 <meta property="article:published_time" content="2026-08-23T16:59:50.000Z">
-<meta property="article:modified_time" content="2026-11-17T11:08:03.382Z">
+<meta property="article:modified_time" content="2026-08-23T16:59:50.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="分库分表">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="对账">
 <meta property="article:tag" content="扩容">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/08dd67bf59a6c5c0c59062977ae26727.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/08dd67bf59a6c5c0c59062977ae26727.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"分库分表上线一周年复盘：稳态运营、对账与扩容规划","datePublished":"2026-08-23T16:59:50.000Z","dateModified":"2026-08-23T16:59:50.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/08/24/2026-08-24-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E4%B8%8A%E7%BA%BF%E4%B8%80%E5%91%A8%E5%B9%B4%E5%A4%8D%E7%9B%98-%E7%A8%B3%E6%80%81%E8%BF%90%E8%90%A5%E4%B8%8E%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%92/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.6k 字
+          1.8k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          14 分钟
+          15 分钟
         
       </span>
     
@@ -410,18 +419,22 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">分库分表上线一周年复盘：稳态运营、对账与扩容规划</h1>
+            <p id="seo-header">分库分表上线一周年复盘：稳态运营、对账与扩容规划</p>
             
             
               <div class="markdown-body">
                 
                 <blockquote>
-<p>2025 年下半年分库分表上线，到 2026 年 8 月正好一年。这一篇复盘”上线之后”的事——不是迁移怎么做（那篇讲过），而是<strong>稳态运营、对账机制、以及 8→16 扩容的推演</strong>。这才是分库分表真正见功夫的地方。</p>
+<p>2025 年上半年完成迁移，2025 年下半年灰度到全量上线；到 2026 年 8 月正好一周年。这一篇复盘”上线之后”的事——不是迁移怎么做（那篇讲过），而是<strong>稳态运营、对账机制、以及 8→16 扩容的推演</strong>。这才是分库分表真正见功夫的地方。</p>
 </blockquote>
 <h2 id="一、稳态现状"><a href="#一、稳态现状" class="headerlink" title="一、稳态现状"></a>一、稳态现状</h2><ul>
-<li>当前 <strong>8 片</strong>，每片约 <strong>750 万</strong>行，累计 <strong>6000 万</strong>行；</li>
+<li>当前 <strong>8 片</strong>；上线时约 <strong>6000 万</strong>行、每片约 <strong>750 万</strong>行（这是上线时点存量，不是当前值）；</li>
 <li>分片键单号（order_no），写路径<strong>零广播</strong>；</li>
 <li>复杂统计查询下沉 Doris（Canal → Kafka 同步）。</li>
 </ul>
@@ -441,21 +454,21 @@
 <h3 id="3-踩坑的持续修复"><a href="#3-踩坑的持续修复" class="headerlink" title="3. 踩坑的持续修复"></a>3. 踩坑的持续修复</h3><p>上线一年遇到的兼容性问题：</p>
 <ul>
 <li><strong>PageHelper 分页冲突</strong>：跨分片分页会内存归并，深分页贵 → 禁大页码、改游标分页；</li>
-<li><strong>非分片键查询</strong>：按用户查订单 → 建 user_id → order_no 索引表，二次路由；</li>
+<li><strong>非分片键查询</strong>：低频后台按 user_id 查订单走 id-mapping（二次路由）；高频 C 端列表走 ES&#x2F;Doris 宽表，不为 order_no 再建反向索引表；</li>
 <li><strong>跨分片 JOIN</strong>：关联表同键分片（订单主表&#x2F;商品表&#x2F;地址表都用 order_no），片内本地 JOIN。</li>
 </ul>
 <h2 id="三、扩容规划：8→16-的推演"><a href="#三、扩容规划：8→16-的推演" class="headerlink" title="三、扩容规划：8→16 的推演"></a>三、扩容规划：8→16 的推演</h2><p>单号哈希分片，扩容必然 <strong>rehash</strong>——<code>hash(order_no) % 8</code> 变成 <code>% 16</code>，落片变化，大约<strong>一半数据要迁移</strong>。</p>
-<p><strong>扩容流程</strong>（和首次迁移同一套，我验证过）：</p>
+<p><strong>扩容流程</strong>（和首次迁移同一套，首次迁移已验证过；8→16 尚未执行）：</p>
 <figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">存量回填 → <span class="hljs-keyword">binlog </span>增量追平 → 对账兜底 → 灰度切流 → 删旧表<br></code></pre></td></tr></table></figure>
 
 <p><strong>关键推演</strong>：</p>
 <ol>
-<li><strong>要动多少数据</strong>：8→16，约一半行数（3000 万行）需要换分片——这是个大工程，不能停机；</li>
+<li><strong>要动多少数据</strong>：按上线时约 6000 万存量计，8→16 约一半行数（3000 万行）需要换分片——这是个大工程，不能停机；</li>
 <li><strong>“双写”是零侵入增量双写</strong>：新老分片并存期间，binlog&#x2F;Canal 异步把新写补到新表，<strong>业务只写老表，不应用层改代码双向写</strong>；</li>
 <li><strong>零停机切换靠 Nacos 配置热更</strong>：业务写逻辑表，路由层映射物理表，换表名 &#x3D; 改路由配置（Nacos 下发），应用不重启；</li>
 <li><strong>对账不过不切流</strong>：连续两轮差异 0 才切，灰度按渠道逐个切，随时可回滚。</li>
 </ol>
-<p><strong>为什么现在规划而不是等数据满了再想</strong>：扩容的推演（数据量、流程、工具）提前验证过，真到触发时是按流程走，不是现场发明。</p>
+<p><strong>为什么现在规划而不是等数据满了再想</strong>：扩容的数据量、流程、工具已经提前推演过（流程在首次迁移中验证过，8→16 本身尚未执行），真到触发时是按流程走，不是现场发明。</p>
 <h2 id="四、一个诚实的算账"><a href="#四、一个诚实的算账" class="headerlink" title="四、一个诚实的算账"></a>四、一个诚实的算账</h2><p>扩容的代价要算清楚：</p>
 <ul>
 <li>8→16 要迁移约一半数据，<strong>磁盘、网络、时间成本</strong>都高；</li>
@@ -468,7 +481,7 @@
 <li><strong>先便宜后贵</strong>：归档、优化能拖后扩容，就不要急着加片。</li>
 </ol>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>稳态：8 片 &#x2F; 750 万每片 &#x2F; 6000 万行，写路径零广播；</li>
+<li>稳态：8 片；上线时 6000 万行 &#x2F; 每片约 750 万，写路径零广播；</li>
 <li><strong>对账常态化</strong>：定期比对 MySQL vs Doris，连续两轮差异 0 才一致；比对用 XXL-JOB、重投用 SyncTask；</li>
 <li>监控：分片倾斜、跨片查询、慢 SQL 分布；</li>
 <li>扩容 8→16：rehash 约一半数据，<strong>回填 + 增量追平 + 对账 + 灰度 + 删旧表</strong>，Nacos 热更零停机；</li>
@@ -663,7 +676,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -763,7 +776,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -778,7 +792,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

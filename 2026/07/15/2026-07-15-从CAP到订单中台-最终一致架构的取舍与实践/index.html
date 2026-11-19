@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/07/15/2026-07-15-从CAP到订单中台-最终一致架构的取舍与实践/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/07/15/2026-07-15-%E4%BB%8ECAP%E5%88%B0%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0-%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%9E%B6%E6%9E%84%E7%9A%84%E5%8F%96%E8%88%8D%E4%B8%8E%E5%AE%9E%E8%B7%B5/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="学习 CAP 时，理论是清楚的：网络分区时，一致性和可用性二选一。但真正落地到订单中台，”三选二”是错的——应该按操作类型分流，每条链路单独选。这篇讲 CAP 在订单场景的真实取舍。  一、CAP 不是”三选二”，是”分区时的二选一”先纠正一个常见误解。CAP 的正确表述：  当网络分区发生时（P），系统必须在 C（一致性） 和 A（可用性） 之间选择——不能同时满足。  关键：没有分区时，C">
+    <meta name="description" content="学习 CAP 时，理论是清楚的：网络分区时，一致性和可用性二选一。但真正落地到订单中台，”三选二”是错的——应该按操作类型分流，每条链路单独选。这篇讲 CAP 在订单场景的真实取舍。 一、CAP 不是”三选二”，是”分区时的二选一”先纠正一个常见误解。CAP 的正确表述： 当网络分区发生时（P），系统必须在 C（一致性） 和 A（可用性） 之间选择——不能同时满足。 关键：没有分区时，C 和 A">
 <meta property="og:type" content="article">
 <meta property="og:title" content="从 CAP 到订单中台：最终一致架构的取舍与实践">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/07/15/2026-07-15-%E4%BB%8ECAP%E5%88%B0%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0-%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%9E%B6%E6%9E%84%E7%9A%84%E5%8F%96%E8%88%8D%E4%B8%8E%E5%AE%9E%E8%B7%B5/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="学习 CAP 时，理论是清楚的：网络分区时，一致性和可用性二选一。但真正落地到订单中台，”三选二”是错的——应该按操作类型分流，每条链路单独选。这篇讲 CAP 在订单场景的真实取舍。  一、CAP 不是”三选二”，是”分区时的二选一”先纠正一个常见误解。CAP 的正确表述：  当网络分区发生时（P），系统必须在 C（一致性） 和 A（可用性） 之间选择——不能同时满足。  关键：没有分区时，C">
+<meta property="og:description" content="学习 CAP 时，理论是清楚的：网络分区时，一致性和可用性二选一。但真正落地到订单中台，”三选二”是错的——应该按操作类型分流，每条链路单独选。这篇讲 CAP 在订单场景的真实取舍。 一、CAP 不是”三选二”，是”分区时的二选一”先纠正一个常见误解。CAP 的正确表述： 当网络分区发生时（P），系统必须在 C（一致性） 和 A（可用性） 之间选择——不能同时满足。 关键：没有分区时，C 和 A">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/37874fde506184ea93684a19d4ffc589.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/37874fde506184ea93684a19d4ffc589.png">
 <meta property="article:published_time" content="2026-07-15T12:56:18.000Z">
-<meta property="article:modified_time" content="2026-11-17T11:08:03.258Z">
+<meta property="article:modified_time" content="2026-07-15T12:56:18.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CAP">
 <meta property="article:tag" content="分布式">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="架构">
 <meta property="article:tag" content="订单中台">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/37874fde506184ea93684a19d4ffc589.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/37874fde506184ea93684a19d4ffc589.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"从 CAP 到订单中台：最终一致架构的取舍与实践","datePublished":"2026-07-15T12:56:18.000Z","dateModified":"2026-07-15T12:56:18.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/07/15/2026-07-15-%E4%BB%8ECAP%E5%88%B0%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0-%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%9E%B6%E6%9E%84%E7%9A%84%E5%8F%96%E8%88%8D%E4%B8%8E%E5%AE%9E%E8%B7%B5/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.6k 字
+          1.8k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          14 分钟
+          16 分钟
         
       </span>
     
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">从 CAP 到订单中台：最终一致架构的取舍与实践</h1>
+            <p id="seo-header">从 CAP 到订单中台：最终一致架构的取舍与实践</p>
             
             
               <div class="markdown-body">
@@ -438,10 +451,10 @@
 </tr>
 </thead>
 <tbody><tr>
-<td><strong>强一致链路</strong></td>
+<td><strong>近似强一致链路</strong></td>
 <td>下单扣库存、发货确认</td>
-<td>宁可用性受损，也要一致性（CP）</td>
-<td>TCC、Seata AT</td>
+<td>宁可用性受损，也要一致性（CP 取向）</td>
+<td>TCC（应用层多段提交）、Seata AT</td>
 </tr>
 <tr>
 <td><strong>最终一致链路</strong></td>
@@ -451,11 +464,12 @@
 </tr>
 </tbody></table>
 <p><strong>核心原则：一致性等级跟着业务语义走，不跟着系统走。</strong></p>
-<h2 id="三、强一致链路：分区时拒绝，也不许错"><a href="#三、强一致链路：分区时拒绝，也不许错" class="headerlink" title="三、强一致链路：分区时拒绝，也不许错"></a>三、强一致链路：分区时拒绝，也不许错</h2><p>下单扣库存、发货确认这类，<strong>错一分都不行</strong>，所以选择 CP：</p>
+<h2 id="三、近似强一致链路：分区时拒绝，也不许错"><a href="#三、近似强一致链路：分区时拒绝，也不许错" class="headerlink" title="三、近似强一致链路：分区时拒绝，也不许错"></a>三、近似强一致链路：分区时拒绝，也不许错</h2><p>下单扣库存、发货确认这类，<strong>错一分都不行</strong>，所以选择 CP：</p>
 <ul>
 <li><strong>下单预占库存</strong>：TCC Try（预扣），分区时宁可下单失败，也不允许”扣了 A 库存却按 B 算”；</li>
-<li><strong>发货确认</strong>：TCC Confirm，强一致，失败必须回滚。</li>
+<li><strong>发货确认</strong>：TCC Confirm，确认资源；它给的是应用层多段提交的近似强一致，失败要重试&#x2F;补偿，最终仍靠幂等兜底。</li>
 </ul>
+<p><strong>口径说明</strong>：TCC 不是数据库意义上的严格强一致——它是应用层多段提交，靠 Try&#x2F;Confirm&#x2F;Cancel + 幂等 + 最终一致兜底。Seata AT 则是全局写锁&#x2F;冲突行串行化，不是可串行化隔离，也不会把所有并发都串行化。</p>
 <p><strong>代价</strong>：极端情况下（分区）这部分功能不可用——但这是正确的代价，因为”扣错库存”比”暂时不能下单”严重得多。</p>
 <h2 id="四、最终一致链路：分区时保可用，靠收敛"><a href="#四、最终一致链路：分区时保可用，靠收敛" class="headerlink" title="四、最终一致链路：分区时保可用，靠收敛"></a>四、最终一致链路：分区时保可用，靠收敛</h2><p>订单下发下游、状态回传这类，<strong>可以延迟但不能丢</strong>，所以选择 AP：</p>
 <ul>
@@ -465,7 +479,7 @@
 </ul>
 <p><strong>关键认知</strong>：AP 不是”放弃一致性”，是**”保证最终一致”**——瞬时不一致允许存在，靠幂等 + 对账收敛到一致。</p>
 <h2 id="五、分区时的具体处理"><a href="#五、分区时的具体处理" class="headerlink" title="五、分区时的具体处理"></a>五、分区时的具体处理</h2><p>订单中台在分区时怎么表现？</p>
-<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs 1c">网络分区（订单服务与库存服务断开）：<br>① 强一致链路（扣库存）→ 立即失败/拒绝，不返回假成功<br>② 最终一致链路（下发下游）→ 本地先落库（写消息表），分区恢复后补发<br>③ 用户看到<span class="hljs-string">&quot;下单失败&quot;</span>或<span class="hljs-string">&quot;订单处理中&quot;</span>——绝不允许<span class="hljs-string">&quot;下单成功但库存没扣&quot;</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs 1c">网络分区（订单服务与库存服务断开）：<br>① 近似强一致链路（扣库存）→ 立即失败/拒绝，不返回假成功<br>② 最终一致链路（下发下游）→ 本地先落库（写消息表），分区恢复后补发<br>③ 用户看到<span class="hljs-string">&quot;下单失败&quot;</span>或<span class="hljs-string">&quot;订单处理中&quot;</span>——绝不允许<span class="hljs-string">&quot;下单成功但库存没扣&quot;</span><br></code></pre></td></tr></table></figure>
 
 <p><strong>分区时最重要的一条</strong>：<strong>不能让用户看到”部分成功”</strong>。宁可明确失败，也不给模糊的中间态。</p>
 <h2 id="六、最终一致的三个关键实现"><a href="#六、最终一致的三个关键实现" class="headerlink" title="六、最终一致的三个关键实现"></a>六、最终一致的三个关键实现</h2><p>AP 链路要真正收敛，三个机制缺一不可：</p>
@@ -482,13 +496,13 @@
 <h2 id="八、诚实的边界"><a href="#八、诚实的边界" class="headerlink" title="八、诚实的边界"></a>八、诚实的边界</h2><p>CAP 是理论框架，落地时没有完美答案。我的经验是：<strong>一致性等级按业务语义分流 + 幂等对账兜底 + 分区时不给模糊中间态</strong>——这三条比纠结”选 C 还是选 A”更可落地。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>CAP 不是”三选二”，是<strong>分区时的二选一</strong>，给每条链路单独定；</li>
-<li>订单中台分流：<strong>强一致链路（CP）用 TCC&#x2F;AT，最终一致链路（AP）用本地消息表</strong>；</li>
+<li>订单中台分流：<strong>近似强一致链路（CP 取向）用 TCC&#x2F;AT，最终一致链路（AP）用本地消息表</strong>；</li>
 <li>分区时：<strong>不给”部分成功”的中间态</strong>，宁可明确失败；</li>
 <li>最终一致的三个关键：<strong>幂等 + 对账 + 可观测</strong>，缺一个就不是”最终一致”；</li>
 <li>落地原则：按业务语义分流，而不是整个系统选一个。</li>
 </ul>
 <hr>
-<p><em>发表于 2026 年 7 月 · 标签: CAP, 最终一致, 订单中台, 架构, 分布式</em></p>
+<p><em>发表于 2026 年 7 月 · 标签: CAP, 最终一致性, 订单中台, 架构, 分布式</em></p>
 
                 
               </div>
@@ -596,8 +610,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2026/07/10/2026-07-10-SyncTask%E8%B0%83%E5%BA%A6%E5%BC%95%E6%93%8E%E6%B7%B1%E6%8C%96-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E4%B8%8E%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" title="SyncTask 调度引擎深挖：双层权重调度与分层时间轮">
-                        <span class="hidden-mobile">SyncTask 调度引擎深挖：双层权重调度与分层时间轮</span>
+                      <a href="/2026/07/10/2026-07-10-SyncTask%E8%B0%83%E5%BA%A6%E5%BC%95%E6%93%8E%E6%B7%B1%E6%8C%96-%E5%8F%8C%E5%B1%82%E6%9D%83%E9%87%8D%E8%B0%83%E5%BA%A6%E4%B8%8E%E5%88%86%E5%B1%82%E6%97%B6%E9%97%B4%E8%BD%AE/" title="SyncTask 调度引擎深挖：双层权重调度与分层时间轮思想">
+                        <span class="hidden-mobile">SyncTask 调度引擎深挖：双层权重调度与分层时间轮思想</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -675,7 +689,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -775,7 +789,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -790,7 +805,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

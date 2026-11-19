@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/10/10/2025-10-10-慢SQL治理一年复盘-从千条到个位数/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="订单中心慢 SQL 从日均千条级（峰值 1124 条）降到个位数（6 条），DB 单次负载降 30-50%。这篇复盘一年治理的完整路径——不是一次优化，是持续体系。  一、现状：慢 SQL 是”慢性病”订单中心日均处理几十万订单，慢 SQL 日志峰值日均 1124 条，系统可用性在 99.9% 附近徘徊，每次大促都心跳加速。 慢 SQL 的危害不只是”慢”——它占用连接、拖慢事务、引发雪崩。一条">
+    <meta name="description" content="订单中心慢 SQL 从日均千条级（峰值 1124 条）降到个位数（6 条），DB 单次负载降 30-50%。1124→6 的原始治理发生在 2023-11；这篇复盘的是之后的机制化运营——不是一次优化，是持续体系。 一、现状：慢 SQL 是”慢性病”订单中心日均 15 万单（大促峰值 50 万），慢 SQL 日志峰值日均 1124 条，系统可用性在 99.9% 附近徘徊，每次大促都心跳加速。 慢">
 <meta property="og:type" content="article">
-<meta property="og:title" content="慢 SQL 治理一年复盘：从日均千条级到个位数">
+<meta property="og:title" content="慢 SQL 治理一年复盘：1124→6 之后的运营机制">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="订单中心慢 SQL 从日均千条级（峰值 1124 条）降到个位数（6 条），DB 单次负载降 30-50%。这篇复盘一年治理的完整路径——不是一次优化，是持续体系。  一、现状：慢 SQL 是”慢性病”订单中心日均处理几十万订单，慢 SQL 日志峰值日均 1124 条，系统可用性在 99.9% 附近徘徊，每次大促都心跳加速。 慢 SQL 的危害不只是”慢”——它占用连接、拖慢事务、引发雪崩。一条">
+<meta property="og:description" content="订单中心慢 SQL 从日均千条级（峰值 1124 条）降到个位数（6 条），DB 单次负载降 30-50%。1124→6 的原始治理发生在 2023-11；这篇复盘的是之后的机制化运营——不是一次优化，是持续体系。 一、现状：慢 SQL 是”慢性病”订单中心日均 15 万单（大促峰值 50 万），慢 SQL 日志峰值日均 1124 条，系统可用性在 99.9% 附近徘徊，每次大促都心跳加速。 慢">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-10-09T16:57:54.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.529Z">
+<meta property="article:modified_time" content="2025-10-09T16:57:54.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="复盘">
 <meta property="article:tag" content="性能优化">
@@ -38,8 +44,11 @@
 <meta name="twitter:card" content="summary_large_image">
   
   
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"慢 SQL 治理一年复盘：1124→6 之后的运营机制","datePublished":"2025-10-09T16:57:54.000Z","dateModified":"2025-10-09T16:57:54.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/"}}</script>
   
-  <title>慢 SQL 治理一年复盘：从日均千条级到个位数 - AsterXu Lab</title>
+  
+  
+  <title>慢 SQL 治理一年复盘：1124→6 之后的运营机制 - AsterXu Lab</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -210,7 +219,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -365,7 +374,7 @@
         <div id="board">
           <header class="ax-post-head">
             <p class="ax-eyebrow">数据库</p>
-            <h1 class="ax-post-head__title">慢 SQL 治理一年复盘：从日均千条级到个位数</h1>
+            <h1 class="ax-post-head__title">慢 SQL 治理一年复盘：1124→6 之后的运营机制</h1>
             <div class="ax-post-head__meta">
               
   <div class="mt-3">
@@ -385,7 +394,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.2k 字
+          1.4k 字
         
       </span>
     
@@ -396,7 +405,7 @@
         
         
         
-          11 分钟
+          12 分钟
         
       </span>
     
@@ -407,17 +416,21 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">慢 SQL 治理一年复盘：从日均千条级到个位数</h1>
+            <p id="seo-header">慢 SQL 治理一年复盘：1124→6 之后的运营机制</p>
             
             
               <div class="markdown-body">
                 
                 <blockquote>
-<p>订单中心慢 SQL 从日均千条级（峰值 1124 条）降到个位数（6 条），DB 单次负载降 30-50%。这篇复盘一年治理的完整路径——不是一次优化，是持续体系。</p>
+<p>订单中心慢 SQL 从日均千条级（峰值 1124 条）降到个位数（6 条），DB 单次负载降 30-50%。1124→6 的原始治理发生在 2023-11；这篇复盘的是之后的机制化运营——不是一次优化，是持续体系。</p>
 </blockquote>
-<h2 id="一、现状：慢-SQL-是”慢性病”"><a href="#一、现状：慢-SQL-是”慢性病”" class="headerlink" title="一、现状：慢 SQL 是”慢性病”"></a>一、现状：慢 SQL 是”慢性病”</h2><p>订单中心日均处理几十万订单，慢 SQL 日志峰值日均 <strong>1124 条</strong>，系统可用性在 99.9% 附近徘徊，每次大促都心跳加速。</p>
+<h2 id="一、现状：慢-SQL-是”慢性病”"><a href="#一、现状：慢-SQL-是”慢性病”" class="headerlink" title="一、现状：慢 SQL 是”慢性病”"></a>一、现状：慢 SQL 是”慢性病”</h2><p>订单中心日均 15 万单（大促峰值 50 万），慢 SQL 日志峰值日均 <strong>1124 条</strong>，系统可用性在 99.9% 附近徘徊，每次大促都心跳加速。</p>
 <p>慢 SQL 的危害不只是”慢”——它<strong>占用连接、拖慢事务、引发雪崩</strong>。一条慢 SQL 打满连接池，整个订单链路就瘫了。</p>
 <h2 id="二、治理路径：从上到下，低成本手段优先"><a href="#二、治理路径：从上到下，低成本手段优先" class="headerlink" title="二、治理路径：从上到下，低成本手段优先"></a>二、治理路径：从上到下，低成本手段优先</h2><p>我遵循”<strong>从便宜到贵</strong>“的治理顺序：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">① 索引优化（最便宜）→ ② <span class="hljs-keyword">SQL</span> 改写 → ③ 缓存 → ④ 连接池<span class="hljs-operator">/</span>架构<br></code></pre></td></tr></table></figure>
@@ -447,8 +460,9 @@
 <li><strong>大促前专项</strong>：大促前做一次慢 SQL 全量清剿 + 热点缓存预热。</li>
 </ol>
 <p><strong>关键认知</strong>：慢 SQL 治理是”存量清理 + 增量拦截”两条腿——只清存量，新的还会冒出来。</p>
+<p><strong>本文新增的是什么</strong>：索引优化、SQL 改写等原始手段发生在 2023-11；本文复盘的是之后新增的机制化运营——慢 SQL 监控、每周扫描、上线 SQL 评审、大促前专项清剿，以及把一次性优化变成持续流程。</p>
 <h2 id="四、结果与数字"><a href="#四、结果与数字" class="headerlink" title="四、结果与数字"></a>四、结果与数字</h2><ul>
-<li>慢 SQL：日均 1124 条 → <strong>6 条</strong>；</li>
+<li>慢 SQL：日均 1124 条 → <strong>6 条</strong>（2023-11 原始治理成果）；</li>
 <li>DB 单次负载：降 <strong>30-50%</strong>；</li>
 <li>大促：DB 不再是瓶颈，配合限流降级扛住峰值。</li>
 </ul>
@@ -463,10 +477,10 @@
 <li>治理顺序：<strong>索引 → SQL 改写 → 缓存 → 连接池&#x2F;架构</strong>，从便宜到贵；</li>
 <li>覆盖索引、大 IN 拆批、去 COUNT(*)、避免 SELECT *，是高频手段；</li>
 <li>体系化：<strong>监控 + 定期扫描 + 上线评审 + 大促专项</strong>，存量清理 + 增量拦截；</li>
-<li>结果：1124 → 6 条、DB 负载降 30-50%，数字有据。</li>
+<li>结果：1124 → 6 条（2023-11 原始治理）、DB 负载降 30-50%，数字有据。</li>
 </ul>
 <hr>
-<p><em>发表于 2025 年 10 月 · 标签: 慢SQL, 索引, 性能调优, 复盘</em></p>
+<p><em>发表于 2025 年 10 月 · 标签: 慢SQL, 索引, 性能优化, 复盘</em></p>
 
                 
               </div>
@@ -517,7 +531,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>慢 SQL 治理一年复盘：从日均千条级到个位数</div>
+      <div>慢 SQL 治理一年复盘：1124→6 之后的运营机制</div>
       <div>https://aster-xu-lab.github.io/2025/10/10/2025-10-10-慢SQL治理一年复盘-从千条到个位数/</div>
     </div>
     <div class="license-meta">
@@ -651,7 +665,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -751,7 +765,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -766,7 +781,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

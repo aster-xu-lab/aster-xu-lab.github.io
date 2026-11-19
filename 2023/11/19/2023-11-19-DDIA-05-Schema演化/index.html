@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/11/19/2023-11-19-DDIA-05-Schema演化/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/11/19/2023-11-19-DDIA-05-Schema%E6%BC%94%E5%8C%96/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -29,7 +35,7 @@
 <meta property="og:description" content="API升级是所有系统的噩梦——上游改字段，下游没升级，线上报错一片。本文从向前兼容、向后兼容、Schema Registry到三种API版本策略，结合订单中心线上回滚的真实踩坑经历，总结Schema管理的工程纪律。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-11-18T23:13:15.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.585Z">
+<meta property="article:modified_time" content="2023-11-18T23:13:15.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="API">
 <meta property="article:tag" content="DDIA">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="兼容性">
 <meta property="article:tag" content="架构">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-05-前后兼容与Schema演化：API版本管理的技术债务","datePublished":"2023-11-18T23:13:15.000Z","dateModified":"2023-11-18T23:13:15.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/11/19/2023-11-19-DDIA-05-Schema%E6%BC%94%E5%8C%96/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-05-前后兼容与Schema演化：API版本管理的技术债务</h1>
+            <p id="seo-header">DDIA-05-前后兼容与Schema演化：API版本管理的技术债务</p>
             
             
               <div class="markdown-body">
@@ -423,7 +436,7 @@
 <p>原因很简单——隔壁营销组在上游订单接口里加了一个 <code>promotionTag</code> 字段，用于标记订单是否参与了促销活动。这个字段他们没有通知下游，也没有设默认值。而我们订单中心的消费者还在用旧版DTO解析——Jackson遇到不认识的字段，直接抛异常。</p>
 <p>回滚。凌晨12点回滚。</p>
 <p>这不是一个技术难题，这是一个<strong>工程纪律</strong>问题。</p>
-<p>DDIA（《Designing Data-Intensive Applications》）第4章和第5章花了大量篇幅讨论数据编码与Schema演化。Kleppmann的原话非常直白：</p>
+<p>DDIA（《Designing Data-Intensive Applications》）第5章花了大量篇幅讨论数据编码与Schema演化。Kleppmann的原话非常直白：</p>
 <blockquote>
 <p>“Data outlives code.”</p>
 </blockquote>
@@ -431,13 +444,13 @@
 <p>这就是API版本管理的核心矛盾：<strong>生产者和消费者的升级节奏永远不同步</strong>。</p>
 <hr>
 <h2 id="二、向前兼容-vs-向后兼容：一张图讲清楚"><a href="#二、向前兼容-vs-向后兼容：一张图讲清楚" class="headerlink" title="二、向前兼容 vs 向后兼容：一张图讲清楚"></a>二、向前兼容 vs 向后兼容：一张图讲清楚</h2><p>在聊具体方案之前，必须先把两个最容易被混淆的概念掰开揉碎。</p>
-<h3 id="2-1-向前兼容（Forward-Compatibility）：新读旧"><a href="#2-1-向前兼容（Forward-Compatibility）：新读旧" class="headerlink" title="2.1 向前兼容（Forward Compatibility）：新读旧"></a>2.1 向前兼容（Forward Compatibility）：新读旧</h3><p><strong>场景</strong>：Consumer先升级，Producer还没升级。新代码能读旧数据。</p>
+<h3 id="2-1-向后兼容（Backward-Compatibility）：新读旧"><a href="#2-1-向后兼容（Backward-Compatibility）：新读旧" class="headerlink" title="2.1 向后兼容（Backward Compatibility）：新读旧"></a>2.1 向后兼容（Backward Compatibility）：新读旧</h3><p><strong>场景</strong>：Consumer先升级，Producer还没升级。新代码能读旧数据。</p>
 <p>举个例子：你的订单服务已经升级到v2版本，DTO里多了一个 <code>discountAmount</code> 字段。但上游还没有升级，产出的消息里没有 <code>discountAmount</code>。</p>
 <p>你的v2代码必须能处理这种情况——读到没有 <code>discountAmount</code> 的数据时不报错，给它一个合理的默认值。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 正确做法：所有新增字段都有默认值</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderDTO</span> &#123;<br>    <span class="hljs-keyword">private</span> String orderId;                    <span class="hljs-comment">// 原有字段</span><br>    <span class="hljs-keyword">private</span> BigDecimal totalAmount;            <span class="hljs-comment">// 原有字段</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">BigDecimal</span> <span class="hljs-variable">discountAmount</span> <span class="hljs-operator">=</span> BigDecimal.ZERO;  <span class="hljs-comment">// v2新增，有默认值！</span><br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p>这样就算旧数据里没有 <code>discountAmount</code>，代码也能正常运行。</p>
-<h3 id="2-2-向后兼容（Backward-Compatibility）：旧读新"><a href="#2-2-向后兼容（Backward-Compatibility）：旧读新" class="headerlink" title="2.2 向后兼容（Backward Compatibility）：旧读新"></a>2.2 向后兼容（Backward Compatibility）：旧读新</h3><p><strong>场景</strong>：Producer先升级，Consumer还没升级。旧代码能读新数据。</p>
+<h3 id="2-2-向前兼容（Forward-Compatibility）：旧读新"><a href="#2-2-向前兼容（Forward-Compatibility）：旧读新" class="headerlink" title="2.2 向前兼容（Forward Compatibility）：旧读新"></a>2.2 向前兼容（Forward Compatibility）：旧读新</h3><p><strong>场景</strong>：Producer先升级，Consumer还没升级。旧代码能读新数据。</p>
 <p>还是刚才的例子，但顺序反了——上游先升级了，开始在消息里输出 <code>discountAmount</code> 字段。你的订单服务还是v1版本，DTO里没有这个字段。</p>
 <p>这时候旧代码能不能正常解析新数据，取决于你用的序列化框架和配置。</p>
 <p><strong>JSON&#x2F;Jackson</strong>：默认情况下，Jackson遇到未知字段会抛 <code>UnrecognizedPropertyException</code>（这就是我踩坑的那个报错）。你必须在全局配置里加上：</p>
@@ -446,13 +459,13 @@
 <p>或者用注解忽略未知字段：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@JsonIgnoreProperties(ignoreUnknown = true)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderDTO</span> &#123; ... &#125;<br></code></pre></td></tr></table></figure>
 
-<p><strong>Protobuf&#x2F;Avro</strong>：这两种二进制协议天然支持向后兼容。新增的字段用新的field number标识，旧版Consumer解析时会直接跳过不认识的field number，不会报错。</p>
+<p><strong>Protobuf&#x2F;Avro</strong>：这两种二进制协议天然支持向前兼容。新增的字段用新的field number标识，旧版Consumer解析时会直接跳过不认识的field number，不会报错。</p>
 <h3 id="2-3-一张对比表"><a href="#2-3-一张对比表" class="headerlink" title="2.3 一张对比表"></a>2.3 一张对比表</h3><table>
 <thead>
 <tr>
 <th>维度</th>
-<th>向前兼容（新读旧）</th>
-<th>向后兼容（旧读新）</th>
+<th>向后兼容（新读旧）</th>
+<th>向前兼容（旧读新）</th>
 </tr>
 </thead>
 <tbody><tr>
@@ -481,7 +494,7 @@
 <td>天然支持</td>
 </tr>
 </tbody></table>
-<p>一句话总结：<strong>向前兼容靠默认值，向后兼容靠忽略未知字段</strong>。</p>
+<p>一句话总结：<strong>向后兼容靠默认值，向前兼容靠忽略未知字段</strong>。</p>
 <hr>
 <h2 id="三、Schema-Registry：不是中间件，是工程纪律"><a href="#三、Schema-Registry：不是中间件，是工程纪律" class="headerlink" title="三、Schema Registry：不是中间件，是工程纪律"></a>三、Schema Registry：不是中间件，是工程纪律</h2><p>很多人以为Schema Registry只是一个”存Schema的地方”。这完全低估了它的价值。</p>
 <h3 id="3-1-它到底解决了什么问题"><a href="#3-1-它到底解决了什么问题" class="headerlink" title="3.1 它到底解决了什么问题"></a>3.1 它到底解决了什么问题</h3><p>在没有Schema Registry的世界里，Schema随代码库分散在各处。生产者改了一个字段类型，消费者可能三个月后才发现——还是因为线上报错。</p>
@@ -505,13 +518,13 @@
 </thead>
 <tbody><tr>
 <td><code>BACKWARD</code></td>
-<td>新Schema可被旧Consumer读取</td>
-<td>Producer先升级</td>
+<td>新代码能读旧数据（新读旧）</td>
+<td>Consumer先升级</td>
 </tr>
 <tr>
 <td><code>FORWARD</code></td>
-<td>旧Schema可被新Consumer读取</td>
-<td>Consumer先升级</td>
+<td>旧代码能读新数据（旧读新）</td>
+<td>Producer先升级</td>
 </tr>
 <tr>
 <td><code>FULL</code></td>
@@ -711,7 +724,7 @@
 <p>在那之前，我觉得 Schema 兼容性、API 版本管理这些东西是”大公司才需要操心的问题”。我们一个十几人的团队，哪有那么多上下游？哪有那么多版本要管？</p>
 <p>错了。</p>
 <p><strong>Schema兼容性问题跟你团队大小无关，跟你的系统有没有上下游有关。</strong> 只要你的系统有一个消费者——哪怕是前端页面——你改一个字段就可能让它炸掉。</p>
-<p>DDIA第4章有一段话我印象特别深：</p>
+<p>DDIA第5章有一段话我印象特别深：</p>
 <blockquote>
 <p>“We need to assume that different versions of the data will coexist. The system needs to support the ability to change the schema over time.”</p>
 </blockquote>
@@ -757,9 +770,9 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
-        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
-      
         <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
         <a href="/tags/API/" class="print-no-link">#API</a>
       
@@ -911,7 +924,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -1011,7 +1024,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -1026,7 +1040,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/11/28/2024-11-28-DDIA-12-流批一体/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/11/28/2024-11-28-DDIA-12-%E6%B5%81%E6%89%B9%E4%B8%80%E4%BD%93/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -28,16 +34,19 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="引子：两拨人的对立在大数据团队里，向来有两拨人。 一拨人写离线批处理。他们每天凌晨跑 MapReduce 或 Spark SQL，把前一天的数据全量算一遍，早上出报表。等数小时是常态，延迟以天计，但数据靠谱——只要隔天早上结果一致，没人找他们麻烦。 另一拨人写实时流处理。他们接 Kafka，写 Storm 或 Spark Streaming，秒级延迟，大屏上数字跳得飞起。但数据老是对不齐——不是多">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3a7057146b172e412c9e8316a99ebac7.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3a7057146b172e412c9e8316a99ebac7.png">
 <meta property="article:published_time" content="2024-11-27T17:31:36.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.524Z">
+<meta property="article:modified_time" content="2024-11-27T17:31:36.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="Flink">
 <meta property="article:tag" content="Lambda架构">
 <meta property="article:tag" content="流批一体">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3a7057146b172e412c9e8316a99ebac7.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3a7057146b172e412c9e8316a99ebac7.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-12-流批一体：为什么Flink在同时讨好两拨人","datePublished":"2024-11-27T17:31:36.000Z","dateModified":"2024-11-27T17:31:36.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/11/28/2024-11-28-DDIA-12-%E6%B5%81%E6%89%B9%E4%B8%80%E4%BD%93/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-12-流批一体：为什么Flink在同时讨好两拨人</h1>
+            <p id="seo-header">DDIA-12-流批一体：为什么Flink在同时讨好两拨人</p>
             
             
               <div class="markdown-body">
@@ -422,7 +435,7 @@
 <p>两拨人用两套引擎、两套代码、两套口径。<strong>离线工程师不懂流，流工程师嫌批太慢。</strong> Data Infra 团队更痛苦——要维护两套集群，两套监控，两套运维体系。</p>
 <p>Flink 想做的事很疯狂：<strong>让这两拨人用同一套东西。</strong></p>
 <h2 id="DDIA-的论断：批处理是流处理的特殊形式"><a href="#DDIA-的论断：批处理是流处理的特殊形式" class="headerlink" title="DDIA 的论断：批处理是流处理的特殊形式"></a>DDIA 的论断：批处理是流处理的特殊形式</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3a7057146b172e412c9e8316a99ebac7.png#pic_center" srcset="/img/loading.gif" lazyload alt="流批一体：批是流的一种特例"></p>
-<p>Martin Kleppmann 在《Designing Data-Intensive Applications》第12章”流处理的未来”中，写下了一个至今读来仍然犀利的论断：</p>
+<p>Martin Kleppmann 在《Designing Data-Intensive Applications》第12章”Stream Processing”（流处理）中，表达过一个至今读来仍然犀利的观点，大意（第12章）是：</p>
 <blockquote>
 <p>批处理引擎和流处理引擎之间的区别正在模糊。批处理不过是**处理有界数据（Bounded Data）**的流处理。</p>
 </blockquote>
@@ -513,7 +526,7 @@
 <p>凌晨，Flink 同一个 JAR、同一段 SQL、同一个 <code>GROUP BY user_id</code> 聚合逻辑，只是数据源从 Kafka 切到了 Hive，运行模式从 STREAMING 切到了 BATCH。跑完之后 Redis 里的值被精确覆盖，财务团队也能直接用。</p>
 <p><strong>对比 Lambda 架构</strong>，这个方案把维护成本从”两套引擎 + 两套代码 + 数据对账脚本”压缩到了”一套引擎 + 一套代码 + 零对账”——因为流和批的聚合逻辑<strong>保证一致</strong>，不存在逻辑差异导致的口径偏差。</p>
 <p>这就是 Flink 流批一体最直接的业务价值：不是理论上”可以统一”，而是<strong>运维成本断崖式下降</strong>。</p>
-<h2 id="总结：不可逆转的融合趋势"><a href="#总结：不可逆转的融合趋势" class="headerlink" title="总结：不可逆转的融合趋势"></a>总结：不可逆转的融合趋势</h2><p>回到 DDIA 第12章的那句话——“流处理和批处理的融合是不可逆转的趋势。”</p>
+<h2 id="总结：不可逆转的融合趋势"><a href="#总结：不可逆转的融合趋势" class="headerlink" title="总结：不可逆转的融合趋势"></a>总结：不可逆转的融合趋势</h2><p>回到 DDIA 第12章讨论的流批边界模糊——它指向的是一个融合趋势。</p>
 <p>这不是预言，而是正在发生的事。</p>
 <p>Google Dataflow 在2015年提出”流批一体”的 Beam 模型，Flink 在2018年做到生产级可用，Spark 从 2.x 开始用 Structured Streaming 弥补了微批的延迟劣势。现在主流引擎都在向”一套 API，多种模式”收敛。</p>
 <p>但 Flink 走得更彻底——它不是给批处理引擎加流处理的壳，也不是给流处理引擎加批处理的补丁。它的运行时从第一天就把”有界&#x2F;无界”作为数据源的属性而非引擎的属性。这让它的流批一体不是”兼容”，而是<strong>原生的统一抽象</strong>。</p>
@@ -705,7 +718,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -805,7 +818,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -820,7 +834,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

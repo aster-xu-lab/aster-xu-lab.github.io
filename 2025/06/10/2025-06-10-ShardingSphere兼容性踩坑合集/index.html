@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/06/10/2025-06-10-ShardingSphere兼容性踩坑合集/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/06/10/2025-06-10-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="分片落地最痛的往往不是分片本身，而是与现有 ORM 的兼容性。我在把 ShardingSphere 接入 cloud-order（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。 坑1：分页 —— PageHelper 与 ShardingSphere 二选一现象：cloud-dal 的 PageUtils.startPage()">
+    <meta name="description" content="分片落地最痛的往往不是分片本身，而是与现有 ORM 的兼容性。我在把 ShardingSphere 接入订单中台（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。 坑1：分页 —— PageHelper 与 ShardingSphere 二选一现象：cloud-dal 的 PageUtils.startPage() 用的是 Pag">
 <meta property="og:type" content="article">
 <meta property="og:title" content="ShardingSphere 与 ORM 兼容性踩坑合集（分页 &#x2F; 元数据 &#x2F; 拦截器）">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/06/10/2025-06-10-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="分片落地最痛的往往不是分片本身，而是与现有 ORM 的兼容性。我在把 ShardingSphere 接入 cloud-order（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。 坑1：分页 —— PageHelper 与 ShardingSphere 二选一现象：cloud-dal 的 PageUtils.startPage()">
+<meta property="og:description" content="分片落地最痛的往往不是分片本身，而是与现有 ORM 的兼容性。我在把 ShardingSphere 接入订单中台（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。 坑1：分页 —— PageHelper 与 ShardingSphere 二选一现象：cloud-dal 的 PageUtils.startPage() 用的是 Pag">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2025-06-09T17:01:52.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.527Z">
+<meta property="article:modified_time" content="2025-06-09T17:01:52.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="MyBatis-Plus">
 <meta property="article:tag" content="PageHelper">
@@ -38,6 +44,9 @@
 <meta property="article:tag" content="兼容性">
 <meta property="article:tag" content="踩坑">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）","datePublished":"2025-06-09T17:01:52.000Z","dateModified":"2025-06-09T17:01:52.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/06/10/2025-06-10-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -409,14 +418,18 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）</h1>
+            <p id="seo-header">ShardingSphere 与 ORM 兼容性踩坑合集（分页 / 元数据 / 拦截器）</p>
             
             
               <div class="markdown-body">
                 
-                <p>分片落地最痛的往往不是分片本身，而是<strong>与现有 ORM 的兼容性</strong>。我在把 ShardingSphere 接入 cloud-order（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。</p>
+                <p>分片落地最痛的往往不是分片本身，而是<strong>与现有 ORM 的兼容性</strong>。我在把 ShardingSphere 接入订单中台（cloud-dal + MyBatis-Plus + PageHelper）时踩了一堆坑，整理成合集，帮你提前规避。</p>
 <h2 id="坑1：分页-——-PageHelper-与-ShardingSphere-二选一"><a href="#坑1：分页-——-PageHelper-与-ShardingSphere-二选一" class="headerlink" title="坑1：分页 —— PageHelper 与 ShardingSphere 二选一"></a>坑1：分页 —— PageHelper 与 ShardingSphere 二选一</h2><p><strong>现象</strong>：cloud-dal 的 <code>PageUtils.startPage()</code> 用的是 <strong>PageHelper 5.3.0</strong>（独立分页库），而 ShardingSphere 自己也带分页改写。两个分页机制叠加，SQL 被重复追加 LIMIT。</p>
 <p><strong>源码确认</strong>：<code>PageUtils.startPage → PageHelper.startPage()</code>；而 <code>MybatisPlusAutoConfig</code> 里 <code>PaginationInnerInterceptor</code> 默认 <code>pagePluginEnable=false</code>（关闭）。所以 cloud-dal 实际用 PageHelper 分页。</p>
 <p><strong>解法</strong>：<strong>分页必须二选一</strong>，不能两个分页拦截器并存。</p>
@@ -425,7 +438,7 @@
 <li><strong>废除 PageHelper，改用 ShardingSphere 或 MyBatis-Plus 原生分页（推荐）</strong></li>
 </ul>
 <blockquote>
-<p>实测：MyBatis-Plus 的 <code>PaginationInnerInterceptor</code> 与 ShardingSphere 协同正常，<code>total/pages</code> 跨分片正确。这是我验证过最稳的组合。</p>
+<p>最小验证（4 条数据 &#x2F; 4 分片）：MyBatis-Plus 的 <code>PaginationInnerInterceptor</code> 与 ShardingSphere 协同正常，<code>total/pages</code> 跨分片正确。这是本次验证里最稳的组合；生产还需补充深分页、事务、连接池验证。</p>
 </blockquote>
 <h2 id="坑2：物理表必须先建，再构造-ShardingSphere-数据源"><a href="#坑2：物理表必须先建，再构造-ShardingSphere-数据源" class="headerlink" title="坑2：物理表必须先建，再构造 ShardingSphere 数据源"></a>坑2：物理表必须先建，再构造 ShardingSphere 数据源</h2><p><strong>现象</strong>：Spring Boot 里逻辑表报 <code>Table or view &#39;t_demo_order&#39; does not exist</code>。</p>
 <p><strong>根因</strong>：<code>shardingDataSource()</code> 这个 <code>@Bean</code> 在容器早期创建，ShardingSphere 扫描元数据时若物理表还没建，元数据是<strong>空白快照</strong>。而 <code>@Component</code> 的 <code>CommandLineRunner</code> 建表在容器 ready 后，太晚了。</p>
@@ -446,8 +459,8 @@
 <p><strong>正确写法</strong>：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 读写分离: 挂 rw0</span><br><span class="hljs-string">&quot;rw0.t_rw_order_$&#123;0..3&#125;&quot;</span><br><span class="hljs-comment">// 影子库: 挂 sds0</span><br><span class="hljs-string">&quot;sds0.t_shadow_order&quot;</span><br></code></pre></td></tr></table></figure>
 
-<h2 id="坑5：cloud-parent-生态里-SpringBootApplication-被中间件卡死"><a href="#坑5：cloud-parent-生态里-SpringBootApplication-被中间件卡死" class="headerlink" title="坑5：cloud-parent 生态里 @SpringBootApplication 被中间件卡死"></a>坑5：cloud-parent 生态里 @SpringBootApplication 被中间件卡死</h2><p><strong>现象</strong>：order-service 加 <code>@SpringBootApplication</code> 启动报 Seata&#x2F;Dubbo&#x2F;Redis 找不到配置或连不上。</p>
-<p><strong>根因</strong>：cloud-parent 带入大量中间件，spring.factories 注册了自动配置，<code>@SpringBootApplication</code> 全部加载。</p>
+<h2 id="坑5：父工程生态里-SpringBootApplication-被中间件卡死"><a href="#坑5：父工程生态里-SpringBootApplication-被中间件卡死" class="headerlink" title="坑5：父工程生态里 @SpringBootApplication 被中间件卡死"></a>坑5：父工程生态里 @SpringBootApplication 被中间件卡死</h2><p><strong>现象</strong>：order-service 加 <code>@SpringBootApplication</code> 启动报 Seata&#x2F;Dubbo&#x2F;Redis 找不到配置或连不上。</p>
+<p><strong>根因</strong>：父工程带入大量中间件，spring.factories 注册了自动配置，<code>@SpringBootApplication</code> 全部加载。</p>
 <p><strong>解法</strong>（二选一）：</p>
 <ol>
 <li><code>@SpringBootApplication(exclude={...})</code> 排除所有中间件自动配置（清单很长且会漏）</li>
@@ -480,7 +493,7 @@
 <td>底层 JDBC 直查物理表确认分布</td>
 </tr>
 </tbody></table>
-<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>兼容性坑的共性问题就几个：<strong>分页二选一、物理表先建、元数据注册、逻辑数据源挂载</strong>。提前知道这些，能省掉大量调试时间。最推荐的生产组合：<strong>SpringBoot + MyBatis-Plus（原生分页）+ ShardingSphere</strong>，已在独立模块完整验证。</p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p>兼容性坑的共性问题就几个：<strong>分页二选一、物理表先建、元数据注册、逻辑数据源挂载</strong>。提前知道这些，能省掉大量调试时间。本次最小验证跑通的组合：<strong>SpringBoot + MyBatis-Plus（原生分页）+ ShardingSphere</strong>；生产落地前还需补充深分页、事务、连接池与版本兼容验证。</p>
 
                 
               </div>
@@ -669,7 +682,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -769,7 +782,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -784,7 +798,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

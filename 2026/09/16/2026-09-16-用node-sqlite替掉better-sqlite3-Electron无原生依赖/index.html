@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/16/2026-09-16-用node-sqlite替掉better-sqlite3-Electron无原生依赖/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="Electron 里做本地数据库，默认答案通常是 better-sqlite3。我最后用的是 Electron 内置的 node:sqlite。这篇讲为什么——核心不是”性能”，而是”不想让主进程背上原生模块”，以及随之而来的几个 schema 设计取舍。  一、better-sqlite3 的隐性代价better-sqlite3 很好用，但它是原生模块（native addon），这意味着：">
+    <meta name="description" content="Electron 里做本地数据库，默认答案通常是 better-sqlite3。我最后用的是 Electron 内置的 node:sqlite。这篇讲为什么——核心不是”性能”，而是”不想让主进程背上原生模块”，以及随之而来的几个 schema 设计取舍。 一、better-sqlite3 的隐性代价better-sqlite3 很好用，但它是原生模块（native addon），这意味着： 要按">
 <meta property="og:type" content="article">
 <meta property="og:title" content="用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="Electron 里做本地数据库，默认答案通常是 better-sqlite3。我最后用的是 Electron 内置的 node:sqlite。这篇讲为什么——核心不是”性能”，而是”不想让主进程背上原生模块”，以及随之而来的几个 schema 设计取舍。  一、better-sqlite3 的隐性代价better-sqlite3 很好用，但它是原生模块（native addon），这意味着：">
+<meta property="og:description" content="Electron 里做本地数据库，默认答案通常是 better-sqlite3。我最后用的是 Electron 内置的 node:sqlite。这篇讲为什么——核心不是”性能”，而是”不想让主进程背上原生模块”，以及随之而来的几个 schema 设计取舍。 一、better-sqlite3 的隐性代价better-sqlite3 很好用，但它是原生模块（native addon），这意味着： 要按">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ad336afc01a544f5f97e593bef08002.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ad336afc01a544f5f97e593bef08002.png">
 <meta property="article:published_time" content="2026-09-16T15:10:54.000Z">
-<meta property="article:modified_time" content="2026-11-03T03:09:51.633Z">
+<meta property="article:modified_time" content="2026-09-16T15:10:54.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="SQLite">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="原生模块">
 <meta property="article:tag" content="打包">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ad336afc01a544f5f97e593bef08002.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ad336afc01a544f5f97e593bef08002.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块","datePublished":"2026-09-16T15:10:54.000Z","dateModified":"2026-09-16T15:10:54.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/09/16/2026-09-16-%E7%94%A8node-sqlite%E6%9B%BF%E6%8E%89better-sqlite3-Electron%E6%97%A0%E5%8E%9F%E7%94%9F%E4%BE%9D%E8%B5%96/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -367,7 +376,7 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <header class="ax-post-head">
-            <p class="ax-eyebrow">技术</p>
+            <p class="ax-eyebrow">架构设计</p>
             <h1 class="ax-post-head__title">用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块</h1>
             <div class="ax-post-head__meta">
               
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.3k 字
+          2.7k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          19 分钟
+          23 分钟
         
       </span>
     
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块</h1>
+            <p id="seo-header">用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块</p>
             
             
               <div class="markdown-body">
@@ -429,7 +442,8 @@
 </ul>
 <p>这些代价平时不明显，但一旦进了打包链路，就会变成”换个 Node 版本就构建失败”这类烦人问题。</p>
 <h2 id="二、node-sqlite：内置、零原生依赖"><a href="#二、node-sqlite：内置、零原生依赖" class="headerlink" title="二、node:sqlite：内置、零原生依赖"></a>二、node:sqlite：内置、零原生依赖</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ad336afc01a544f5f97e593bef08002.png#pic_center" srcset="/img/loading.gif" lazyload alt="用 node:sqlite 替掉 better-sqlite3"></p>
-<p>Electron 内置了自己的 Node 运行时，而较新的 Node 提供了内置的 <code>node:sqlite</code>。于是可以做到：</p>
+<p>Electron 内置了自己的 Node 运行时，而较新的 Node 提供了内置的 <code>node:sqlite</code>。版本前提要写清楚：<code>node:sqlite</code> 从 <strong>Node 22.5</strong> 起提供，22.5–22.12 需要 <code>--experimental-sqlite</code>；<strong>Node 22.13 &#x2F; 23.4 起默认可用</strong>，但仍会打 <code>ExperimentalWarning</code>（Stability 1.1）。对应到 Electron 还不能只看 Node 版本：Electron 35&#x2F;36 内置的是 Node 22.14，但 <code>require(&#39;node:sqlite&#39;)</code> 在 <strong>36.7.3 之前</strong>的 Electron 构建里会失败（SQLite builtin 没有编进去），修复直到 <a target="_blank" rel="noopener" href="https://releases.electronjs.org/release/v36.7.3">36.7.3</a> &#x2F; 37.2.3 才落地；Electron 33&#x2F;34 还是 Node 20.18，更没有这个模块。所以实际可用下限是 <strong>Electron 36.7.3+ 或 37.2.3+</strong>。升级 Electron 或 Node 时仍要重新核对 API 与稳定性，不能把”能 require 到”当成”已经稳定”。</p>
+<p>于是可以做到：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">主进程：只用 Electron + node:*，不引任何原生 npm 数据库依赖<br>打包：npmRebuild: false<br></code></pre></td></tr></table></figure>
 
 <p>这条取舍我写在工程硬约束里：<strong>主进程不引原生 npm addon</strong>。好处是构建链路干净——不需要原生工具链，不需要 ABI 对齐，Electron 升级不用担心 SQLite 编译不过。</p>
@@ -462,7 +476,7 @@
 <li>这套存储设计是<strong>按”桌面单机、按商家隔离”的场景</strong>做的（每个商家一个库文件、每库一套捕获目录）。它不适合”多端共享一个库”的场景。</li>
 </ul>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>选 <strong><code>node:sqlite</code>（内置）</strong> 而不是 <code>better-sqlite3</code>：<strong>主进程零原生依赖</strong>、<code>npmRebuild: false</code>，构建链路干净；代价是 API 朴素、生态少；</li>
+<li>选 <strong><code>node:sqlite</code>（内置）</strong> 而不是 <code>better-sqlite3</code>：<strong>主进程零原生依赖</strong>、<code>npmRebuild: false</code>，构建链路干净；前提是 Node ≥ 22.13，且 Electron 要 <strong>36.7.3+ &#x2F; 37.2.3+</strong>（更早的构建里 SQLite builtin 缺失），它仍是实验性 API；代价是 API 朴素、生态少；</li>
 <li>schema 演进靠<strong>幂等操作</strong>（<code>ensureColumn</code> &#x2F; <code>CREATE INDEX IF NOT EXISTS</code>），<strong>不靠版本号 gate</strong>；DDL 文档与代码必须同步；</li>
 <li><strong>证据（<code>product_json</code>）与人工复核（<code>review_json</code>）分开存</strong>，人工编辑不污染证据；投影列<strong>停写不删列</strong>做兼容；</li>
 <li>任务计数列是<strong>反规范化</strong>，不保证等于行数（重试 &#x2F; 占位 &#x2F; UPSERT 会漂移），<strong>不要拿来对账</strong>；</li>
@@ -487,7 +501,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E6%8A%80%E6%9C%AF/" class="category-chain-item">技术</a>
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
   
   
 
@@ -656,7 +670,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -756,7 +770,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -771,7 +786,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

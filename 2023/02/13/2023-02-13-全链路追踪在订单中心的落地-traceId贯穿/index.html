@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/02/13/2023-02-13-全链路追踪在订单中心的落地-traceId贯穿/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/02/13/2023-02-13-%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E5%9C%A8%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E7%9A%84%E8%90%BD%E5%9C%B0-traceId%E8%B4%AF%E7%A9%BF/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。  一、问题：分布式调用链怎么定位瓶颈单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务： 123网关 → 订单服务 → 库存服务            ↘ 仓储服务">
+    <meta name="description" content="订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。 一、问题：分布式调用链怎么定位瓶颈单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务： 123网关 → 订单服务 → 库存服务 ↘ 仓储服务 ↘ 财务服务 接口慢了，是订单服务慢？">
 <meta property="og:type" content="article">
 <meta property="og:title" content="全链路追踪在订单中心的落地：traceId 贯穿每一次调用">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/02/13/2023-02-13-%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E5%9C%A8%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E7%9A%84%E8%90%BD%E5%9C%B0-traceId%E8%B4%AF%E7%A9%BF/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。  一、问题：分布式调用链怎么定位瓶颈单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务： 123网关 → 订单服务 → 库存服务            ↘ 仓储服务">
+<meta property="og:description" content="订单中心 20+ 微服务，一次请求要经过网关 → 订单服务 → 库存&#x2F;仓储&#x2F;财务多个下游。定位”哪个服务慢”靠全链路追踪。这篇讲 traceId 怎么贯穿全链路、Zipkin 怎么聚合。 一、问题：分布式调用链怎么定位瓶颈单体时代，慢接口看日志就行。微服务时代，一次请求要经过多个服务： 123网关 → 订单服务 → 库存服务 ↘ 仓储服务 ↘ 财务服务 接口慢了，是订单服务慢？">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31c2bf8993c4e416b21e06a41148e3ba.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31c2bf8993c4e416b21e06a41148e3ba.png">
 <meta property="article:published_time" content="2023-02-13T14:10:59.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.577Z">
+<meta property="article:modified_time" content="2023-02-13T14:10:59.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Sleuth">
 <meta property="article:tag" content="Zipkin">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="可观测性">
 <meta property="article:tag" content="链路追踪">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31c2bf8993c4e416b21e06a41148e3ba.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31c2bf8993c4e416b21e06a41148e3ba.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"全链路追踪在订单中心的落地：traceId 贯穿每一次调用","datePublished":"2023-02-13T14:10:59.000Z","dateModified":"2023-02-13T14:10:59.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/02/13/2023-02-13-%E5%85%A8%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%E5%9C%A8%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E7%9A%84%E8%90%BD%E5%9C%B0-traceId%E8%B4%AF%E7%A9%BF/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/service/">微服务与云原生</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">全链路追踪在订单中心的落地：traceId 贯穿每一次调用</h1>
+            <p id="seo-header">全链路追踪在订单中心的落地：traceId 贯穿每一次调用</p>
             
             
               <div class="markdown-body">
@@ -438,7 +451,7 @@
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span><br>  <span class="hljs-attr">sleuth:</span><br>    <span class="hljs-attr">sampler:</span><br>      <span class="hljs-attr">probability:</span> <span class="hljs-number">1.0</span>   <span class="hljs-comment"># 采样率：生产可以低一点（如 0.1），排查时调高</span><br>  <span class="hljs-attr">zipkin:</span><br>    <span class="hljs-attr">base-url:</span> <span class="hljs-string">http://zipkin:9411</span><br></code></pre></td></tr></table></figure>
 
 <p><strong>② traceId 自动贯穿</strong>：Sleuth 自动在日志里加 traceId&#x2F;spanId，并通过 Feign&#x2F;Dubbo 的调用头传递。</p>
-<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs subunit"># 日志自动带 traceId，所有服务按它串联<br>2026<span class="hljs-string">-07</span><span class="hljs-string">-18</span> [order-service,abc123,def456] 处理订单下单<br>2026<span class="hljs-string">-07</span><span class="hljs-string">-18</span> [stock-service,abc123,ghi789] 扣减库存<br></code></pre></td></tr></table></figure>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs subunit"># 日志自动带 traceId，所有服务按它串联<br>2023<span class="hljs-string">-02</span><span class="hljs-string">-13</span> [order-service,abc123,def456] 处理订单下单<br>2023<span class="hljs-string">-02</span><span class="hljs-string">-13</span> [stock-service,abc123,ghi789] 扣减库存<br></code></pre></td></tr></table></figure>
 
 <p><strong>③ Zipkin 看瀑布</strong>：Zipkin 聚合所有服务的 span，展示整条链路的<strong>耗时瀑布</strong>：</p>
 <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs">订单服务    ████████████ 5ms<br>  库存      ██ 3ms<br>  仓储      ████████████████████ 15ms   ← 一眼看到瓶颈<br>  财务      █ 2ms<br></code></pre></td></tr></table></figure>
@@ -474,7 +487,7 @@
 <li>边界：追踪缩小范围，不定位根因。</li>
 </ul>
 <hr>
-<p><em>发表于 2023 年 2 月 · 标签: 全链路追踪, Sleuth, Zipkin, traceId, 可观测性</em></p>
+<p><em>发表于 2023 年 2 月 · 标签: 链路追踪, Sleuth, Zipkin, traceId, 可观测性</em></p>
 
                 
               </div>
@@ -507,6 +520,8 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
+        <a href="/tags/%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA/" class="print-no-link">#链路追踪</a>
+      
         <a href="/tags/Sleuth/" class="print-no-link">#Sleuth</a>
       
         <a href="/tags/Zipkin/" class="print-no-link">#Zipkin</a>
@@ -514,8 +529,6 @@
         <a href="/tags/traceId/" class="print-no-link">#traceId</a>
       
         <a href="/tags/%E5%8F%AF%E8%A7%82%E6%B5%8B%E6%80%A7/" class="print-no-link">#可观测性</a>
-      
-        <a href="/tags/%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA/" class="print-no-link">#链路追踪</a>
       
     </div>
   
@@ -572,9 +585,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2023/02/16/2023-02-16-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" title="AI辅助代码审查实战：用Claude审查5.3万行供应链代码">
+                      <a href="/2023/02/16/2023-02-16-AI%E8%BE%85%E5%8A%A9%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" title="AI辅助代码审查实战：用早期大模型审查5.3万行供应链代码">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">AI辅助代码审查实战：用Claude审查5.3万行供应链代码</span>
+                        <span class="hidden-mobile">AI辅助代码审查实战：用早期大模型审查5.3万行供应链代码</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -661,7 +674,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -761,7 +774,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -776,7 +790,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

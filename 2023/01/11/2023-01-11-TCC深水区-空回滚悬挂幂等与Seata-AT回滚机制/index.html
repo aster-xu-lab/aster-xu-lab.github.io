@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/01/11/2023-01-11-TCC深水区-空回滚悬挂幂等与Seata-AT回滚机制/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/01/11/2023-01-11-TCC%E6%B7%B1%E6%B0%B4%E5%8C%BA-%E7%A9%BA%E5%9B%9E%E6%BB%9A%E6%82%AC%E6%8C%82%E5%B9%82%E7%AD%89%E4%B8%8ESeata-AT%E5%9B%9E%E6%BB%9A%E6%9C%BA%E5%88%B6/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -29,7 +35,7 @@
 <meta property="og:description" content="一、TCC 的三个坑：都在解决”网络不可靠下的状态错乱”TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但网络是不可靠的——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。 坑 1：空回滚场景：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。 后果：直接回滚会报错&#x2F;误删——“没 Try 过">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-01-11T12:26:02.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.577Z">
+<meta property="article:modified_time" content="2023-01-11T12:26:02.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Seata">
 <meta property="article:tag" content="TCC">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="分布式事务">
 <meta property="article:tag" content="幂等">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚","datePublished":"2023-01-11T12:26:02.000Z","dateModified":"2023-01-11T12:26:02.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/01/11/2023-01-11-TCC%E6%B7%B1%E6%B0%B4%E5%8C%BA-%E7%A9%BA%E5%9B%9E%E6%BB%9A%E6%82%AC%E6%8C%82%E5%B9%82%E7%AD%89%E4%B8%8ESeata-AT%E5%9B%9E%E6%BB%9A%E6%9C%BA%E5%88%B6/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.7k 字
+          1.8k 字
         
       </span>
     
@@ -397,7 +406,7 @@
         
         
         
-          14 分钟
+          15 分钟
         
       </span>
     
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/consistency/">分布式事务与消息</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚</h1>
+            <p id="seo-header">TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚</p>
             
             
               <div class="markdown-body">
@@ -424,7 +437,7 @@
 <h3 id="坑-3：幂等"><a href="#坑-3：幂等" class="headerlink" title="坑 3：幂等"></a>坑 3：幂等</h3><p><strong>场景</strong>：网络重试导致 Confirm&#x2F;Cancel 重复执行。</p>
 <p><strong>解决</strong>：Confirm&#x2F;Cancel <strong>按业务主键做幂等</strong>（预留记录上打状态&#x2F;版本号），重复执行只生效一次。</p>
 <p><strong>本质</strong>：TCC 三个坑都在解决”<strong>网络不可靠下的状态错乱</strong>“——用<strong>预留记录 + 状态标记 + 幂等</strong>兜住空回滚、悬挂、重复。</p>
-<h2 id="二、Seata-AT-模式的-undo-log-到底怎么回滚"><a href="#二、Seata-AT-模式的-undo-log-到底怎么回滚" class="headerlink" title="二、Seata AT 模式的 undo_log 到底怎么回滚"></a>二、Seata AT 模式的 undo_log 到底怎么回滚</h2><p>我在工单系统用 Seata AT，被问”AT 怎么自动回滚”要能讲机制：</p>
+<h2 id="二、Seata-AT-模式的-undo-log-到底怎么回滚"><a href="#二、Seata-AT-模式的-undo-log-到底怎么回滚" class="headerlink" title="二、Seata AT 模式的 undo_log 到底怎么回滚"></a>二、Seata AT 模式的 undo_log 到底怎么回滚</h2><p>我在工单系统的跨库链路用 Seata AT（同库多表用本地事务），被问”AT 怎么自动回滚”要能讲机制：</p>
 <p><strong>一阶段</strong>：</p>
 <figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">① 拦截器先记录该行的 <span class="hljs-keyword">before</span>-image（查一次）<br>② 执行业务 <span class="hljs-keyword">SQL</span><br>③ 再查 <span class="hljs-keyword">after</span>-image<br>④ 把前后镜像 + 业务 <span class="hljs-keyword">SQL</span> 写进 undo_log 表（和业务同库、同一本地事务）<br>⑤ 业务 <span class="hljs-keyword">SQL</span> 正常提交<br>⑥ 全局锁记在锁表<br></code></pre></td></tr></table></figure>
 
@@ -432,7 +445,7 @@
 <figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">Commit</span> → 删 undo_log（不用回滚）<br><span class="hljs-keyword">Rollback</span> → 用 undo_log 里的 <span class="hljs-keyword">before</span>-image 做反向补偿<br>        → 生成反向 <span class="hljs-keyword">SQL</span> 把行改回旧值 → 删 undo_log<br></code></pre></td></tr></table></figure>
 
 <p><strong>核心</strong>：AT 是<strong>反向 SQL 补偿</strong>实现回滚，不重放事务——所以比 2PC 的锁轻，但一阶段是乐观的（先提交业务、靠 undo 兜底）。</p>
-<p><strong>为什么 AT 全局锁 → 并发低</strong>：一阶段提交时拿全局锁保证多库间串行，回滚也持锁，冲突多的写操作被串行化——这就是我 2PC → TCC 的动机。</p>
+<p><strong>为什么 AT 全局写锁 → 并发低</strong>：一阶段提交时拿全局写锁保证多库间提交顺序，回滚也持锁，冲突多的写操作被串行化（是<strong>冲突行串行化</strong>，不是数据库的可串行化隔离）——这就是我 2PC → TCC 的动机。</p>
 <h2 id="三、TCC-是强一致吗？准确定位"><a href="#三、TCC-是强一致吗？准确定位" class="headerlink" title="三、TCC 是强一致吗？准确定位"></a>三、TCC 是强一致吗？准确定位</h2><p>被问”TCC 是强一致吗”要答准：</p>
 <blockquote>
 <p>TCC 是<strong>应用层多段提交、近似强一致但本质靠幂等 + 最终一致兜底</strong>——Try 预留是宽松隔离，不是真锁住；它比 2PC 快因为把长事务串行化换成”预留 + 确认”的短临界。<strong>别吹成”和 2PC 一样强同步”</strong>。</p>
@@ -444,15 +457,15 @@
 <li><strong>幂等</strong>管”重试别重复”——即使事务保证了原子，<strong>网络仍可能重试</strong>，Confirm&#x2F;Cancel 被重复执行依然会错。</li>
 </ul>
 <p>所以<strong>用了事务也必须并行做幂等</strong>。事务和幂等是两个维度，不是替代关系。</p>
-<h2 id="五、结合我的项目"><a href="#五、结合我的项目" class="headerlink" title="五、结合我的项目"></a>五、结合我的项目</h2><p>订单中心把发货确认、库存扣减这类核心链路从 AT 改 <strong>TCC</strong>：AT 的全局锁本质是把可串行化隔离强加在所有事务上，把所有并发串行化了；TCC 在 Try 阶段用宽松隔离、只在 Confirm 做串行化，性能提升 <strong>40%+</strong>。</p>
+<h2 id="五、结合我的项目"><a href="#五、结合我的项目" class="headerlink" title="五、结合我的项目"></a>五、结合我的项目</h2><p>订单中心计划把发货确认、库存扣减这类核心链路从 AT 迁到 <strong>TCC</strong>：AT 的全局写锁会把冲突行串行化（不是可串行化隔离），争用高时开销大；TCC 在 Try 阶段用宽松隔离、只在 Confirm 做短临界区提交，预期在争用高的链路上吞吐更好（迁移与对比放到后续复盘，无统一压测基线，不报具体百分比）。</p>
 <p>同时订单同步这种最终一致场景用<strong>本地消息表 + 幂等</strong>（那套和 SAGA 的”最终一致 + 补偿”是一路）。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>TCC 三坑：<strong>空回滚（没 Try 却 Cancel）、悬挂（Cancel 后 Try 才到）、幂等（重试重复）</strong>——用预留记录 + 状态标记 + 幂等解决；</li>
 <li>Seata AT 回滚：<strong>一阶段记前后镜像到 undo_log，二阶段 Rollback 用 before-image 反向 SQL 补偿</strong>；</li>
-<li>AT 全局锁 → 串行化 → 并发低，是 2PC → TCC 的动机；</li>
+<li>AT 全局写锁 → 冲突行串行化 → 争用高时并发低，是 2PC → TCC 的动机；</li>
 <li>TCC 准确定位：<strong>应用层多段提交、近似强一致、本质靠幂等兜底</strong>，别吹过头；</li>
 <li>事务管原子、幂等管重试，<strong>两个维度都要做</strong>；</li>
-<li>我的实战：核心链路 TCC（40%+ 提升）、同步场景本地消息表 + 幂等。</li>
+<li>我的场景：核心链路规划 TCC、同步场景本地消息表 + 幂等。</li>
 </ul>
 <hr>
 <p><em>发表于 2023 年 1 月 · 标签: 分布式事务, TCC, Seata, 幂等, undo_log</em></p>
@@ -642,7 +655,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -742,7 +755,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -757,7 +771,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

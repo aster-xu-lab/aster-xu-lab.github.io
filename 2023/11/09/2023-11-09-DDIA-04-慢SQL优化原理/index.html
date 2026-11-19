@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/11/09/2023-11-09-DDIA-04-慢SQL优化原理/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/11/09/2023-11-09-DDIA-04-%E6%85%A2SQL%E4%BC%98%E5%8C%96%E5%8E%9F%E7%90%86/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -29,7 +35,7 @@
 <meta property="og:description" content="日均慢SQL从1124条降到6条，降幅99.4%。不是靠堆硬件，不是靠改SQL语法糖，而是把存储引擎原理吃透之后，让每一条SQL都走在最短路径上。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-11-08T17:18:28.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.512Z">
+<meta property="article:modified_time" content="2023-11-08T17:18:28.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="B+Tree">
 <meta property="article:tag" content="DDIA">
@@ -40,6 +46,9 @@
 <meta property="article:tag" content="性能优化">
 <meta property="article:tag" content="慢SQL">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-04-实战：1124→6，慢SQL优化背后的存储引擎原理","datePublished":"2023-11-08T17:18:28.000Z","dateModified":"2023-11-08T17:18:28.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/11/09/2023-11-09-DDIA-04-%E6%85%A2SQL%E4%BC%98%E5%8C%96%E5%8E%9F%E7%90%86/"}}</script>
   
   
   
@@ -214,7 +223,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -411,14 +420,18 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-04-实战：1124→6，慢SQL优化背后的存储引擎原理</h1>
+            <p id="seo-header">DDIA-04-实战：1124→6，慢SQL优化背后的存储引擎原理</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="一、1124→6，这个数字怎么来的"><a href="#一、1124→6，这个数字怎么来的" class="headerlink" title="一、1124→6，这个数字怎么来的"></a>一、1124→6，这个数字怎么来的</h2><p>先交代背景。我负责的电商中台系统（订单中心 + 仓储管理），日订单峰值130万，线上跑了几十个业务模块，数据库是MySQL 5.7，InnoDB引擎。当时慢查询监控面板上的数字是：<strong>日均慢SQL 1124条</strong>。</p>
+                <h2 id="一、1124→6，这个数字怎么来的"><a href="#一、1124→6，这个数字怎么来的" class="headerlink" title="一、1124→6，这个数字怎么来的"></a>一、1124→6，这个数字怎么来的</h2><p>先交代背景。我负责的电商中台系统（订单中心 + 仓储管理），日订单峰值130万（历史峰值口径，主口径见订单中台系列），线上跑了几十个业务模块，数据库是MySQL 5.7，InnoDB引擎。当时慢查询监控面板上的数字是：<strong>日均慢SQL 1124条</strong>。</p>
 <p>什么是慢SQL？我们设的阈值是执行时间超过1秒。1124条意味着每天有1100多次数据库查询耗时超过1秒——这在用户侧表现为订单提交卡顿、库存查询超时、报表加载转圈。线上偶尔告警，用户反馈时好时坏。</p>
 <p>优化之后这个数字降到<strong>日均6条</strong>，降幅99.4%。</p>
 <p>这个数字不是某个单一优化的结果，而是一套组合拳打下去之后的总效果。在本文里，我会把每个优化动作和它背后的存储引擎原理对应起来——为什么要建这个索引？为什么覆盖索引比普通索引快？为什么JOIN能不写就不写？每一个”为什么”后面都有一段B+Tree和磁盘IO的硬核逻辑。</p>
@@ -659,7 +672,7 @@
 </ol>
 <p>你不需要记住一百种SQL写法技巧。你只需要把B+Tree那颗树的结构刻在脑子里，然后遇到慢SQL时问自己一句话：<strong>“这个查询，从根节点到叶子节点，到底多走了哪段路？”</strong></p>
 <hr>
-<p><em>DDIA系列第四篇。下一篇预告：DDIA-05-事务隔离级别在订单系统中的实战选择。</em></p>
+<p><em>DDIA系列第四篇。下一篇：DDIA-05-Schema演化——数据编码与兼容性。</em></p>
 
                 
               </div>
@@ -696,13 +709,13 @@
       
         <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
-        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
-      
         <a href="/tags/%E6%85%A2SQL/" class="print-no-link">#慢SQL</a>
       
-        <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
+        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
       
         <a href="/tags/InnoDB/" class="print-no-link">#InnoDB</a>
+      
+        <a href="/tags/%E5%AE%9E%E6%88%98/" class="print-no-link">#实战</a>
       
         <a href="/tags/%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" class="print-no-link">#存储引擎</a>
       
@@ -852,7 +865,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -952,7 +965,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -967,7 +981,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

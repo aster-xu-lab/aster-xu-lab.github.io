@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/05/08/2024-05-08-DDIA-08-长事务与死锁/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/05/08/2024-05-08-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="长事务是怎么一步步把系统拖垮的？死锁到底怎么排查？乐观锁和悲观锁分别在什么场景下用？本文结合130万日订单实战，从订单批量处理锁表事故，到扣库存用版本号+CAS，再到SyncTask引擎事务边界设计的V1→V2修复，完整还原事务踩坑与自救的全过程。">
+    <meta name="description" content="长事务是怎么一步步把系统拖垮的？死锁到底怎么排查？乐观锁和悲观锁分别在什么场景下用？本文结合130万日订单峰值（历史口径）的实战，从订单批量处理锁表事故，到扣库存用版本号+CAS，再到SyncTask引擎事务边界设计的V1→V2修复，完整还原事务踩坑与自救的全过程。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/05/08/2024-05-08-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="长事务是怎么一步步把系统拖垮的？死锁到底怎么排查？乐观锁和悲观锁分别在什么场景下用？本文结合130万日订单实战，从订单批量处理锁表事故，到扣库存用版本号+CAS，再到SyncTask引擎事务边界设计的V1→V2修复，完整还原事务踩坑与自救的全过程。">
+<meta property="og:description" content="长事务是怎么一步步把系统拖垮的？死锁到底怎么排查？乐观锁和悲观锁分别在什么场景下用？本文结合130万日订单峰值（历史口径）的实战，从订单批量处理锁表事故，到扣库存用版本号+CAS，再到SyncTask引擎事务边界设计的V1→V2修复，完整还原事务踩坑与自救的全过程。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-05-08T14:26:47.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.751Z">
+<meta property="article:modified_time" content="2024-05-08T14:26:47.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="MySQL">
@@ -40,6 +46,9 @@
 <meta property="article:tag" content="死锁">
 <meta property="article:tag" content="锁">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验","datePublished":"2024-05-08T14:26:47.000Z","dateModified":"2024-05-08T14:26:47.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/05/08/2024-05-08-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/"}}</script>
   
   
   
@@ -214,7 +223,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -411,9 +420,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验</h1>
+            <p id="seo-header">DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验</p>
             
             
               <div class="markdown-body">
@@ -424,7 +437,7 @@
 
 <p>这个事务涵盖了数据库操作、HTTP调用、MQ发送，执行一次至少3-5秒。看起来一切正常地对吗？「原子性」保证了任何一个环节失败就回滚，逻辑上没毛病。</p>
 <p>但你猜生产环境会怎么样？</p>
-<p>在日订单峰值120万+、QPS 8000的场景下，这个「完美事务」会在三小时内把数据库连接池打满，然后整个订单服务开始拒绝服务 —— 不是哪个组件坏了，就是「事务写得太长」这一个问题。</p>
+<p>在日订单峰值130万（历史峰值口径，主口径见订单中台系列）、QPS 8000的场景下，这个「完美事务」会在三小时内把数据库连接池打满，然后整个订单服务开始拒绝服务 —— 不是哪个组件坏了，就是「事务写得太长」这一个问题。</p>
 <p>这就是我这篇文章要说的：<strong>事务不是万能膏药。用得不对，事务本身会成为系统雪崩的起点。</strong></p>
 <p>本文会从长事务的危害开始，讲到死锁的形成与排查，再到乐观锁和悲观锁的实战选型，最后总结事务边界设计的原则。读完你会明白：写对事务，不是知道ACID四个字母就够了。</p>
 <hr>
@@ -757,7 +770,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -857,7 +870,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -872,7 +886,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

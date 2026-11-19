@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/12/14/2022-12-14-百万订单缓存与降级策略/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="百万订单系统的缓存与降级策略前言我们订单系统日均处理百万级订单，双十一峰值还要翻几倍。对于 B 端系统来说，缓存策略跟 C 端完全不一样——B 端对一致性的要求更高，不能简单地”先查缓存、缓存没有查 DB”。 这篇文章聊聊我们在订单系统里的缓存和降级实践。 一、B端缓存的特殊性跟 C 端不一样的地方在于：  一致性要求高：用户看到订单状态”已发货”但实际是”待发货”，这就是客诉 数据量大但不全是热">
+    <meta name="description" content="百万订单系统的缓存与降级策略前言我们订单系统日均处理百万级订单，双十一峰值还要翻几倍。对于 B 端系统来说，缓存策略跟 C 端完全不一样——B 端对一致性的要求更高，不能只靠”先查缓存、缓存没有查 DB”就认为一致性问题已经解决。 这篇文章聊聊我们在订单系统里的缓存和降级实践。 一、B端缓存的特殊性跟 C 端不一样的地方在于： 一致性要求高：用户看到订单状态”已发货”但实际是”待发货”，这就是客诉">
 <meta property="og:type" content="article">
 <meta property="og:title" content="百万订单系统的缓存与降级策略">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="百万订单系统的缓存与降级策略前言我们订单系统日均处理百万级订单，双十一峰值还要翻几倍。对于 B 端系统来说，缓存策略跟 C 端完全不一样——B 端对一致性的要求更高，不能简单地”先查缓存、缓存没有查 DB”。 这篇文章聊聊我们在订单系统里的缓存和降级实践。 一、B端缓存的特殊性跟 C 端不一样的地方在于：  一致性要求高：用户看到订单状态”已发货”但实际是”待发货”，这就是客诉 数据量大但不全是热">
+<meta property="og:description" content="百万订单系统的缓存与降级策略前言我们订单系统日均处理百万级订单，双十一峰值还要翻几倍。对于 B 端系统来说，缓存策略跟 C 端完全不一样——B 端对一致性的要求更高，不能只靠”先查缓存、缓存没有查 DB”就认为一致性问题已经解决。 这篇文章聊聊我们在订单系统里的缓存和降级实践。 一、B端缓存的特殊性跟 C 端不一样的地方在于： 一致性要求高：用户看到订单状态”已发货”但实际是”待发货”，这就是客诉">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-12-13T17:39:03.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.506Z">
+<meta property="article:modified_time" content="2022-12-13T17:39:03.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Caffeine">
 <meta property="article:tag" content="Redis">
@@ -38,6 +44,9 @@
 <meta property="article:tag" content="缓存">
 <meta property="article:tag" content="降级">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"百万订单系统的缓存与降级策略","datePublished":"2022-12-13T17:39:03.000Z","dateModified":"2022-12-13T17:39:03.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -387,7 +396,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.7k 字
+          3.9k 字
         
       </span>
     
@@ -398,7 +407,7 @@
         
         
         
-          31 分钟
+          33 分钟
         
       </span>
     
@@ -409,14 +418,18 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">百万订单系统的缓存与降级策略</h1>
+            <p id="seo-header">百万订单系统的缓存与降级策略</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="百万订单系统的缓存与降级策略"><a href="#百万订单系统的缓存与降级策略" class="headerlink" title="百万订单系统的缓存与降级策略"></a>百万订单系统的缓存与降级策略</h2><h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>我们订单系统日均处理百万级订单，双十一峰值还要翻几倍。对于 B 端系统来说，缓存策略跟 C 端完全不一样——B 端对一致性的要求更高，不能简单地”先查缓存、缓存没有查 DB”。</p>
+                <h2 id="百万订单系统的缓存与降级策略"><a href="#百万订单系统的缓存与降级策略" class="headerlink" title="百万订单系统的缓存与降级策略"></a>百万订单系统的缓存与降级策略</h2><h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>我们订单系统日均处理百万级订单，双十一峰值还要翻几倍。对于 B 端系统来说，缓存策略跟 C 端完全不一样——B 端对一致性的要求更高，不能只靠”先查缓存、缓存没有查 DB”就认为一致性问题已经解决。</p>
 <p>这篇文章聊聊我们在订单系统里的缓存和降级实践。</p>
 <h3 id="一、B端缓存的特殊性"><a href="#一、B端缓存的特殊性" class="headerlink" title="一、B端缓存的特殊性"></a>一、B端缓存的特殊性</h3><p>跟 C 端不一样的地方在于：</p>
 <ol>
@@ -434,9 +447,10 @@
 <p>查询策略：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> OrderDTO <span class="hljs-title function_">getOrder</span><span class="hljs-params">(String orderNo)</span> &#123;<br>    <span class="hljs-comment">// L1: Caffeine</span><br>    <span class="hljs-type">OrderDTO</span> <span class="hljs-variable">order</span> <span class="hljs-operator">=</span> caffeineCache.getIfPresent(orderNo);<br>    <span class="hljs-keyword">if</span> (order != <span class="hljs-literal">null</span>) <span class="hljs-keyword">return</span> order;<br>    <br>    <span class="hljs-comment">// L2: Redis</span><br>    order = redisTemplate.opsForValue().get(<span class="hljs-string">&quot;order:&quot;</span> + orderNo);<br>    <span class="hljs-keyword">if</span> (order != <span class="hljs-literal">null</span>) &#123;<br>        caffeineCache.put(orderNo, order);<br>        <span class="hljs-keyword">return</span> order;<br>    &#125;<br>    <br>    <span class="hljs-comment">// L3: MySQL</span><br>    order = orderMapper.selectByOrderNo(orderNo);<br>    <span class="hljs-keyword">if</span> (order != <span class="hljs-literal">null</span>) &#123;<br>        redisTemplate.opsForValue().set(<span class="hljs-string">&quot;order:&quot;</span> + orderNo, order, <br>            <span class="hljs-number">30</span>, TimeUnit.MINUTES);<br>        caffeineCache.put(orderNo, order);<br>    &#125;<br>    <span class="hljs-keyword">return</span> order;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h4 id="缓存更新策略"><a href="#缓存更新策略" class="headerlink" title="缓存更新策略"></a>缓存更新策略</h4><p>B 端不适合 Cache Aside（先删缓存再更新 DB），因为写入和读取之间的窗口期会拿到脏数据。我们采用<strong>写入后刷新</strong>：</p>
+<h4 id="缓存更新策略"><a href="#缓存更新策略" class="headerlink" title="缓存更新策略"></a>缓存更新策略</h4><p>Cache Aside（更新 DB 后删除缓存）适合读多写少的场景，但在 B 端多节点 + L1 本地缓存下，单靠删 Redis 无法让各节点 L1 立即失效，必须配合版本号或失效广播。我们采用<strong>写入后刷新</strong>，并需要配合<strong>失效广播&#x2F;版本校验</strong>来覆盖多节点 L1：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Transactional</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">updateOrderStatus</span><span class="hljs-params">(String orderNo, OrderStatus newStatus)</span> &#123;<br>    orderMapper.updateStatus(orderNo, newStatus);<br>    <span class="hljs-comment">// 事务提交后再刷新缓存</span><br>    TransactionSynchronizationManager.registerSynchronization(<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">TransactionSynchronization</span>() &#123;<br>            <span class="hljs-meta">@Override</span><br>            <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">afterCommit</span><span class="hljs-params">()</span> &#123;<br>                <span class="hljs-type">OrderDTO</span> <span class="hljs-variable">order</span> <span class="hljs-operator">=</span> orderMapper.selectByOrderNo(orderNo);<br>                redisTemplate.opsForValue().set(<span class="hljs-string">&quot;order:&quot;</span> + orderNo, order, <br>                    <span class="hljs-number">30</span>, TimeUnit.MINUTES);<br>                caffeineCache.put(orderNo, order);<br>            &#125;<br>        &#125;);<br>&#125;<br></code></pre></td></tr></table></figure>
 
+<p>多节点部署时，<code>afterCommit</code> 只刷新了当前节点的 L1，其他节点的 Caffeine 仍是旧值，需要配合 Redis Pub&#x2F;Sub 广播失效消息（或监听数据库 binlog）：各节点收到后执行 <code>caffeineCache.invalidate(orderNo)</code>；同时给缓存值带版本号，写入时递增版本，读取时校验版本，避免失效消息丢失后长期脏读。</p>
 <h3 id="三、大促降级策略"><a href="#三、大促降级策略" class="headerlink" title="三、大促降级策略"></a>三、大促降级策略</h3><p>双十一期间，我们有三层降级：</p>
 <h4 id="第一层：关闭非核心功能"><a href="#第一层：关闭非核心功能" class="headerlink" title="第一层：关闭非核心功能"></a>第一层：关闭非核心功能</h4><figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-comment"># 大促开关配置（Nacos 动态配置）</span><br><span class="hljs-attr">purchase.switch:</span><br>  <span class="hljs-attr">sync-history-order:</span> <span class="hljs-literal">false</span>   <span class="hljs-comment"># 关闭历史订单同步</span><br>  <span class="hljs-attr">report-export:</span> <span class="hljs-literal">false</span>        <span class="hljs-comment"># 关闭报表导出</span><br>  <span class="hljs-attr">data-clean:</span> <span class="hljs-literal">false</span>           <span class="hljs-comment"># 关闭数据清理任务</span><br>  <span class="hljs-attr">log-detail:</span> <span class="hljs-literal">false</span>           <span class="hljs-comment"># 关闭详情日志</span><br></code></pre></td></tr></table></figure>
 
@@ -462,13 +476,13 @@
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>B 端缓存策略的核心在于<strong>一致性优先，性能其次</strong>。几个关键决策：</p>
 <ul>
 <li>L1 + L2 双层缓存，L1 扛 QPS，L2 做共享</li>
-<li>写入后刷新而非 Cache Aside</li>
+<li>写入后刷新 + 多节点 L1 失效广播&#x2F;版本校验，而非只依赖 Cache Aside</li>
 <li>大促三层降级：关非核心 → 缓存兜底 → 熔断</li>
 <li>TTL 作为一致性最终防线</li>
 <li>关键操作直读 DB 不缓存</li>
 </ul>
 <hr>
-<p><em>发表于 2022 年 12 月 · 标签: 缓存, Caffeine, Redis, 降级, 熔断, 大促保障</em></p>
+<p><em>发表于 2022 年 12 月 · 标签: 缓存, Caffeine, Redis, 降级, 熔断, 大促</em></p>
 
                 
               </div>
@@ -657,7 +671,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -757,7 +771,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -772,7 +787,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

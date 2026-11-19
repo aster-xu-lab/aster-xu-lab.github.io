@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/05/09/2023-05-09-大促保障与秒杀设计-限流降级熔断缓存/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/05/09/2023-05-09-%E5%A4%A7%E4%BF%83%E4%BF%9D%E9%9A%9C%E4%B8%8E%E7%A7%92%E6%9D%80%E8%AE%BE%E8%AE%A1-%E9%99%90%E6%B5%81%E9%99%8D%E7%BA%A7%E7%86%94%E6%96%AD%E7%BC%93%E5%AD%98/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、大促保障四件套高并发场景（大促&#x2F;秒杀）的保障，核心是四件套一起上：  限流：入口控制量，按 QPS&#x2F;并发线程限流，防止打爆； 降级：非核心功能降级（营销&#x2F;推荐只保留基础、二级缓存降级走 Redis）； 熔断：下游异常快速失败，保护自己； 缓存：热点数据预热、缓存降级。  我的订单中心大促：按 QPS 限流防打爆、下游仓储&#x2F;SAP 异常时熔断快速失败、非核">
+    <meta name="description" content="一、大促保障四件套 定位：本文聚焦大促保障与秒杀的组合设计；限流算法原理见《四大限流算法》，Sentinel 组件能力见《Sentinel 限流熔断降级与雪崩传导》。 高并发场景（大促&#x2F;秒杀）的保障，核心是四件套一起上： 限流：入口控制量，按 QPS&#x2F;并发线程限流，防止打爆； 降级：非核心功能降级（营销&#x2F;推荐只保留基础、二级缓存降级走 Redis）； 熔断：下游异常快">
 <meta property="og:type" content="article">
 <meta property="og:title" content="大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/05/09/2023-05-09-%E5%A4%A7%E4%BF%83%E4%BF%9D%E9%9A%9C%E4%B8%8E%E7%A7%92%E6%9D%80%E8%AE%BE%E8%AE%A1-%E9%99%90%E6%B5%81%E9%99%8D%E7%BA%A7%E7%86%94%E6%96%AD%E7%BC%93%E5%AD%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、大促保障四件套高并发场景（大促&#x2F;秒杀）的保障，核心是四件套一起上：  限流：入口控制量，按 QPS&#x2F;并发线程限流，防止打爆； 降级：非核心功能降级（营销&#x2F;推荐只保留基础、二级缓存降级走 Redis）； 熔断：下游异常快速失败，保护自己； 缓存：热点数据预热、缓存降级。  我的订单中心大促：按 QPS 限流防打爆、下游仓储&#x2F;SAP 异常时熔断快速失败、非核">
+<meta property="og:description" content="一、大促保障四件套 定位：本文聚焦大促保障与秒杀的组合设计；限流算法原理见《四大限流算法》，Sentinel 组件能力见《Sentinel 限流熔断降级与雪崩传导》。 高并发场景（大促&#x2F;秒杀）的保障，核心是四件套一起上： 限流：入口控制量，按 QPS&#x2F;并发线程限流，防止打爆； 降级：非核心功能降级（营销&#x2F;推荐只保留基础、二级缓存降级走 Redis）； 熔断：下游异常快">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-05-09T14:12:05.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.828Z">
+<meta property="article:modified_time" content="2023-05-09T14:12:05.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="大促">
 <meta property="article:tag" content="库存">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="系统设计">
 <meta property="article:tag" content="限流">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳","datePublished":"2023-05-09T14:12:05.000Z","dateModified":"2023-05-09T14:12:05.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/05/09/2023-05-09-%E5%A4%A7%E4%BF%83%E4%BF%9D%E9%9A%9C%E4%B8%8E%E7%A7%92%E6%9D%80%E8%AE%BE%E8%AE%A1-%E9%99%90%E6%B5%81%E9%99%8D%E7%BA%A7%E7%86%94%E6%96%AD%E7%BC%93%E5%AD%98/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.4k 字
+          1.5k 字
         
       </span>
     
@@ -397,7 +406,7 @@
         
         
         
-          12 分钟
+          13 分钟
         
       </span>
     
@@ -408,14 +417,21 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳</h1>
+            <p id="seo-header">大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="一、大促保障四件套"><a href="#一、大促保障四件套" class="headerlink" title="一、大促保障四件套"></a>一、大促保障四件套</h2><p>高并发场景（大促&#x2F;秒杀）的保障，核心是四件套一起上：</p>
+                <h2 id="一、大促保障四件套"><a href="#一、大促保障四件套" class="headerlink" title="一、大促保障四件套"></a>一、大促保障四件套</h2><blockquote>
+<p>定位：本文聚焦大促保障与秒杀的组合设计；限流算法原理见《四大限流算法》，Sentinel 组件能力见《Sentinel 限流熔断降级与雪崩传导》。</p>
+</blockquote>
+<p>高并发场景（大促&#x2F;秒杀）的保障，核心是四件套一起上：</p>
 <ul>
 <li><strong>限流</strong>：入口控制量，按 QPS&#x2F;并发线程限流，防止打爆；</li>
 <li><strong>降级</strong>：非核心功能降级（营销&#x2F;推荐只保留基础、二级缓存降级走 Redis）；</li>
@@ -449,7 +465,7 @@
 <li><strong>缓存</strong>：热点数据预热、缓存降级；</li>
 <li><strong>异步</strong>：MQ 解耦耗时操作，削峰。</li>
 </ol>
-<p><strong>这套从”缓存到分库分表到 OLAP”的完整链路，就是我处理高并发&#x2F;大促的方案</strong>——订单中台日均 15 万单（峰值 50 万），通天晓传统 OMS 双十一峰值 130 万日单，都是同一套。</p>
+<p><strong>这套”缓存 → 限流 → 降级熔断 → 异步削峰”的组合，就是我处理高并发&#x2F;大促的方案</strong>——订单中台日均 15 万单（峰值 50 万），某传统OMS双十一峰值 130 万日单（另一统计口径），都是同一套思路。数据量再往上才引入分库分表&#x2F;OLAP，那是后续复盘的内容，不是当时已有能力。</p>
 <h2 id="四、为什么秒杀要”排队”"><a href="#四、为什么秒杀要”排队”" class="headerlink" title="四、为什么秒杀要”排队”"></a>四、为什么秒杀要”排队”</h2><p>秒杀的本质是<strong>瞬时流量远超处理能力</strong>。如果不排队，所有请求同时打 DB，DB 直接挂。</p>
 <p>排队（MQ）的价值：<strong>把瞬时尖峰平滑成持续流量</strong>——请求先落队列，后端按自己的吞吐慢慢消化。用户看到”排队中”，但不会丢请求。这就是”削峰”的落地。</p>
 <h2 id="五、防超卖的底层"><a href="#五、防超卖的底层" class="headerlink" title="五、防超卖的底层"></a>五、防超卖的底层</h2><p>超卖 &#x3D; 卖出的比库存多。防超卖的关键在<strong>扣减的原子性</strong>：</p>
@@ -459,13 +475,13 @@
 <li>先 Redis 预扣（挡流量），再 DB 条件扣减（落账），对账兜底。</li>
 </ul>
 <p>两层都”条件扣减”，才能既扛流量又不超卖。</p>
-<h2 id="六、和面试的连接"><a href="#六、和面试的连接" class="headerlink" title="六、和面试的连接"></a>六、和面试的连接</h2><p>被问”设计一个秒杀系统”，就用这套：<strong>预热 → 限流排队异步 → Redis 预扣 + DB 条件扣减 → 对账</strong>。每一步都有 trade-off（比如 Redis 预扣可能和 DB 不一致，靠对账收敛），能讲清取舍就是 P7 水平。</p>
+<h2 id="六、和面试的连接"><a href="#六、和面试的连接" class="headerlink" title="六、和面试的连接"></a>六、和面试的连接</h2><p>被问”设计一个秒杀系统”，就用这套：<strong>预热 → 限流排队异步 → Redis 预扣 + DB 条件扣减 → 对账</strong>。每一步都有 trade-off（比如 Redis 预扣可能和 DB 不一致，靠对账收敛），能讲清取舍就到位了。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>大促四件套：<strong>限流 + 降级 + 熔断 + 缓存</strong>，配合预热&#x2F;风控&#x2F;异步；</li>
 <li>秒杀分阶段：<strong>预热 → 限流排队异步 → Redis 预扣 + DB 扣减 → 对账</strong>；</li>
 <li>削峰靠<strong>队列</strong>，把瞬时尖峰平滑成持续流量；</li>
 <li>防超卖靠<strong>原子扣减</strong>（Redis DECR + DB 条件更新），两层都不超卖；</li>
-<li>我的订单中心（日均 15 万&#x2F;峰值 50 万）和通天晓大促（130 万日单）是这套的完整验证。</li>
+<li>我的订单中心（日均 15 万&#x2F;峰值 50 万）和某传统OMS大促（130 万日单，历史峰值&#x2F;另一统计口径）是这套的完整验证。</li>
 </ul>
 <hr>
 <p><em>发表于 2023 年 5 月 · 标签: 系统设计, 秒杀, 大促, 限流, 库存</em></p>
@@ -501,13 +517,13 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
+        <a href="/tags/%E5%A4%A7%E4%BF%83/" class="print-no-link">#大促</a>
+      
         <a href="/tags/%E9%99%90%E6%B5%81/" class="print-no-link">#限流</a>
       
         <a href="/tags/%E7%B3%BB%E7%BB%9F%E8%AE%BE%E8%AE%A1/" class="print-no-link">#系统设计</a>
       
         <a href="/tags/%E7%A7%92%E6%9D%80/" class="print-no-link">#秒杀</a>
-      
-        <a href="/tags/%E5%A4%A7%E4%BF%83/" class="print-no-link">#大促</a>
       
         <a href="/tags/%E5%BA%93%E5%AD%98/" class="print-no-link">#库存</a>
       
@@ -566,9 +582,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2023/06/01/2023-06-01-DDIA-01-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%96%B0%E6%8C%91%E6%88%98/" title="DDIA-01-云原生时代的架构新挑战：DDIA第二版新增内容解读">
+                      <a href="/2023/06/01/2023-06-01-DDIA-01-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%96%B0%E6%8C%91%E6%88%98/" title="DDIA-01-云原生时代的架构新挑战：DDIA第二版公开目录解读">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">DDIA-01-云原生时代的架构新挑战：DDIA第二版新增内容解读</span>
+                        <span class="hidden-mobile">DDIA-01-云原生时代的架构新挑战：DDIA第二版公开目录解读</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -655,7 +671,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -755,7 +771,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -770,7 +787,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

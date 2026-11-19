@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/09/16/2023-09-16-DDIA-03-多模型存储策略/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/09/16/2023-09-16-DDIA-03-%E5%A4%9A%E6%A8%A1%E5%9E%8B%E5%AD%98%E5%82%A8%E7%AD%96%E7%95%A5/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -28,16 +34,19 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="一个存储引擎打天下的时代过去了。本文以日订单峰值130万的订单中心为例，拆解MySQL主存储、Elasticsearch搜索引擎、HBase归档存储三者如何协同工作。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fc1d4641064aaa8d87f0103227dcf37d.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fc1d4641064aaa8d87f0103227dcf37d.png">
 <meta property="article:published_time" content="2023-09-16T02:11:58.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.582Z">
+<meta property="article:modified_time" content="2023-09-16T02:11:58.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="实战">
 <meta property="article:tag" content="数据库">
 <meta property="article:tag" content="架构">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fc1d4641064aaa8d87f0103227dcf37d.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fc1d4641064aaa8d87f0103227dcf37d.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-03-实战：订单中心的多模型存储策略——MySQL主库+ES搜索+HBase归档","datePublished":"2023-09-16T02:11:58.000Z","dateModified":"2023-09-16T02:11:58.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/09/16/2023-09-16-DDIA-03-%E5%A4%9A%E6%A8%A1%E5%9E%8B%E5%AD%98%E5%82%A8%E7%AD%96%E7%95%A5/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -398,7 +407,7 @@
         
         
         
-          99 分钟
+          98 分钟
         
       </span>
     
@@ -409,15 +418,19 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-03-实战：订单中心的多模型存储策略——MySQL主库+ES搜索+HBase归档</h1>
+            <p id="seo-header">DDIA-03-实战：订单中心的多模型存储策略——MySQL主库+ES搜索+HBase归档</p>
             
             
               <div class="markdown-body">
                 
                 <h2 id="一、一个存储引擎打天下的时代过去了"><a href="#一、一个存储引擎打天下的时代过去了" class="headerlink" title="一、一个存储引擎打天下的时代过去了"></a>一、一个存储引擎打天下的时代过去了</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fc1d4641064aaa8d87f0103227dcf37d.png#pic_center" srcset="/img/loading.gif" lazyload alt="多模型存储：按数据属性选引擎"></p>
-<p>2019年我刚接手cloud-order订单中心时，所有东西都在MySQL里。订单明细查询、商家后台列表、运营报表导出——全部走MySQL，靠加索引、分库分表、读写分离硬扛。那时候团队的共识很简单：出问题就加索引，再不行就分表，分表不行就上缓存。</p>
+<p>2019年我刚接手订单中台时，所有东西都在MySQL里。订单明细查询、商家后台列表、运营报表导出——全部走MySQL，靠加索引、分库分表、读写分离硬扛。那时候团队的共识很简单：出问题就加索引，再不行就分表，分表不行就上缓存。</p>
 <p>直到2020年双十一，峰值冲到一天80万单，商家后台某个”订单详情列表”页面撑不住了。SQL里带了8个WHERE条件、3个JOIN，MySQL执行计划走不了索引，每一页翻页都要全表扫描几十万行，CPU直接飙到90%以上。加缓存只缓解了热点订单的重复查询，但商家对历史订单的任意组合检索——比如”最近3个月、已完成、金额大于500的退款单”——缓存命中率低得可怜。</p>
 <p>然后我们引入了Elasticsearch，把订单搜索场景从MySQL剥离到ES，问题迎刃而解。这是第一刀。第二刀是2021年初，订单表涨到了快2亿行，DBA三天两头喊磁盘告警。我们分析了一周的查询日志，发现超过60%的SQL只查最近3个月的数据，而3个月以前的订单，除了偶尔的售后和财务对账，几乎没人碰。于是我们把冷数据迁移到HBase做归档，主库只保留近3个月的热数据，表空间砍掉了70%。</p>
 <p>这篇文章记录了这次存储架构的演进过程。我写得不只是”怎么用”这些存储引擎，更想讲清楚”为什么要这么用”——以及踩过的坑。</p>
@@ -433,9 +446,9 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Transactional(rollbackFor = Exception.class)</span><br><span class="hljs-keyword">public</span> OrderCreateResult <span class="hljs-title function_">createOrder</span><span class="hljs-params">(OrderCreateRequest request)</span> &#123;<br>    <span class="hljs-comment">// 1. 扣减库存（库存微服务RPC，超时2s，重试3次）</span><br>    <span class="hljs-type">boolean</span> <span class="hljs-variable">deducted</span> <span class="hljs-operator">=</span> inventoryService.deduct(<br>        request.getSkuId(), request.getQuantity());<br>    <span class="hljs-keyword">if</span> (!deducted) &#123;<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">InsufficientStockException</span>(<span class="hljs-string">&quot;库存不足&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">// 2. 创建订单主记录</span><br>    <span class="hljs-type">Order</span> <span class="hljs-variable">order</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Order</span>();<br>    order.setOrderNo(generateOrderNo());<br>    order.setBuyerId(request.getBuyerId());<br>    order.setTotalAmount(request.getTotalAmount());<br>    order.setStatus(OrderStatus.PENDING_PAY);<br>    orderMapper.insert(order);<br><br>    <span class="hljs-comment">// 3. 创建订单明细</span><br>    List&lt;OrderItem&gt; items = buildOrderItems(request, order.getId());<br>    orderItemMapper.batchInsert(items);<br><br>    <span class="hljs-comment">// 4. 核销优惠券（幂等操作，可补偿）</span><br>    couponService.writeOff(request.getCouponId(), order.getOrderNo());<br><br>    <span class="hljs-keyword">return</span> buildResult(order);<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p>如果第2步插入订单主记录时报主键冲突（订单号重复），事务回滚，库存扣减也需要回滚。这就是<code>@Transactional</code>的语义保证：一个数据库事务内数据的一致性由undo log保障，跨服务的一致性用本地事务表+消息补偿来实现。但无论用哪种方案，”一个订单在一个事务内完成组装”这个基础是不变的。</p>
-<p><strong>如果换成NoSQL呢？</strong> 大部分NoSQL不支持跨行事务或多文档事务。你可以用分布式事务框架（Seata等），但那就引入了新的协调节点、全局锁、两阶段提交的性能损耗。在130万日订单峰值——也就是每秒约15单、每单涉及5-10次数据库操作——用Seata的AT模式平白多出一轮分支事务注册和全局锁等待，RT从80ms涨到200ms以上。这不是一个好选择。</p>
+<p><strong>如果换成NoSQL呢？</strong> 大部分NoSQL不支持跨行事务或多文档事务。你可以用分布式事务框架（Seata等），但那就引入了新的协调节点、全局锁、两阶段提交的性能损耗。在130万日订单峰值（历史峰值口径，主口径见订单中台系列）——也就是每秒约15单、每单涉及5-10次数据库操作——用Seata的AT模式平白多出一轮分支事务注册和全局锁等待，RT从80ms涨到200ms以上。这不是一个好选择。</p>
 <h3 id="2-2-JOIN的价值被严重低估了"><a href="#2-2-JOIN的价值被严重低估了" class="headerlink" title="2.2 JOIN的价值被严重低估了"></a>2.2 JOIN的价值被严重低估了</h3><p>业界有个声音喊了好几年：”不要用JOIN，在应用层组装。” 这个建议在某些场景是对的，但一刀切式地不用JOIN，会让代码变得不可维护。</p>
-<p>cloud-order的订单详情接口需要组装以下数据：</p>
+<p>订单中台的订单详情接口需要组装以下数据：</p>
 <ul>
 <li>订单主信息（order表）</li>
 <li>订单商品明细（order_item表，一个订单1-20行）</li>
@@ -453,7 +466,7 @@
 <blockquote>
 <p><strong>什么时候不JOIN？</strong> 当数据跨越不同存储引擎（比如订单在MySQL、商品图片在ES），或者JOIN的表数据量巨大且扫描范围广（比如报表聚合），那就不要勉强。</p>
 </blockquote>
-<h3 id="2-3-分库分表后的JOIN限制与解决"><a href="#2-3-分库分表后的JOIN限制与解决" class="headerlink" title="2.3 分库分表后的JOIN限制与解决"></a>2.3 分库分表后的JOIN限制与解决</h3><p>cloud-order用的分库分表是ShardingSphere-JDBC，以<code>buyer_id</code>分片。这带来一个天然限制：跨分片的JOIN不能做。我们的解法是：</p>
+<h3 id="2-3-分库分表后的JOIN限制与解决"><a href="#2-3-分库分表后的JOIN限制与解决" class="headerlink" title="2.3 分库分表后的JOIN限制与解决"></a>2.3 分库分表后的JOIN限制与解决</h3><p>订单中台用的分库分表是ShardingSphere-JDBC，以<code>buyer_id</code>分片。这带来一个天然限制：跨分片的JOIN不能做。我们的解法是：</p>
 <ol>
 <li><strong>单分片内的关联查询</strong>：order和order_item用同一个分片键（buyer_id），订单和明细保证落在同一分片上，可以本地JOIN。</li>
 <li><strong>跨分片数据不JOIN</strong>：比如商家查订单列表（跨buyer_id分片），走ES而非MySQL。MySQL只服务”当前用户查自己的订单”这类精准命中分片的查询。</li>
@@ -474,7 +487,7 @@
 
 <p>问题出在<code>receiver_phone LIKE &#39;%188%&#39;</code>这行。B+Tree对左前缀模糊匹配无能为力，这意味着全表扫描。如果状态和时间范围过滤后的数据仍然很大，查询耗时会非常难看。即使没有LIKE，当WHERE条件涉及多个独立索引列时，MySQL只能选一个最优索引，其余条件回表过滤——在百万级数据下勉强能用，到了几千万行就崩了。</p>
 <h3 id="3-2-ES的倒排索引恰好解决这个痛点"><a href="#3-2-ES的倒排索引恰好解决这个痛点" class="headerlink" title="3.2 ES的倒排索引恰好解决这个痛点"></a>3.2 ES的倒排索引恰好解决这个痛点</h3><p>Elasticsearch的倒排索引天然适合”多条件检索+模糊匹配+排序+分页”组合。每一列独立建立倒排索引，查询时多个索引的倒排列表取交集——效率远高于MySQL的索引合并。</p>
-<p>cloud-order的ES索引映射（简化版）：</p>
+<p>订单中台的ES索引映射（简化版）：</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;mappings&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;properties&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;order_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;long&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;order_no&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;keyword&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;buyer_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;long&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;buyer_nickname&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;text&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;analyzer&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ik_max_word&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;fields&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>          <span class="hljs-attr">&quot;keyword&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;keyword&quot;</span> <span class="hljs-punctuation">&#125;</span><br>        <span class="hljs-punctuation">&#125;</span><br>      <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;integer&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;total_amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;scaled_float&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;scaling_factor&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">100</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;receiver_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;text&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;analyzer&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ik_smart&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;receiver_phone&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;keyword&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;items&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;nested&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;properties&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>          <span class="hljs-attr">&quot;sku_id&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;long&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>          <span class="hljs-attr">&quot;spu_name&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>            <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;text&quot;</span><span class="hljs-punctuation">,</span><br>            <span class="hljs-attr">&quot;analyzer&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ik_max_word&quot;</span><br>          <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>          <span class="hljs-attr">&quot;quantity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;integer&quot;</span> <span class="hljs-punctuation">&#125;</span><br>        <span class="hljs-punctuation">&#125;</span><br>      <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>      <span class="hljs-attr">&quot;create_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;type&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;date&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;format&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;yyyy-MM-dd HH:mm:ss&quot;</span> <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
 
 <p>几个设计要点：</p>
@@ -487,9 +500,9 @@
 <p>对应的ES查询DSL：</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;query&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;bool&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>      <span class="hljs-attr">&quot;must&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>        <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;terms&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;status&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-number">1</span><span class="hljs-punctuation">,</span> <span class="hljs-number">2</span><span class="hljs-punctuation">,</span> <span class="hljs-number">3</span><span class="hljs-punctuation">]</span> <span class="hljs-punctuation">&#125;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;range&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;create_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;gte&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-04-01&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;lte&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2026-07-31&quot;</span> <span class="hljs-punctuation">&#125;</span> <span class="hljs-punctuation">&#125;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;range&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;total_amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;gte&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">100</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;lte&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5000</span> <span class="hljs-punctuation">&#125;</span> <span class="hljs-punctuation">&#125;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;wildcard&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;receiver_phone&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;*188*&quot;</span> <span class="hljs-punctuation">&#125;</span> <span class="hljs-punctuation">&#125;</span><br>      <span class="hljs-punctuation">]</span><br>    <span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;sort&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><span class="hljs-punctuation">&#123;</span> <span class="hljs-attr">&quot;create_time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;desc&quot;</span> <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">]</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;from&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">0</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;size&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">20</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
 
-<p>实测对比（cloud-order生产环境，订单量约5000万）：同一个检索条件，MySQL耗时8.2秒（即使优化索引后仍需3.5秒），ES在300ms内返回结果，P99在800ms以内。</p>
-<h3 id="3-3-ES的一个关键坑：不要用它做主存储"><a href="#3-3-ES的一个关键坑：不要用它做主存储" class="headerlink" title="3.3 ES的一个关键坑：不要用它做主存储"></a>3.3 ES的一个关键坑：不要用它做主存储</h3><p>ES被设计为搜索引擎，不是数据库。它在写入一致性、事务隔离级别上与MySQL有本质差别。ES的近实时特性（refresh_interval默认1秒）意味着数据写入后不是立即可见的。cloud-order的原则很明确：<strong>ES永远只做”镜像”，不做”权威”。</strong> 任何写入永远以MySQL为准，ES数据丢了可以全量重建，MySQL数据丢了就是事故。</p>
-<h2 id="四、HBase归档存储：冷数据迁移，给主库减负"><a href="#四、HBase归档存储：冷数据迁移，给主库减负" class="headerlink" title="四、HBase归档存储：冷数据迁移，给主库减负"></a>四、HBase归档存储：冷数据迁移，给主库减负</h2><h3 id="4-1-冷热分离的核心思路"><a href="#4-1-冷热分离的核心思路" class="headerlink" title="4.1 冷热分离的核心思路"></a>4.1 冷热分离的核心思路</h3><p>数据有天然的生命周期。订单创建后前7天是高活跃期（支付、取消、发货），1个月内是问题高发期（退款、投诉），3个月后基本进入沉寂。cloud-order的查询日志分析显示：</p>
+<p>实测对比（订单中台生产环境，当时订单表约 5000 万行）：同一个检索条件，MySQL耗时8.2秒（即使优化索引后仍需3.5秒），ES在300ms内返回结果，P99在800ms以内。</p>
+<h3 id="3-3-ES的一个关键坑：不要用它做主存储"><a href="#3-3-ES的一个关键坑：不要用它做主存储" class="headerlink" title="3.3 ES的一个关键坑：不要用它做主存储"></a>3.3 ES的一个关键坑：不要用它做主存储</h3><p>ES被设计为搜索引擎，不是数据库。它在写入一致性、事务隔离级别上与MySQL有本质差别。ES的近实时特性（refresh_interval默认1秒）意味着数据写入后不是立即可见的。订单中台的原则很明确：<strong>ES永远只做”镜像”，不做”权威”。</strong> 任何写入永远以MySQL为准，ES数据丢了可以全量重建，MySQL数据丢了就是事故。</p>
+<h2 id="四、HBase归档存储：冷数据迁移，给主库减负"><a href="#四、HBase归档存储：冷数据迁移，给主库减负" class="headerlink" title="四、HBase归档存储：冷数据迁移，给主库减负"></a>四、HBase归档存储：冷数据迁移，给主库减负</h2><h3 id="4-1-冷热分离的核心思路"><a href="#4-1-冷热分离的核心思路" class="headerlink" title="4.1 冷热分离的核心思路"></a>4.1 冷热分离的核心思路</h3><p>数据有天然的生命周期。订单创建后前7天是高活跃期（支付、取消、发货），1个月内是问题高发期（退款、投诉），3个月后基本进入沉寂。订单中台的查询日志分析显示：</p>
 <table>
 <thead>
 <tr>
@@ -525,10 +538,10 @@
 <li><strong>冷热分离后的查询路由</strong>：按时间分表意味着每个查询都要知道时间范围。商家查”最近3个月的待发货订单”，OK，路由到热表。但如果查”某用户的所有订单”（没有时间条件），就要遍历所有分片——性能和复杂度都不小。</li>
 <li><strong>跨表UNION&#x2F;排序</strong>：如果冷热表结构一致，查询需要<code>UNION ALL</code>然后<code>ORDER BY</code>，性能会随分片数增长而恶化。</li>
 <li><strong>存储成本</strong>：MySQL单行存储开销（包括索引）远高于HBase。同样存储1亿行订单，MySQL的存储成本是HBase的3-5倍。</li>
-<li><strong>运维负担</strong>：5000万活跃行的MySQL实例和2亿行的实例，备份、主从同步、DDL的时间完全不是一个量级。</li>
+<li><strong>运维负担</strong>：约 5000 万活跃行的MySQL实例和2亿行的实例，备份、主从同步、DDL的时间完全不是一个量级。</li>
 </ol>
 <p>HBase的宽表模型和按rowkey顺序存储的特性，恰好适合”已知rowkey（订单ID），扫一批连续记录”的场景。而且HDFS作为底层存储，三副本冗余，成本低于MySQL的主从+备份存储。</p>
-<h3 id="4-3-HBase的设计：rowkey和列族"><a href="#4-3-HBase的设计：rowkey和列族" class="headerlink" title="4.3 HBase的设计：rowkey和列族"></a>4.3 HBase的设计：rowkey和列族</h3><p>cloud-order的HBase订单表设计：</p>
+<h3 id="4-3-HBase的设计：rowkey和列族"><a href="#4-3-HBase的设计：rowkey和列族" class="headerlink" title="4.3 HBase的设计：rowkey和列族"></a>4.3 HBase的设计：rowkey和列族</h3><p>订单中台的HBase订单表设计：</p>
 <figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">表名: <span class="hljs-keyword">order_archive</span><br><span class="hljs-keyword"></span><span class="hljs-symbol">RowKey:</span> reverse(<span class="hljs-keyword">buyer_id) </span>+ <span class="hljs-string">&quot;_&quot;</span> + <span class="hljs-keyword">order_id</span><br><span class="hljs-keyword"></span>解释: <span class="hljs-keyword">buyer_id取反，使同一个用户的所有订单存到相邻Region，提高&quot;查用户历史订单&quot;的扫描效率。</span><br><span class="hljs-keyword"></span><br>列族: cf<br>- cf:<span class="hljs-keyword">order_info </span>   → 订单主信息<span class="hljs-keyword">JSON（订单号、金额、状态、时间等）</span><br><span class="hljs-keyword"></span>- cf:<span class="hljs-keyword">order_items </span>  → 订单商品明细<span class="hljs-keyword">JSON数组</span><br><span class="hljs-keyword"></span>- cf:<span class="hljs-keyword">order_address </span>→ 收货地址<span class="hljs-keyword">JSON</span><br><span class="hljs-keyword"></span>- cf:<span class="hljs-keyword">order_payment </span>→ 支付记录<span class="hljs-keyword">JSON</span><br></code></pre></td></tr></table></figure>
 
 <p>整个订单的所有子表数据，拍平成一个大JSON，存到一个RowKey下。单次<code>Get</code>操作就拿回整条订单的所有信息，不需要跨表关联。HBase不支持JOIN，那就在写入时把关联数据提前聚合好，以”空间换时间”——这也是宽表设计的核心思想。</p>
@@ -557,7 +570,7 @@
 <p>我们的选择是<strong>方案A + 熔断保护</strong>：正常情况下走ES，空结果时触发一次MySQL回源。但如果MySQL回源的比例超过5%（说明ES大面积异常），自动关闭MySQL回源，走”请稍后重试”提示。这个熔断阈值由Sentinel控制，避免级联故障。</p>
 <h3 id="HBase归档的一个一致性细节"><a href="#HBase归档的一个一致性细节" class="headerlink" title="HBase归档的一个一致性细节"></a>HBase归档的一个一致性细节</h3><p>归档到HBase后，MySQL中对应的订单记录会被删除。如果删除操作先于HBase写入完成，查询”3个月前刚归档的订单”会两边都查不到。我们的解法是：<strong>先写HBase，确认写入成功后再删MySQL，且删除是逻辑删除（<code>is_deleted=1</code>），物理删除由定时任务每天执行一次，并加2小时的buffer——HBase写入成功2小时后才真正物理删除。</strong> 这道安全垫在几次归档事故中救了我们。</p>
 <h2 id="七、运维成本：130万日订单规模下的必要性分析"><a href="#七、运维成本：130万日订单规模下的必要性分析" class="headerlink" title="七、运维成本：130万日订单规模下的必要性分析"></a>七、运维成本：130万日订单规模下的必要性分析</h2><p>多一套存储就多一套运维。Elasticsearch的集群、Kibana监控、索引生命周期管理；HBase的HMaster、RegionServer、HDFS上的数据均衡；Canal的HA切换——这些都是运维的代价。在日订单只有几万条的时候，MySQL单库就搞定了，上ES和HBase纯粹是过度设计。</p>
-<h3 id="什么规模值得上多存储？"><a href="#什么规模值得上多存储？" class="headerlink" title="什么规模值得上多存储？"></a>什么规模值得上多存储？</h3><p>以cloud-order的经验（没干到”必须”的时候不要加组件，每加一个组件就多一个故障点）：</p>
+<h3 id="什么规模值得上多存储？"><a href="#什么规模值得上多存储？" class="headerlink" title="什么规模值得上多存储？"></a>什么规模值得上多存储？</h3><p>以订单中台的经验（没干到”必须”的时候不要加组件，每加一个组件就多一个故障点）：</p>
 <table>
 <thead>
 <tr>
@@ -587,13 +600,13 @@
 <td>冷热分离降本，全链路可扩展</td>
 </tr>
 </tbody></table>
-<p>cloud-order在生产环境跑了3年，架构成本大概是这样：MySQL 3台（1主2从），ES 3台（数据节点），HBase 5台（1HMaster + 3RegionServer + 1备份），Kafka 3台，Canal 2台（一主一备）。总机器数16台，运维团队2人（轮值）。</p>
+<p>订单中台在生产环境跑了3年，架构成本大概是这样：MySQL 3台（1主2从），ES 3台（数据节点），HBase 5台（1HMaster + 3RegionServer + 1备份），Kafka 3台，Canal 2台（一主一备）。总机器数16台，运维团队2人（轮值）。</p>
 <p><strong>ES的运维痛点</strong>：索引容量规划和分片设计。订单量每年翻倍，索引如果没有提前规划好shard数量，后期拆分困难。我们按”每个shard 50GB以内，每天一个索引”做lifecycle管理——7天内的热索引保留在SSD节点，30天内的温索引迁到HDD节点，超过30天自动关闭（数据可删，需要时从HBase重建）。</p>
 <p><strong>HBase的运维痛点</strong>：Region分裂和合并。数据量增长时Region自动分裂，大量小Region影响性能。我们设置了预分区策略（按buyer_id hash分200个Region），并监控Region大小，在HBase负载低峰期手动触发major_compact。</p>
 <h3 id="运维成本-vs-业务价值"><a href="#运维成本-vs-业务价值" class="headerlink" title="运维成本 vs 业务价值"></a>运维成本 vs 业务价值</h3><p>如果只算机器和人力成本，多存储架构大概每年多花12-15万（云服务器+运维DBA分摊）。但如果不做存储拆分，维持一个能扛住130万日订单的MySQL集群：1主N从 + 超大规模磁盘 + 更贵的商业数据库服务（如RDS的高配PolarDB），成本不会比多存储低，而且随着数据持续膨胀，单点瓶颈会越来越突出。</p>
 <p><strong>核心问题的关键不是成本，而是”单存储架构的能力天花板”</strong>。MySQL不是设计来干”全文搜索”和”海量数据归档查询”的。你让一个人干三个人的活，他能撑一阵子，但早晚会出事。</p>
 <h2 id="八、结语：多模型存储不是为了炫技，是被业务逼出来的"><a href="#八、结语：多模型存储不是为了炫技，是被业务逼出来的" class="headerlink" title="八、结语：多模型存储不是为了炫技，是被业务逼出来的"></a>八、结语：多模型存储不是为了炫技，是被业务逼出来的</h2><p>这篇文章写到最后，我想回到这个标题：<strong>“一个存储引擎打天下的时代过去了”</strong>。</p>
-<p>我不是说MySQL不够好。事实上，7年了，cloud-order的核心业务逻辑始终跑在MySQL上，从未动摇。没有哪个NoSQL能替代它在事务处理和关联查询上的位置。但它有它的边界——当查询模式从”按ID精准定位”变成”多维度自由组合检索”，当数据量从”几千万”膨胀到”十几亿”，当你发现大部分数据常年没人碰却占着最贵的存储——你就需要其他工具来填补空白。</p>
+<p>我不是说MySQL不够好。事实上，7年了，订单中台的核心业务逻辑始终跑在MySQL上，从未动摇。没有哪个NoSQL能替代它在事务处理和关联查询上的位置。但它有它的边界——当查询模式从”按ID精准定位”变成”多维度自由组合检索”，当数据量从”几千万”膨胀到”十几亿”，当你发现大部分数据常年没人碰却占着最贵的存储——你就需要其他工具来填补空白。</p>
 <p>这个演进过程是渐进的，也是一步步被业务倒逼的：商家要更快更灵活的订单检索→上ES；DBA报警磁盘不够→冷热分离上HBase。没有哪一次决策来自”新技术很酷我们用一下吧”，而都来自”现有方案扛不住了我们得想个办法”。</p>
 <p>如果要用一句话总结这次存储架构的演进，我会说：<strong>选择存储引擎的依据不是它有多强，而是它刚好能解决你眼下最难的那个问题——而其他的问题，留给其他引擎去解决。</strong></p>
 <p>（全文完）</p>
@@ -633,9 +646,9 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
-        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
-      
         <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
         <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#数据库</a>
       
@@ -785,7 +798,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -885,7 +898,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -900,7 +914,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

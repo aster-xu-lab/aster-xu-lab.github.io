@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/09/03/2024-09-03-DDIA-10-分布式锁/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/09/03/2024-09-03-DDIA-10-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -29,7 +35,7 @@
 <meta property="og:description" content="分布式锁的难点不在“如何加锁”，而在“加锁之后共享资源是否安全”。从Redis SET NX的陷阱到RedLock的争议，再到ZooKeeper临时顺序节点和etcd的Lease机制，本文结合SyncTask驿传引擎的实战，深入探讨为什么你应该使用Redisson而不是自己写一把锁。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-09-03T15:57:45.000Z">
-<meta property="article:modified_time" content="2026-08-04T11:12:09.755Z">
+<meta property="article:modified_time" content="2024-09-03T15:57:45.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="Redis">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="ZooKeeper">
 <meta property="article:tag" content="分布式锁">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-10-ZooKeeper与etcd：为什么分布式锁不应该自己实现","datePublished":"2024-09-03T15:57:45.000Z","dateModified":"2024-09-03T15:57:45.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/09/03/2024-09-03-DDIA-10-%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-10-ZooKeeper与etcd：为什么分布式锁不应该自己实现</h1>
+            <p id="seo-header">DDIA-10-ZooKeeper与etcd：为什么分布式锁不应该自己实现</p>
             
             
               <div class="markdown-body">
@@ -492,7 +505,7 @@
 
 <p>实现Fencing Token，ZooKeeper可以直接用顺序节点的序号（znode的cversion或序号后缀）；etcd可以用事务的ModRevision。Redisson本身不提供Fencing Token机制，但你可以基于Redis的 <code>INCR</code> 命令自己实现。</p>
 <p>这个设计的深刻之处在于：它把”锁的安全性”从锁服务转移到了共享资源——如果共享资源有能力拒绝过期的请求，那么即使锁偶尔出问题，整体系统仍然是安全的。</p>
-<h2 id="七、实战：SyncTask驿传引擎的分布式锁"><a href="#七、实战：SyncTask驿传引擎的分布式锁" class="headerlink" title="七、实战：SyncTask驿传引擎的分布式锁"></a>七、实战：SyncTask驿传引擎的分布式锁</h2><p>回到真实项目。SyncTask驿传引擎是我司的异步任务调度框架，日均处理130万订单的履约同步，部署了8个服务实例。核心约束是：同一个租户的任务，同一时刻只能有一个实例在执行。</p>
+<h2 id="七、实战：SyncTask驿传引擎的分布式锁"><a href="#七、实战：SyncTask驿传引擎的分布式锁" class="headerlink" title="七、实战：SyncTask驿传引擎的分布式锁"></a>七、实战：SyncTask驿传引擎的分布式锁</h2><p>回到真实项目。SyncTask驿传引擎是我司的异步任务调度框架，峰值日处理130万订单（历史峰值口径，主口径见订单中台系列）的履约同步，部署了8个服务实例。核心约束是：同一个租户的任务，同一时刻只能有一个实例在执行。</p>
 <p>我们选择了<strong>Redisson</strong>作为分布式锁的客户端库。不是因为Redis比ZooKeeper更安全，而是因为这是<strong>工程权衡后的最优解</strong>。</p>
 <h3 id="Watchdog看门狗：解决锁过期比任务执行时间长"><a href="#Watchdog看门狗：解决锁过期比任务执行时间长" class="headerlink" title="Watchdog看门狗：解决锁过期比任务执行时间长"></a>Watchdog看门狗：解决锁过期比任务执行时间长</h3><p>Redisson的看门狗机制如下：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">RLock</span> <span class="hljs-variable">lock</span> <span class="hljs-operator">=</span> redisson.getLock(<span class="hljs-string">&quot;sync_task:&quot;</span> + tenantId);<br><span class="hljs-keyword">try</span> &#123;<br>    <span class="hljs-comment">// 尝试加锁，等待10秒，锁持有时间默认30秒</span><br>    <span class="hljs-keyword">if</span> (lock.tryLock(<span class="hljs-number">10</span>, TimeUnit.SECONDS)) &#123;<br>        executeSyncTask(tenantId);<br>    &#125;<br>&#125; <span class="hljs-keyword">finally</span> &#123;<br>    <span class="hljs-keyword">if</span> (lock.isHeldByCurrentThread()) &#123;<br>        lock.unlock();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
@@ -507,7 +520,7 @@
 <li><strong>锁丢失的实际概率：</strong> 主从切换导致的锁丢失在8个实例的高峰期确实可能发生。但我们评估下来，SyncTask有天然的重试和幂等保护（基于任务状态机），即使极低概率的锁丢失也不会造成数据不一致——最坏情况是多执行了一次任务，而任务是幂等的。</li>
 </ul>
 <p>这个取舍背后的原则是：<strong>根据共享资源的性质选择锁策略。如果共享资源自身有Fencing或幂等保护，Redis锁的弱一致性就是可接受的；如果共享资源不能容忍任何并发写入，就必须上ZooKeeper或etcd。</strong></p>
-<h2 id="八、回归DDIA：锁的本质是共识问题"><a href="#八、回归DDIA：锁的本质是共识问题" class="headerlink" title="八、回归DDIA：锁的本质是共识问题"></a>八、回归DDIA：锁的本质是共识问题</h2><p>DDIA第10章的标题是”领导者和锁”（Leaders and Locks），Martin把这两个概念放在一起不是偶然的。选主和加锁本质上是同一个问题：<strong>在同一时刻，只允许一个节点做某件事</strong>。</p>
+<h2 id="八、回归DDIA：锁的本质是共识问题"><a href="#八、回归DDIA：锁的本质是共识问题" class="headerlink" title="八、回归DDIA：锁的本质是共识问题"></a>八、回归DDIA：锁的本质是共识问题</h2><p>DDIA第10章讨论”一致性与共识”，其中一节是”领导者和锁”（Leaders and Locks）；Martin把这两个概念放在一起不是偶然的。选主和加锁本质上是同一个问题：<strong>在同一时刻，只允许一个节点做某件事</strong>。</p>
 <ul>
 <li>Raft选主：同一时刻只能有一个Leader处理写请求</li>
 <li>ZooKeeper锁：同一时刻只能有一个客户端持有锁</li>
@@ -553,7 +566,7 @@
 <hr>
 <p><em>参考资料：</em></p>
 <ul>
-<li><em>Martin Kleppmann, 《Designing Data-Intensive Applications》, Chapter 9 &amp; 10</em></li>
+<li><em>Martin Kleppmann, 《Designing Data-Intensive Applications》(2nd ed.), Chapter 10</em></li>
 <li><em>Martin Kleppmann, “How to do distributed locking”, martin.kleppmann.com, 2016</em></li>
 <li><em>Antirez, “Is Redlock safe?”, redis.io, 2021</em></li>
 <li><em>Redisson Reference Guide, redisson.org</em></li>
@@ -595,9 +608,9 @@
       
         <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
-        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" class="print-no-link">#分布式锁</a>
-      
         <a href="/tags/Redisson/" class="print-no-link">#Redisson</a>
+      
+        <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81/" class="print-no-link">#分布式锁</a>
       
         <a href="/tags/ZooKeeper/" class="print-no-link">#ZooKeeper</a>
       
@@ -745,7 +758,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -845,7 +858,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -860,7 +874,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

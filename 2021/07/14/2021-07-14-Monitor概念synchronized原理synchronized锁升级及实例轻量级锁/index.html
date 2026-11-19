@@ -8,25 +8,31 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/07/14/2021-07-14-Monitor概念synchronized原理synchronized锁升级及实例轻量级锁/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/07/14/2021-07-14-Monitor%E6%A6%82%E5%BF%B5synchronized%E5%8E%9F%E7%90%86synchronized%E9%94%81%E5%8D%87%E7%BA%A7%E5%8F%8A%E5%AE%9E%E4%BE%8B%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="Monitor概念Java对象头以32位虚拟机为例普通对象数组对象其中Mark Word结构为64位虚拟机Mark Word  参考资料https:&#x2F;&#x2F;stackoverflow.com&#x2F;questions&#x2F;26357186&#x2F;what-is-in-java-object-header  原理之Monitor（锁）Monitor被翻译为监视器或管程每个Java对象都可以关联一个Monitor对象，如">
+    <meta name="description" content="Monitor概念Java对象头以32位虚拟机为例普通对象数组对象其中Mark Word结构为64位虚拟机Mark Word 参考资料https:&#x2F;&#x2F;stackoverflow.com&#x2F;questions&#x2F;26357186&#x2F;what-is-in-java-object-header 原理之Monitor（锁）Monitor被翻译为监视器或管程每个Java对象都可以关联一个Monitor对象，如果使">
 <meta property="og:type" content="article">
 <meta property="og:title" content="3.5、Monitor概念、synchronized原理、synchronized锁升级及实例（轻量级锁、重量级锁、自旋锁、偏向锁）">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/07/14/2021-07-14-Monitor%E6%A6%82%E5%BF%B5synchronized%E5%8E%9F%E7%90%86synchronized%E9%94%81%E5%8D%87%E7%BA%A7%E5%8F%8A%E5%AE%9E%E4%BE%8B%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="Monitor概念Java对象头以32位虚拟机为例普通对象数组对象其中Mark Word结构为64位虚拟机Mark Word  参考资料https:&#x2F;&#x2F;stackoverflow.com&#x2F;questions&#x2F;26357186&#x2F;what-is-in-java-object-header  原理之Monitor（锁）Monitor被翻译为监视器或管程每个Java对象都可以关联一个Monitor对象，如">
+<meta property="og:description" content="Monitor概念Java对象头以32位虚拟机为例普通对象数组对象其中Mark Word结构为64位虚拟机Mark Word 参考资料https:&#x2F;&#x2F;stackoverflow.com&#x2F;questions&#x2F;26357186&#x2F;what-is-in-java-object-header 原理之Monitor（锁）Monitor被翻译为监视器或管程每个Java对象都可以关联一个Monitor对象，如果使">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fdec0e7f76e604524ecb251b7e097b08.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fffd4407b184613c0835bab41365eac2.png">
@@ -47,7 +53,7 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fa55974a64417c836888b94d77942b78.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/091bfe313a86302c75e2f9ce93003342.png">
 <meta property="article:published_time" content="2021-07-14T13:32:30.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.148Z">
+<meta property="article:modified_time" content="2021-07-14T13:32:30.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java并发">
 <meta property="article:tag" content="Monitor">
@@ -55,6 +61,9 @@
 <meta property="article:tag" content="锁升级">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fdec0e7f76e604524ecb251b7e097b08.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"3.5、Monitor概念、synchronized原理、synchronized锁升级及实例（轻量级锁、重量级锁、自旋锁、偏向锁）","datePublished":"2021-07-14T13:32:30.000Z","dateModified":"2021-07-14T13:32:30.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/07/14/2021-07-14-Monitor%E6%A6%82%E5%BF%B5synchronized%E5%8E%9F%E7%90%86synchronized%E9%94%81%E5%8D%87%E7%BA%A7%E5%8F%8A%E5%AE%9E%E4%BE%8B%E8%BD%BB%E9%87%8F%E7%BA%A7%E9%94%81/"}}</script>
   
   
   
@@ -229,7 +238,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -426,19 +435,23 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/concurrency/">Java 并发</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">3.5、Monitor概念、synchronized原理、synchronized锁升级及实例（轻量级锁、重量级锁、自旋锁、偏向锁）</h1>
+            <p id="seo-header">3.5、Monitor概念、synchronized原理、synchronized锁升级及实例（轻量级锁、重量级锁、自旋锁、偏向锁）</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="Monitor概念"><a href="#Monitor概念" class="headerlink" title="Monitor概念"></a>Monitor概念</h2><h3 id="Java对象头"><a href="#Java对象头" class="headerlink" title="Java对象头"></a>Java对象头</h3><p>以32位虚拟机为例<br>普通对象<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fdec0e7f76e604524ecb251b7e097b08.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>数组对象<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fffd4407b184613c0835bab41365eac2.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>其中Mark Word结构为<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f903a4b5f29930cb641502da381e410a.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>64位虚拟机Mark Word<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/cde746c63799315efc26181c58381acb.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+                <h2 id="Monitor概念"><a href="#Monitor概念" class="headerlink" title="Monitor概念"></a>Monitor概念</h2><h3 id="Java对象头"><a href="#Java对象头" class="headerlink" title="Java对象头"></a>Java对象头</h3><p>以32位虚拟机为例<br>普通对象<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fdec0e7f76e604524ecb251b7e097b08.png" srcset="/img/loading.gif" lazyload alt="32 位虚拟机普通对象头结构图"><br>数组对象<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fffd4407b184613c0835bab41365eac2.png" srcset="/img/loading.gif" lazyload alt="32 位虚拟机数组对象头结构图"><br>其中Mark Word结构为<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f903a4b5f29930cb641502da381e410a.png" srcset="/img/loading.gif" lazyload alt="32 位虚拟机 Mark Word 结构示意图"><br>64位虚拟机Mark Word<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/cde746c63799315efc26181c58381acb.png" srcset="/img/loading.gif" lazyload alt="64 位虚拟机 Mark Word 结构示意图"></p>
 <blockquote>
 <p><strong>参考资料</strong><br><a target="_blank" rel="noopener" href="https://stackoverflow.com/questions/26357186/what-is-in-java-object-header">https://stackoverflow.com/questions/26357186/what-is-in-java-object-header</a></p>
 </blockquote>
 <h3 id="原理之Monitor（锁）"><a href="#原理之Monitor（锁）" class="headerlink" title="原理之Monitor（锁）"></a>原理之Monitor（锁）</h3><p>Monitor被翻译为<strong>监视器</strong>或<strong>管程</strong><br>每个Java对象都可以关联一个Monitor对象，如果使用synchronized给对象上锁（重量级）之后，该对象头的Mark Work中就被设置指向Monitor对象的指针</p>
-<p>Monitor结构如下<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c19a5400b42874996dc04902a03f9051.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>Monitor结构如下<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c19a5400b42874996dc04902a03f9051.png" srcset="/img/loading.gif" lazyload alt="Monitor 对象内部结构示意图"></p>
 <ul>
 <li>刚开始Monitor中Owner为null</li>
 <li>当Thread-2 执行synchronized(obj)就会将Monitor所有者Owner置为Thread-2，Monitor中只能有一个Owner</li>
@@ -464,18 +477,18 @@
 <p>假设有两个方法同步块，利用同一个对象加锁</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">Object</span> <span class="hljs-variable">obj</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">method1</span><span class="hljs-params">()</span> &#123;<br> 	<span class="hljs-keyword">synchronized</span>( obj ) &#123;<br> 		<span class="hljs-comment">// 同步块 A</span><br> 		method2();<br> 	&#125;<br>&#125;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">method2</span><span class="hljs-params">()</span> &#123;<br> 	<span class="hljs-keyword">synchronized</span>( obj ) &#123;<br> 		<span class="hljs-comment">// 同步块 B</span><br> 	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <ul>
-<li>创建锁记录（Lock Record）对象，每个线程都会包含一个锁记录的结构，内部可以存储锁定对象的Mark Word<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6de2d401e06b66f6833929d93b333bc0.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
-<li>让锁记录中Object refrence指向锁对象，并尝试用cas替换Object中的Mark Word，将Mark Word的值存入锁记录<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b830ec97535fb21894b81ead769375f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
-<li>如果cas替换成功，对象头中存储了<code>锁记录地址和状态00</code>，表示由该线程给对象加锁，这时图示如下<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b3f0ab5dd9a7c9f0e71052c028898a2a.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
+<li>创建锁记录（Lock Record）对象，每个线程都会包含一个锁记录的结构，内部可以存储锁定对象的Mark Word<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6de2d401e06b66f6833929d93b333bc0.png" srcset="/img/loading.gif" lazyload alt="锁记录 Lock Record 结构示意图"></li>
+<li>让锁记录中Object refrence指向锁对象，并尝试用cas替换Object中的Mark Word，将Mark Word的值存入锁记录<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b830ec97535fb21894b81ead769375f.png" srcset="/img/loading.gif" lazyload alt="锁记录与对象头 CAS 替换示意图"></li>
+<li>如果cas替换成功，对象头中存储了<code>锁记录地址和状态00</code>，表示由该线程给对象加锁，这时图示如下<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b3f0ab5dd9a7c9f0e71052c028898a2a.png" srcset="/img/loading.gif" lazyload alt="轻量级锁加锁成功状态图"></li>
 <li>如果cas失败，有两种情况<ul>
 <li>如果是其他线程已经持有了该Object的轻量级锁，这时表明有竞争，进入锁膨胀过程</li>
 <li>如果是自己执行了synchronized锁重入，那么再添加一条Lock Record作为重入的计数</li>
 </ul>
 </li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2a38a11edd0dd67d82629fe815b03218.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2a38a11edd0dd67d82629fe815b03218.png" srcset="/img/loading.gif" lazyload alt="轻量级锁重入锁记录示意图"></p>
 <ul>
-<li>当退出synchronized代码块（解锁时），如果有取值为null的锁记录，表示有重入，表示重入计数减一<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06dfe953a4f477877ec7d2e83ce48d48.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></li>
+<li>当退出synchronized代码块（解锁时），如果有取值为null的锁记录，表示有重入，表示重入计数减一<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06dfe953a4f477877ec7d2e83ce48d48.png" srcset="/img/loading.gif" lazyload alt="轻量级锁重入解锁示意图"></li>
 <li>当退出synchronized代码块（解锁时）锁记录的值补位null，这时使用cas将Mark Word的值回复给对象头<ul>
 <li>成功，则解锁成功</li>
 <li>失败，说明轻量级锁进行了锁膨胀或已经升级为重量级锁，进入重量级锁解锁流程</li>
@@ -485,21 +498,21 @@
 <h4 id="2、锁膨胀"><a href="#2、锁膨胀" class="headerlink" title="2、锁膨胀"></a>2、锁膨胀</h4><p>如果在尝试加轻量级锁的过程中，cas无法成功，这时一种情况就是有其他线程为此对象加上了重量级锁（有竞争），这时需要进行锁膨胀，将轻量级锁变为重量级锁</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java">tatic <span class="hljs-type">Object</span> <span class="hljs-variable">obj</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">method1</span><span class="hljs-params">()</span> &#123;<br> 	<span class="hljs-keyword">synchronized</span>( obj ) &#123;<br> 		<span class="hljs-comment">// 同步块</span><br> 	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <ul>
-<li><p>当Thread-1进行轻量级锁加锁时，Thread-0已经为该对象加了轻量级锁<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/40a3b8bdb03929168dbc83bd2b89cc02.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<li><p>当Thread-1进行轻量级锁加锁时，Thread-0已经为该对象加了轻量级锁<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/40a3b8bdb03929168dbc83bd2b89cc02.png" srcset="/img/loading.gif" lazyload alt="两个线程竞争轻量级锁示意图"></p>
 </li>
 <li><p>当Thread-1加轻量级锁失败，进入锁膨胀流程	</p>
 <ul>
 <li>即为Object对象申请Monitor锁，让Object指向重量级锁地址</li>
 <li>然后自己进入Monitor的EntryList BLOCKED</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bc3d265a4041a2d95561a7a9e27d4a6c.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bc3d265a4041a2d95561a7a9e27d4a6c.png" srcset="/img/loading.gif" lazyload alt="锁膨胀为重量级锁过程图"></p>
 </li>
 <li><p>当Thread-0退出同步同步块解锁时，使用cas将Mark Word的值恢复给对象头，失败。这时会进入重量级锁流程，即按照Monitor地址找到Monitor对象，设置Owner为null，唤醒EntryList中的BOLCKED线程</p>
 </li>
 </ul>
 <h4 id="3、自旋优化"><a href="#3、自旋优化" class="headerlink" title="3、自旋优化"></a>3、自旋优化</h4><p>重量级锁竞争的时候，还可以使用自旋来进行优化，如果当前线程自旋成功（即这时持锁线程已经退出了同步块，释放了锁），这时当前线程就可以避免阻塞。</p>
 <p>自旋重试成功的情况</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/66346c217db9117aea0b82fcafcd6433.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>自旋重试失败的情况<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/acba67a20710d626cf14ba36be82da94.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/66346c217db9117aea0b82fcafcd6433.png" srcset="/img/loading.gif" lazyload alt="自旋重试成功避免阻塞图"><br>自旋重试失败的情况<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/acba67a20710d626cf14ba36be82da94.png" srcset="/img/loading.gif" lazyload alt="自旋重试失败后阻塞示意图"></p>
 <ul>
 <li>自旋会占用CPU时间，单核CPU自旋就是浪费，多核CPU自旋才能发挥优势</li>
 <li>在Java 6 之后自旋锁是自适应的，比如对象刚刚的一次自旋成功过，那么认为这次自旋成功的可能性会高，就多自旋几次；反之，就少自旋甚至不自旋，总之，比较智能</li>
@@ -509,11 +522,11 @@
 <p>Java 6中引入了偏向锁来做进一步优化：只有第一次使用cas线程id设置到对象的Mark Word头，之后发现这个线程id是自己就表示没有竞争，不用重新cas。之后只要不发生竞争，这个对象就归线程所有</p>
 <p>例如：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">Object</span> <span class="hljs-variable">obj</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">m1</span><span class="hljs-params">()</span> &#123;<br> 	<span class="hljs-keyword">synchronized</span>( obj ) &#123;<br> 		<span class="hljs-comment">// 同步块 A</span><br>	 	m2();<br> 	&#125;<br>&#125;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">m2</span><span class="hljs-params">()</span> &#123;<br> 	<span class="hljs-keyword">synchronized</span>( obj ) &#123;<br> 		<span class="hljs-comment">// 同步块 B</span><br>		 m3();<br> 	&#125;<br>&#125;<br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">m3</span><span class="hljs-params">()</span> &#123;<br> 	<span class="hljs-keyword">synchronized</span>( obj ) &#123;<br>  		<span class="hljs-comment">// 同步块 C</span><br> 	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/11df99543b6d5e7a5bc6b10d1dc0de82.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9b0bfe9421f68fc36a914afe5eb6b57a.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
-<h5 id="偏向状态"><a href="#偏向状态" class="headerlink" title="偏向状态"></a>偏向状态</h5><p>回忆一下对象头格式<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fa55974a64417c836888b94d77942b78.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>一个对象创建时：</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/11df99543b6d5e7a5bc6b10d1dc0de82.png" srcset="/img/loading.gif" lazyload alt="偏向锁重入加锁流程示意图"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9b0bfe9421f68fc36a914afe5eb6b57a.png" srcset="/img/loading.gif" lazyload alt="偏向锁重入后对象头状态图"></p>
+<h5 id="偏向状态"><a href="#偏向状态" class="headerlink" title="偏向状态"></a>偏向状态</h5><p>回忆一下对象头格式<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fa55974a64417c836888b94d77942b78.png" srcset="/img/loading.gif" lazyload alt="对象头 Mark Word 位域布局图"><br>一个对象创建时：</p>
 <ul>
-<li>如果开启了偏向锁（默认开启），那么对象创建后，Mark Word的值为0x05，即最后三位为101，这时它的thread、epoch、age都为0</li>
-<li>偏向锁是默认延迟的，不会再程序启动时立即生效，如果想要避免延迟，可以加VM参数<code>-XX:BiasedLockingStartupDelay=0 </code>来禁用延迟</li>
+<li>如果开启了偏向锁（JDK 8 下默认开启），那么对象创建后，Mark Word的值为0x05，即最后三位为101，这时它的thread、epoch、age都为0</li>
+<li>JDK 8 下偏向锁默认延迟生效，不会在程序启动时立即生效，如果想要避免延迟，可以加VM参数<code>-XX:BiasedLockingStartupDelay=0 </code>来禁用延迟</li>
 <li>如果没有开启偏向锁，那么对象创建后，Mark Word的值为0x01，即最后三位为001，这时它的hashcode、age都为0，第一次用到hashcode时才会赋值</li>
 </ul>
 <p>1）测试延迟特征</p>
@@ -521,7 +534,7 @@
 <p>输出</p>
 <figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs tap">2022/03/05-23:52:50.383 [main] c.Dog - synchronized before<br>sync.test.Dog object internals:<br> OFFSET  SIZE   TYPE DESCRIPTION                               VALUE<br>     <span class="hljs-number"> 0 </span>   <span class="hljs-number"> 4 </span>       (object header)                          <span class="hljs-number"> 01 </span>00<span class="hljs-number"> 00 </span>00 (00000001<span class="hljs-number"> 00000000 </span>00000000 00000000) (1)<br>     <span class="hljs-number"> 4 </span>   <span class="hljs-number"> 4 </span>       (object header)                          <span class="hljs-number"> 00 </span>00<span class="hljs-number"> 00 </span>00 (00000000<span class="hljs-number"> 00000000 </span>00000000 00000000) (0)<br>     <span class="hljs-number"> 8 </span>   <span class="hljs-number"> 4 </span>       (object header)                           a4 9b<span class="hljs-number"> 01 </span>f8 (10100100<span class="hljs-number"> 10011011 </span>00000001 11111000) (-134112348)<br>    <span class="hljs-number"> 12 </span>   <span class="hljs-number"> 4 </span>       (loss due to the next object alignment)<br>Instance size:<span class="hljs-number"> 16 </span>bytes<br>Space losses:<span class="hljs-number"> 0 </span>bytes internal +<span class="hljs-number"> 4 </span>bytes external =<span class="hljs-number"> 4 </span>bytes total<br><br>2022/03/05-23:52:54.383 [main] c.Dog - synchronized after<br>sync.test.Dog object internals:<br> OFFSET  SIZE   TYPE DESCRIPTION                               VALUE<br>     <span class="hljs-number"> 0 </span>   <span class="hljs-number"> 4 </span>       (object header)                          <span class="hljs-number"> 05 </span>00<span class="hljs-number"> 00 </span>00 (00000101<span class="hljs-number"> 00000000 </span>00000000 00000000) (5)<br>     <span class="hljs-number"> 4 </span>   <span class="hljs-number"> 4 </span>       (object header)                          <span class="hljs-number"> 00 </span>00<span class="hljs-number"> 00 </span>00 (00000000<span class="hljs-number"> 00000000 </span>00000000 00000000) (0)<br>     <span class="hljs-number"> 8 </span>   <span class="hljs-number"> 4 </span>       (object header)                           a4 9b<span class="hljs-number"> 01 </span>f8 (10100100<span class="hljs-number"> 10011011 </span>00000001 11111000) (-134112348)<br>    <span class="hljs-number"> 12 </span>   <span class="hljs-number"> 4 </span>       (loss due to the next object alignment)<br>Instance size:<span class="hljs-number"> 16 </span>bytes<br>Space losses:<span class="hljs-number"> 0 </span>bytes internal +<span class="hljs-number"> 4 </span>bytes external =<span class="hljs-number"> 4 </span>bytes total<br></code></pre></td></tr></table></figure>
 <p>在偏向锁延迟启动之前创建的对象Mark Work 结尾还是01结尾，之后创建的对象才是101结尾。</p>
-<p>需要说明的是，由于操作系统大小端存储数据的问题，所以需要关注的位置如图示位置<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/091bfe313a86302c75e2f9ce93003342.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>需要说明的是，由于操作系统大小端存储数据的问题，所以需要关注的位置如图示位置<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/091bfe313a86302c75e2f9ce93003342.png" srcset="/img/loading.gif" lazyload alt="大小端存储关注字节位置图"></p>
 <h6 id="大小端存储"><a href="#大小端存储" class="headerlink" title="大小端存储"></a>大小端存储</h6><ul>
 <li><strong>大端（存储）模式</strong>：是指一个数据的低位字节序的内容放在高地址处，高位字节序存的内容放在低地址处。</li>
 <li><strong>小端（存储）模式</strong>：是指一个数据的低位字节序内容存放在低地址处，高位字节序的内容存放在高地址处。（可以总结为“小小小”即低位、低地址、小端）</li>
@@ -764,7 +777,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -864,7 +877,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -879,7 +893,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

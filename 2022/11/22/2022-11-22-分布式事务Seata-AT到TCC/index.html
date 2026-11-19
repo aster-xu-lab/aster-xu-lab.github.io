@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/11/22/2022-11-22-分布式事务Seata-AT到TCC/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/11/22/2022-11-22-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1Seata-AT%E5%88%B0TCC/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="分布式事务实战：从 Seata AT 到 TCC 的性能提升之路背景OFS订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现核心接口 RT 偏高达 400ms+，分布式事务成为性能瓶颈。 本文将复盘我们从 AT 迁移到 TCC 的完整过程，包括方案对比、改造细节和踩坑经验。 一、Seata AT 模式的原理">
+    <meta name="description" content="分布式事务实战：从 Seata AT 到 TCC 的性能提升之路背景某订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现核心接口平均 RT 约 350ms（并发竞争下更高），分布式事务成为性能瓶颈。 本文将复盘我们从 AT 迁移到 TCC 的完整过程，包括方案对比、改造细节和踩坑经验。 一、Seata AT">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分布式事务实战：从Seata AT到TCC的性能提升之路">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/11/22/2022-11-22-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1Seata-AT%E5%88%B0TCC/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="分布式事务实战：从 Seata AT 到 TCC 的性能提升之路背景OFS订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现核心接口 RT 偏高达 400ms+，分布式事务成为性能瓶颈。 本文将复盘我们从 AT 迁移到 TCC 的完整过程，包括方案对比、改造细节和踩坑经验。 一、Seata AT 模式的原理">
+<meta property="og:description" content="分布式事务实战：从 Seata AT 到 TCC 的性能提升之路背景某订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现核心接口平均 RT 约 350ms（并发竞争下更高），分布式事务成为性能瓶颈。 本文将复盘我们从 AT 迁移到 TCC 的完整过程，包括方案对比、改造细节和踩坑经验。 一、Seata AT">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-11-22T12:37:19.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.153Z">
+<meta property="article:modified_time" content="2022-11-22T12:37:19.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="2PC">
 <meta property="article:tag" content="AT模式">
@@ -38,6 +44,9 @@
 <meta property="article:tag" content="分布式事务">
 <meta property="article:tag" content="性能优化">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"分布式事务实战：从Seata AT到TCC的性能提升之路","datePublished":"2022-11-22T12:37:19.000Z","dateModified":"2022-11-22T12:37:19.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2022/11/22/2022-11-22-%E5%88%86%E5%B8%83%E5%BC%8F%E4%BA%8B%E5%8A%A1Seata-AT%E5%88%B0TCC/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -387,7 +396,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.1k 字
+          3.3k 字
         
       </span>
     
@@ -398,7 +407,7 @@
         
         
         
-          27 分钟
+          28 分钟
         
       </span>
     
@@ -409,21 +418,25 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/consistency/">分布式事务与消息</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">分布式事务实战：从Seata AT到TCC的性能提升之路</h1>
+            <p id="seo-header">分布式事务实战：从Seata AT到TCC的性能提升之路</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="分布式事务实战：从-Seata-AT-到-TCC-的性能提升之路"><a href="#分布式事务实战：从-Seata-AT-到-TCC-的性能提升之路" class="headerlink" title="分布式事务实战：从 Seata AT 到 TCC 的性能提升之路"></a>分布式事务实战：从 Seata AT 到 TCC 的性能提升之路</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>OFS订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现<strong>核心接口 RT 偏高达 400ms+</strong>，分布式事务成为性能瓶颈。</p>
+                <h2 id="分布式事务实战：从-Seata-AT-到-TCC-的性能提升之路"><a href="#分布式事务实战：从-Seata-AT-到-TCC-的性能提升之路" class="headerlink" title="分布式事务实战：从 Seata AT 到 TCC 的性能提升之路"></a>分布式事务实战：从 Seata AT 到 TCC 的性能提升之路</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>某订单履行系统中，订单创建涉及订单表写入、库存扣减、物流单生成三个跨服务操作。最初我们使用 Seata AT 模式保证一致性，但在大促压测时发现<strong>核心接口平均 RT 约 350ms（并发竞争下更高）</strong>，分布式事务成为性能瓶颈。</p>
 <p>本文将复盘我们从 AT 迁移到 TCC 的完整过程，包括方案对比、改造细节和踩坑经验。</p>
 <h3 id="一、Seata-AT-模式的原理与瓶颈"><a href="#一、Seata-AT-模式的原理与瓶颈" class="headerlink" title="一、Seata AT 模式的原理与瓶颈"></a>一、Seata AT 模式的原理与瓶颈</h3><h4 id="AT-模式做了什么？"><a href="#AT-模式做了什么？" class="headerlink" title="AT 模式做了什么？"></a>AT 模式做了什么？</h4><p>AT（Auto Transaction）模式基于<strong>两阶段提交</strong>：</p>
 <figure class="highlight stata"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs stata">Phase 1:<br>┌─────────┐    ┌─────────┐    ┌──────────┐<br>│ <span class="hljs-keyword">RM</span>-订单  │    │ <span class="hljs-keyword">RM</span>-库存  │    │ <span class="hljs-keyword">RM</span>-物流   │<br>│ INSERT  │    │ <span class="hljs-keyword">UPDATE</span>  │    │ INSERT    │<br>│ (undo)  │    │ (undo)  │    │ (undo)    │<br>└─────────┘    └─────────┘    └──────────┘<br>         \         |         /<br>          ┌────────┴────────┐<br>          │       TC        │<br>          └─────────────────┘<br><br>Phase 2:<br>  TC 收齐所有 <span class="hljs-keyword">RM</span> 的 Phase 1 结果<br>  → 全成功: 异步删 undo_log<br>  → 任一失败: 用 undo_log 回滚<br></code></pre></td></tr></table></figure>
 
 <h4 id="AT-模式的性能代价"><a href="#AT-模式的性能代价" class="headerlink" title="AT 模式的性能代价"></a>AT 模式的性能代价</h4><ol>
 <li><strong>undo_log 写入</strong>：每条业务 SQL 都伴随一条 undo_log 写入，翻倍了 DB 写入量</li>
-<li><strong>全局锁</strong>：Phase 1 → Phase 2 之间持有全局锁，阻塞并发</li>
+<li><strong>全局锁</strong>：Phase 1 → Phase 2 之间持有全局锁，阻塞并发；它只保证各分支对同一资源的写互斥，并不是数据库的可串行化隔离级别</li>
 <li><strong>两次 RPC</strong>：每个 RM 需要跟 TC 通信两次（branch register + branch report）</li>
 </ol>
 <p>在压测中，我们观察到 AT 模式下的 RT 分布：</p>
@@ -431,12 +444,13 @@
 <li>业务 SQL：~50ms</li>
 <li>undo_log 写入：~30ms</li>
 <li>TC 通信：~20ms × 2 &#x3D; ~40ms</li>
-<li>全局锁等待：~80ms（并发越高越严重）</li>
-<li><strong>总 RT：~200ms（无竞争）到 400ms+（有竞争）</strong></li>
+<li>全局锁等待：无竞争时接近 0，并发越高越严重</li>
+<li><strong>总 RT：无竞争时约 120ms，并发竞争下平均约 350ms</strong></li>
 </ul>
 <h3 id="二、为什么选择-TCC？"><a href="#二、为什么选择-TCC？" class="headerlink" title="二、为什么选择 TCC？"></a>二、为什么选择 TCC？</h3><h4 id="TCC-的核心思想"><a href="#TCC-的核心思想" class="headerlink" title="TCC 的核心思想"></a>TCC 的核心思想</h4><p>TCC（Try-Confirm-Cancel）取消了 undo_log，改为业务方自行实现资源预留和补偿：</p>
 <figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">Try 阶段（资源预留）</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-attribute">订单服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">INSERT 订单(status=PENDING)</span><br>  <span class="hljs-attribute">库存服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE 冻结库存+1, 可用库存-1</span><br>  <span class="hljs-attribute">物流服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">INSERT 物流单(status=DRAFT)</span><br><br><span class="hljs-attribute">Confirm 阶段（提交）</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-attribute">订单服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE status=CONFIRMED</span><br>  <span class="hljs-attribute">库存服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE 冻结库存-1</span><br>  <span class="hljs-attribute">物流服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE status=ACTIVE</span><br><br><span class="hljs-attribute">Cancel 阶段（回滚）</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-attribute">订单服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE status=CANCELED</span><br>  <span class="hljs-attribute">库存服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE 冻结库存-1, 可用库存+1</span><br>  <span class="hljs-attribute">物流服务</span><span class="hljs-punctuation">:</span> <span class="hljs-string">UPDATE status=CANCELED</span><br></code></pre></td></tr></table></figure>
 
+<p>TCC 取消的是数据库层的 undo_log 和全局锁，但 Confirm&#x2F;Cancel 仍可能失败或被重复调用。它达到的是<strong>近似强一致</strong>：正常路径靠 Confirm 提交，异常路径靠业务补偿、空回滚&#x2F;悬挂处理和幂等兜底，而不是数据库意义上的强一致。</p>
 <h4 id="与-AT-的关键差异"><a href="#与-AT-的关键差异" class="headerlink" title="与 AT 的关键差异"></a>与 AT 的关键差异</h4><table>
 <thead>
 <tr>
@@ -463,7 +477,7 @@
 <tr>
 <td>性能</td>
 <td>受 undo_log 和全局锁影响</td>
-<td>锁窗口更短，无额外写入</td>
+<td>锁窗口更短，无 undo_log 额外写入</td>
 </tr>
 <tr>
 <td>侵入性</td>
@@ -487,7 +501,7 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 通过在事务记录表中维护状态来解决</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">cancel</span><span class="hljs-params">(String xid)</span> &#123;<br>    <span class="hljs-type">TccRecord</span> <span class="hljs-variable">record</span> <span class="hljs-operator">=</span> tccRecordMapper.selectByXid(xid);<br>    <span class="hljs-keyword">if</span> (record == <span class="hljs-literal">null</span>) &#123;<br>        <span class="hljs-comment">// 空回滚：记录一条 canceled 记录，防止后续 Try</span><br>        tccRecordMapper.insert(xid, <span class="hljs-string">&quot;CANCELED&quot;</span>);<br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br>    <span class="hljs-keyword">if</span> (<span class="hljs-string">&quot;TRY_DONE&quot;</span>.equals(record.getStatus())) &#123;<br>        <span class="hljs-comment">// 正常回滚</span><br>        doCancel(xid);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">tryPhase</span><span class="hljs-params">(String xid)</span> &#123;<br>    <span class="hljs-type">TccRecord</span> <span class="hljs-variable">record</span> <span class="hljs-operator">=</span> tccRecordMapper.selectByXid(xid);<br>    <span class="hljs-keyword">if</span> (record != <span class="hljs-literal">null</span> &amp;&amp; <span class="hljs-string">&quot;CANCELED&quot;</span>.equals(record.getStatus())) &#123;<br>        <span class="hljs-comment">// 悬挂：Cancel 先执行了，拒绝 Try</span><br>        <span class="hljs-keyword">return</span>;<br>    &#125;<br>    doTry(xid);<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <h4 id="3-3-幂等性"><a href="#3-3-幂等性" class="headerlink" title="3.3 幂等性"></a>3.3 幂等性</h4><p>Confirm 和 Cancel 都可能被重复调用，必须保证幂等：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">confirm</span><span class="hljs-params">(String xid)</span> &#123;<br>    <span class="hljs-type">TccRecord</span> <span class="hljs-variable">record</span> <span class="hljs-operator">=</span> tccRecordMapper.selectByXid(xid);<br>    <span class="hljs-keyword">if</span> (<span class="hljs-string">&quot;CONFIRMED&quot;</span>.equals(record.getStatus())) &#123;<br>        <span class="hljs-keyword">return</span>;  <span class="hljs-comment">// 已确认，幂等返回</span><br>    &#125;<br>    doConfirm(xid);<br>    tccRecordMapper.updateStatus(xid, <span class="hljs-string">&quot;CONFIRMED&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">confirm</span><span class="hljs-params">(String xid)</span> &#123;<br>    <span class="hljs-type">TccRecord</span> <span class="hljs-variable">record</span> <span class="hljs-operator">=</span> tccRecordMapper.selectByXid(xid);<br>    <span class="hljs-keyword">if</span> (record != <span class="hljs-literal">null</span> &amp;&amp; <span class="hljs-string">&quot;CONFIRMED&quot;</span>.equals(record.getStatus())) &#123;<br>        <span class="hljs-keyword">return</span>;  <span class="hljs-comment">// 已确认，幂等返回</span><br>    &#125;<br>    doConfirm(xid);<br>    tccRecordMapper.updateStatus(xid, <span class="hljs-string">&quot;CONFIRMED&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <h3 id="四、性能对比"><a href="#四、性能对比" class="headerlink" title="四、性能对比"></a>四、性能对比</h3><p>迁移完成后，我们在压测环境做了对比（相同业务场景、相同并发）：</p>
 <table>
@@ -524,7 +538,7 @@
 <td align="center">↓50%</td>
 </tr>
 </tbody></table>
-<p>实际提升约 <strong>40%+</strong>，P99 提升更明显——去掉了全局锁等待这个最大变量。</p>
+<p>实际平均 RT 下降约 <strong>45%</strong>，与压测表一致；P99 提升更明显——去掉了全局锁等待这个最大变量。</p>
 <h3 id="五、什么时候该用-TCC？"><a href="#五、什么时候该用-TCC？" class="headerlink" title="五、什么时候该用 TCC？"></a>五、什么时候该用 TCC？</h3><p>TCC 不是银弹。总结一下选型标准：</p>
 <p><strong>选 AT</strong>：</p>
 <ul>
@@ -729,7 +743,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -829,7 +843,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -844,7 +859,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

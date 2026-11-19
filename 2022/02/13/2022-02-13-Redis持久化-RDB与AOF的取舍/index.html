@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/02/13/2022-02-13-Redis持久化-RDB与AOF的取舍/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/02/13/2022-02-13-Redis%E6%8C%81%E4%B9%85%E5%8C%96-RDB%E4%B8%8EAOF%E7%9A%84%E5%8F%96%E8%88%8D/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题：     RDB 快照 AOF 日志    内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof）   恢复 快（直接加载快照） 慢（逐条重放命令）   丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度）   文件 小、二进制 大、文本，可重写   RDB：某一时刻的完整">
+    <meta name="description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题： RDB 快照 AOF 日志 内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof） 恢复 快（直接加载快照） 慢（逐条重放命令） 丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度） 文件 小、二进制 大、文本，可重写 RDB：某一时刻的完整快照，恢复快，但快照间隔内的写">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Redis 持久化：RDB 与 AOF 的取舍，fork+COW 为什么不停顿">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/02/13/2022-02-13-Redis%E6%8C%81%E4%B9%85%E5%8C%96-RDB%E4%B8%8EAOF%E7%9A%84%E5%8F%96%E8%88%8D/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题：     RDB 快照 AOF 日志    内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof）   恢复 快（直接加载快照） 慢（逐条重放命令）   丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度）   文件 小、二进制 大、文本，可重写   RDB：某一时刻的完整">
+<meta property="og:description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题： RDB 快照 AOF 日志 内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof） 恢复 快（直接加载快照） 慢（逐条重放命令） 丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度） 文件 小、二进制 大、文本，可重写 RDB：某一时刻的完整快照，恢复快，但快照间隔内的写">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-02-13T02:08:34.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.828Z">
+<meta property="article:modified_time" content="2022-02-13T02:08:34.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="AOF">
 <meta property="article:tag" content="RDB">
@@ -38,6 +44,9 @@
 <meta property="article:tag" content="写时复制">
 <meta property="article:tag" content="持久化">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Redis 持久化：RDB 与 AOF 的取舍，fork+COW 为什么不停顿","datePublished":"2022-02-13T02:08:34.000Z","dateModified":"2022-02-13T02:08:34.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2022/02/13/2022-02-13-Redis%E6%8C%81%E4%B9%85%E5%8C%96-RDB%E4%B8%8EAOF%E7%9A%84%E5%8F%96%E8%88%8D/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -387,7 +396,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.8k 字
+          1.9k 字
         
       </span>
     
@@ -398,7 +407,7 @@
         
         
         
-          15 分钟
+          16 分钟
         
       </span>
     
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/redis/">Redis</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">Redis 持久化：RDB 与 AOF 的取舍，fork+COW 为什么不停顿</h1>
+            <p id="seo-header">Redis 持久化：RDB 与 AOF 的取舍，fork+COW 为什么不停顿</p>
             
             
               <div class="markdown-body">
@@ -482,7 +495,7 @@
 <li>追求<strong>丢得少</strong>（最多丢 1 秒）→ AOF 为主；</li>
 <li><strong>生产最佳实践</strong>：RDB + AOF 都开，RDB 做备份&#x2F;副本初始化，AOF 做实时保护。</li>
 </ul>
-<p>Redis 4.0 之后默认的混合持久化：<strong>用 RDB 做基础快照 + AOF 只记录快照后的增量命令</strong>——恢复时先加载 RDB 再重放少量 AOF，又快又丢得少。</p>
+<p>混合持久化是 4.0 引入的配置，<strong>Redis 5.0 起 <code>aof-use-rdb-preamble</code> 默认 yes</strong>（前提是开启 AOF，即 <code>appendonly yes</code>）：<strong>用 RDB 做基础快照 + AOF 只记录快照后的增量命令</strong>——恢复时先加载 RDB 再重放少量 AOF，又快又丢得少。</p>
 <h2 id="七、和我的项目"><a href="#七、和我的项目" class="headerlink" title="七、和我的项目"></a>七、和我的项目</h2><p>订单系统的 Redis 缓存数据基本都是<strong>可重建数据</strong>（从 DB 派生），所以持久化策略偏保守——开 AOF everysec 保安全，RDB 定期做备份。理解 COW 后，我特别在意<strong>大促期间不要频繁触发 RDB</strong>：峰值写越多，COW 复制越猛，内存和 fork 卡顿风险越高——所以快照安排在低峰，和 MySQL 备份同理。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>RDB &#x3D; 全量快照，恢复快、丢得多；AOF &#x3D; 命令日志，恢复慢、丢得少；</li>
@@ -682,7 +695,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -782,7 +795,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -797,7 +811,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

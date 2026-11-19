@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/07/01/2021-07-01-进程与线程/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/07/01/2021-07-01-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -30,13 +36,16 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c87b6393286e48f821b552b24b80f23f.png">
 <meta property="article:published_time" content="2021-07-01T15:51:43.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.148Z">
+<meta property="article:modified_time" content="2021-07-01T15:51:43.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java并发">
 <meta property="article:tag" content="线程">
 <meta property="article:tag" content="进程">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c87b6393286e48f821b552b24b80f23f.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"1、进程与线程","datePublished":"2021-07-01T15:51:43.000Z","dateModified":"2021-07-01T15:51:43.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/07/01/2021-07-01-%E8%BF%9B%E7%A8%8B%E4%B8%8E%E7%BA%BF%E7%A8%8B/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/concurrency/">Java 并发</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">1、进程与线程</h1>
+            <p id="seo-header">1、进程与线程</p>
             
             
               <div class="markdown-body">
@@ -441,7 +454,7 @@
 <h4 id="例子"><a href="#例子" class="headerlink" title="例子"></a>例子</h4><ul>
 <li>家庭主妇做饭、打扫卫生、给孩子喂奶，他一个人轮流交替做这多件事，这就是并发</li>
 <li>家庭主妇雇了个保姆，他们一起做这些事，这时候既有并发，也有并行（这时会产生竞争，例如只有一口锅，一个人用锅时，另一个人就得等待）<blockquote>
-<p>图解可能更清楚吧<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c87b6393286e48f821b552b24b80f23f.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p>图解可能更清楚吧<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c87b6393286e48f821b552b24b80f23f.png" srcset="/img/loading.gif" lazyload alt="并发与并行区别示意图"></p>
 </blockquote>
 </li>
 </ul>
@@ -646,7 +659,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -746,7 +759,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -761,7 +775,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/06/12/2023-06-12-DDIA-01-可靠性可扩展性可维护性/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/06/12/2023-06-12-DDIA-01-%E5%8F%AF%E9%9D%A0%E6%80%A7%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7%E5%8F%AF%E7%BB%B4%E6%8A%A4%E6%80%A7/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="前言今年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 这几年，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群。再翻DDIA，每一章都像在复盘自己的架构笔记。 这个系">
+    <meta name="description" content="前言今年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 这几年，从日订单几万的小系统，做到日峰值130万（历史峰值口径，主口径见订单中台系列）的电商中台，从单机部署到分布式集群。再翻DDIA，每">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/06/12/2023-06-12-DDIA-01-%E5%8F%AF%E9%9D%A0%E6%80%A7%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7%E5%8F%AF%E7%BB%B4%E6%8A%A4%E6%80%A7/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="前言今年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 这几年，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群。再翻DDIA，每一章都像在复盘自己的架构笔记。 这个系">
+<meta property="og:description" content="前言今年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。 这几年，从日订单几万的小系统，做到日峰值130万（历史峰值口径，主口径见订单中台系列）的电商中台，从单机部署到分布式集群。再翻DDIA，每">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-06-12T13:02:38.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.579Z">
+<meta property="article:modified_time" content="2023-06-12T13:02:38.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="分布式">
@@ -39,6 +45,9 @@
 <meta property="article:tag" content="架构">
 <meta property="article:tag" content="读书笔记">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度","datePublished":"2023-06-12T13:02:38.000Z","dateModified":"2023-06-12T13:02:38.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/06/12/2023-06-12-DDIA-01-%E5%8F%AF%E9%9D%A0%E6%80%A7%E5%8F%AF%E6%89%A9%E5%B1%95%E6%80%A7%E5%8F%AF%E7%BB%B4%E6%8A%A4%E6%80%A7/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          6.3k 字
+          6.2k 字
         
       </span>
     
@@ -410,16 +419,20 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度</h1>
+            <p id="seo-header">DDIA-01-可靠性可扩展性可维护性：数据系统的三个永恒维度</p>
             
             
               <div class="markdown-body">
                 
                 <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>今年，我决定重读《Designing Data-Intensive Applications》（简称DDIA）。这本书被誉为分布式系统的”圣经”，但坦白说，2019年我第一次翻开它时，很多东西只是囫囵吞枣——没有经历过生产环境的毒打，你是读不懂DDIA的。</p>
-<p>这几年，从日订单几万的小系统，做到日峰值130万的电商中台，从单机部署到分布式集群。再翻DDIA，每一章都像在复盘自己的架构笔记。</p>
-<p>这个系列是我重读DDIA的实战笔记。第一篇，从第一章的三个永恒维度聊起：<strong>可靠性（Reliability）、可扩展性（Scalability）、可维护性（Maintainability）</strong>。这三个词，几乎概括了我们作为后端工程师工作的全部。</p>
+<p>这几年，从日订单几万的小系统，做到日峰值130万（历史峰值口径，主口径见订单中台系列）的电商中台，从单机部署到分布式集群。再翻DDIA，每一章都像在复盘自己的架构笔记。</p>
+<p>这个系列是我重读DDIA的实战笔记。第一篇，从第二章的三个永恒维度聊起：<strong>可靠性（Reliability）、可扩展性（Scalability）、可维护性（Maintainability）</strong>。这三个词，几乎概括了我们作为后端工程师工作的全部。</p>
 <hr>
 <h2 id="一、可靠性：系统不出错的”错觉”"><a href="#一、可靠性：系统不出错的”错觉”" class="headerlink" title="一、可靠性：系统不出错的”错觉”"></a>一、可靠性：系统不出错的”错觉”</h2><p>DDIA对可靠性的定义很朴素：</p>
 <blockquote>
@@ -456,7 +469,7 @@
 </ul>
 <p>好的系统设计，应该假设人会犯错，然后让错误的代价尽可能小。</p>
 <hr>
-<h2 id="二、可扩展性：描述负载，而非追逐数字"><a href="#二、可扩展性：描述负载，而非追逐数字" class="headerlink" title="二、可扩展性：描述负载，而非追逐数字"></a>二、可扩展性：描述负载，而非追逐数字</h2><p>这是DDIA第一章最让人醍醐灌顶的部分。Kleppmann说：</p>
+<h2 id="二、可扩展性：描述负载，而非追逐数字"><a href="#二、可扩展性：描述负载，而非追逐数字" class="headerlink" title="二、可扩展性：描述负载，而非追逐数字"></a>二、可扩展性：描述负载，而非追逐数字</h2><p>这是DDIA第二章最让人醍醐灌顶的部分。Kleppmann 的观点，大意（第2章）是：</p>
 <blockquote>
 <p>可扩展性不是”我的系统能不能抗住100万QPS”，而是”当负载增加时，我有没有一个合理的方式增加资源来应对”。</p>
 </blockquote>
@@ -491,7 +504,7 @@
 <ul>
 <li><strong>阶段一（单机时代）</strong>：日订单1-5万，一台8核16G机器跑所有。MVC+MyBatis，连Redis都没有。这个阶段无脑垂直扩展是对的——人少事多，别折腾架构。</li>
 <li><strong>阶段二（垂直到瓶颈）</strong>：日订单到30万，单机数据库CPU长期80%+。我们做了读写分离+Redis缓存，但核心问题是：<strong>订单表太大了</strong>，一个表两亿行，索引都开始失效。这时候才真正需要水平扩展。</li>
-<li><strong>阶段三（分布式改造）</strong>：日订单130万，分库分表+消息削峰+分布式事务。QPS从2000涨到8000+，不是因为我们代码写得快了，而是因为<strong>请求不再集中在单点上</strong>。</li>
+<li><strong>阶段三（分布式改造）</strong>：日订单130万，分库分表+消息削峰+分布式事务。QPS从2000涨到8000+（历史压测口径），不是因为我们代码写得快了，而是因为<strong>请求不再集中在单点上</strong>。</li>
 </ul>
 <p>分享一个关键的架构决策逻辑：<strong>什么时候从垂直切换到水平？不是看QPS数字，而是看单点容量是否接近物理极限</strong>。我们的订单表单库单表撑到约2亿行时，DDL操作已经跑不动了，ALTER TABLE要锁表40分钟——这不是优化能解决的，物理天花板到了。</p>
 <hr>
@@ -500,7 +513,7 @@
 <p>好的运维体验包括：</p>
 <ul>
 <li><strong>监控覆盖</strong>：QPS、延迟分位数、错误率、线程池水位、数据库连接池——这些是基础；</li>
-<li><strong>告警分层</strong>：P0核心链路挂了电话告警，P1非核心降级企业微信&#x2F;飞书告警，P2慢查询日报；</li>
+<li><strong>告警分层</strong>：P0核心链路挂了电话告警，P1非核心降级企业IM告警，P2慢查询日报；</li>
 <li><strong>故障处理文档</strong>：不是”出问题了重启一下”，而是精确到场景的标准操作流程；</li>
 <li><strong>灰度发布</strong>：不要一次性全量，先单台、再小比例、再全量，每一步都有自动化验证。</li>
 </ul>
@@ -523,7 +536,7 @@
 <p>几点实践体会：</p>
 <ul>
 <li><strong>SPI扩展点</strong>：我们SyncTask引擎定义了10个SPI接口，新的Handler接入不需要改一行引擎代码。这是可演化性的典型实践——开闭原则在架构层的应用。</li>
-<li><strong>防腐层（Anti-Corruption Layer）</strong>：对接金蝶、聚水潭、华为等十几个外部系统时，每个外部系统封装一个独立的Adapter，外部系统的变化不会污染核心域逻辑。</li>
+<li><strong>防腐层（Anti-Corruption Layer）</strong>：对接某ERP、某电商ERP等十几个外部系统时，每个外部系统封装一个独立的Adapter，外部系统的变化不会污染核心域逻辑。</li>
 <li><strong>数据库字段不用枚举，用字典表</strong>：状态的演变远比你想的快。今天3个状态值，一年后可能变成12个。枚举类型改起来代价极大，字典表只需要插一条数据。</li>
 <li><strong>不要过早抽象</strong>：见过太多人在项目初期就搞出一套”万能框架”，最后发现80%的抽象从未被复用。等你有三个相似场景时再抽象，完全来得及。</li>
 </ul>
@@ -540,7 +553,7 @@
 <ul>
 <li>读写分离（Atlas中间件，现在回头看很原始但够用）；</li>
 <li>热数据上Redis缓存，缓存命中率从30%拉到85%；</li>
-<li>拆出了一套独立的工单服务（cloud-work-order），0到1交付，这是我第一次从业务需求到系统设计全链路负责。</li>
+<li>拆出了一套独立的工单服务，0到1交付，这是我第一次从业务需求到系统设计全链路负责。</li>
 </ul>
 <p>三个维度的变化：</p>
 <ul>
@@ -555,13 +568,13 @@
 <li><strong>分布式事务</strong>：从2PC改到TCC，核心链路性能提升40%以上。2PC的同步阻塞在高并发下太伤了，CC（Try-Confirm-Cancel）让资源锁粒度降到单操作级别；</li>
 <li><strong>降级预案</strong>：非核心链路挂了不拖核心，比如推荐服务挂了，订单照下。</li>
 </ul>
-<h4 id="可扩展性：QPS-2000-→-8000"><a href="#可扩展性：QPS-2000-→-8000" class="headerlink" title="可扩展性：QPS 2000 → 8000+"></a>可扩展性：QPS 2000 → 8000+</h4><ul>
+<h4 id="可扩展性：QPS-2000-→-8000-（历史压测口径）"><a href="#可扩展性：QPS-2000-→-8000-（历史压测口径）" class="headerlink" title="可扩展性：QPS 2000 → 8000+（历史压测口径）"></a>可扩展性：QPS 2000 → 8000+（历史压测口径）</h4><ul>
 <li><strong>分库分表</strong>：按用户ID哈希分片，16个库×4张表。查询复杂度增加，但通过全局索引表+ES做二级索引，解决了非分片键查询问题；</li>
 <li><strong>SyncTask引擎V2</strong>：引入CompletableFuture并行处理+批次聚合，同一批订单并行同步到多个外部系统，吞吐量直接翻了数倍；</li>
 <li><strong>消息削峰</strong>：大促期间的流量峰谷用RocketMQ做缓冲，生产者和消费者解耦，保证下单接口不被打垮。</li>
 </ul>
 <h4 id="可维护性：从”不敢改”到”放心改”"><a href="#可维护性：从”不敢改”到”放心改”" class="headerlink" title="可维护性：从”不敢改”到”放心改”"></a>可维护性：从”不敢改”到”放心改”</h4><ul>
-<li><strong>SyncTask引擎独立组件化</strong>：从cloud-order和cloud-wms中抽离出独立的sync-task-engine项目，5个模块、10个SPI扩展点、93个Handler统一管理。新业务接入从几天降到几小时；</li>
+<li><strong>SyncTask引擎独立组件化</strong>：从订单中台和仓储中台抽离出独立的sync-task-engine项目，5个模块、10个SPI扩展点、93个Handler统一管理。新业务接入从几天降到几小时；</li>
 <li><strong>afterExecute回调编排</strong>：放弃DAG的决策让核心引擎保持极简，团队4个人轻松维护；</li>
 <li><strong>Handler级监控</strong>：每个Handler的执行次数、成功&#x2F;失败率、平均耗时、p99耗时全部接入Prometheus+Grafana，出问题秒级定位到具体Handler。</li>
 </ul>
@@ -581,7 +594,7 @@
 <td>130万</td>
 </tr>
 <tr>
-<td>QPS</td>
+<td>QPS（历史压测口径）</td>
 <td>&lt;500</td>
 <td>2000</td>
 <td>8000+</td>
@@ -617,9 +630,9 @@
 <td>4人</td>
 </tr>
 </tbody></table>
-<p>三个阶段，三个维度的演进，本质上就是DDIA第一章所讨论的内容在现实中的投射。</p>
+<p>三个阶段，三个维度的演进，本质上就是DDIA第二章所讨论的内容在现实中的投射。</p>
 <hr>
-<h2 id="结尾：架构就是权衡的艺术"><a href="#结尾：架构就是权衡的艺术" class="headerlink" title="结尾：架构就是权衡的艺术"></a>结尾：架构就是权衡的艺术</h2><p>DDIA第一章没有给我任何代码，但它给了我一套思考框架。后来我每次做架构决策，都自觉或不自觉地套用这三个维度：</p>
+<h2 id="结尾：架构就是权衡的艺术"><a href="#结尾：架构就是权衡的艺术" class="headerlink" title="结尾：架构就是权衡的艺术"></a>结尾：架构就是权衡的艺术</h2><p>DDIA第二章没有给我任何代码，但它给了我一套思考框架。后来我每次做架构决策，都自觉或不自觉地套用这三个维度：</p>
 <ul>
 <li>这个方案，<strong>可靠性</strong>够不够？故障了会不会雪崩？</li>
 <li>这个方案，<strong>可扩展性</strong>有没有天花板？半年后数据量翻倍了还撑得住吗？</li>
@@ -629,7 +642,7 @@
 <p><strong>没有银弹，没有最佳实践，没有所谓的”正确架构”。只有在你当前的上下文里，权衡了所有trade-off之后，做出的那个最不坏的选择。</strong></p>
 <p>这就是DDIA教会我的第一课。</p>
 <hr>
-<p><em>本系列是《Designing Data-Intensive Applications》的读书笔记，结合本人7年电商供应链后端实战经验。下一篇将讨论数据模型与查询语言——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。</em></p>
+<p><em>本系列是《Designing Data-Intensive Applications》的读书笔记，结合本人7年电商供应链后端实战经验。下一篇聊架构权衡：从130万日订单看，为什么没有银弹。</em></p>
 
                 
               </div>
@@ -662,9 +675,9 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
-        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
-      
         <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
+      
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
         <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" class="print-no-link">#分布式</a>
       
@@ -731,9 +744,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2023/06/22/2023-06-22-DDIA-01-%E6%9E%B6%E6%9E%84%E6%9D%83%E8%A1%A1%E6%B2%A1%E6%9C%89%E9%93%B6%E5%BC%B9/" title="DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍">
+                      <a href="/2023/06/22/2023-06-22-DDIA-01-%E6%9E%B6%E6%9E%84%E6%9D%83%E8%A1%A1%E6%B2%A1%E6%9C%89%E9%93%B6%E5%BC%B9/" title="DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍</span>
+                        <span class="hidden-mobile">DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -741,8 +754,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/2023/06/01/2023-06-01-DDIA-01-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%96%B0%E6%8C%91%E6%88%98/" title="DDIA-01-云原生时代的架构新挑战：DDIA第二版新增内容解读">
-                        <span class="hidden-mobile">DDIA-01-云原生时代的架构新挑战：DDIA第二版新增内容解读</span>
+                      <a href="/2023/06/01/2023-06-01-DDIA-01-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%96%B0%E6%8C%91%E6%88%98/" title="DDIA-01-云原生时代的架构新挑战：DDIA第二版公开目录解读">
+                        <span class="hidden-mobile">DDIA-01-云原生时代的架构新挑战：DDIA第二版公开目录解读</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
@@ -820,7 +833,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -920,7 +933,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -935,7 +949,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/08/13/2025-08-13-Kafka在Canal到Doris链路中的削峰角色/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/08/13/2025-08-13-Kafka%E5%9C%A8Canal%E5%88%B0Doris%E9%93%BE%E8%B7%AF%E4%B8%AD%E7%9A%84%E5%89%8A%E5%B3%B0%E8%A7%92%E8%89%B2/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="背景：分库分表后，复杂查询去哪儿订单中台的销售信息表做了分库分表（单号主分片，8 片，每片约 750 万行），WHERE order_no &#x3D; ? 这种主路径查询零广播，很舒服。 但分库分表有个必然的代价：按单号分片后，跨分片的复杂统计查询做不了——比如按用户、按时间段的聚合分析，散落在 8 个分片里，没法在 MySQL 层高效完成。 业界的标准解法是读写分离 + 异构存储：把 MySQL 的数据">
+    <meta name="description" content="背景：分库分表后，复杂查询去哪儿订单中台的销售信息表做了分库分表（单号主分片，上线时 8 片、约 6000 万行、每片约 750 万行），WHERE order_no &#x3D; ? 这种主路径查询零广播，很舒服。 但分库分表有个必然的代价：按单号分片后，跨分片的复杂统计查询做不了——比如按用户、按时间段的聚合分析，散落在 8 个分片里，没法在 MySQL 层高效完成。 业界的标准解法是读写分离 + 异构">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Kafka在Canal→Doris链路中的削峰角色：一次分库分表的真实配套工程">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/08/13/2025-08-13-Kafka%E5%9C%A8Canal%E5%88%B0Doris%E9%93%BE%E8%B7%AF%E4%B8%AD%E7%9A%84%E5%89%8A%E5%B3%B0%E8%A7%92%E8%89%B2/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="背景：分库分表后，复杂查询去哪儿订单中台的销售信息表做了分库分表（单号主分片，8 片，每片约 750 万行），WHERE order_no &#x3D; ? 这种主路径查询零广播，很舒服。 但分库分表有个必然的代价：按单号分片后，跨分片的复杂统计查询做不了——比如按用户、按时间段的聚合分析，散落在 8 个分片里，没法在 MySQL 层高效完成。 业界的标准解法是读写分离 + 异构存储：把 MySQL 的数据">
+<meta property="og:description" content="背景：分库分表后，复杂查询去哪儿订单中台的销售信息表做了分库分表（单号主分片，上线时 8 片、约 6000 万行、每片约 750 万行），WHERE order_no &#x3D; ? 这种主路径查询零广播，很舒服。 但分库分表有个必然的代价：按单号分片后，跨分片的复杂统计查询做不了——比如按用户、按时间段的聚合分析，散落在 8 个分片里，没法在 MySQL 层高效完成。 业界的标准解法是读写分离 + 异构">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/738f4f6147a6ec2e3e821ee4ffd45be8.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/738f4f6147a6ec2e3e821ee4ffd45be8.png">
 <meta property="article:published_time" content="2025-08-13T14:50:50.000Z">
-<meta property="article:modified_time" content="2026-11-02T11:21:15.753Z">
+<meta property="article:modified_time" content="2025-08-13T14:50:50.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Canal">
 <meta property="article:tag" content="Doris">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="分库分表">
 <meta property="article:tag" content="削峰">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/738f4f6147a6ec2e3e821ee4ffd45be8.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/738f4f6147a6ec2e3e821ee4ffd45be8.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Kafka在Canal→Doris链路中的削峰角色：一次分库分表的真实配套工程","datePublished":"2025-08-13T14:50:50.000Z","dateModified":"2025-08-13T14:50:50.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/08/13/2025-08-13-Kafka%E5%9C%A8Canal%E5%88%B0Doris%E9%93%BE%E8%B7%AF%E4%B8%AD%E7%9A%84%E5%89%8A%E5%B3%B0%E8%A7%92%E8%89%B2/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -410,14 +419,18 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">Kafka在Canal→Doris链路中的削峰角色：一次分库分表的真实配套工程</h1>
+            <p id="seo-header">Kafka在Canal→Doris链路中的削峰角色：一次分库分表的真实配套工程</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="背景：分库分表后，复杂查询去哪儿"><a href="#背景：分库分表后，复杂查询去哪儿" class="headerlink" title="背景：分库分表后，复杂查询去哪儿"></a>背景：分库分表后，复杂查询去哪儿</h2><p>订单中台的销售信息表做了分库分表（单号主分片，8 片，每片约 750 万行），<code>WHERE order_no = ?</code> 这种主路径查询零广播，很舒服。</p>
+                <h2 id="背景：分库分表后，复杂查询去哪儿"><a href="#背景：分库分表后，复杂查询去哪儿" class="headerlink" title="背景：分库分表后，复杂查询去哪儿"></a>背景：分库分表后，复杂查询去哪儿</h2><p>订单中台的销售信息表做了分库分表（单号主分片，上线时 8 片、约 6000 万行、每片约 750 万行），<code>WHERE order_no = ?</code> 这种主路径查询零广播，很舒服。</p>
 <p>但分库分表有个必然的代价：<strong>按单号分片后，跨分片的复杂统计查询做不了</strong>——比如按用户、按时间段的聚合分析，散落在 8 个分片里，没法在 MySQL 层高效完成。</p>
 <p>业界的标准解法是<strong>读写分离 + 异构存储</strong>：把 MySQL 的数据实时同步到分析型数据库（OLAP），复杂查询走 OLAP，MySQL 只扛事务。</p>
 <p>我们用的组合是：<strong>MySQL → Canal → Kafka → Doris</strong>。</p>
@@ -446,7 +459,7 @@
 <li><strong>消费端手动提交 offset</strong>：Doris 写成功才提交消费位置，写失败不提交，重启后重新消费。</li>
 </ul>
 <p>再往下还有一层：<strong>对账</strong>。这条链路依赖”增量消息不漏”，但增量本身有兜不住的概率（Canal 位点异常、消费积压超 retention 被清等）。所以除了 Kafka 侧的可靠投递，链路还要有<strong>定期对账</strong>补漏——按业务主键比对 MySQL 和 Doris 的数据，差异重投。增量 + 对账，才是完整闭环。</p>
-<h2 id="六、一个诚实的口径说明"><a href="#六、一个诚实的口径说明" class="headerlink" title="六、一个诚实的口径说明"></a>六、一个诚实的口径说明</h2><p>这里涉及的”8 片、每片约 750 万行、2025 下半年灰度约两周、迁移约一周无停机”是我简历和面试里的<strong>定稿口径</strong>，写博客时我保持同一口径，避免各渠道数据打架。分库分表本身的选型逻辑（为什么单号主分片、为什么不用时间主分片）是另一篇的主题。</p>
+<h2 id="六、一个诚实的口径说明"><a href="#六、一个诚实的口径说明" class="headerlink" title="六、一个诚实的口径说明"></a>六、一个诚实的口径说明</h2><p>这里把涉及的数字固定下来，避免不同文章口径打架：上线时 8 片、约 6000 万行、每片约 750 万行；2025 上半年完成迁移，下半年灰度→全量；切流约两周、历史迁移约一周且无停机。分库分表本身的选型逻辑（为什么单号主分片、为什么不用时间主分片）是另一篇的主题。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>分库分表后的复杂查询，靠<strong>异构存储</strong>承接：MySQL 事务、Doris 分析；</li>
 <li><strong>Canal 抓 binlog → Kafka 削峰缓冲 → 写 Doris</strong>，Kafka 的角色是削峰 + 解耦 + 兜底；</li>
@@ -553,9 +566,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/" title="订单中心慢SQL治理：从日均1124条到6条的实战总结">
+                      <a href="/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/" title="订单中心慢SQL治理：1124→6 之后的机制化运营">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">订单中心慢SQL治理：从日均1124条到6条的实战总结</span>
+                        <span class="hidden-mobile">订单中心慢SQL治理：1124→6 之后的机制化运营</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -642,7 +655,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -742,7 +755,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -757,7 +771,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/09/01/2025-09-01-订单中心慢SQL治理/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="订单中心慢SQL治理：从日均1124条到6条背景我们订单中心日均处理100万+订单，高峰期慢SQL日志日均达到 1124条，Doris慢查询日均 8735条。系统可用性在 99.9% 附近徘徊，每次大促都是一次心跳加速的考验。 这篇文章记录了我们如何通过系统性治理，将慢SQL从 1124 降到 6 条（↓99.4%），系统可用性提升到 99.99%。 一、先看问题：慢SQL从哪里来？ 1.1 缺失">
+    <meta name="description" content="订单中心慢SQL治理：1124→6 之后的机制化运营 口径说明：1124→6 的原始治理发生在 2023-11（见《慢SQL优化原理》）。本文不重复把成果归因到 2025，重点写 2025 年新增的机制与运营动作。 背景我们订单中心日均 15 万单（大促峰值 50 万），慢SQL日志高峰日均达到 1124条，Doris慢查询日均 约 8700 条。这是 2023-11 治理前的基线，系统可用性当时">
 <meta property="og:type" content="article">
-<meta property="og:title" content="订单中心慢SQL治理：从日均1124条到6条的实战总结">
+<meta property="og:title" content="订单中心慢SQL治理：1124→6 之后的机制化运营">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="订单中心慢SQL治理：从日均1124条到6条背景我们订单中心日均处理100万+订单，高峰期慢SQL日志日均达到 1124条，Doris慢查询日均 8735条。系统可用性在 99.9% 附近徘徊，每次大促都是一次心跳加速的考验。 这篇文章记录了我们如何通过系统性治理，将慢SQL从 1124 降到 6 条（↓99.4%），系统可用性提升到 99.99%。 一、先看问题：慢SQL从哪里来？ 1.1 缺失">
+<meta property="og:description" content="订单中心慢SQL治理：1124→6 之后的机制化运营 口径说明：1124→6 的原始治理发生在 2023-11（见《慢SQL优化原理》）。本文不重复把成果归因到 2025，重点写 2025 年新增的机制与运营动作。 背景我们订单中心日均 15 万单（大促峰值 50 万），慢SQL日志高峰日均达到 1124条，Doris慢查询日均 约 8700 条。这是 2023-11 治理前的基线，系统可用性当时">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5211b0102a5c20308d68d8717c872250.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5211b0102a5c20308d68d8717c872250.png">
 <meta property="article:published_time" content="2025-08-31T17:54:56.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.528Z">
+<meta property="article:modified_time" content="2025-08-31T17:54:56.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Doris">
 <meta property="article:tag" content="MySQL">
@@ -39,11 +45,14 @@
 <meta property="article:tag" content="索引优化">
 <meta property="article:tag" content="连接池">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5211b0102a5c20308d68d8717c872250.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5211b0102a5c20308d68d8717c872250.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"订单中心慢SQL治理：1124→6 之后的机制化运营","datePublished":"2025-08-31T17:54:56.000Z","dateModified":"2025-08-31T17:54:56.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/"}}</script>
   
   
   
-  <title>订单中心慢SQL治理：从日均1124条到6条的实战总结 - AsterXu Lab</title>
+  <title>订单中心慢SQL治理：1124→6 之后的机制化运营 - AsterXu Lab</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -214,7 +223,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -369,7 +378,7 @@
         <div id="board">
           <header class="ax-post-head">
             <p class="ax-eyebrow">性能优化</p>
-            <h1 class="ax-post-head__title">订单中心慢SQL治理：从日均1124条到6条的实战总结</h1>
+            <h1 class="ax-post-head__title">订单中心慢SQL治理：1124→6 之后的机制化运营</h1>
             <div class="ax-post-head__meta">
               
   <div class="mt-3">
@@ -389,7 +398,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.3k 字
+          3.6k 字
         
       </span>
     
@@ -400,7 +409,7 @@
         
         
         
-          28 分钟
+          31 分钟
         
       </span>
     
@@ -411,21 +420,28 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">订单中心慢SQL治理：从日均1124条到6条的实战总结</h1>
+            <p id="seo-header">订单中心慢SQL治理：1124→6 之后的机制化运营</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="订单中心慢SQL治理：从日均1124条到6条"><a href="#订单中心慢SQL治理：从日均1124条到6条" class="headerlink" title="订单中心慢SQL治理：从日均1124条到6条"></a>订单中心慢SQL治理：从日均1124条到6条</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>我们订单中心日均处理100万+订单，高峰期慢SQL日志日均达到 <strong>1124条</strong>，Doris慢查询日均 <strong>8735条</strong>。系统可用性在 99.9% 附近徘徊，每次大促都是一次心跳加速的考验。</p>
-<p>这篇文章记录了我们如何通过系统性治理，将慢SQL从 1124 降到 6 条（↓99.4%），系统可用性提升到 99.99%。</p>
+                <h2 id="订单中心慢SQL治理：1124→6-之后的机制化运营"><a href="#订单中心慢SQL治理：1124→6-之后的机制化运营" class="headerlink" title="订单中心慢SQL治理：1124→6 之后的机制化运营"></a>订单中心慢SQL治理：1124→6 之后的机制化运营</h2><blockquote>
+<p>口径说明：1124→6 的原始治理发生在 2023-11（见《慢SQL优化原理》）。本文不重复把成果归因到 2025，重点写 2025 年新增的机制与运营动作。</p>
+</blockquote>
+<h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>我们订单中心日均 15 万单（大促峰值 50 万），慢SQL日志高峰日均达到 <strong>1124条</strong>，Doris慢查询日均 <strong>约 8700 条</strong>。这是 2023-11 治理前的基线，系统可用性当时在 99.9% 附近徘徊，每次大促都是一次心跳加速的考验。</p>
+<p>这篇文章记录这套治理的核心手段，以及 2025 年新增的机制化运营；1124→6 的原始成果归 2023-11，可用性提升的主复盘见《订单中台大促复盘》（本文只算贡献之一）。</p>
 <h3 id="一、先看问题：慢SQL从哪里来？"><a href="#一、先看问题：慢SQL从哪里来？" class="headerlink" title="一、先看问题：慢SQL从哪里来？"></a>一、先看问题：慢SQL从哪里来？</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5211b0102a5c20308d68d8717c872250.png#pic_center" srcset="/img/loading.gif" lazyload alt="订单中心慢 SQL 治理：1124 → 6"></p>
 <h4 id="1-1-缺失索引"><a href="#1-1-缺失索引" class="headerlink" title="1.1 缺失索引"></a>1.1 缺失索引</h4><p>这是最常见的慢SQL原因。我们通过慢查询日志聚合发现，Top 10 慢SQL中有 7 条是走全表扫描：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 典型问题：订单号查询走了全表扫描</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> order_main <span class="hljs-keyword">WHERE</span> order_no <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;20230101000001&#x27;</span>;<br><span class="hljs-comment">-- explain 显示 rows=2300000, type=ALL</span><br></code></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 典型问题：订单号查询走了全表扫描</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> or_sales_info <span class="hljs-keyword">WHERE</span> order_no <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;20230101000001&#x27;</span>;<br><span class="hljs-comment">-- explain 显示 rows=2300000, type=ALL</span><br></code></pre></td></tr></table></figure>
 
 <p><strong>修复</strong>：新增联合索引 30+ 处，原则是”高频查询条件+排序字段”。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">ALTER TABLE</span> order_main <span class="hljs-keyword">ADD</span> INDEX idx_order_no(order_no);<br><span class="hljs-keyword">ALTER TABLE</span> order_item <span class="hljs-keyword">ADD</span> INDEX idx_order_id_sku(order_id, sku_code);<br></code></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 逻辑表不能直接建索引：对每个物理分片表执行（或由 DBA 广播 DDL）</span><br><span class="hljs-keyword">ALTER TABLE</span> or_sales_info_0 <span class="hljs-keyword">ADD</span> INDEX idx_order_no(order_no);<br><span class="hljs-comment">-- 其余物理分片表同样处理</span><br><span class="hljs-keyword">ALTER TABLE</span> or_sales_item <span class="hljs-keyword">ADD</span> INDEX idx_order_id_sku(order_id, sku_code);  <span class="hljs-comment">-- 同样按物理分片表/广播 DDL 处理</span><br></code></pre></td></tr></table></figure>
 
 <h4 id="1-2-大-IN-查询"><a href="#1-2-大-IN-查询" class="headerlink" title="1.2 大 IN 查询"></a>1.2 大 IN 查询</h4><p>渠道订单表经常出现 <code>WHERE channel IN (1,2,3,...,20)</code> 的场景，IN 列表过长导致 MySQL 优化器选择了错误的执行计划：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 问题代码</span><br>List&lt;Long&gt; channelIds = channelService.getAllIds();  <span class="hljs-comment">// 返回50+个ID</span><br>orderMapper.selectByChannelIds(channelIds);           <span class="hljs-comment">// IN子句爆炸</span><br></code></pre></td></tr></table></figure>
@@ -433,7 +449,7 @@
 <p><strong>修复</strong>：大 IN 拆分为多批次查询，每批控制在 10 个以内，或改为 JOIN 方式。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 修复后</span><br>List&lt;List&lt;Long&gt;&gt; batches = partition(channelIds, <span class="hljs-number">10</span>);<br>List&lt;Order&gt; result = batches.stream()<br>    .flatMap(batch -&gt; orderMapper.selectByChannelIds(batch).stream())<br>    .collect(toList());<br></code></pre></td></tr></table></figure>
 
-<h4 id="1-3-未命中分区——Doris慢查询的根源"><a href="#1-3-未命中分区——Doris慢查询的根源" class="headerlink" title="1.3 未命中分区——Doris慢查询的根源"></a>1.3 未命中分区——Doris慢查询的根源</h4><p>Doris 的 8735 条慢查询中，超过 80% 是因为 SQL 没有带分区字段。Doris 分区剪枝是性能的关键，不带分区键等于全表扫描所有分区。</p>
+<h4 id="1-3-未命中分区——Doris慢查询的根源"><a href="#1-3-未命中分区——Doris慢查询的根源" class="headerlink" title="1.3 未命中分区——Doris慢查询的根源"></a>1.3 未命中分区——Doris慢查询的根源</h4><p>Doris 的约 8700 条慢查询中，超过 80% 是因为 SQL 没有带分区字段。Doris 分区剪枝是性能的关键，不带分区键等于全表扫描所有分区。</p>
 <p><strong>修复</strong>：强制所有 OLAP 查询必须带上 <code>dt</code>（日期分区）条件，在 DAO 层增加拦截校验。</p>
 <h3 id="二、连接池隔离——舱壁模式的应用"><a href="#二、连接池隔离——舱壁模式的应用" class="headerlink" title="二、连接池隔离——舱壁模式的应用"></a>二、连接池隔离——舱壁模式的应用</h3><h4 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h4><p>所有业务模块共用一个数据库连接池，一个慢查询就能拖垮整个服务——线程池耗尽，其他正常请求全部阻塞。</p>
 <h4 id="方案：舱壁模式（Bulkhead-Pattern）"><a href="#方案：舱壁模式（Bulkhead-Pattern）" class="headerlink" title="方案：舱壁模式（Bulkhead Pattern）"></a>方案：舱壁模式（Bulkhead Pattern）</h4><figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs">┌─────────────────────────────────────────┐<br>│              应用实例                     │<br>│  ┌──────────┐ ┌──────────┐ ┌──────────┐ │<br>│  │ 订单查询  │ │ 库存同步  │ │ 报表导出  │ │<br>│  │ 20连接   │ │ 15连接   │ │ 5连接    │ │<br>│  └──────────┘ └──────────┘ └──────────┘ │<br>└─────────────────────────────────────────┘<br></code></pre></td></tr></table></figure>
@@ -458,8 +474,9 @@
 
 <h3 id="五、Doris-分区和物化视图"><a href="#五、Doris-分区和物化视图" class="headerlink" title="五、Doris 分区和物化视图"></a>五、Doris 分区和物化视图</h3><p>Doris 慢查询治理的核心就两个字：<strong>分区</strong>。</p>
 <p>我们对所有核心表按 <code>dt</code> 字段做了 Range 分区，并且为高频聚合查询（渠道日报、状态汇总）创建了物化视图，把聚合计算从查询时挪到了写入时。</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 分区策略</span><br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(dt) (<br>    <span class="hljs-keyword">PARTITION</span> p202301 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-string">&#x27;2023-02-01&#x27;</span>),<br>    ...<br>)<br><br><span class="hljs-comment">-- 物化视图</span><br><span class="hljs-keyword">CREATE</span> MATERIALIZED <span class="hljs-keyword">VIEW</span> order_channel_daily <span class="hljs-keyword">AS</span><br><span class="hljs-keyword">SELECT</span> dt, channel, <span class="hljs-built_in">COUNT</span>(<span class="hljs-operator">*</span>) <span class="hljs-keyword">as</span> cnt, <span class="hljs-built_in">SUM</span>(amount) <span class="hljs-keyword">as</span> total<br><span class="hljs-keyword">FROM</span> order_main<br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> dt, channel;<br></code></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 分区策略</span><br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(dt) (<br>    <span class="hljs-keyword">PARTITION</span> p202301 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-string">&#x27;2023-02-01&#x27;</span>),<br>    ...<br>)<br><br><span class="hljs-comment">-- 物化视图</span><br><span class="hljs-keyword">CREATE</span> MATERIALIZED <span class="hljs-keyword">VIEW</span> order_channel_daily <span class="hljs-keyword">AS</span><br><span class="hljs-keyword">SELECT</span> dt, channel, <span class="hljs-built_in">COUNT</span>(<span class="hljs-operator">*</span>) <span class="hljs-keyword">as</span> cnt, <span class="hljs-built_in">SUM</span>(amount) <span class="hljs-keyword">as</span> total<br><span class="hljs-keyword">FROM</span> or_sales_info<br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> dt, channel;<br></code></pre></td></tr></table></figure>
 
+<p><strong>本文新增的是什么</strong>：1124→6 的索引&#x2F;SQL 改写等原始手段发生在 2023-11；2025 年新增的是把治理机制化——连接池隔离、ThreadLocal 清理、Doris 分区校验、监控与上线评审，以及大促前的专项清剿。</p>
 <h3 id="量化成果"><a href="#量化成果" class="headerlink" title="量化成果"></a>量化成果</h3><table>
 <thead>
 <tr>
@@ -477,9 +494,9 @@
 </tr>
 <tr>
 <td>日均 Doris 慢查询</td>
-<td>8735 条</td>
-<td><strong>94 条</strong></td>
-<td>↓98.9%</td>
+<td>约 8700 条</td>
+<td><strong>约 100 条</strong></td>
+<td>↓约 99%</td>
 </tr>
 <tr>
 <td>DB 单次负载</td>
@@ -496,7 +513,7 @@
 <tr>
 <td>系统可用性</td>
 <td>99.9%</td>
-<td><strong>99.99%</strong></td>
+<td><strong>99.99%（贡献之一，主复盘见大促复盘）</strong></td>
 <td>↑1个9</td>
 </tr>
 </tbody></table>
@@ -510,7 +527,7 @@
 </ol>
 <p>这些原则不是一次性做完的，而是在日常 Code Review 和压测中持续迭代。</p>
 <hr>
-<p><em>发表于 2025 年 9 月 · 标签: MySQL, 慢SQL, 索引优化, 性能调优, 连接池, Doris</em></p>
+<p><em>发表于 2025 年 9 月 · 标签: MySQL, 慢SQL, 索引优化, 性能优化, 连接池, Doris</em></p>
 
                 
               </div>
@@ -545,9 +562,9 @@
       
         <a href="/tags/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/" class="print-no-link">#性能优化</a>
       
-        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
-      
         <a href="/tags/%E6%85%A2SQL/" class="print-no-link">#慢SQL</a>
+      
+        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
       
         <a href="/tags/Doris/" class="print-no-link">#Doris</a>
       
@@ -565,7 +582,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>订单中心慢SQL治理：从日均1124条到6条的实战总结</div>
+      <div>订单中心慢SQL治理：1124→6 之后的机制化运营</div>
       <div>https://aster-xu-lab.github.io/2025/09/01/2025-09-01-订单中心慢SQL治理/</div>
     </div>
     <div class="license-meta">
@@ -699,7 +716,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -799,7 +816,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -814,7 +832,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

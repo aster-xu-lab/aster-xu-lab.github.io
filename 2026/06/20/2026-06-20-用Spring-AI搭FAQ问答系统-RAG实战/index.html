@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/06/20/2026-06-20-用Spring-AI搭FAQ问答系统-RAG实战/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/06/20/2026-06-20-%E7%94%A8Spring-AI%E6%90%ADFAQ%E9%97%AE%E7%AD%94%E7%B3%BB%E7%BB%9F-RAG%E5%AE%9E%E6%88%98/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="上一篇讲了 Spring AI 的基础，这篇做一个完整的小项目：内部 FAQ 问答系统。把 RAG 的完整链路（切块 → 向量化 → 检索 → 拼 prompt → 幻觉控制）真正跑起来。这是我自己做过的最小落地场景。  一、场景与架构内部有几百条 FAQ（运维问题、业务规则、操作手册），想让员工用自然语言提问，系统基于 FAQ 回答。 RAG 架构： 12345离线（建库）：  FAQ 文档">
+    <meta name="description" content="上一篇讲了 Spring AI 的基础，这篇做一个完整的小项目：内部 FAQ 问答系统。把 RAG 的完整链路（切块 → 向量化 → 检索 → 拼 prompt → 幻觉控制）真正跑起来。这是我自己做过的最小落地场景。RAG 的工程思路（切块策略、混合检索、幻觉控制为什么这么做）在《RAG 工程实践》里已经展开过，这篇只讲 Spring AI 下的具体实现，不重复论证。 一、场景与架构内部有几百条">
 <meta property="og:type" content="article">
 <meta property="og:title" content="用 Spring AI 搭一个 FAQ 问答系统：RAG 实战全流程">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/06/20/2026-06-20-%E7%94%A8Spring-AI%E6%90%ADFAQ%E9%97%AE%E7%AD%94%E7%B3%BB%E7%BB%9F-RAG%E5%AE%9E%E6%88%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="上一篇讲了 Spring AI 的基础，这篇做一个完整的小项目：内部 FAQ 问答系统。把 RAG 的完整链路（切块 → 向量化 → 检索 → 拼 prompt → 幻觉控制）真正跑起来。这是我自己做过的最小落地场景。  一、场景与架构内部有几百条 FAQ（运维问题、业务规则、操作手册），想让员工用自然语言提问，系统基于 FAQ 回答。 RAG 架构： 12345离线（建库）：  FAQ 文档">
+<meta property="og:description" content="上一篇讲了 Spring AI 的基础，这篇做一个完整的小项目：内部 FAQ 问答系统。把 RAG 的完整链路（切块 → 向量化 → 检索 → 拼 prompt → 幻觉控制）真正跑起来。这是我自己做过的最小落地场景。RAG 的工程思路（切块策略、混合检索、幻觉控制为什么这么做）在《RAG 工程实践》里已经展开过，这篇只讲 Spring AI 下的具体实现，不重复论证。 一、场景与架构内部有几百条">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-06-20T00:49:28.000Z">
-<meta property="article:modified_time" content="2026-08-28T04:29:44.265Z">
+<meta property="article:modified_time" content="2026-06-20T00:49:28.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="RAG">
 <meta property="article:tag" content="Spring AI">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="幻觉控制">
 <meta property="article:tag" content="问答系统">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"用 Spring AI 搭一个 FAQ 问答系统：RAG 实战全流程","datePublished":"2026-06-20T00:49:28.000Z","dateModified":"2026-06-20T00:49:28.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/06/20/2026-06-20-%E7%94%A8Spring-AI%E6%90%ADFAQ%E9%97%AE%E7%AD%94%E7%B3%BB%E7%BB%9F-RAG%E5%AE%9E%E6%88%98/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.4k 字
+          3.7k 字
         
       </span>
     
@@ -397,7 +406,7 @@
         
         
         
-          21 分钟
+          32 分钟
         
       </span>
     
@@ -408,15 +417,19 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/agent/">AI / Agent 工程</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">用 Spring AI 搭一个 FAQ 问答系统：RAG 实战全流程</h1>
+            <p id="seo-header">用 Spring AI 搭一个 FAQ 问答系统：RAG 实战全流程</p>
             
             
               <div class="markdown-body">
                 
                 <blockquote>
-<p>上一篇讲了 Spring AI 的基础，这篇做一个完整的小项目：<strong>内部 FAQ 问答系统</strong>。把 RAG 的完整链路（切块 → 向量化 → 检索 → 拼 prompt → 幻觉控制）真正跑起来。这是我自己做过的最小落地场景。</p>
+<p>上一篇讲了 Spring AI 的基础，这篇做一个完整的小项目：<strong>内部 FAQ 问答系统</strong>。把 RAG 的完整链路（切块 → 向量化 → 检索 → 拼 prompt → 幻觉控制）真正跑起来。这是我自己做过的最小落地场景。RAG 的工程思路（切块策略、混合检索、幻觉控制为什么这么做）在《RAG 工程实践》里已经展开过，这篇只讲 Spring AI 下的具体实现，不重复论证。</p>
 </blockquote>
 <h2 id="一、场景与架构"><a href="#一、场景与架构" class="headerlink" title="一、场景与架构"></a>一、场景与架构</h2><p>内部有几百条 FAQ（运维问题、业务规则、操作手册），想让员工用自然语言提问，系统基于 FAQ 回答。</p>
 <p>RAG 架构：</p>
@@ -434,33 +447,44 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// FAQ 每一条就是一个天然块：问题 + 答案</span><br><span class="hljs-comment">// 长文档按标题/段落切，别按固定字数硬切（会把语义从中间切断）</span><br>List&lt;FaqChunk&gt; chunks = faqList.stream()<br>    .map(faq -&gt; <span class="hljs-keyword">new</span> <span class="hljs-title class_">FaqChunk</span>(<br>        faq.getQuestion() + <span class="hljs-string">&quot;\n&quot;</span> + faq.getAnswer(),<br>        faq.getCategory()<br>    ))<br>    .toList();<br></code></pre></td></tr></table></figure>
 
 <p><strong>向量化 + 存储</strong>：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 1. 每条 FAQ 用 Embedding 模型转成向量</span><br><span class="hljs-type">float</span>[] vector = embeddingModel.embed(chunk.getText());<br><br><span class="hljs-comment">// 2. 存进 pgvector</span><br>jdbcTemplate.update(<br>    <span class="hljs-string">&quot;INSERT INTO faq_chunks (content, category, embedding) VALUES (?, ?, ?)&quot;</span>,<br>    chunk.getText(), chunk.getCategory(),<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">Pgvector</span>(vector)<br>);<br></code></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 1. 每条 FAQ 用 Embedding 模型转成向量</span><br><span class="hljs-type">float</span>[] vector = embeddingModel.embed(chunk.getText());<br><br><span class="hljs-comment">// 2. 存进 pgvector（PGvector 来自 pgvector 官方 Java 库 com.pgvector.PGvector）</span><br><span class="hljs-comment">//    示意写法；不同 JDBC 驱动/模板对 PGvector 的参数绑定方式可能不同，</span><br><span class="hljs-comment">//    必要时用 PreparedStatement.setObject 显式绑定</span><br>jdbcTemplate.update(<br>    <span class="hljs-string">&quot;INSERT INTO faq_chunks (content, category, embedding) VALUES (?, ?, ?)&quot;</span>,<br>    chunk.getText(), chunk.getCategory(),<br>    <span class="hljs-keyword">new</span> <span class="hljs-title class_">PGvector</span>(vector)<br>);<br></code></pre></td></tr></table></figure>
 
-<p><strong>关键坑：建库和检索必须用同一个 Embedding 模型</strong>，换模型 &#x3D; 全部重算向量，否则检索结果全乱。</p>
+<p><strong>为什么这里手写 <code>JdbcTemplate</code> 而不用 <code>PgVectorStore</code></strong>：目的是把 pgvector 的检索过程摊开看。生产项目更推荐直接用 Spring AI 的 <code>PgVectorStore</code> + <code>QuestionAnswerAdvisor</code>，检索、拼接、TopN 配置都由框架接管，少写易错的 SQL 和向量转换。下面的 SQL 是学习版实现。</p>
+<p>最小表结构（示意）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> EXTENSION IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> vector;<br><br><span class="hljs-keyword">CREATE TABLE</span> faq_chunks (<br>  id        BIGSERIAL <span class="hljs-keyword">PRIMARY KEY</span>,   <span class="hljs-comment">-- chunk id，回填引用和定位原文时用</span><br>  content   TEXT <span class="hljs-keyword">NOT NULL</span>,<br>  category  TEXT,<br>  embedding vector(<span class="hljs-number">1536</span>)             <span class="hljs-comment">-- 维度必须和 Embedding 模型一致</span><br>);<br><br><span class="hljs-comment">-- 数据量小时可先顺序扫描；量上来再加索引。</span><br><span class="hljs-comment">-- 索引类型要和查询用的距离算子匹配，这里用余弦距离（&lt;=&gt;）。</span><br><span class="hljs-keyword">CREATE</span> INDEX <span class="hljs-keyword">ON</span> faq_chunks <span class="hljs-keyword">USING</span> hnsw (embedding vector_cosine_ops);<br></code></pre></td></tr></table></figure>
+
+<p><strong>关键坑：建库和检索必须用同一个 Embedding 模型</strong>，换模型 &#x3D; 全部重算向量，否则检索结果全乱。表的向量维度也要和该模型输出维度一致。</p>
 <h2 id="四、在线问答：检索-拼-prompt"><a href="#四、在线问答：检索-拼-prompt" class="headerlink" title="四、在线问答：检索 + 拼 prompt"></a>四、在线问答：检索 + 拼 prompt</h2><p><strong>语义检索</strong>（向量相似度）：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> content, <span class="hljs-number">1</span> <span class="hljs-operator">-</span> (embedding <span class="hljs-operator">&lt;=&gt;</span> ?) <span class="hljs-keyword">AS</span> similarity<br><span class="hljs-keyword">FROM</span> faq_chunks<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> embedding <span class="hljs-operator">&lt;=&gt;</span> ?    <span class="hljs-comment">-- &lt;=&gt; 是余弦距离</span><br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> id, content, <span class="hljs-number">1</span> <span class="hljs-operator">-</span> (embedding <span class="hljs-operator">&lt;=&gt;</span> ?) <span class="hljs-keyword">AS</span> similarity<br><span class="hljs-keyword">FROM</span> faq_chunks<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> embedding <span class="hljs-operator">&lt;=&gt;</span> ?    <span class="hljs-comment">-- &lt;=&gt; 是余弦距离</span><br>LIMIT <span class="hljs-number">5</span>;                    <span class="hljs-comment">-- id 用于引用来源，similarity 用于阈值判断</span><br></code></pre></td></tr></table></figure>
 
 <p><strong>拼进 prompt</strong>：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> String <span class="hljs-title function_">answer</span><span class="hljs-params">(String question)</span> &#123;<br>    <span class="hljs-comment">// 1. 问题向量化</span><br>    <span class="hljs-type">float</span>[] qVec = embeddingModel.embed(question);<br><br>    <span class="hljs-comment">// 2. 检索 TopN</span><br>    List&lt;String&gt; candidates = search(qVec);   <span class="hljs-comment">// 上面那条 SQL</span><br><br>    <span class="hljs-comment">// 3. 拼 prompt：要求 LLM 基于检索结果回答</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">prompt</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">        你是内部知识助手。请只根据下面提供的资料回答问题。</span><br><span class="hljs-string">        如果资料里没有相关信息，请明确说&quot;没有找到相关信息&quot;。</span><br><span class="hljs-string"></span><br><span class="hljs-string">        资料：</span><br><span class="hljs-string">        %s</span><br><span class="hljs-string"></span><br><span class="hljs-string">        问题：%s</span><br><span class="hljs-string">        &quot;&quot;&quot;</span>.formatted(String.join(<span class="hljs-string">&quot;\n---\n&quot;</span>, candidates), question);<br><br>    <span class="hljs-keyword">return</span> chatModel.call(prompt);<br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> String <span class="hljs-title function_">answer</span><span class="hljs-params">(String question)</span> &#123;<br>    <span class="hljs-comment">// 1. 问题向量化</span><br>    <span class="hljs-type">float</span>[] qVec = embeddingModel.embed(question);<br><br>    <span class="hljs-comment">// 2. 检索 TopN（Candidate 带 id / content / similarity）</span><br>    List&lt;Candidate&gt; hits = search(qVec);   <span class="hljs-comment">// 上面那条 SQL</span><br><br>    <span class="hljs-comment">// 3. 拼 prompt：要求 LLM 基于检索结果回答</span><br>    <span class="hljs-type">String</span> <span class="hljs-variable">references</span> <span class="hljs-operator">=</span> hits.stream()<br>        .map(h -&gt; <span class="hljs-string">&quot;[FAQ-&quot;</span> + h.id() + <span class="hljs-string">&quot;] &quot;</span> + h.content())<br>        .collect(Collectors.joining(<span class="hljs-string">&quot;\n---\n&quot;</span>));<br>    <span class="hljs-type">String</span> <span class="hljs-variable">prompt</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;&quot;</span><br><span class="hljs-string">        你是内部知识助手。请只根据下面提供的资料回答问题。</span><br><span class="hljs-string">        如果资料里没有相关信息，请明确说&quot;没有找到相关信息&quot;。</span><br><span class="hljs-string"></span><br><span class="hljs-string">        资料：</span><br><span class="hljs-string">        %s</span><br><span class="hljs-string"></span><br><span class="hljs-string">        问题：%s</span><br><span class="hljs-string">        &quot;&quot;&quot;</span>.formatted(references, question);<br><br>    <span class="hljs-keyword">return</span> chatModel.call(prompt);<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h2 id="五、幻觉控制：RAG-的生死线"><a href="#五、幻觉控制：RAG-的生死线" class="headerlink" title="五、幻觉控制：RAG 的生死线"></a>五、幻觉控制：RAG 的生死线</h2><p>这是整个系统最重要的部分，三个手段：</p>
-<p><strong>① 检索不到就明说</strong>：TopN 的相似度低于阈值时，不硬答，直接返回”没有找到相关信息，建议转人工”——<strong>允许说不知道，绝不允许编</strong>。</p>
+<h2 id="五、幻觉控制的实现"><a href="#五、幻觉控制的实现" class="headerlink" title="五、幻觉控制的实现"></a>五、幻觉控制的实现</h2><p>三种手段的取舍和理由在《RAG 工程实践》里讲过，这里只写落地时具体卡在哪：</p>
+<p><strong>① 检索不到就明说</strong>：TopN 的相似度低于阈值时，不硬答，直接返回”没有找到相关信息，建议转人工”——<strong>允许说不知道，绝不允许编</strong>。阈值不要拍脑袋，用一批真实问题分别看”该拒答”和”该回答”两边的分布，再定一个能接受误杀的值。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java">List&lt;Candidate&gt; hits = search(qVec);<br><span class="hljs-keyword">if</span> (hits.isEmpty() || hits.get(<span class="hljs-number">0</span>).similarity() &lt; THRESHOLD) &#123;<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;没有找到相关信息，建议搜索关键词或联系运维。&quot;</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<p><strong>② 加引用来源</strong>：要求 LLM 回答带上来源（”根据 FAQ-123”），用户可核验，模型也更不容易瞎编。</p>
+<p><strong>② 加引用来源</strong>：要求 LLM 回答带上 <code>chunk id</code>（”根据 FAQ-123”）。这要求检索结果把 <code>id</code> 一起查出来，而不是只拼 <code>content</code>——否则模型只能编一个来源。</p>
 <p><strong>③ 意图识别兜底</strong>：接 LLM 之前先判断问题类型——明显不在 FAQ 覆盖范围的（比如闲聊），直接走兜底，不硬往 LLM 上引。</p>
+<p><strong>④ 检索结果的信任边界</strong>：FAQ 文档可能被写入”忽略以上指令”之类的间接注入，检索结果只能当资料。另外，如果 FAQ 分部门或租户，<strong>权限过滤要写进检索 SQL</strong>（如 <code>WHERE tenant_id = ?</code>），不能先召回再在应用层删——那样越权内容已经进了模型上下文。</p>
 <h2 id="六、降级与成本"><a href="#六、降级与成本" class="headerlink" title="六、降级与成本"></a>六、降级与成本</h2><ul>
-<li><strong>LLM 超时&#x2F;不可用</strong>：降级为”直接返回检索到的 TopN 原文”，保证用户至少看到相关内容，而不是报错；</li>
-<li><strong>成本</strong>：TopN 控制在 3-5 条，长 FAQ 答案切短，控制 prompt token。</li>
+<li><strong>降级的具体做法</strong>：捕获 LLM 调用异常或超时后，直接返回检索到的 TopN 原文，并明确标注”以下为相关资料，未经过模型总结”——既留住用户，也不把错误答案伪装成答案；</li>
+<li><strong>成本的两个旋钮</strong>：TopN 和 chunk 大小。TopN 固定在配置里，chunk 在建库时切好；改任何一个都要重新评估检索质量，不能只盯着账单。</li>
 </ul>
-<h2 id="七、诚实评估"><a href="#七、诚实评估" class="headerlink" title="七、诚实评估"></a>七、诚实评估</h2><p>这是一个<strong>最小落地场景</strong>，没有大规模生产数据，也没有量化指标（没有”召回率 88%”这种数字）。它的价值在于<strong>把 RAG 完整链路跑通了</strong>：切块、向量化、检索、拼 prompt、幻觉控制、降级——每个环节该踩的坑都踩了一遍。<strong>原理清楚、链路跑通、边界诚实</strong>，是我现在能对 AI 工程化说的最准确的话。</p>
+<h2 id="七、这套实现没覆盖什么"><a href="#七、这套实现没覆盖什么" class="headerlink" title="七、这套实现没覆盖什么"></a>七、这套实现没覆盖什么</h2><ul>
+<li><strong>没有量化评测</strong>：代码只验证了链路能跑通，没有标注集，也没有统计召回率或答案正确率；</li>
+<li><strong>没有混合检索</strong>：只用了向量相似度，关键词&#x2F;精确匹配还没接；</li>
+<li><strong>没有生产级并发与限流</strong>：示例是最小单机实现。</li>
+</ul>
+<p>这些不是”以后再说”，而是下一步的明确待办。<strong>没有评测，就不能说它”效果好”</strong>——链路跑通和效果达标是两件事。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>RAG &#x3D; <strong>离线建库（切块→向量化→存库）+ 在线问答（检索→拼 prompt→回答）</strong>；</li>
 <li>选 pgvector：<strong>不引新组件、体量匹配</strong>，大流量再上 Milvus；</li>
 <li>切块粒度匹配回答粒度，<strong>建库&#x2F;检索用同一 Embedding 模型</strong>；</li>
-<li>幻觉控制三件套：<strong>检索不到就说不知道 + 引用来源 + 意图识别兜底</strong>；</li>
-<li>LLM 不可用要<strong>降级为返回原文</strong>，TopN 控制成本；</li>
-<li>最小落地场景，链路完整、边界诚实。</li>
+<li>幻觉控制：<strong>检索不到就说不知道 + 引用来源 + 意图识别兜底</strong>；检索内容按不可信输入处理，权限过滤写进检索 SQL；</li>
+<li>本文用手写 <code>JdbcTemplate</code> 展示检索过程；生产更推荐 <code>PgVectorStore</code> + <code>QuestionAnswerAdvisor</code>，并用 chunk id 支撑引用回填；</li>
+<li>LLM 不可用要<strong>降级为返回原文</strong>，用 TopN 和 chunk 大小控制成本；</li>
+<li>这只是最小实现：缺评测、混合检索、并发限流，不能据此声称效果达标。</li>
 </ul>
 <hr>
 <p><em>发表于 2026 年 6 月 · 标签: RAG, Spring AI, pgvector, 问答系统, 幻觉控制</em></p>
@@ -650,7 +674,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -750,7 +774,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -765,7 +790,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

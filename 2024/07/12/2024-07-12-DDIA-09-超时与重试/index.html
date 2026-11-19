@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/07/12/2024-07-12-DDIA-09-超时与重试/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/07/12/2024-07-12-DDIA-09-%E8%B6%85%E6%97%B6%E4%B8%8E%E9%87%8D%E8%AF%95/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="引言2024年双十一大促，凌晨刚过零点，我们团队接到告警：订单创建接口RT从80ms飙升至12秒，大量超时。令人意外的是，下游核心服务CPU其实只有40%，数据库连接池也远未打满——真正的原因是某个不设防的重试逻辑快速放大了流量，把系统推下了悬崖。 这个问题把我拉回了DDIA第9章的开篇句，Martin Kleppmann用一句话点破了真相：  “分布式系统的很多问题，根本原因都是不可靠的网络”">
+    <meta name="description" content="引言2024年双十一大促，凌晨刚过零点，我们团队接到告警：订单创建接口RT从80ms飙升至12秒，大量超时。令人意外的是，下游核心服务CPU其实只有40%，数据库连接池也远未打满——真正的原因是某个不设防的重试逻辑快速放大了流量，把系统推下了悬崖。 这个问题把我拉回了DDIA第9章的开篇，书中表达的大意（第9章）是：分布式系统的很多问题，根本原因都是不可靠的网络。 网络不可靠，所以我们需要超时和重">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-09-超时与重试：如何设计一个不会雪崩的重试策略">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/07/12/2024-07-12-DDIA-09-%E8%B6%85%E6%97%B6%E4%B8%8E%E9%87%8D%E8%AF%95/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="引言2024年双十一大促，凌晨刚过零点，我们团队接到告警：订单创建接口RT从80ms飙升至12秒，大量超时。令人意外的是，下游核心服务CPU其实只有40%，数据库连接池也远未打满——真正的原因是某个不设防的重试逻辑快速放大了流量，把系统推下了悬崖。 这个问题把我拉回了DDIA第9章的开篇句，Martin Kleppmann用一句话点破了真相：  “分布式系统的很多问题，根本原因都是不可靠的网络”">
+<meta property="og:description" content="引言2024年双十一大促，凌晨刚过零点，我们团队接到告警：订单创建接口RT从80ms飙升至12秒，大量超时。令人意外的是，下游核心服务CPU其实只有40%，数据库连接池也远未打满——真正的原因是某个不设防的重试逻辑快速放大了流量，把系统推下了悬崖。 这个问题把我拉回了DDIA第9章的开篇，书中表达的大意（第9章）是：分布式系统的很多问题，根本原因都是不可靠的网络。 网络不可靠，所以我们需要超时和重">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-07-12T15:29:47.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.594Z">
+<meta property="article:modified_time" content="2024-07-12T15:29:47.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="SyncTask">
@@ -38,6 +44,9 @@
 <meta property="article:tag" content="超时">
 <meta property="article:tag" content="重试">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-09-超时与重试：如何设计一个不会雪崩的重试策略","datePublished":"2024-07-12T15:29:47.000Z","dateModified":"2024-07-12T15:29:47.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/07/12/2024-07-12-DDIA-09-%E8%B6%85%E6%97%B6%E4%B8%8E%E9%87%8D%E8%AF%95/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -387,7 +396,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          7k 字
+          7.1k 字
         
       </span>
     
@@ -409,18 +418,19 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-09-超时与重试：如何设计一个不会雪崩的重试策略</h1>
+            <p id="seo-header">DDIA-09-超时与重试：如何设计一个不会雪崩的重试策略</p>
             
             
               <div class="markdown-body">
                 
                 <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>2024年双十一大促，凌晨刚过零点，我们团队接到告警：订单创建接口RT从80ms飙升至12秒，大量超时。令人意外的是，下游核心服务CPU其实只有40%，数据库连接池也远未打满——真正的原因是某个不设防的重试逻辑快速放大了流量，把系统推下了悬崖。</p>
-<p>这个问题把我拉回了DDIA第9章的开篇句，Martin Kleppmann用一句话点破了真相：</p>
-<blockquote>
-<p>“分布式系统的很多问题，根本原因都是不可靠的网络”</p>
-</blockquote>
+<p>这个问题把我拉回了DDIA第9章的开篇，书中表达的大意（第9章）是：分布式系统的很多问题，根本原因都是不可靠的网络。</p>
 <p>网络不可靠，所以我们需要超时和重试。但重试本身又可能成为新的风险源头。怎么破？这就是本文要探讨的核心问题。</p>
 <hr>
 <h2 id="01-超时的两难：快刀斩不了乱麻"><a href="#01-超时的两难：快刀斩不了乱麻" class="headerlink" title="01 超时的两难：快刀斩不了乱麻"></a>01 超时的两难：快刀斩不了乱麻</h2><p>超时是分布式系统里最基础的防御手段。无非一句话：<strong>等太久了就别等了</strong>。但设多少合适？</p>
@@ -526,7 +536,7 @@
 <li><strong>幂等≠缓存</strong>：幂等返回的是”第一次处理的结果”，不一定等于当前的业务状态</li>
 </ul>
 <hr>
-<h2 id="06-实战：SyncTask引擎的超时控制演进"><a href="#06-实战：SyncTask引擎的超时控制演进" class="headerlink" title="06 实战：SyncTask引擎的超时控制演进"></a>06 实战：SyncTask引擎的超时控制演进</h2><h3 id="6-1-SyncTask引擎简介"><a href="#6-1-SyncTask引擎简介" class="headerlink" title="6.1 SyncTask引擎简介"></a>6.1 SyncTask引擎简介</h3><p>SyncTask（驿传引擎）是我们团队自研的异步任务调度框架，用于支撑电商中台里大量需要跨系统数据同步的场景——订单同步到WMS、库存同步到OMS、会员数据同步到CRM——日均执行数百万次任务调度。</p>
+<h2 id="06-实战：SyncTask引擎的超时控制演进"><a href="#06-实战：SyncTask引擎的超时控制演进" class="headerlink" title="06 实战：SyncTask引擎的超时控制演进"></a>06 实战：SyncTask引擎的超时控制演进</h2><h3 id="6-1-SyncTask引擎简介"><a href="#6-1-SyncTask引擎简介" class="headerlink" title="6.1 SyncTask引擎简介"></a>6.1 SyncTask引擎简介</h3><p>SyncTask（驿传引擎）是我们团队自研的异步任务调度框架，用于支撑电商中台里大量需要跨系统数据同步的场景——订单同步到WMS、库存同步到OMS、会员数据同步到CRM——日均执行大量任务调度。</p>
 <p>引擎基于线程池实现，每个任务提交到线程池后异步执行。</p>
 <h3 id="6-2-V1版本的痛点：无超时控制"><a href="#6-2-V1版本的痛点：无超时控制" class="headerlink" title="6.2 V1版本的痛点：无超时控制"></a>6.2 V1版本的痛点：无超时控制</h3><p>V1版本最简单的设计：</p>
 <figure class="highlight coffeescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs coffeescript">executor.submit(<span class="hljs-function"><span class="hljs-params">()</span> -&gt;</span> &#123;<br>    <span class="hljs-regexp">//</span> 执行业务逻辑<br>&#125;);<br></code></pre></td></tr></table></figure>
@@ -543,7 +553,7 @@
 <h3 id="6-3-V2改进：CompletableFuture-orTimeout"><a href="#6-3-V2改进：CompletableFuture-orTimeout" class="headerlink" title="6.3 V2改进：CompletableFuture + orTimeout"></a>6.3 V2改进：CompletableFuture + orTimeout</h3><p>V2的核心改造是引入<code>CompletableFuture</code>：</p>
 <figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs livescript">CompletableFuture&lt;Result&gt; future = CompletableFuture.supplyAsync<span class="hljs-function"><span class="hljs-params">(() -&gt; &#123;</span></span><br><span class="hljs-params"><span class="hljs-function">    <span class="hljs-keyword">return</span> executeBusinessLogic(task);</span></span><br><span class="hljs-params"><span class="hljs-function">&#125;, threadPool)</span>;</span><br><span class="hljs-function"></span><br><span class="hljs-function"><span class="hljs-title">future</span>.<span class="hljs-title">orTimeout</span><span class="hljs-params">(task.getTimeoutSeconds(), TimeUnit.SECONDS)</span></span><br><span class="hljs-function">    .<span class="hljs-title">exceptionally</span><span class="hljs-params">(ex -&gt; &#123;</span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-keyword">if</span> (ex <span class="hljs-keyword">instanceof</span> TimeoutException) &#123;</span></span><br><span class="hljs-params"><span class="hljs-function">            log.warn(<span class="hljs-string">&quot;Task &#123;&#125; timeout after &#123;&#125;s&quot;</span>, task.getId(), task.getTimeoutSeconds());</span></span><br><span class="hljs-params"><span class="hljs-function">            <span class="hljs-keyword">return</span> Result.timeout();</span></span><br><span class="hljs-params"><span class="hljs-function">        &#125;</span></span><br><span class="hljs-params"><span class="hljs-function">        <span class="hljs-keyword">return</span> Result.error(ex);</span></span><br><span class="hljs-params"><span class="hljs-function">    &#125;)</span>;</span><br></code></pre></td></tr></table></figure>
 
-<p><code>orTimeout</code>是Java 9引入的，超时后自动以<code>TimeoutException</code>完成Future。无需再手动管理Timer或ScheduledExecutorService。</p>
+<p><code>orTimeout</code>是Java 9引入的，超时后自动以<code>TimeoutException</code>完成Future，无需再手动管理Timer或ScheduledExecutorService。但它只改变Future的完成状态，<strong>不会中断仍在执行的任务线程</strong>。</p>
 <p>配合线程池的<code>afterExecute</code>：</p>
 <figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs livescript">threadPool.setRejectedExecutionHandler<span class="hljs-function"><span class="hljs-params">((r, executor) -&gt; &#123;</span></span><br><span class="hljs-params"><span class="hljs-function">    log.error(<span class="hljs-string">&quot;Thread pool full, task rejected: &#123;&#125;&quot;</span>, ((SyncTask) r).getId());</span></span><br><span class="hljs-params"><span class="hljs-function">&#125;)</span>;</span><br></code></pre></td></tr></table></figure>
 
@@ -564,7 +574,7 @@
 <tr>
 <td>卡死线程恢复</td>
 <td>需要重启</td>
-<td>超时后自动释放线程</td>
+<td>超时完成Future；线程需靠中断&#x2F;连接超时释放，不会自动释放</td>
 </tr>
 <tr>
 <td>线程池满处理</td>
@@ -591,7 +601,7 @@
 
 <p>当排队时间持续过高时，说明需要扩容线程池或优化任务执行效率。</p>
 <hr>
-<h2 id="07-回看DDIA：超时是不可靠网络的对策"><a href="#07-回看DDIA：超时是不可靠网络的对策" class="headerlink" title="07 回看DDIA：超时是不可靠网络的对策"></a>07 回看DDIA：超时是不可靠网络的对策</h2><p>DDIA第9章的标题是”一致性与共识”，但开篇大量篇幅在讲分布式系统里的网络问题。</p>
+<h2 id="07-回看DDIA：超时是不可靠网络的对策"><a href="#07-回看DDIA：超时是不可靠网络的对策" class="headerlink" title="07 回看DDIA：超时是不可靠网络的对策"></a>07 回看DDIA：超时是不可靠网络的对策</h2><p>DDIA第9章的标题是”分布式系统的麻烦”，开篇大量篇幅在讲分布式系统里的网络问题；一致性与共识在第10章。</p>
 <p>Martin Kleppmann的核心论点可以归纳为：</p>
 <ol>
 <li><strong>网络是不可靠的</strong>——你以为的”请求发出去了”可能是”请求消失了”</li>
@@ -602,7 +612,7 @@
 </ol>
 <p>我们的实践和DDIA的理论形成了闭环：</p>
 <ul>
-<li><strong>超时控制</strong>（CompletableFuture.orTimeout）→ DDIA的”超时是必要之恶”</li>
+<li><strong>超时控制</strong>（CompletableFuture.orTimeout）→ DDIA 第9章对超时的讨论</li>
 <li><strong>重试+退避+Jitter</strong> → DDIA的”雷鸣群”问题的工程解法</li>
 <li><strong>断路器</strong> → DDIA没有专门讲但工程上同样关键——防止对不可用的下游持续重试</li>
 <li><strong>幂等设计</strong> → DDIA提到的”精确一次语义”的工程实现基础</li>
@@ -651,7 +661,7 @@
 <hr>
 <p><em>参考：</em></p>
 <ul>
-<li><em>Martin Kleppmann, Designing Data-Intensive Applications, Chapter 8 &amp; 9</em></li>
+<li><em>Martin Kleppmann, Designing Data-Intensive Applications, Chapter 9 (The Trouble with Distributed Systems)</em></li>
 <li><em>AWS Architecture Blog, “Exponential Backoff and Jitter”</em></li>
 <li><em>Release It!, Michael Nygard — Circuit Breaker Pattern</em></li>
 </ul>
@@ -843,7 +853,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -943,7 +953,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -958,7 +969,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-给没有测试框架的桌面应用写状态机探针/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E7%BB%99%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E5%86%99%E7%8A%B6%E6%80%81%E6%9C%BA%E6%8E%A2%E9%92%88/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="这个项目没有测试框架，也没有 pnpm test。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是怎么避免探针自己假通过。  一、为什么是「状态机探针」桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态：  更新检查有 8 种决策：禁用、已最新、有更新、待生效强制、已生效强制、已撤回、业务失败、策略非法； 每">
+    <meta name="description" content="这个项目没有测试框架，也没有 pnpm test。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是怎么避免探针自己假通过。 一、为什么是「状态机探针」桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态： 更新检查有 8 种决策：禁用、已最新、有更新、待生效强制、已生效强制、已撤回、业务失败、策略非法； 每种决策">
 <meta property="og:type" content="article">
 <meta property="og:title" content="给没有测试框架的桌面应用写状态机探针">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E7%BB%99%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E5%86%99%E7%8A%B6%E6%80%81%E6%9C%BA%E6%8E%A2%E9%92%88/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="这个项目没有测试框架，也没有 pnpm test。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是怎么避免探针自己假通过。  一、为什么是「状态机探针」桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态：  更新检查有 8 种决策：禁用、已最新、有更新、待生效强制、已生效强制、已撤回、业务失败、策略非法； 每">
+<meta property="og:description" content="这个项目没有测试框架，也没有 pnpm test。但「没有单元测试」不等于「关键路径不可验证」。这篇讲一套针对状态机的探针做法：用 CDP 驱动真实应用，用 stub 顶替后端，重点是怎么避免探针自己假通过。 一、为什么是「状态机探针」桌面应用最难测的不是纯函数，而是跨进程、跨时序的状态： 更新检查有 8 种决策：禁用、已最新、有更新、待生效强制、已生效强制、已撤回、业务失败、策略非法； 每种决策">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2026-10-17T12:25:23.000Z">
-<meta property="article:modified_time" content="2026-10-21T03:47:56.938Z">
+<meta property="article:modified_time" content="2026-10-17T12:25:23.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="CDP">
 <meta property="article:tag" content="Electron">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="测试">
 <meta property="article:tag" content="状态机">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"给没有测试框架的桌面应用写状态机探针","datePublished":"2026-10-17T12:25:23.000Z","dateModified":"2026-10-17T12:25:23.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E7%BB%99%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E7%9A%84%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E5%86%99%E7%8A%B6%E6%80%81%E6%9C%BA%E6%8E%A2%E9%92%88/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">给没有测试框架的桌面应用写状态机探针</h1>
+            <p id="seo-header">给没有测试框架的桌面应用写状态机探针</p>
             
             
               <div class="markdown-body">
@@ -655,7 +668,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -755,7 +768,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -770,7 +784,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

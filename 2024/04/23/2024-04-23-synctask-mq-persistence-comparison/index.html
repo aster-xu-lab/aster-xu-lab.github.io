@@ -8,6 +8,11 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
@@ -17,20 +22,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="问题的起点最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？ 答案是有相似的内核，但设计目标完全不同。本文以订单中心 cloud-order 项目中的实际代码为例，深入对比三种持久化机制。 订单中心">
+    <meta name="description" content="问题的起点最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？ 答案是有相似的内核，但设计目标完全不同。本文以订单中心项目中的实际代码为例，深入对比三种持久化机制。 订单中心的三种持久化机制 1234">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SyncTask Job 与基于日志的消息中间件 - 持久化机制对比">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/23/2024-04-23-synctask-mq-persistence-comparison/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="问题的起点最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？ 答案是有相似的内核，但设计目标完全不同。本文以订单中心 cloud-order 项目中的实际代码为例，深入对比三种持久化机制。 订单中心">
+<meta property="og:description" content="问题的起点最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？ 答案是有相似的内核，但设计目标完全不同。本文以订单中心项目中的实际代码为例，深入对比三种持久化机制。 订单中心的三种持久化机制 1234">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8d7ae975db6fee834901d1e514e71f.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8d7ae975db6fee834901d1e514e71f.png">
 <meta property="article:published_time" content="2024-04-23T12:32:06.000Z">
-<meta property="article:modified_time" content="2026-11-03T03:45:03.670Z">
+<meta property="article:modified_time" content="2024-04-23T12:32:06.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Kafka">
 <meta property="article:tag" content="RocketMQ">
@@ -40,7 +46,10 @@
 <meta property="article:tag" content="持久化">
 <meta property="article:tag" content="本地消息表">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8d7ae975db6fee834901d1e514e71f.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8d7ae975db6fee834901d1e514e71f.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"SyncTask Job 与基于日志的消息中间件 - 持久化机制对比","datePublished":"2024-04-23T12:32:06.000Z","dateModified":"2024-04-23T12:32:06.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/04/23/2024-04-23-synctask-mq-persistence-comparison/"}}</script>
   
   
   
@@ -215,7 +224,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -390,7 +399,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          4.8k 字
+          4.9k 字
         
       </span>
     
@@ -412,19 +421,23 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/synctask/">SyncTask 任务编排</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">SyncTask Job 与基于日志的消息中间件 - 持久化机制对比</h1>
+            <p id="seo-header">SyncTask Job 与基于日志的消息中间件 - 持久化机制对比</p>
             
             
               <div class="markdown-body">
                 
                 <h2 id="问题的起点"><a href="#问题的起点" class="headerlink" title="问题的起点"></a>问题的起点</h2><p>最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：<strong>SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？</strong></p>
-<p>答案是有相似的内核，但设计目标完全不同。本文以订单中心 <code>cloud-order</code> 项目中的实际代码为例，深入对比三种持久化机制。</p>
+<p>答案是有相似的内核，但设计目标完全不同。本文以订单中心项目中的实际代码为例，深入对比三种持久化机制。</p>
 <h2 id="订单中心的三种持久化机制"><a href="#订单中心的三种持久化机制" class="headerlink" title="订单中心的三种持久化机制"></a>订单中心的三种持久化机制</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8d7ae975db6fee834901d1e514e71f.png#pic_center" srcset="/img/loading.gif" lazyload alt="三种持久化机制：SyncTask、RocketMQ、日志治理"></p>
 <figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs scss">┌──────────────────────────────────────────────────────────────────┐<br>│                        持久化金字塔                                │<br>│                                                                  │<br>│   SyncTask Job        RocketMQ Consumer        日志治理系统        │<br>│   (业务状态持久化)     (消息数据持久化)          (运维诊断持久化)    │<br>│                                                                  │<br>│   写 DB → 查 DB        Broker 写 CommitLog      本地内存聚合        │<br>│   → 状态机流转         → Consumer pull           → Redis pipeline  │<br>│   → 完成               → 处理 + <span class="hljs-attribute">offset</span> commit    → MySQL 落表      │<br>└──────────────────────────────────────────────────────────────────┘<br></code></pre></td></tr></table></figure>
 
-<h3 id="SyncTask-Job-—-Transactional-Outbox-模式"><a href="#SyncTask-Job-—-Transactional-Outbox-模式" class="headerlink" title="SyncTask Job — Transactional Outbox 模式"></a>SyncTask Job — Transactional Outbox 模式</h3><p>SyncTask 是订单中心自研的统一同步任务调度引擎，负责订单数据到 10+ 个外部系统（聚水潭、无仓、金蝶、FMS 等）的分发同步。它的核心思路非常朴素：</p>
+<h3 id="SyncTask-Job-—-Transactional-Outbox-模式"><a href="#SyncTask-Job-—-Transactional-Outbox-模式" class="headerlink" title="SyncTask Job — Transactional Outbox 模式"></a>SyncTask Job — Transactional Outbox 模式</h3><p>SyncTask 是订单中心自研的统一同步任务调度引擎，负责订单数据到 10+ 个外部系统（某电商ERP、某WMS、某ERP、某财务系统等）的分发同步。它的核心思路非常朴素：</p>
 <p><strong>表结构</strong> <code>or_sync_task</code>：</p>
 <figure class="highlight elm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs elm"><span class="hljs-title">id</span>, order_<span class="hljs-keyword">type</span>, reference_id, reference_code, order_source,<br><span class="hljs-title">sync_system</span>, <span class="hljs-keyword">type</span>, status, message, retry_times,<br><span class="hljs-title">operate_by</span>, create_time, update_time, sync_success_time<br></code></pre></td></tr></table></figure>
 
@@ -442,21 +455,21 @@
 </ol>
 <p><strong>防丢失的核心机制</strong>：</p>
 <ul>
-<li><strong>分布式锁</strong>：拉取层 <code>ORDER_CENTER_REFRESH_TASK</code> + 执行层 <code>ORDER_CENTER#{orderType}#{referenceId}</code>，双层锁防重</li>
+<li><strong>分布式锁</strong>：拉取层用固定业务锁 key，执行层按 orderType + referenceId 拼业务锁 key，双层锁防重</li>
 <li><strong>二次查库</strong>：<code>refreshSyncTask()</code> 加锁后重新从 DB 拿最新数据，再锁定状态</li>
 <li><strong>幂等判断</strong>：<code>execute()</code> 锁内再次 <code>findById</code>，若已是 SUCCESS&#x2F;CANCEL 直接返回</li>
 <li><strong>僵尸补偿</strong>：超过 1 小时的 PROCESSING 任务自动重置为 INIT</li>
 <li><strong>原子递增</strong>：<code>UPDATE or_sync_task SET retry_times = retry_times + 1</code>，避免 Java 侧读-改-写竞态</li>
 <li><strong>线程池拒绝降级</strong>：队列满时直接标记 FAIL，下次 cron 重试</li>
 </ul>
-<h3 id="RocketMQ-—-Broker-侧-CommitLog"><a href="#RocketMQ-—-Broker-侧-CommitLog" class="headerlink" title="RocketMQ — Broker 侧 CommitLog"></a>RocketMQ — Broker 侧 CommitLog</h3><p>订单中心消费 <strong>33 种消息</strong>，涵盖订单流转、物流轨迹、财务开票、售后、即时零售、爬虫任务等全部场景。消费者采用 Spring Cloud Function 的 <code>Consumer&lt;Message&lt;T&gt;&gt;</code> 模式。</p>
+<h3 id="RocketMQ-—-Broker-侧-CommitLog"><a href="#RocketMQ-—-Broker-侧-CommitLog" class="headerlink" title="RocketMQ — Broker 侧 CommitLog"></a>RocketMQ — Broker 侧 CommitLog</h3><p>订单中心消费 <strong>33 种消息</strong>（截至 2024-04 的统计口径），涵盖订单流转、物流轨迹、财务开票、售后、即时零售、爬虫任务等全部场景。消费者采用 Spring Cloud Function 的 <code>Consumer&lt;Message&lt;T&gt;&gt;</code> 模式。</p>
 <p><strong>RocketMQ 的持久化是 Broker 的责任</strong>：</p>
 <ul>
 <li>Producer 发送消息 → Broker 写入 CommitLog（Append-only 分段文件）</li>
-<li>Consumer 拉取消息 → 处理 → 提交 offset（记录消费进度到 <code>__consumer_offsets</code>）</li>
+<li>Consumer 拉取消息 → 处理 → 提交 offset。集群消费模式下，offset 由 Broker 持久化到 <code>consumerOffset.json</code>；广播模式下，offset 记录在消费者本地（不是 Kafka 的 <code>__consumer_offsets</code>）</li>
 <li>Consumer 重启后，从上次 commit 的 offset 继续消费</li>
 </ul>
-<p><strong>订单中心的幂等去重</strong>：<br>对于广播消费场景，由于同一个消息会被多个消费组消费，RocketMQ 的 offset 机制不够用。项目用 <strong>Redis</strong> 额外做了一层幂等：<code>RedisKeyUtil.generate(&quot;ORDER&quot;, msg.keys())</code> 作为幂等 key，避免重复处理。</p>
+<p><strong>订单中心的幂等去重</strong>：<br>广播消费模式下，每个消费者实例在本地维护自己的 offset，跨实例&#x2F;重启的消费进度不可靠。项目另外用 <strong>Redis</strong> 做了一层幂等：<code>RedisKeyUtil.generate(&quot;ORDER&quot;, msg.keys())</code> 作为幂等 key，避免重复处理。</p>
 <h3 id="日志治理系统-—-三级缓存管道"><a href="#日志治理系统-—-三级缓存管道" class="headerlink" title="日志治理系统 — 三级缓存管道"></a>日志治理系统 — 三级缓存管道</h3><p>日志治理是订单中心自研的一套运维诊断系统，它的持久化路径比前两者更复杂：</p>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">Logback</span> Appender → 本地内存聚合 → Redis pipeline (<span class="hljs-number">60</span>s) → MySQL 落表<br></code></pre></td></tr></table></figure>
 
@@ -530,7 +543,7 @@
 <p><strong>三者本质上都是：把”进行中的流程”的状态&#x2F;进度持久化到外部存储，以便故障恢复后能从断点继续。</strong></p>
 <h2 id="为什么-SyncTask-不用-RocketMQ-替代？"><a href="#为什么-SyncTask-不用-RocketMQ-替代？" class="headerlink" title="为什么 SyncTask 不用 RocketMQ 替代？"></a>为什么 SyncTask 不用 RocketMQ 替代？</h2><p>这是一个经常被问到的问题。SyncTask 完全可以用”发一条 MQ 消息 + Consumer 处理 + 失败进死信队列”来替代，但那就丢失了 SyncTask 最核心的能力：</p>
 <p><strong>可查、可改、可人工干预</strong>：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 运维想知道&quot;这张销售单同步到聚水潭成功了吗？&quot;</span><br><span class="hljs-keyword">SELECT</span> status <span class="hljs-keyword">FROM</span> or_sync_task<br><span class="hljs-keyword">WHERE</span> reference_id <span class="hljs-operator">=</span> <span class="hljs-number">123456</span> <span class="hljs-keyword">AND</span> sync_system <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br><br><span class="hljs-comment">-- 运维想手动重试某个失败的任务</span><br><span class="hljs-keyword">UPDATE</span> or_sync_task<br><span class="hljs-keyword">SET</span> status <span class="hljs-operator">=</span> <span class="hljs-number">0</span>, retry_times <span class="hljs-operator">=</span> <span class="hljs-number">0</span><br><span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">789</span>;<br></code></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 运维想知道&quot;这张销售单同步到某电商ERP成功了吗？&quot;</span><br><span class="hljs-keyword">SELECT</span> status <span class="hljs-keyword">FROM</span> or_sync_task<br><span class="hljs-keyword">WHERE</span> reference_id <span class="hljs-operator">=</span> <span class="hljs-number">123456</span> <span class="hljs-keyword">AND</span> sync_system <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br><br><span class="hljs-comment">-- 运维想手动重试某个失败的任务</span><br><span class="hljs-keyword">UPDATE</span> or_sync_task<br><span class="hljs-keyword">SET</span> status <span class="hljs-operator">=</span> <span class="hljs-number">0</span>, retry_times <span class="hljs-operator">=</span> <span class="hljs-number">0</span><br><span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">789</span>;<br></code></pre></td></tr></table></figure>
 
 <p>如果换成 RocketMQ，你做不到 SQL 查询任务状态，也做不到一行 UPDATE 就重置重试。Kafka&#x2F;RocketMQ 是<strong>数据管道</strong>（data pipeline），SyncTask 是<strong>状态机</strong>（state machine）。二者的”读”需求完全不同。</p>
 <p><strong>设计决策的本质</strong>：</p>
@@ -577,10 +590,10 @@
 </blockquote>
 <p>这不是学术上的分类，而是工程上三种不同层次的需求，恰好都在”持久化”这个维度上产生了交集。理解清楚它们各自的边界，才能在架构决策中做出正确的选择。</p>
 <h2 id="项目代码位置"><a href="#项目代码位置" class="headerlink" title="项目代码位置"></a>项目代码位置</h2><ul>
-<li>SyncTask 核心：<code>order-portal/.../job/sync/SyncTaskJob.java</code>、<code>sync/handler/AbstractSyncTaskHandler.java</code></li>
-<li>MQ Consumer：<code>order-portal/.../mq/MqConsumer.java</code>（17 种消息）、<code>InstantMqConsumer.java</code>、<code>AfterServiceConsumer.java</code>、<code>InvoiceConsumer.java</code></li>
-<li>日志治理：<code>order-portal/.../log/</code>（Appender、LocalCache、FlushScheduler、XXL-Job 落表）</li>
-<li>表实体：<code>order-service-common/.../base/domain/SyncTask.java</code>、<code>EventLog.java</code></li>
+<li>SyncTask 核心：<code>某内部模块/.../job/sync/SyncTaskJob.java</code>、<code>sync/handler/AbstractSyncTaskHandler.java</code></li>
+<li>MQ Consumer：<code>某内部模块/.../mq/MqConsumer.java</code>（17 种消息，旧口径，统计时间早于 33 种口径）、<code>InstantMqConsumer.java</code>、<code>AfterServiceConsumer.java</code>、<code>InvoiceConsumer.java</code></li>
+<li>日志治理：<code>某内部模块/.../log/</code>（Appender、LocalCache、FlushScheduler、XXL-Job 落表）</li>
+<li>表实体：<code>某公共模块/.../base/domain/SyncTask.java</code>、<code>EventLog.java</code></li>
 </ul>
 
                 
@@ -622,9 +635,9 @@
       
         <a href="/tags/SyncTask/" class="print-no-link">#SyncTask</a>
       
-        <a href="/tags/Transactional-Outbox/" class="print-no-link">#Transactional Outbox</a>
-      
         <a href="/tags/RocketMQ/" class="print-no-link">#RocketMQ</a>
+      
+        <a href="/tags/Transactional-Outbox/" class="print-no-link">#Transactional Outbox</a>
       
         <a href="/tags/WAL/" class="print-no-link">#WAL</a>
       
@@ -772,7 +785,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -872,7 +885,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -887,7 +901,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

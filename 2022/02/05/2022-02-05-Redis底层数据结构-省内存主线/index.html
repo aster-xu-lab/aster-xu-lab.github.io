@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/02/05/2022-02-05-Redis底层数据结构-省内存主线/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2022/02/05/2022-02-05-Redis%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E7%9C%81%E5%86%85%E5%AD%98%E4%B8%BB%E7%BA%BF/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、五种类型的底层实现Redis 五种数据类型（String&#x2F;Hash&#x2F;List&#x2F;Set&#x2F;ZSet）各有底层结构：    类型 底层实现    String SDS（简单动态字符串）   List listpack（压缩列表）→ quicklist 双向链表   Hash listpack → 哈希表（不是链表）   Set 整数集合（intset）→ 哈希">
+    <meta name="description" content="一、五种类型的底层实现Redis 五种数据类型（String&#x2F;Hash&#x2F;List&#x2F;Set&#x2F;ZSet）各有底层结构。以下按 Redis 7.x 口径：7.0 起 Hash&#x2F;List&#x2F;ZSet 的紧凑编码由 ziplist 换成 listpack，Set 到 7.2 才支持 listpack；6.2 及更早版本对应位置仍是 ziplist，S">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Redis 底层数据结构：一条&quot;省内存&quot;的主线">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/02/05/2022-02-05-Redis%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E7%9C%81%E5%86%85%E5%AD%98%E4%B8%BB%E7%BA%BF/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、五种类型的底层实现Redis 五种数据类型（String&#x2F;Hash&#x2F;List&#x2F;Set&#x2F;ZSet）各有底层结构：    类型 底层实现    String SDS（简单动态字符串）   List listpack（压缩列表）→ quicklist 双向链表   Hash listpack → 哈希表（不是链表）   Set 整数集合（intset）→ 哈希">
+<meta property="og:description" content="一、五种类型的底层实现Redis 五种数据类型（String&#x2F;Hash&#x2F;List&#x2F;Set&#x2F;ZSet）各有底层结构。以下按 Redis 7.x 口径：7.0 起 Hash&#x2F;List&#x2F;ZSet 的紧凑编码由 ziplist 换成 listpack，Set 到 7.2 才支持 listpack；6.2 及更早版本对应位置仍是 ziplist，S">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2022-02-05T02:53:40.000Z">
-<meta property="article:modified_time" content="2026-08-27T09:53:40.846Z">
+<meta property="article:modified_time" content="2022-02-05T02:53:40.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Redis">
 <meta property="article:tag" content="SDS">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="数据结构">
 <meta property="article:tag" content="跳表">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Redis 底层数据结构：一条\"省内存\"的主线","datePublished":"2022-02-05T02:53:40.000Z","dateModified":"2022-02-05T02:53:40.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2022/02/05/2022-02-05-Redis%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E7%9C%81%E5%86%85%E5%AD%98%E4%B8%BB%E7%BA%BF/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.9k 字
+          2.1k 字
         
       </span>
     
@@ -397,7 +406,7 @@
         
         
         
-          17 分钟
+          18 分钟
         
       </span>
     
@@ -408,14 +417,18 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/redis/">Redis</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">Redis 底层数据结构：一条&#34;省内存&#34;的主线</h1>
+            <p id="seo-header">Redis 底层数据结构：一条&#34;省内存&#34;的主线</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="一、五种类型的底层实现"><a href="#一、五种类型的底层实现" class="headerlink" title="一、五种类型的底层实现"></a>一、五种类型的底层实现</h2><p>Redis 五种数据类型（String&#x2F;Hash&#x2F;List&#x2F;Set&#x2F;ZSet）各有底层结构：</p>
+                <h2 id="一、五种类型的底层实现"><a href="#一、五种类型的底层实现" class="headerlink" title="一、五种类型的底层实现"></a>一、五种类型的底层实现</h2><p>Redis 五种数据类型（String&#x2F;Hash&#x2F;List&#x2F;Set&#x2F;ZSet）各有底层结构。以下按 <strong>Redis 7.x</strong> 口径：7.0 起 Hash&#x2F;List&#x2F;ZSet 的紧凑编码由 ziplist 换成 listpack，Set 到 7.2 才支持 listpack；6.2 及更早版本对应位置仍是 ziplist，Set 只有 intset。</p>
 <table>
 <thead>
 <tr>
@@ -429,7 +442,7 @@
 </tr>
 <tr>
 <td><strong>List</strong></td>
-<td>listpack（压缩列表）→ quicklist 双向链表</td>
+<td>quicklist（每个节点为 listpack）</td>
 </tr>
 <tr>
 <td><strong>Hash</strong></td>
@@ -437,11 +450,11 @@
 </tr>
 <tr>
 <td><strong>Set</strong></td>
-<td>整数集合（intset）→ 哈希表</td>
+<td>intset &#x2F; listpack → 哈希表（listpack 7.2 起）</td>
 </tr>
 <tr>
 <td><strong>ZSet</strong></td>
-<td><strong>跳表 + 哈希表</strong></td>
+<td>listpack → <strong>跳表 + 哈希表</strong></td>
 </tr>
 </tbody></table>
 <p>两张表放在一起，能看出一条清晰的主线——<strong>“数据小用紧凑编码省内存，数据大升级成哈希表&#x2F;跳表换性能”</strong>。这是理解 Redis 内存设计的关键。</p>
@@ -452,13 +465,13 @@
 <li><strong>二进制安全</strong>：能存 <code>\0</code> 在内的任意字节，不依赖 <code>\0</code> 结尾——这是它能存序列化对象、图片字节的前提。</li>
 </ol>
 <p>一句话：<strong>带长度 + 预分配 + 就地向后扩</strong>，避免反复 strlen &#x2F; realloc 搬内存。</p>
-<h2 id="三、listpack-intset：数据小时，把元素塞进一块连续内存"><a href="#三、listpack-intset：数据小时，把元素塞进一块连续内存" class="headerlink" title="三、listpack &#x2F; intset：数据小时，把元素塞进一块连续内存"></a>三、listpack &#x2F; intset：数据小时，把元素塞进一块连续内存</h2><p>当元素少、值小而整数占比高时，Redis 不用”每个元素一个指针 + 对象头”的通用结构，而是用<strong>紧凑编码</strong>：</p>
+<h2 id="三、listpack-intset：数据小时，把元素塞进一块连续内存"><a href="#三、listpack-intset：数据小时，把元素塞进一块连续内存" class="headerlink" title="三、listpack &#x2F; intset：数据小时，把元素塞进一块连续内存"></a>三、listpack &#x2F; intset：数据小时，把元素塞进一块连续内存</h2><p>当元素少、值小时，Redis 不用”每个元素一个指针 + 对象头”的通用结构，而是用<strong>紧凑编码</strong>：</p>
 <ul>
-<li><strong>listpack（压缩列表）</strong>：把多个元素<strong>紧凑地连续排布</strong>，按实际长度<strong>变长编码</strong>塞进一块连续内存；</li>
+<li><strong>listpack（紧凑列表）</strong>：把多个元素<strong>紧凑地连续排布</strong>，按实际长度<strong>变长编码</strong>塞进一块连续内存；</li>
 <li><strong>intset（整数集合）</strong>：全是整数时按类型紧凑排列。</li>
 </ul>
 <p>好处：<strong>省掉指针和对象头的开销，而且一整块数据能装进一个 cache line</strong>，扫描都快。</p>
-<h2 id="四、升级：数据大了，O-N-扛不住就换结构"><a href="#四、升级：数据大了，O-N-扛不住就换结构" class="headerlink" title="四、升级：数据大了，O(N) 扛不住就换结构"></a>四、升级：数据大了，O(N) 扛不住就换结构</h2><p>紧凑编码的问题在它是<strong>线性扫描 O(N)</strong>——数据少时顺序扫也快，数据大到阈值（如 <code>hash-max-ziplist-entries</code>）后，O(N) 太慢。于是升级：</p>
+<h2 id="四、升级：数据大了，O-N-扛不住就换结构"><a href="#四、升级：数据大了，O-N-扛不住就换结构" class="headerlink" title="四、升级：数据大了，O(N) 扛不住就换结构"></a>四、升级：数据大了，O(N) 扛不住就换结构</h2><p>listpack 的查找是<strong>线性扫描 O(N)</strong>（intset 用二分查找 O(logN)，但插入要移动元素）——数据少时开销可接受，数据大到阈值（如 <code>hash-max-listpack-entries</code>）后，O(N) 太慢。于是升级：</p>
 <table>
 <thead>
 <tr>
@@ -474,7 +487,7 @@
 </tr>
 <tr>
 <td>Set</td>
-<td>intset</td>
+<td>intset &#x2F; listpack</td>
 <td>哈希表（O(1)）</td>
 </tr>
 <tr>
@@ -494,7 +507,7 @@
 <li><strong>范围遍历方便</strong>：跳表是”多层链表”，从最小值开始按序走<strong>天然有序</strong>，范围查询友好；红黑树虽也能 O(logN) 查单个，但范围遍历要中序栈，麻烦；</li>
 <li><strong>实现简单</strong>：跳表代码比红黑树简单得多，改的范围是局部的，便于维护。</li>
 </ol>
-<h2 id="六、一个容易说错的点：Hash-底层不是链表"><a href="#六、一个容易说错的点：Hash-底层不是链表" class="headerlink" title="六、一个容易说错的点：Hash 底层不是链表"></a>六、一个容易说错的点：Hash 底层不是链表</h2><p>复习卡里我实测说错过一次：<strong>Hash 底层是 listpack + 哈希表，不是链表</strong>。Redis 的 Hash 解决哈希冲突用的是链地址法（每个桶一个链表），但那是<strong>哈希表的实现细节</strong>，Hash 类型的底层结构不是链表——小数据用 listpack，大数据用哈希表。</p>
+<h2 id="六、一个容易说错的点：Hash-底层不是链表"><a href="#六、一个容易说错的点：Hash-底层不是链表" class="headerlink" title="六、一个容易说错的点：Hash 底层不是链表"></a>六、一个容易说错的点：Hash 底层不是链表</h2><p>相关复习笔记里我实测说错过一次：<strong>Hash 底层是 listpack + 哈希表，不是链表</strong>。Redis 的 Hash 解决哈希冲突用的是链地址法（每个桶一个链表），但那是<strong>哈希表的实现细节</strong>，Hash 类型的底层结构不是链表——小数据用 listpack，大数据用哈希表。</p>
 <h2 id="七、面试加分：为什么这套设计重要"><a href="#七、面试加分：为什么这套设计重要" class="headerlink" title="七、面试加分：为什么这套设计重要"></a>七、面试加分：为什么这套设计重要</h2><p>这套”紧凑编码 → 升级”策略，本质是 Redis <strong>用空间换启动内存、用升级换大数据性能</strong>的权衡：</p>
 <ul>
 <li><strong>小数据</strong>（绝大多数场景的 key）：内存是主要成本，紧凑编码能把内存压到极限；</li>
@@ -697,7 +710,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -797,7 +810,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -812,7 +826,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

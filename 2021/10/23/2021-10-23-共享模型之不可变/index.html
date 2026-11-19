@@ -8,33 +8,42 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/10/23/2021-10-23-共享模型之不可变/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/10/23/2021-10-23-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E4%B8%8D%E5%8F%AF%E5%8F%98/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="本章内容 不可变类的使用 不可变类设计 无状态类设计  1、日期转换问题问题提出下面代码在运行时，由于SimpleDateFormat 不是线程安全的 12345678910SimpleDateFormat sdf &#x3D; new SimpleDateFormat(&quot;yyyy-MM-dd&quot;);        for (int i &#x3D; 0; i &lt; 10; i++) &amp;#123">
+    <meta name="description" content="本章内容 不可变类的使用 不可变类设计 无状态类设计 1、日期转换问题问题提出下面代码在运行时，由于SimpleDateFormat 不是线程安全的 12345678910SimpleDateFormat sdf &#x3D; new SimpleDateFormat(&quot;yyyy-MM-dd&quot;); for (int i &#x3D; 0; i &lt; 10; i++) &#123; new Th">
 <meta property="og:type" content="article">
 <meta property="og:title" content="6、共享模型之不可变">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/10/23/2021-10-23-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E4%B8%8D%E5%8F%AF%E5%8F%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="本章内容 不可变类的使用 不可变类设计 无状态类设计  1、日期转换问题问题提出下面代码在运行时，由于SimpleDateFormat 不是线程安全的 12345678910SimpleDateFormat sdf &#x3D; new SimpleDateFormat(&quot;yyyy-MM-dd&quot;);        for (int i &#x3D; 0; i &lt; 10; i++) &amp;#123">
+<meta property="og:description" content="本章内容 不可变类的使用 不可变类设计 无状态类设计 1、日期转换问题问题提出下面代码在运行时，由于SimpleDateFormat 不是线程安全的 12345678910SimpleDateFormat sdf &#x3D; new SimpleDateFormat(&quot;yyyy-MM-dd&quot;); for (int i &#x3D; 0; i &lt; 10; i++) &#123; new Th">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2021-10-23T05:57:20.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.151Z">
+<meta property="article:modified_time" content="2021-10-23T05:57:20.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java并发">
 <meta property="article:tag" content="final">
 <meta property="article:tag" content="不可变">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"6、共享模型之不可变","datePublished":"2021-10-23T05:57:20.000Z","dateModified":"2021-10-23T05:57:20.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/10/23/2021-10-23-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%9E%8B%E4%B9%8B%E4%B8%8D%E5%8F%AF%E5%8F%98/"}}</script>
   
   
   
@@ -209,7 +218,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -384,7 +393,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          9.7k 字
+          9.8k 字
         
       </span>
     
@@ -395,7 +404,7 @@
         
         
         
-          81 分钟
+          82 分钟
         
       </span>
     
@@ -406,9 +415,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/concurrency/">Java 并发</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">6、共享模型之不可变</h1>
+            <p id="seo-header">6、共享模型之不可变</p>
             
             
               <div class="markdown-body">
@@ -473,11 +486,12 @@
 <li>分布式hash<br>对于关系型数据库，有比较成熟的连接池实现，例如c3p0，druid等 ，对于更通用的对象池，可以考虑apache commons pool，例如redis连接池可以参考jedis中关于连接池的实现</li>
 </ul>
 <h2 id="原理之final"><a href="#原理之final" class="headerlink" title="原理之final"></a>原理之final</h2><h3 id="1、设置final变量的原理"><a href="#1、设置final变量的原理" class="headerlink" title="1、设置final变量的原理"></a>1、设置final变量的原理</h3><p>理解了volatile原理，再对比final的实现就比较简单了</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> vlass TestFinal&#123;<br>	<span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">a</span> <span class="hljs-operator">=</span> <span class="hljs-number">20</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TestFinal</span>&#123;<br>	<span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">a</span> <span class="hljs-operator">=</span> <span class="hljs-number">20</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>字节码</p>
 <figure class="highlight ldif"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs ldif"><span class="hljs-attribute">0</span>: aload_0<br><span class="hljs-attribute">1</span>: invokespecial <span class="hljs-comment">#1 // Method java/lang/Object.&quot;&lt;init&gt;&quot;:()V</span><br><span class="hljs-attribute">4</span>: aload_0<br><span class="hljs-attribute">5</span>: bipush 20<br><span class="hljs-attribute">7</span>: putfield <span class="hljs-comment">#2 // Field a:I</span><br> &lt;-- 写屏障<br><span class="hljs-attribute">10</span>: return<br></code></pre></td></tr></table></figure>
 <p>发现final变量的赋值也会通过putfield指令完成，同样在这条指令之后也会加入写屏障，保证其他线程读到它的值时不会出现0的情况</p>
-<h3 id="2、获取final变量的原理"><a href="#2、获取final变量的原理" class="headerlink" title="2、获取final变量的原理"></a>2、获取final变量的原理</h3><h2 id="5、无状态"><a href="#5、无状态" class="headerlink" title="5、无状态"></a>5、无状态</h2><p>在web学习阶段时，设计Servlet时为了保证其线程安全，都会有这样的建议，不要为Servlet设置成员变量，这种没有任何成员变量的类是线程安全的</p>
+<h3 id="2、获取final变量的原理"><a href="#2、获取final变量的原理" class="headerlink" title="2、获取final变量的原理"></a>2、获取final变量的原理</h3><p>写屏障保证了 final 字段的赋值先于构造器返回，因此只要对象在构造期间没有逃逸，其他线程在构造完成后读取 final 字段时，总能看到正确的初始值，不需要额外同步。</p>
+<h2 id="5、无状态"><a href="#5、无状态" class="headerlink" title="5、无状态"></a>5、无状态</h2><p>在web学习阶段时，设计Servlet时为了保证其线程安全，都会有这样的建议，不要为Servlet设置成员变量，这种没有任何成员变量的类是线程安全的</p>
 <blockquote>
 <p>因为成员变量保存的数据也可以称为状态信息，因此没有成员变量就称之为【无状态】</p>
 </blockquote>
@@ -675,7 +689,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -775,7 +789,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -790,7 +805,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

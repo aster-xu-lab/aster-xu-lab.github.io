@@ -8,34 +8,43 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/12/31/2021-12-31-线程安全集合类概述/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/12/31/2021-12-31-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%9B%86%E5%90%88%E7%B1%BB%E6%A6%82%E8%BF%B0/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="线程安全集合类可以分为三大类：  遗留的线程安全集合如Hashtable，vector 使用Collections装饰的线程安全集合 Collections.synchronizedCollection Collections.synchronizedList Collections.synchronizedMap Collections.synchronizedSet Collections.s">
+    <meta name="description" content="线程安全集合类可以分为三大类： 遗留的线程安全集合如Hashtable，vector 使用Collections装饰的线程安全集合 Collections.synchronizedCollection Collections.synchronizedList Collections.synchronizedMap Collections.synchronizedSet Collections.sy">
 <meta property="og:type" content="article">
 <meta property="og:title" content="线程安全集合类概述">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/12/31/2021-12-31-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%9B%86%E5%90%88%E7%B1%BB%E6%A6%82%E8%BF%B0/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="线程安全集合类可以分为三大类：  遗留的线程安全集合如Hashtable，vector 使用Collections装饰的线程安全集合 Collections.synchronizedCollection Collections.synchronizedList Collections.synchronizedMap Collections.synchronizedSet Collections.s">
+<meta property="og:description" content="线程安全集合类可以分为三大类： 遗留的线程安全集合如Hashtable，vector 使用Collections装饰的线程安全集合 Collections.synchronizedCollection Collections.synchronizedList Collections.synchronizedMap Collections.synchronizedSet Collections.sy">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/24b668c4a24241744e331868a5cd30bb.png">
 <meta property="article:published_time" content="2021-12-31T12:10:58.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.574Z">
+<meta property="article:modified_time" content="2021-12-31T12:10:58.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java并发">
 <meta property="article:tag" content="线程安全">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/24b668c4a24241744e331868a5cd30bb.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"线程安全集合类概述","datePublished":"2021-12-31T12:10:58.000Z","dateModified":"2021-12-31T12:10:58.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/12/31/2021-12-31-%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E9%9B%86%E5%90%88%E7%B1%BB%E6%A6%82%E8%BF%B0/"}}</script>
   
   
   
@@ -210,7 +219,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -385,7 +394,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          684 字
+          671 字
         
       </span>
     
@@ -407,14 +416,18 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/concurrency/">Java 并发</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">线程安全集合类概述</h1>
+            <p id="seo-header">线程安全集合类概述</p>
             
             
               <div class="markdown-body">
                 
-                <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/24b668c4a24241744e331868a5cd30bb.png" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>线程安全集合类可以分为三大类：</p>
+                <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/24b668c4a24241744e331868a5cd30bb.png" srcset="/img/loading.gif" lazyload alt="线程安全集合类分类图"><br>线程安全集合类可以分为三大类：</p>
 <ul>
 <li>遗留的线程安全集合如<code>Hashtable</code>，<code>vector</code></li>
 <li>使用Collections装饰的线程安全集合<ul>
@@ -430,14 +443,14 @@
 </li>
 <li><code>java.util.concurrent.*</code></li>
 </ul>
-<p>重点介绍<code>java.util.concurrent.*</code>下的线程安全集合类，可以发现它们有规律，里面包含三类关键词：Blocking、CopyOnWrite、Concurrent</p>
+<p><code>java.util.concurrent.*</code>下的线程安全集合类大致包含三类关键词：Blocking、CopyOnWrite、Concurrent</p>
 <ul>
 <li>Blocking 大部分实现基于锁，并提供用来阻塞的方法</li>
 <li>CopyOnWrite之类容器修改开销相对较重</li>
 <li>Concurrent类型的容器<ul>
 <li>内部很多操作使用cas优化，一般可以提供较高的吞吐量</li>
 <li>弱一致性<ul>
-<li>遍历时弱一致性，例如：当使用迭代器遍历时，如果容器发生修改，地带器仍然可以继续遍历，这时内容是旧的</li>
+<li>遍历时弱一致性，例如：当使用迭代器遍历时，如果容器发生修改，迭代器仍然可以继续遍历，这时内容是旧的</li>
 <li>求大小弱一致性，size操作未必是100%准确</li>
 <li>读取弱一致性</li>
 </ul>
@@ -446,7 +459,7 @@
 </li>
 </ul>
 <blockquote>
-<p>遍历时如果发生了修改，对于非安全容器来讲，使用fail-fast机制也就是让遍历立刻失败，抛出ConcurrentModificationException，不再继续遍历</p>
+<p>遍历时如果发生了修改，对于非线程安全容器来讲，使用fail-fast机制也就是让遍历立刻失败，抛出ConcurrentModificationException，不再继续遍历</p>
 </blockquote>
 
                 
@@ -628,7 +641,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -728,7 +741,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -743,7 +757,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

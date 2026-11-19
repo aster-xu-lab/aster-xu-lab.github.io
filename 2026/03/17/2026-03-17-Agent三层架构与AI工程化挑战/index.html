@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/03/17/2026-03-17-Agent三层架构与AI工程化挑战/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/03/17/2026-03-17-Agent%E4%B8%89%E5%B1%82%E6%9E%B6%E6%9E%84%E4%B8%8EAI%E5%B7%A5%E7%A8%8B%E5%8C%96%E6%8C%91%E6%88%98/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、Agent 是什么Function Calling 解决了”让模型调用单个工具”，Agent 更进一步：让模型自己决定”接下来做什么”——把一个大任务拆成多步，每步调一个工具，观察结果，再决定下一步，直到完成。 1用户目标 → Planner 拆解 → Tool 调用 → 观察结果 → 再拆解 → ... → 完成  和传统程序的区别：传统程序的执行路径是写死的；Agent 的执行路径是模型在">
+    <meta name="description" content="一、Agent 是什么Function Calling 解决了”让模型调用单个工具”，Agent 更进一步：让模型自己决定”接下来做什么”——把一个大任务拆成多步，每步调一个工具，观察结果，再决定下一步，直到完成。 1用户目标 → Planner 拆解 → Tool 调用 → 观察结果 → 再拆解 → ... → 完成 和传统程序的区别：传统程序的执行路径是写死的；Agent 的执行路径是模型在运">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Agent三层架构与AI工程化挑战：从Demo到可靠系统">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/03/17/2026-03-17-Agent%E4%B8%89%E5%B1%82%E6%9E%B6%E6%9E%84%E4%B8%8EAI%E5%B7%A5%E7%A8%8B%E5%8C%96%E6%8C%91%E6%88%98/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、Agent 是什么Function Calling 解决了”让模型调用单个工具”，Agent 更进一步：让模型自己决定”接下来做什么”——把一个大任务拆成多步，每步调一个工具，观察结果，再决定下一步，直到完成。 1用户目标 → Planner 拆解 → Tool 调用 → 观察结果 → 再拆解 → ... → 完成  和传统程序的区别：传统程序的执行路径是写死的；Agent 的执行路径是模型在">
+<meta property="og:description" content="一、Agent 是什么Function Calling 解决了”让模型调用单个工具”，Agent 更进一步：让模型自己决定”接下来做什么”——把一个大任务拆成多步，每步调一个工具，观察结果，再决定下一步，直到完成。 1用户目标 → Planner 拆解 → Tool 调用 → 观察结果 → 再拆解 → ... → 完成 和传统程序的区别：传统程序的执行路径是写死的；Agent 的执行路径是模型在运">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be42a5d682978e864db19cd15a5ed856.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be42a5d682978e864db19cd15a5ed856.png">
 <meta property="article:published_time" content="2026-03-17T14:22:01.000Z">
-<meta property="article:modified_time" content="2026-11-02T09:18:05.253Z">
+<meta property="article:modified_time" content="2026-03-17T14:22:01.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="AI工程化">
 <meta property="article:tag" content="Agent">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="ReAct">
 <meta property="article:tag" content="Spring AI">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be42a5d682978e864db19cd15a5ed856.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be42a5d682978e864db19cd15a5ed856.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Agent三层架构与AI工程化挑战：从Demo到可靠系统","datePublished":"2026-03-17T14:22:01.000Z","dateModified":"2026-03-17T14:22:01.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/03/17/2026-03-17-Agent%E4%B8%89%E5%B1%82%E6%9E%B6%E6%9E%84%E4%B8%8EAI%E5%B7%A5%E7%A8%8B%E5%8C%96%E6%8C%91%E6%88%98/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.3k 字
+          2.6k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          20 分钟
+          22 分钟
         
       </span>
     
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/agent/">AI / Agent 工程</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">Agent三层架构与AI工程化挑战：从Demo到可靠系统</h1>
+            <p id="seo-header">Agent三层架构与AI工程化挑战：从Demo到可靠系统</p>
             
             
               <div class="markdown-body">
@@ -421,8 +434,8 @@
 <figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">用户目标 → Planner 拆解 → Tool 调用 → 观察结果 → 再拆解 → <span class="hljs-string">...</span> → 完成<br></code></pre></td></tr></table></figure>
 
 <p>和传统程序的区别：传统程序的执行路径是<strong>写死的</strong>；Agent 的执行路径是<strong>模型在运行时动态决策的</strong>。这是它的能力，也是它难工程化的根源。</p>
-<h2 id="二、三层架构：Planner-Tool-Memory"><a href="#二、三层架构：Planner-Tool-Memory" class="headerlink" title="二、三层架构：Planner &#x2F; Tool &#x2F; Memory"></a>二、三层架构：Planner &#x2F; Tool &#x2F; Memory</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be42a5d682978e864db19cd15a5ed856.png#pic_center" srcset="/img/loading.gif" lazyload alt="Agent 的三层架构：Planner &#x2F; Tool &#x2F; Memory"></p>
-<p>标准的 Agent 架构分三层：</p>
+<h2 id="二、一种常见划分：Planner-Tool-Memory"><a href="#二、一种常见划分：Planner-Tool-Memory" class="headerlink" title="二、一种常见划分：Planner &#x2F; Tool &#x2F; Memory"></a>二、一种常见划分：Planner &#x2F; Tool &#x2F; Memory</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be42a5d682978e864db19cd15a5ed856.png#pic_center" srcset="/img/loading.gif" lazyload alt="Agent 的三层架构：Planner &#x2F; Tool &#x2F; Memory"></p>
+<p>一种常见的划分把 Agent 拆成三层（也有别的划法，这里只取这个便于讲解的切分）：</p>
 <p><strong>Planner（规划层）</strong>：任务拆解、规划步骤。把”帮我分析这批订单”拆成”拉数据 → 汇总 → 出报告”几步，决定每一步做什么。</p>
 <p><strong>Tool（工具层）</strong>：实际执行能力，靠 Function Calling 接上——查订单、算库存、发消息，都是一个个工具。<strong>工具是 Agent 能力的边界</strong>：工具越多越强，也越容易选错。</p>
 <p><strong>Memory（记忆层）</strong>：</p>
@@ -441,7 +454,7 @@
 <li><strong>Multi-Agent</strong>：多个 Agent 各司其职、互相协作（一个查数据、一个写报告），复杂度高但能力强；</li>
 <li><strong>Reflection</strong>：Agent 执行完自我审视、修正输出，是”自我纠错”的思路——和 SyncTask 的重试策略异曲同工。</li>
 </ul>
-<h2 id="四、Java-生态：Spring-AI"><a href="#四、Java-生态：Spring-AI" class="headerlink" title="四、Java 生态：Spring AI"></a>四、Java 生态：Spring AI</h2><p>Java 项目做 Agent，优先 <strong>Spring AI</strong>（Spring 官方集成）：核心是 ChatClient 调模型 + StructuredOutput 结构化输出（即 Function Calling），跟 Spring 生态无缝贴合。LangChain4j 功能更全，但和 Spring 集成不如 Spring AI 顺。</p>
+<h2 id="四、Java-生态：Spring-AI"><a href="#四、Java-生态：Spring-AI" class="headerlink" title="四、Java 生态：Spring AI"></a>四、Java 生态：Spring AI</h2><p>Java 项目做 Agent，优先 <strong>Spring AI</strong>（Spring 官方集成）：核心是 <code>ChatClient</code> 调模型、<code>@Tool</code> &#x2F; <code>ToolCallbacks</code> 注册工具；需要固定 JSON 结构时，再用 <code>ChatClient...call().entity(Class)</code>（底层是 <code>StructuredOutputConverter</code>）。注意<strong>结构化输出和 Function Calling 是两件事</strong>：前者约束模型输出的数据形状，后者让模型声明要调用哪个工具，不要混为一谈。LangChain4j 功能更全，但和 Spring 集成不如 Spring AI 顺。</p>
 <h2 id="五、AI-工程化五大挑战"><a href="#五、AI-工程化五大挑战" class="headerlink" title="五、AI 工程化五大挑战"></a>五、AI 工程化五大挑战</h2><p>Agent 或任何 LLM 功能，从 Demo 到可靠系统，要跨过五道坎：</p>
 <p><strong>① 延迟（TTFT）</strong>：首 token 延迟是 LLM 体验的关键。对策：流式输出（边生成边返回）、模型分层（简单问题用快模型）。</p>
 <p><strong>② 不稳定 &#x2F; 降级</strong>：LLM 可能答错、可能超时、可能返回格式异常。<strong>必须设计降级路径</strong>——LLM 挂了降到规则引擎、降到”返回检索原文”，绝不能让用户看到”模型报错”。这和我在消息系统里做”事件触发 + 定时扫描双兜底”是同一个思路：<strong>主路径和兜底路径都不信任对方，都要有</strong>。</p>
@@ -455,14 +468,14 @@
 <li><strong>可观测性</strong>：Agent 的推理是”黑盒”，要记录 Think&#x2F;Act&#x2F;Observe 全链路日志，出了问题能复盘；</li>
 <li><strong>人工确认点</strong>：涉及钱、库存、下发的关键 Tool 调用，必须有确认点，不能让模型直接拍板。</li>
 </ul>
-<p><strong>大部分 Agent 开发者是 ML 背景——代码能跑但不懂可靠性。</strong> 他们会调 LLM，但不一定懂幂等、告警分级、断点续传。这套基础设施能力，正是我从任务编排引擎迁移到 Agent 的优势所在。</p>
-<h2 id="七、诚实边界"><a href="#七、诚实边界" class="headerlink" title="七、诚实边界"></a>七、诚实边界</h2><p>如实说：我没有在生产环境跑过 Agent 系统，对 Agent 的理解来自<strong>原理学习 + 任务编排的迁移视角</strong>。我的真实实践是 FAQ RAG（上一篇讲过）和 AI 辅助开发。所以这篇定位是”原理 + 工程化认知”，不是”实战复盘”——这个边界我在博客和面试里都保持一致。</p>
+<p>常听到一种说法：Agent 开发者多来自 ML 背景、工程化能力参差。这只是经验印象，我没有统计数据支撑，不宜当成结论。能确定的是：幂等、告警分级、断点续传这类能力，在任务编排里是日常，在只调过 LLM 的路径里未必有人系统做过——这是我相对熟悉的部分，也是我从任务编排引擎迁移到 Agent 的优势所在。</p>
+<h2 id="七、诚实边界"><a href="#七、诚实边界" class="headerlink" title="七、诚实边界"></a>七、诚实边界</h2><p>如实说：我没有在生产环境跑过 Agent 系统，对 Agent 的理解来自<strong>原理学习 + 任务编排的迁移视角</strong>。我的真实实践是 FAQ RAG（见 3 月初那篇《RAG工程实践：切块、向量化、检索与幻觉控制》，不是紧挨着的上一篇）和 AI 辅助开发。所以这篇定位是”原理 + 工程化认知”，不是”实战复盘”——这个边界我在博客和面试里都保持一致。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
-<li>Agent &#x3D; <strong>Planner（拆任务）+ Tool（调工具）+ Memory（记忆）</strong> 三层，模型动态决策执行路径；</li>
+<li>一种常见划分把 Agent 拆成 <strong>Planner（拆任务）+ Tool（调工具）+ Memory（记忆）</strong> 三层，模型动态决策执行路径；</li>
 <li>基础范式 <strong>ReAct</strong>：Think → Act → Observe 循环，和执行器是同一套编排结构；</li>
-<li>Java 生态优先 <strong>Spring AI</strong>（ChatClient + 结构化输出）；</li>
+<li>Java 生态优先 <strong>Spring AI</strong>（ChatClient + <code>@Tool</code> 工具注册 + <code>entity(Class)</code> 结构化输出，后两者不是一回事）；</li>
 <li>工程化五大坎：<strong>延迟、不稳定降级、成本、幻觉、Prompt 注入</strong>；</li>
-<li>我最大的迁移优势是<strong>可靠性设计</strong>：幂等、超时、可观测、人工确认——这些是 ML 背景开发者容易缺的。</li>
+<li>我最大的迁移优势是<strong>可靠性设计</strong>：幂等、超时、可观测、人工确认——这些在只调过 LLM 的开发路径里容易被忽略。</li>
 </ul>
 <hr>
 <p><em>发表于 2026 年 3 月 · 标签: Agent, ReAct, Planner, AI工程化, Spring AI</em></p>
@@ -498,9 +511,9 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
-        <a href="/tags/Agent/" class="print-no-link">#Agent</a>
-      
         <a href="/tags/ReAct/" class="print-no-link">#ReAct</a>
+      
+        <a href="/tags/Agent/" class="print-no-link">#Agent</a>
       
         <a href="/tags/Spring-AI/" class="print-no-link">#Spring AI</a>
       
@@ -652,7 +665,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -752,7 +765,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -767,7 +781,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

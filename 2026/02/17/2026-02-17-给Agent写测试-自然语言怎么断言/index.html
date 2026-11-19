@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/02/17/2026-02-17-给Agent写测试-自然语言怎么断言/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/02/17/2026-02-17-%E7%BB%99Agent%E5%86%99%E6%B5%8B%E8%AF%95-%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E6%80%8E%E4%B9%88%E6%96%AD%E8%A8%80/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="定位：学习笔记。Agent 的输出是自然语言，不能像普通代码那样 assertEquals。这篇记录我怎么给 Agent 搭测试脚手架（Harness）。  一、问题：普通测试的假设在这里不成立给普通代码写测试，核心假设是输出是确定性的： 1assertEquals(4, calculator.add(2, 2));  但 Agent 的输出是自然语言，同样的输入，两次生成的文本大概率不一样。而">
+    <meta name="description" content="定位：学习笔记。Agent 的输出是自然语言，不能像普通代码那样 assertEquals。这篇记录我怎么给 Agent 搭测试脚手架（Harness）。 一、问题：普通测试的假设在这里不成立给普通代码写测试，核心假设是输出是确定性的： 1assertEquals(4, calculator.add(2, 2)); 但 Agent 的输出是自然语言，同样的输入，两次生成的文本大概率不一样。而且 A">
 <meta property="og:type" content="article">
 <meta property="og:title" content="给 Agent 写测试：输出是自然语言，怎么断言？">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/02/17/2026-02-17-%E7%BB%99Agent%E5%86%99%E6%B5%8B%E8%AF%95-%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E6%80%8E%E4%B9%88%E6%96%AD%E8%A8%80/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="定位：学习笔记。Agent 的输出是自然语言，不能像普通代码那样 assertEquals。这篇记录我怎么给 Agent 搭测试脚手架（Harness）。  一、问题：普通测试的假设在这里不成立给普通代码写测试，核心假设是输出是确定性的： 1assertEquals(4, calculator.add(2, 2));  但 Agent 的输出是自然语言，同样的输入，两次生成的文本大概率不一样。而">
+<meta property="og:description" content="定位：学习笔记。Agent 的输出是自然语言，不能像普通代码那样 assertEquals。这篇记录我怎么给 Agent 搭测试脚手架（Harness）。 一、问题：普通测试的假设在这里不成立给普通代码写测试，核心假设是输出是确定性的： 1assertEquals(4, calculator.add(2, 2)); 但 Agent 的输出是自然语言，同样的输入，两次生成的文本大概率不一样。而且 A">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/32bb93cf379727d08b5fea67b5c77fe8.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/32bb93cf379727d08b5fea67b5c77fe8.png">
 <meta property="article:published_time" content="2026-02-17T14:25:15.000Z">
-<meta property="article:modified_time" content="2026-11-02T11:06:26.669Z">
+<meta property="article:modified_time" content="2026-02-17T14:25:15.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Agent">
 <meta property="article:tag" content="Harness">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="学习笔记">
 <meta property="article:tag" content="测试">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/32bb93cf379727d08b5fea67b5c77fe8.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/32bb93cf379727d08b5fea67b5c77fe8.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"给 Agent 写测试：输出是自然语言，怎么断言？","datePublished":"2026-02-17T14:25:15.000Z","dateModified":"2026-02-17T14:25:15.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/02/17/2026-02-17-%E7%BB%99Agent%E5%86%99%E6%B5%8B%E8%AF%95-%E8%87%AA%E7%84%B6%E8%AF%AD%E8%A8%80%E6%80%8E%E4%B9%88%E6%96%AD%E8%A8%80/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          4.1k 字
+          4.5k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          34 分钟
+          38 分钟
         
       </span>
     
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/agent/">AI / Agent 工程</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">给 Agent 写测试：输出是自然语言，怎么断言？</h1>
+            <p id="seo-header">给 Agent 写测试：输出是自然语言，怎么断言？</p>
             
             
               <div class="markdown-body">
@@ -446,6 +459,20 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">String</span> <span class="hljs-variable">agentOutput</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;登录功能需要支持手机号和邮箱两种方式，使用 Spring Security + JWT 实现。&quot;</span>;<br><br>verify(<span class="hljs-string">&quot;登录需求验证&quot;</span>, agentOutput,<br>        List.of(<span class="hljs-string">&quot;登录&quot;</span>, <span class="hljs-string">&quot;手机号&quot;</span>, <span class="hljs-string">&quot;邮箱&quot;</span>), <span class="hljs-number">20</span>);<br></code></pre></td></tr></table></figure>
 
 <p>这不是精确断言，是<strong>验收断言</strong>：验证”Agent 该干的事干了没”——回答了需求里的点都覆盖了吗、输出是不是敷衍了事的空话。</p>
+<h3 id="关键词断言会漏什么"><a href="#关键词断言会漏什么" class="headerlink" title="关键词断言会漏什么"></a>关键词断言会漏什么</h3><p>关键词只能证明”提到了”，不能证明”说对了”。它至少漏三类问题：</p>
+<ul>
+<li><strong>语义错误</strong>：关键词都在，但组合起来是错的。比如”手机号登录已下线”同样包含”手机号””登录”；</li>
+<li><strong>否定与顺序</strong>：”不支持手机号登录”能通过”手机号”检查，意思却反了；</li>
+<li><strong>无来源编造</strong>：关键词对得上，但内容是模型编的，检索结果里根本没有。</li>
+</ul>
+<p>所以关键词断言只适合当<strong>冒烟测试</strong>，不能当成质量结论。</p>
+<h3 id="怎么把它升级成回归集"><a href="#怎么把它升级成回归集" class="headerlink" title="怎么把它升级成回归集"></a>怎么把它升级成回归集</h3><ol>
+<li><strong>收集真实问题</strong>：从线上日志、FAQ、客服记录里挑有代表性的，固定成一批，避免每次临时想用例；</li>
+<li><strong>标注期望行为</strong>：每条写清”必须包含的事实”和”必须不出现的错误说法”；</li>
+<li><strong>扩展断言维度</strong>：从关键词扩到结构（JSON 字段是否齐全）、工具调用序列（该调哪个工具、不该调哪个工具）；</li>
+<li><strong>每次变更都跑同一批</strong>：改 prompt、换模型、调检索参数后，比较通过率变化，而不是看单次输出”感觉还行”；</li>
+<li><strong>保留人工抽检</strong>：自动断言负责拦住退化，关键场景的正确性仍要人看。</li>
+</ol>
 <h2 id="五、三层测试的完整图景"><a href="#五、三层测试的完整图景" class="headerlink" title="五、三层测试的完整图景"></a>五、三层测试的完整图景</h2><figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs isbl">┌─────────────────────────────────────────────┐<br>│  验收测试（<span class="hljs-variable">Agent</span> 整体）                       │<br>│    <span class="hljs-function"><span class="hljs-title">verify</span>(<span class="hljs-string">&quot;包含关键词 + 长度合理&quot;</span>)            │  ← 软断言</span><br><span class="hljs-function">├─────────────────────────────────────────────┤</span><br><span class="hljs-function">│  <span class="hljs-variable">Mock</span> 工具（隔离不确定性）                    │</span><br><span class="hljs-function">│    <span class="hljs-variable">MockEchoTool</span> 替代真实工具                  │  ← 可控</span><br><span class="hljs-function">├─────────────────────────────────────────────┤</span><br><span class="hljs-function">│  工具测试（确定性部分）                       │</span><br><span class="hljs-function">│    <span class="hljs-variable">ToolRegistry</span> / <span class="hljs-variable">Tool</span> 行为 <span class="hljs-variable">assertEquals</span>      │  ← 硬断言</span><br><span class="hljs-function">└─────────────────────────────────────────────┘</span><br></code></pre></td></tr></table></figure>
 
 <p>原则一句话：<strong>越接近 LLM 的输出，断言越”软”；越接近确定性代码，断言越”硬”。</strong> 把能确定的部分（工具、注册表、Mock）测扎实，对不确定的部分（Agent 自然语言输出）用关键词&#x2F;结构做验收。</p>
@@ -455,7 +482,8 @@
 <li>Agent 输出是自然语言，<strong>不能 <code>assertEquals</code></strong>，要分三层测；</li>
 <li><strong>工具测试</strong>（硬断言）：工具是确定性部分，先测稳；</li>
 <li><strong>Mock 工具</strong>：用可控替身隔离不确定性，测试可预测；</li>
-<li><strong>验收测试</strong>（软断言）：关键词 + 长度，验证”该干的事干了没”；</li>
+<li><strong>验收测试</strong>（软断言）：关键词 + 长度，验证”该干的事干了没”；但关键词会漏语义错误、否定和无来源编造，只能当冒烟；</li>
+<li>把一次性验收升级成<strong>回归集</strong>：固定真实问题、标注期望行为、扩展结构和工具序列断言、每次变更跑同一批；</li>
 <li>原则：越接近 LLM 越软，越接近代码越硬；</li>
 <li>Harness &#x3D; Agent 的<strong>质量护栏</strong>，让概率性输出可验证。</li>
 </ul>
@@ -647,7 +675,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -747,7 +775,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -762,7 +791,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

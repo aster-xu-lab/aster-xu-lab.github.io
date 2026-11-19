@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/02/01/2023-02-01-微服务注册发现与网关-Nacos与Dubbo/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/02/01/2023-02-01-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E5%8F%91%E7%8E%B0%E4%B8%8E%E7%BD%91%E5%85%B3-Nacos%E4%B8%8EDubbo/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="定位：订单中心真实在用 Spring Cloud Alibaba（Nacos&#x2F;Dubbo&#x2F;Feign&#x2F;Sentinel），这篇把”为什么用、怎么用、怎么治理”理成框架。  一、为什么拆微服务单体 → 微服务，换来解耦、独立部署、独立扩展、技术栈灵活；代价是分布式复杂性：网络调用、事务、一致性、链路追踪。 Spring Cloud Alibaba 全家桶是我的栈：">
+    <meta name="description" content="定位：订单中心真实在用 Spring Cloud Alibaba（Nacos&#x2F;Dubbo&#x2F;Feign&#x2F;Sentinel），这篇把”为什么用、怎么用、怎么治理”理成框架。 一、为什么拆微服务单体 → 微服务，换来解耦、独立部署、独立扩展、技术栈灵活；代价是分布式复杂性：网络调用、事务、一致性、链路追踪。 Spring Cloud Alibaba 全家桶是我的栈： 组件">
 <meta property="og:type" content="article">
 <meta property="og:title" content="微服务注册发现与网关：Nacos、Dubbo、Feign 各管什么">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/02/01/2023-02-01-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E5%8F%91%E7%8E%B0%E4%B8%8E%E7%BD%91%E5%85%B3-Nacos%E4%B8%8EDubbo/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="定位：订单中心真实在用 Spring Cloud Alibaba（Nacos&#x2F;Dubbo&#x2F;Feign&#x2F;Sentinel），这篇把”为什么用、怎么用、怎么治理”理成框架。  一、为什么拆微服务单体 → 微服务，换来解耦、独立部署、独立扩展、技术栈灵活；代价是分布式复杂性：网络调用、事务、一致性、链路追踪。 Spring Cloud Alibaba 全家桶是我的栈：">
+<meta property="og:description" content="定位：订单中心真实在用 Spring Cloud Alibaba（Nacos&#x2F;Dubbo&#x2F;Feign&#x2F;Sentinel），这篇把”为什么用、怎么用、怎么治理”理成框架。 一、为什么拆微服务单体 → 微服务，换来解耦、独立部署、独立扩展、技术栈灵活；代价是分布式复杂性：网络调用、事务、一致性、链路追踪。 Spring Cloud Alibaba 全家桶是我的栈： 组件">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-01-31T17:52:28.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.507Z">
+<meta property="article:modified_time" content="2023-01-31T17:52:28.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Dubbo">
 <meta property="article:tag" content="Feign">
@@ -37,6 +43,9 @@
 <meta property="article:tag" content="微服务">
 <meta property="article:tag" content="网关">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"微服务注册发现与网关：Nacos、Dubbo、Feign 各管什么","datePublished":"2023-01-31T17:52:28.000Z","dateModified":"2023-01-31T17:52:28.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/02/01/2023-02-01-%E5%BE%AE%E6%9C%8D%E5%8A%A1%E6%B3%A8%E5%86%8C%E5%8F%91%E7%8E%B0%E4%B8%8E%E7%BD%91%E5%85%B3-Nacos%E4%B8%8EDubbo/"}}</script>
   
   
   
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          1.3k 字
+          1.4k 字
         
       </span>
     
@@ -408,9 +417,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/service/">微服务与云原生</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">微服务注册发现与网关：Nacos、Dubbo、Feign 各管什么</h1>
+            <p id="seo-header">微服务注册发现与网关：Nacos、Dubbo、Feign 各管什么</p>
             
             
               <div class="markdown-body">
@@ -473,7 +486,7 @@
 <tr>
 <td><strong>特点</strong></td>
 <td>分组&#x2F;泛化调用、服务治理强</td>
-<td>声明式接口、简单、Ribbon 负载均衡</td>
+<td>声明式接口、简单；新版由 Spring Cloud LoadBalancer 提供客户端负载均衡（Ribbon 已停止维护）</td>
 </tr>
 <tr>
 <td><strong>场景</strong></td>
@@ -483,7 +496,7 @@
 </tbody></table>
 <p><strong>订单中心的做法</strong>：服务间关键调用用 <strong>Dubbo</strong>（性能高），需要 HTTP 或对接非 Dubbo 场景用 <strong>Feign</strong>。Nacos 做服务发现 + 配置中心。</p>
 <h2 id="四、负载均衡与网关"><a href="#四、负载均衡与网关" class="headerlink" title="四、负载均衡与网关"></a>四、负载均衡与网关</h2><ul>
-<li><strong>负载均衡</strong>：Ribbon（客户端）&#x2F; Nginx（服务端），把请求分到多个实例；</li>
+<li><strong>负载均衡</strong>：客户端用 Spring Cloud LoadBalancer（Ribbon 已停止维护）&#x2F; 服务端用 Nginx，把请求分到多个实例；</li>
 <li><strong>网关（Gateway）</strong>：统一入口，做<strong>路由、鉴权、限流、跨域</strong>。外部请求先进网关，再分发到微服务。</li>
 </ul>
 <p><strong>网关 vs 注册中心的分工</strong>（别混）：</p>
@@ -497,7 +510,7 @@
 <li>外部请求经<strong>网关</strong>路由；</li>
 <li><strong>Sentinel</strong> 限流熔断降级护大促（下一篇展开）。</li>
 </ul>
-<p>这套 + 连接池隔离 + 全链路追踪，是可用性 99.99% 的基础。</p>
+<p>这套 + 连接池隔离 + 全链路追踪，是可用性保障的组成部分之一，不单独构成 99.99% 的归因。</p>
 <h2 id="六、一个踩过的坑：Dubbo-超时谁说了算"><a href="#六、一个踩过的坑：Dubbo-超时谁说了算" class="headerlink" title="六、一个踩过的坑：Dubbo 超时谁说了算"></a>六、一个踩过的坑：Dubbo 超时谁说了算</h2><p>Dubbo 超时是”<strong>消费方优先</strong>“——调用方在 Reference 上配置的 timeout 优先级最高，提供方 Service 上配的会被覆盖&#x2F;不生效。<strong>所以超时统一在消费方配</strong>，避免提供方坑消费方。重试默认 2 次，<strong>幂等才能重试，非幂等关重试</strong>。</p>
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>微服务拆解耦、独立部署，代价是分布式复杂性；</li>
@@ -695,7 +708,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -795,7 +808,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -810,7 +824,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

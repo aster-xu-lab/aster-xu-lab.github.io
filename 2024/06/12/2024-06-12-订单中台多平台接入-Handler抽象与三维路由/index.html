@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/06/12/2024-06-12-订单中台多平台接入-Handler抽象与三维路由/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/06/12/2024-06-12-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%9A%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%85%A5-Handler%E6%8A%BD%E8%B1%A1%E4%B8%8E%E4%B8%89%E7%BB%B4%E8%B7%AF%E7%94%B1/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、多渠道接入：订单中台最难啃的骨头订单中台（cloud-order，约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是全渠道订单处理中枢——对接多电商平台、多商家异构下游。 “多平台”意味着什么？真实情况是：每个外部系统都有自己的协议、字段、鉴权方式、消息格式、处理时序。聚水潭、金蝶、FMS、抖音、快手……每个系统的销售单据、采购单据、售后单据、开票单据，接入方式都不同">
+    <meta name="description" content="一、多渠道接入：订单中台最难啃的骨头订单中台（约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是全渠道订单处理中枢——对接多电商平台、多商家异构下游。 “多平台”意味着什么？真实情况是：每个外部系统都有自己的协议、字段、鉴权方式、消息格式、处理时序。某电商ERP、某ERP、某财务系统、某短视频平台、某内容电商平台……每个系统的销售单据、采购单据、售后单据、开票单据，接入方">
 <meta property="og:type" content="article">
 <meta property="og:title" content="订单中台的多平台接入：Handler抽象与三维路由">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/06/12/2024-06-12-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%9A%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%85%A5-Handler%E6%8A%BD%E8%B1%A1%E4%B8%8E%E4%B8%89%E7%BB%B4%E8%B7%AF%E7%94%B1/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、多渠道接入：订单中台最难啃的骨头订单中台（cloud-order，约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是全渠道订单处理中枢——对接多电商平台、多商家异构下游。 “多平台”意味着什么？真实情况是：每个外部系统都有自己的协议、字段、鉴权方式、消息格式、处理时序。聚水潭、金蝶、FMS、抖音、快手……每个系统的销售单据、采购单据、售后单据、开票单据，接入方式都不同">
+<meta property="og:description" content="一、多渠道接入：订单中台最难啃的骨头订单中台（约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是全渠道订单处理中枢——对接多电商平台、多商家异构下游。 “多平台”意味着什么？真实情况是：每个外部系统都有自己的协议、字段、鉴权方式、消息格式、处理时序。某电商ERP、某ERP、某财务系统、某短视频平台、某内容电商平台……每个系统的销售单据、采购单据、售后单据、开票单据，接入方">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/42740746567311dadc5a5d662046652b.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/42740746567311dadc5a5d662046652b.png">
 <meta property="article:published_time" content="2024-06-12T14:51:32.000Z">
-<meta property="article:modified_time" content="2026-11-03T02:09:52.546Z">
+<meta property="article:modified_time" content="2024-06-12T14:51:32.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Handler">
 <meta property="article:tag" content="多平台">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="路由">
 <meta property="article:tag" content="适配器">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/42740746567311dadc5a5d662046652b.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/42740746567311dadc5a5d662046652b.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"订单中台的多平台接入：Handler抽象与三维路由","datePublished":"2024-06-12T14:51:32.000Z","dateModified":"2024-06-12T14:51:32.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/06/12/2024-06-12-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%9A%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%85%A5-Handler%E6%8A%BD%E8%B1%A1%E4%B8%8E%E4%B8%89%E7%BB%B4%E8%B7%AF%E7%94%B1/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.5k 字
+          2.4k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          21 分钟
+          20 分钟
         
       </span>
     
@@ -410,23 +419,24 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">订单中台的多平台接入：Handler抽象与三维路由</h1>
+            <p id="seo-header">订单中台的多平台接入：Handler抽象与三维路由</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="一、多渠道接入：订单中台最难啃的骨头"><a href="#一、多渠道接入：订单中台最难啃的骨头" class="headerlink" title="一、多渠道接入：订单中台最难啃的骨头"></a>一、多渠道接入：订单中台最难啃的骨头</h2><p>订单中台（cloud-order，约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是<strong>全渠道订单处理中枢</strong>——对接多电商平台、多商家异构下游。</p>
-<p>“多平台”意味着什么？真实情况是：每个外部系统都有自己的<strong>协议、字段、鉴权方式、消息格式、处理时序</strong>。聚水潭、金蝶、FMS、抖音、快手……每个系统的销售单据、采购单据、售后单据、开票单据，接入方式都不同。</p>
+                <h2 id="一、多渠道接入：订单中台最难啃的骨头"><a href="#一、多渠道接入：订单中台最难啃的骨头" class="headerlink" title="一、多渠道接入：订单中台最难啃的骨头"></a>一、多渠道接入：订单中台最难啃的骨头</h2><p>订单中台（约 2084 个 Java 文件、5 个子模块、100+ 张表）的核心职责是<strong>全渠道订单处理中枢</strong>——对接多电商平台、多商家异构下游。</p>
+<p>“多平台”意味着什么？真实情况是：每个外部系统都有自己的<strong>协议、字段、鉴权方式、消息格式、处理时序</strong>。某电商ERP、某ERP、某财务系统、某短视频平台、某内容电商平台……每个系统的销售单据、采购单据、售后单据、开票单据，接入方式都不同。</p>
 <p>如果不做抽象，最直接的写法是：每个平台一套同步逻辑，一个平台一套代码。<strong>结果是代码爆炸 + 加一个平台就要复制一遍。</strong></p>
 <h2 id="二、Handler-抽象：策略-工厂"><a href="#二、Handler-抽象：策略-工厂" class="headerlink" title="二、Handler 抽象：策略 + 工厂"></a>二、Handler 抽象：策略 + 工厂</h2><p>订单中台的解法是 <strong>Handler 抽象</strong>：把”同步一个外部系统的一类单据”抽象成一个 Handler，用<strong>策略模式 + 工厂模式</strong>组织。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 一个 Handler = 一个外部系统的一类同步任务</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">SyncTaskHandler</span> &#123;<br>    String <span class="hljs-title function_">handlerKey</span><span class="hljs-params">()</span>;        <span class="hljs-comment">// 路由键</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">execute</span><span class="hljs-params">(SyncTaskParam param)</span>;  <span class="hljs-comment">// 执行同步</span><br>&#125;<br><br><span class="hljs-comment">// 工厂：按 handlerKey 从注册表路由到具体实现</span><br><span class="hljs-type">SyncTaskHandler</span> <span class="hljs-variable">handler</span> <span class="hljs-operator">=</span> handlerRegistry.get(handlerKey);<br>handler.execute(param);<br></code></pre></td></tr></table></figure>
 
 <p>核心是<strong>开闭原则</strong>：新接入一个平台 &#x3D; 新增一个 Handler 实现，<strong>不改动既有 Handler</strong>。接入成本从”改一堆代码”变成”加一个类”，从数天降到数小时。</p>
-<blockquote>
-<p>口径说明：订单中台内部有 49 个 Handler（内部数字），对外简历上写”数十种业务同步任务”——这不是藏掖，而是”数十种”本身就是这个量级最准确的表达，避免给面试官一个”49 是不是数出来的”的追问。</p>
-</blockquote>
 <h2 id="三、三维路由：bizType-×-syncTaskType-×-syncSystem"><a href="#三、三维路由：bizType-×-syncTaskType-×-syncSystem" class="headerlink" title="三、三维路由：bizType × syncTaskType × syncSystem"></a>三、三维路由：bizType × syncTaskType × syncSystem</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/42740746567311dadc5a5d662046652b.png#pic_center" srcset="/img/loading.gif" lazyload alt="多平台接入：Handler 抽象 + 三维路由"></p>
 <p>Handler 多了，路由就变成关键。我的路由键是三维的：</p>
 <figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-attribute">handlerKey</span> <span class="hljs-operator">=</span> bizType - syncTaskType - syncSystem<br></code></pre></td></tr></table></figure>
@@ -434,11 +444,11 @@
 <ul>
 <li><strong>bizType</strong>：业务类型——销售、采购、售后、开票；</li>
 <li><strong>syncTaskType</strong>：同步任务类型——下发、回传、对账；</li>
-<li><strong>syncSystem</strong>：目标系统——聚水潭、金蝶、FMS……</li>
+<li><strong>syncSystem</strong>：目标系统——某电商ERP、某ERP、某财务系统……</li>
 </ul>
 <p>三维组合出一个唯一的 handlerKey，<strong>每个 Handler 只处理命中自己维度的任务</strong>。这跟分库分表的分区键路由是同一思想——<strong>用唯一标识把任务精准路由到处理者，避免广播</strong>。</p>
 <p>新增一种任务，只要三维里有新组合，就注册新 Handler；没有新组合，复用已有 Handler。<strong>扩展靠注册，不靠改判断分支。</strong></p>
-<h2 id="四、适配器：多平台异构的最后一块"><a href="#四、适配器：多平台异构的最后一块" class="headerlink" title="四、适配器：多平台异构的最后一块"></a>四、适配器：多平台异构的最后一块</h2><p>Handler 解决”每个平台一套逻辑”，适配器解决”<strong>同一能力不同平台实现不同</strong>“——比如”下发订单”这个动作，聚水潭的协议和金蝶完全不一样。</p>
+<h2 id="四、适配器：多平台异构的最后一块"><a href="#四、适配器：多平台异构的最后一块" class="headerlink" title="四、适配器：多平台异构的最后一块"></a>四、适配器：多平台异构的最后一块</h2><p>Handler 解决”每个平台一套逻辑”，适配器解决”<strong>同一能力不同平台实现不同</strong>“——比如”下发订单”这个动作，某电商ERP的协议和某ERP完全不一样。</p>
 <p>订单中台的适配层是<strong>三层 SPI 适配</strong>：</p>
 <figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm"><span class="hljs-keyword">SyncTask </span>引擎（通用编排） → 适配器（协议转换） → 外部系统<br></code></pre></td></tr></table></figure>
 
@@ -449,7 +459,7 @@
 <ul>
 <li>引擎核心零框架依赖，只定义”编排骨架 + 扩展点”；</li>
 <li>接入方式：引入 Starter → 实现 Handler → 配置参数 → 建表，<strong>零 @Configuration 代码</strong>；</li>
-<li>cloud-order 是第一个接入方（孵化地），cloud-wms 是第二个接入方（验证跨项目复用）。</li>
+<li>订单中台是第一个接入方（孵化地），仓储中台是第二个接入方（验证跨项目复用）。</li>
 </ul>
 <p>这是”架构减法”的思路：<strong>识别 80% 重复 → 抽公共骨架 → 让重复的业务代码消失</strong>。订单中台的多平台接入，最后长出来的不是一个”越来越大”的系统，而是一个被抽干的瘦中台 + 一个可复用的引擎。</p>
 <h2 id="六、演进：渠道垂直分表-→-分库分表"><a href="#六、演进：渠道垂直分表-→-分库分表" class="headerlink" title="六、演进：渠道垂直分表 → 分库分表"></a>六、演进：渠道垂直分表 → 分库分表</h2><p>订单中台的数据存储也经历了演进：早期按渠道垂直分表（拼多多一张表、京东一张表），后来演进到 <strong>ShardingSphere 单号主分片</strong>（这是另一篇的主题）。</p>
@@ -658,7 +668,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -758,7 +768,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -773,7 +784,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

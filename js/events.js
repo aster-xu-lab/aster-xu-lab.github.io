@@ -31,28 +31,36 @@ Fluid.events = {
     });
 
     var mobileGridMenu = jQuery('#mobile-grid-menu');
+    var navbarToggler = jQuery('#navbar-toggler-btn');
 
-    jQuery('#navbar-toggler-btn').on('click', function() {
+    function setMobileGridMenu(open) {
+      mobileGridMenu.toggleClass('show', open);
+      mobileGridMenu.attr('aria-hidden', open ? 'false' : 'true');
+      mobileGridMenu[0].inert = !open;
+      navbarToggler.attr('aria-expanded', open ? 'true' : 'false');
+      jQuery('.animated-icon').toggleClass('open', open);
+      jQuery('body').toggleClass('mobile-menu-open', open);
+      navbar.toggleClass('top-nav-collapse', open);
+      if (open) {
+        // Apply staggered animation delays when opening
+        mobileGridMenu.find('.mobile-grid-cell, .mobile-grid-group-header').each(function(i, el) {
+          el.style.animationDelay = (i * 20) + 'ms';
+        });
+      }
+    }
+
+    navbarToggler.on('click', function() {
       var $this = jQuery(this);
       if ($this.data('animating')) {
         return;
       }
       $this.data('animating', true);
-      jQuery('.animated-icon').toggleClass('open');
 
       // On mobile use grid menu; on desktop keep original collapse behavior
       if (window.innerWidth < 992) {
-        navbar.addClass('top-nav-collapse');
-        mobileGridMenu.toggleClass('show');
-        // Apply staggered animation delays when opening
-        if (mobileGridMenu.hasClass('show')) {
-          mobileGridMenu.find('.mobile-grid-cell, .mobile-grid-group-header').each(function(i, el) {
-            el.style.animationDelay = (i * 20) + 'ms';
-          });
-        }
-        // Prevent body scroll when menu is open
-        jQuery('body').toggleClass('mobile-menu-open', mobileGridMenu.hasClass('show'));
+        setMobileGridMenu(!mobileGridMenu.hasClass('show'));
       } else {
+        jQuery('.animated-icon').toggleClass('open');
         jQuery('#navbar').toggleClass('navbar-col-show');
       }
 
@@ -63,19 +71,22 @@ Fluid.events = {
 
     // Close grid menu when a link inside it is clicked
     mobileGridMenu.on('click', 'a[href]:not([href="javascript:;"])', function() {
-      mobileGridMenu.removeClass('show');
-      jQuery('.animated-icon').removeClass('open');
-      jQuery('body').removeClass('mobile-menu-open');
-      navbar.removeClass('top-nav-collapse');
-      jQuery('#navbar-toggler-btn').data('animating', false);
+      setMobileGridMenu(false);
+      navbarToggler.data('animating', false);
     });
 
     // Close grid menu on resize to desktop
     jQuery(window).on('resize', function() {
       if (window.innerWidth >= 992 && mobileGridMenu.hasClass('show')) {
-        mobileGridMenu.removeClass('show');
-        jQuery('.animated-icon').removeClass('open');
-        jQuery('body').removeClass('mobile-menu-open');
+        setMobileGridMenu(false);
+      }
+    });
+
+    // Close grid menu on Escape and return focus to the toggler
+    jQuery(document).on('keydown', function(e) {
+      if ((e.key === 'Escape' || e.keyCode === 27) && mobileGridMenu.hasClass('show')) {
+        setMobileGridMenu(false);
+        navbarToggler.trigger('focus');
       }
     });
   },

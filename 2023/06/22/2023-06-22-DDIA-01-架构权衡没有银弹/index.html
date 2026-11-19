@@ -8,28 +8,34 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/06/22/2023-06-22-DDIA-01-架构权衡没有银弹/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/06/22/2023-06-22-DDIA-01-%E6%9E%B6%E6%9E%84%E6%9D%83%E8%A1%A1%E6%B2%A1%E6%9C%89%E9%93%B6%E5%BC%B9/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
     <meta name="description" content="基于真实电商供应链中台经验，拆解4个核心架构权衡——同步vs异步、强一致vs最终一致、单体vs微服务、自研vs开源——没有银弹，只有场景下的最优解。">
 <meta property="og:type" content="article">
-<meta property="og:title" content="DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍">
+<meta property="og:title" content="DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/06/22/2023-06-22-DDIA-01-%E6%9E%B6%E6%9E%84%E6%9D%83%E8%A1%A1%E6%B2%A1%E6%9C%89%E9%93%B6%E5%BC%B9/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="基于真实电商供应链中台经验，拆解4个核心架构权衡——同步vs异步、强一致vs最终一致、单体vs微服务、自研vs开源——没有银弹，只有场景下的最优解。">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-06-22T15:57:24.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.580Z">
+<meta property="article:modified_time" content="2023-06-22T15:57:24.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="分布式">
@@ -39,8 +45,11 @@
 <meta name="twitter:card" content="summary_large_image">
   
   
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍","datePublished":"2023-06-22T15:57:24.000Z","dateModified":"2023-06-22T15:57:24.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/06/22/2023-06-22-DDIA-01-%E6%9E%B6%E6%9E%84%E6%9D%83%E8%A1%A1%E6%B2%A1%E6%9C%89%E9%93%B6%E5%BC%B9/"}}</script>
   
-  <title>DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍 - AsterXu Lab</title>
+  
+  
+  <title>DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍 - AsterXu Lab</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -211,7 +220,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -366,7 +375,7 @@
         <div id="board">
           <header class="ax-post-head">
             <p class="ax-eyebrow">DDIA</p>
-            <h1 class="ax-post-head__title">DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍</h1>
+            <h1 class="ax-post-head__title">DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍</h1>
             <div class="ax-post-head__meta">
               
   <div class="mt-3">
@@ -386,7 +395,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          6.9k 字
+          7k 字
         
       </span>
     
@@ -408,22 +417,26 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍</h1>
+            <p id="seo-header">DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍</p>
             
             
               <div class="markdown-body">
                 
                 <blockquote>
-<p>AsterXu Lab · DDIA实战笔记第1篇<br>作者技术背景：7年Java后端，技术主管，电商供应链中台<br>核心资产：SyncTask驿传引擎（独立组件，5模块&#x2F;10 SPI&#x2F;93 Handler），V2版本作者<br>系统指标：日订单峰值130万，可用性99.9%→99.99%，日均慢SQL 1124→6条，QPS 2000→8000+</p>
+<p>AsterXu Lab · DDIA实战笔记第1篇<br>作者技术背景：7年Java后端，技术主管，电商供应链中台<br>核心资产：SyncTask驿传引擎（独立组件，5模块&#x2F;10 SPI&#x2F;93 Handler），V2版本作者<br>系统指标：日订单峰值130万（历史峰值口径，主口径见订单中台系列），可用性99.9%→99.99%，日均慢SQL 1124→6条，QPS 2000→8000+（历史压测口径）</p>
 </blockquote>
 <hr>
 <h2 id="130万日订单：并发到底多大？"><a href="#130万日订单：并发到底多大？" class="headerlink" title="130万日订单：并发到底多大？"></a>130万日订单：并发到底多大？</h2><p>面试官最爱问：「你说130万日订单，那并发是多少？」</p>
 <p>这里得把数字算清楚。130万订单不是均匀分布在24小时的，我们电商平台有明确的高峰规律：早10点到晚10点是活跃时段，其中晚7点到9点是巅峰。经验数据是 <strong>80%的订单集中在30%的时间段内</strong>。</p>
 <p>算一下：</p>
 <ul>
-<li>日均130万 → 高压时段（7h）订单量 ≈ 130万 × 80% &#x3D; 104万</li>
+<li>峰值日130万 → 高压时段（7h）订单量 ≈ 130万 × 80% &#x3D; 104万</li>
 <li>高压时段平均QPS ≈ 104万 ÷ 7 ÷ 3600 ≈ <strong>41 QPS</strong></li>
 <li>峰值QPS（经验系数 3<del>5 倍）≈ 41 × 5 ≈ **200</del>210 QPS**</li>
 </ul>
@@ -468,7 +481,7 @@
 </ul>
 <p><strong>代价3：消息顺序性问题</strong></p>
 <p>同一个用户的连续操作（支付→退款→重新支付），如果消息乱序到达，订单状态可能错乱。我们的解法是：<strong>订单状态机 + 乐观锁版本号</strong>。状态只能正向流转（待支付→已支付→已发货→已完成），非法转换直接丢弃+告警，而不是依赖消息顺序。</p>
-<h3 id="这个权衡的本质"><a href="#这个权衡的本质" class="headerlink" title="这个权衡的本质"></a>这个权衡的本质</h3><p>DDIA第五章讲复制滞后的时候提过一个观点：<strong>异步复制带来的是滞后，但只要SLA在业务容忍范围内，它就不是Bug而是Feature。</strong> 支付通知的异步化完全同理。</p>
+<h3 id="这个权衡的本质"><a href="#这个权衡的本质" class="headerlink" title="这个权衡的本质"></a>这个权衡的本质</h3><p>DDIA第六章讲复制滞后的时候，大意（第6章）是：<strong>异步复制带来的是滞后，但只要SLA在业务容忍范围内，它就不是Bug而是Feature。</strong> 支付通知的异步化完全同理。</p>
 <p>如果追求同步调用链——收银台回调→RPC调订单→RPC调履约→RPC调通知——系统耦合度会爆炸，任何一个下游慢都会影响支付体验。而支付体验是电商的命门，绝对不能碰。</p>
 <p><strong>结论：对于支付通知这种「通知方等不起，处理方可延迟秒级」的场景，MQ异步是压倒性的正确选择。代价用补偿机制兜底，而不是用同步来回避。</strong></p>
 <hr>
@@ -499,7 +512,7 @@
 </ul>
 <h3 id="代价又是什么？"><a href="#代价又是什么？" class="headerlink" title="代价又是什么？"></a>代价又是什么？</h3><p>Redis预扣 + DB双重检查，每次扣库存比纯Redis方案多了 <strong>一次DB UPDATE（约8~15ms）</strong>。但因为我们用连接池 + HikariCP，210 QPS场景下，库存DB的QPS约是 <strong>210 × 2（Redis+DB）&#x3D; 420 QPS</strong>，数据库完全扛得住。</p>
 <p>如果QPS到5000+呢？那就要引入 <strong>库存分片</strong>——按SKU ID hash到不同库存实例。但我们目前不需要，就不引入。</p>
-<h3 id="这个权衡的本质-1"><a href="#这个权衡的本质-1" class="headerlink" title="这个权衡的本质"></a>这个权衡的本质</h3><p>DDIA第七章（事务）讲隔离级别的时候说：<strong>Serializable是最安全的隔离级别，但性能代价最大。Read Committed有各种异常，但用得最广。</strong> 选什么隔离级别，取决于你能否承受那些异常。</p>
+<h3 id="这个权衡的本质-1"><a href="#这个权衡的本质-1" class="headerlink" title="这个权衡的本质"></a>这个权衡的本质</h3><p>DDIA第八章（事务）讲隔离级别的时候，大意（第8章）是：<strong>Serializable是最安全的隔离级别，但性能代价最大。Read Committed有各种异常，但用得最广。</strong> 选什么隔离级别，取决于你能否承受那些异常。</p>
 <p>库存扣减同理：<strong>Redis纯扣方案就是Read Committed级别——大部分时间正确，偶尔出问题。DB双重检查是Repeatable Read级别——更安全，代价略高。</strong> 我们没有追求强一致（Serializable级别，也就是DB独占锁扣库存），因为业务上不需要——允许短暂的不一致，用最终一致性补偿。</p>
 <p><strong>结论：库存扣减的正确答案不是「选Redis还是选DB」，而是「用Redis做性能层，用DB做正确性层，两层协作」。超卖的本质不是技术选型问题，是没有为不一致场景设计兜底方案。</strong></p>
 <hr>
@@ -545,7 +558,7 @@
 <li>履约（订单→拆单→调度仓库→WMS）是异步链路，天然适合拆分，且无联表查询</li>
 <li>订单中心保留在单体里，履约独立为微服务</li>
 </ul>
-<p>这是一个务实的选择。DDIA第四章（编码与演化）讲向后兼容的时候提到：<strong>架构演进的目标不是追求某个技术名词的正确性，而是让系统在可控的代价下持续交付业务价值。</strong></p>
+<p>这是一个务实的选择。DDIA第五章（编码与演化）讲向后兼容的时候，大意（第5章）是：<strong>架构演进的目标不是追求某个技术名词的正确性，而是让系统在可控的代价下持续交付业务价值。</strong></p>
 <p><strong>结论：微服务拆分不是判断题（拆or不拆），而是选择题（拆哪个）。评价标准只有一个：拆了以后，性能和数据一致性代价能否被业务价值覆盖？订单中心拆了是负收益，履约引擎拆了是正收益——这就是决策的全部。</strong></p>
 <hr>
 <h2 id="权衡4：自研vs开源——SyncTask为什么寄生在xxl-job上？"><a href="#权衡4：自研vs开源——SyncTask为什么寄生在xxl-job上？" class="headerlink" title="权衡4：自研vs开源——SyncTask为什么寄生在xxl-job上？"></a>权衡4：自研vs开源——SyncTask为什么寄生在xxl-job上？</h2><h3 id="SyncTask是什么"><a href="#SyncTask是什么" class="headerlink" title="SyncTask是什么"></a>SyncTask是什么</h3><p>同步任务驿传引擎是我们的核心组件。本质是一个异步任务编排调度框架，负责处理电商履约链路的复杂任务流转：订单拆单→仓库匹配→WMS下发→物流回传→签收完成。</p>
@@ -578,7 +591,7 @@
 <p>所以V2版本直接用 <code>afterExecute</code> Choreography模式——上一个Handler执行完后，通过 SPI 回调链决定下一个Handler是谁。没有图，没有依赖定义，代码即文档：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Handler(order = 3, afterExecute = &quot;warehouseMatch&quot;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderSplitHandler</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">SyncHandler</span> &#123;<br>    <span class="hljs-comment">// 拆单逻辑</span><br>&#125;<br></code></pre></td></tr></table></figure>
 
-<p>DDIA的作者Martin Kleppmann说过一句话我很认同：「好的架构不是做了多少加法，而是敢做减法。」放弃DAG是一次减法，寄居xxl-job是另一次减法。</p>
+<p>DDIA 反复强调的一个观点，大意是：「好的架构不只是做了多少加法，也包括敢做减法。」放弃DAG是一次减法，寄居xxl-job是另一次减法。</p>
 <h3 id="代价是什么？-1"><a href="#代价是什么？-1" class="headerlink" title="代价是什么？"></a>代价是什么？</h3><ul>
 <li>xxl-job版本升级时可能需要适配</li>
 <li>调度逻辑依赖于开源项目Roadmap，但我们fork了稳定版，影响可控</li>
@@ -639,7 +652,7 @@
 <p>如果你也在做架构决策，建议把这3个问题贴在显示器上。</p>
 <p>毕竟，架构师的核心竞争力，从来就不是「知道多少种方案」，而是「在什么场景下选什么方案，以及对代价心知肚明」。</p>
 <hr>
-<p><em>DDIA实战笔记系列持续更新中。下一篇预告：《DDIA-02：复制与分区——从124条慢SQL到6条的索引优化实战》</em></p>
+<p><em>DDIA实战笔记系列持续更新中。下一篇聊 DDIA-02：SLA、SLO、SLI——可用性数字背后的工程取舍。</em></p>
 
                 
               </div>
@@ -672,13 +685,13 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
-        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
-      
         <a href="/tags/%E6%9E%B6%E6%9E%84/" class="print-no-link">#架构</a>
       
-        <a href="/tags/%E7%94%B5%E5%95%86/" class="print-no-link">#电商</a>
+        <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
         <a href="/tags/%E5%88%86%E5%B8%83%E5%BC%8F/" class="print-no-link">#分布式</a>
+      
+        <a href="/tags/%E7%94%B5%E5%95%86/" class="print-no-link">#电商</a>
       
         <a href="/tags/%E6%9D%83%E8%A1%A1/" class="print-no-link">#权衡</a>
       
@@ -692,7 +705,7 @@
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>DDIA-01-从130万日订单看架构权衡：没有银弹只有取舍</div>
+      <div>DDIA-01-从130万日订单峰值看架构权衡：没有银弹只有取舍</div>
       <div>https://aster-xu-lab.github.io/2023/06/22/2023-06-22-DDIA-01-架构权衡没有银弹/</div>
     </div>
     <div class="license-meta">
@@ -826,7 +839,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -926,7 +939,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -941,7 +955,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

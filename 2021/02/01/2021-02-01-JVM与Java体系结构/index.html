@@ -8,41 +8,50 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/02/01/2021-02-01-JVM与Java体系结构/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2021/02/01/2021-02-01-JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="Java及JVM简介Java是跨平台的语言 JVM是跨语言的平台 随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。 Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结">
+    <meta name="description" content="Java及JVM简介Java是跨平台的语言 JVM是跨语言的平台 随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。 Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结果">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JVM与Java体系结构">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/02/01/2021-02-01-JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="Java及JVM简介Java是跨平台的语言 JVM是跨语言的平台 随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。 Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结">
+<meta property="og:description" content="Java及JVM简介Java是跨平台的语言 JVM是跨语言的平台 随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。 Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结果">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b080632fc9e2d2057719ebe4b7ee1788.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ffafa4f5a56b2bb1425c3f49895b7064.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f2403eba26719d8b7c52375001b2548b.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7cb857d0c5ec87f0fed8de440445043e.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b4b42e360f9a9c4087ba9ef0111df593.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5da23cf1a48d7713771df2d2897f3c91.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/992cf9c73afbe71d8296006d3440fa8e.png#pic_center">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bf729d58a99f9689e4d2238022629165.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b080632fc9e2d2057719ebe4b7ee1788.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ffafa4f5a56b2bb1425c3f49895b7064.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f2403eba26719d8b7c52375001b2548b.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7cb857d0c5ec87f0fed8de440445043e.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b4b42e360f9a9c4087ba9ef0111df593.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5da23cf1a48d7713771df2d2897f3c91.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/992cf9c73afbe71d8296006d3440fa8e.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bf729d58a99f9689e4d2238022629165.png">
 <meta property="article:published_time" content="2021-02-01T13:53:18.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:43:42.145Z">
+<meta property="article:modified_time" content="2021-02-01T13:53:18.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="JVM">
 <meta property="article:tag" content="JVM体系结构">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b080632fc9e2d2057719ebe4b7ee1788.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b080632fc9e2d2057719ebe4b7ee1788.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"JVM与Java体系结构","datePublished":"2021-02-01T13:53:18.000Z","dateModified":"2021-02-01T13:53:18.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/02/01/2021-02-01-JVM%E4%B8%8EJava%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/"}}</script>
   
   
   
@@ -217,7 +226,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -414,17 +423,21 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/jvm/">JVM</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">JVM与Java体系结构</h1>
+            <p id="seo-header">JVM与Java体系结构</p>
             
             
               <div class="markdown-body">
                 
-                <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b080632fc9e2d2057719ebe4b7ee1788.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+                <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b080632fc9e2d2057719ebe4b7ee1788.png#pic_center" srcset="/img/loading.gif" lazyload alt="JVM 与 Java 体系结构整体架构图"></p>
 <h2 id="Java及JVM简介"><a href="#Java及JVM简介" class="headerlink" title="Java及JVM简介"></a>Java及JVM简介</h2><p>Java是跨平台的语言</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ffafa4f5a56b2bb1425c3f49895b7064.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>JVM是跨语言的平台</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f2403eba26719d8b7c52375001b2548b.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ffafa4f5a56b2bb1425c3f49895b7064.png#pic_center" srcset="/img/loading.gif" lazyload alt="Java 语言跨平台运行示意图"><br>JVM是跨语言的平台</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f2403eba26719d8b7c52375001b2548b.png#pic_center" srcset="/img/loading.gif" lazyload alt="JVM 跨语言平台运行示意图"><br>随着Java7的正式发布，Java虚拟机的设计者们通过JSR-292规范基本实现在Java虚拟机平台上运行非Java语言编写的程序。</p>
 <p>Java虚拟机根本不关心运行在其内部的程序到底是使用何种编程语言编写的，它只关心“字节码”文件。也就是说Java虚拟机拥有语言无关性，并不会单纯地与Java语言“终身绑定”，只要其他编程语言的编译结果满足并包含Java虚拟机的内部指令集、符号表以及其他的辅助信息，它就是一个有效的字节码文件，就能够被虚拟机所识别并装载运行。</p>
 <h3 id="字节码"><a href="#字节码" class="headerlink" title="字节码"></a>字节码</h3><p>我们平时说的java字节码，指的是用java语言编译成的字节码。准确的说任何能在jvm平台上执行的字节码格式都是一样的。所以应该统称为：jvm字节码。</p>
 <p>不同的编译器，可以编译出相同的字节码文件，字节码文件也可以在不同的JVM上运行。</p>
@@ -451,7 +464,7 @@
 <li>2018年，Android的Java侵权案判决，Google赔偿oracle计88亿美元。同年，oracle宣告JavagE成为历史名词JDBC、JMS、Servlet赠予Eclipse基金会。同年，JDK11发布，LTS版本的JDK，发布革命性的zGc，调整JDK授权许可</li>
 <li>2019年，JDK12发布，加入RedHat领导开发的shenandoah GC</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7cb857d0c5ec87f0fed8de440445043e.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>在JDK11之前，oracleJDK中还会存在一些openJDK中没有的、闭源的功能。但在JDK11中，我们可以认为openJDK和oracleJDK代码实质上已经完全一致的程度。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7cb857d0c5ec87f0fed8de440445043e.png#pic_center" srcset="/img/loading.gif" lazyload alt="Java 发展重大事件时间线示意图"><br>在JDK11之前，oracleJDK中还会存在一些openJDK中没有的、闭源的功能。但在JDK11中，我们可以认为openJDK和oracleJDK代码实质上已经完全一致的程度。</p>
 <h2 id="虚拟机与Java虚拟机"><a href="#虚拟机与Java虚拟机" class="headerlink" title="虚拟机与Java虚拟机"></a>虚拟机与Java虚拟机</h2><h3 id="虚拟机"><a href="#虚拟机" class="headerlink" title="虚拟机"></a>虚拟机</h3><p>所谓虚拟机（Virtual Machine），就是一台虚拟的计算机。它是一款软件，用来执行一系列虚拟计算机指令。大体上，虚拟机可以分为系统虚拟机和程序虚拟机。</p>
 <ul>
 <li>大名鼎鼎的Visual Box，Mware就属于系统虚拟机，它们完全是对物理计算机的仿真，提供了一个可运行完整操作系统的软件平台。</li>
@@ -468,14 +481,14 @@
 <li>自动内存管理</li>
 <li>自动垃圾回收功能</li>
 </ul>
-<h4 id="JVM所处的位置"><a href="#JVM所处的位置" class="headerlink" title="JVM所处的位置"></a>JVM所处的位置</h4><p>JVM是运行在操作系统之上的，它与硬件没有直接的交互<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b4b42e360f9a9c4087ba9ef0111df593.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5da23cf1a48d7713771df2d2897f3c91.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<h4 id="JVM所处的位置"><a href="#JVM所处的位置" class="headerlink" title="JVM所处的位置"></a>JVM所处的位置</h4><p>JVM是运行在操作系统之上的，它与硬件没有直接的交互<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b4b42e360f9a9c4087ba9ef0111df593.png#pic_center" srcset="/img/loading.gif" lazyload alt="JVM 在计算机系统中的位置示意图"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5da23cf1a48d7713771df2d2897f3c91.png#pic_center" srcset="/img/loading.gif" lazyload alt="JVM 所处位置的层次关系示意图"></p>
 <h2 id="JVM的整体结构"><a href="#JVM的整体结构" class="headerlink" title="JVM的整体结构"></a>JVM的整体结构</h2><ul>
 <li>HotSpot VM是目前市面上高性能虚拟机的代表作之一。</li>
 <li>它采用解释器与即时编译器并存的架构。</li>
 <li>在今天，Java程序的运行性能早已脱胎换骨，已经达到了可以和C&#x2F;C++程序一较高下的地步。</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/992cf9c73afbe71d8296006d3440fa8e.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"><br>执行引擎包含三部分：解释器，及时编译器，垃圾回收器</p>
-<h2 id="Java代码执行流程"><a href="#Java代码执行流程" class="headerlink" title="Java代码执行流程"></a>Java代码执行流程</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bf729d58a99f9689e4d2238022629165.png#pic_center" srcset="/img/loading.gif" lazyload alt="在这里插入图片描述"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/992cf9c73afbe71d8296006d3440fa8e.png#pic_center" srcset="/img/loading.gif" lazyload alt="JVM 整体结构组成示意图"><br>执行引擎包含三部分：解释器，及时编译器，垃圾回收器</p>
+<h2 id="Java代码执行流程"><a href="#Java代码执行流程" class="headerlink" title="Java代码执行流程"></a>Java代码执行流程</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bf729d58a99f9689e4d2238022629165.png#pic_center" srcset="/img/loading.gif" lazyload alt="Java 代码编译执行流程图"></p>
 <h2 id="JVM的架构模型"><a href="#JVM的架构模型" class="headerlink" title="JVM的架构模型"></a>JVM的架构模型</h2><p>Java编译器输入的指令流基本上是一种基于栈的指令集架构，另外一种指令集架构则是基于寄存器的指令集架构。具体来说：这两种架构之间的区别：</p>
 <p>基于栈式架构的特点</p>
 <ul>
@@ -794,7 +807,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -894,7 +907,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -909,7 +923,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

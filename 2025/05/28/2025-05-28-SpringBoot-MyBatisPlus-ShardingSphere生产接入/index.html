@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere生产接入/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承 cloud-parentcloud-order">
+    <meta name="description" content="真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承父工程订单中台的 order-service 继承">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承 cloud-parentcloud-order">
+<meta property="og:description" content="真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承父工程订单中台的 order-service 继承">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebbabb3c76b3a32ab7f90ce3e5d374cf.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebbabb3c76b3a32ab7f90ce3e5d374cf.png">
 <meta property="article:published_time" content="2025-05-27T16:27:50.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.527Z">
+<meta property="article:modified_time" content="2025-05-27T16:27:50.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="BaseMapper">
 <meta property="article:tag" content="MyBatis-Plus">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="Spring Boot">
 <meta property="article:tag" content="分页">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebbabb3c76b3a32ab7f90ce3e5d374cf.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebbabb3c76b3a32ab7f90ce3e5d374cf.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战","datePublished":"2025-05-27T16:27:50.000Z","dateModified":"2025-05-27T16:27:50.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.6k 字
+          2.7k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          22 分钟
+          23 分钟
         
       </span>
     
@@ -410,15 +419,19 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战</h1>
+            <p id="seo-header">SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战</p>
             
             
               <div class="markdown-body">
                 
                 <h2 id="真实环境都是-SpringBoot-MyBatis-Plus"><a href="#真实环境都是-SpringBoot-MyBatis-Plus" class="headerlink" title="真实环境都是 SpringBoot + MyBatis-Plus"></a>真实环境都是 SpringBoot + MyBatis-Plus</h2><p>前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 <strong>Spring Boot + MyBatis-Plus</strong>。本文用一个独立模块，验证 MyBatis-Plus 的 <code>BaseMapper</code>&#x2F;<code>ServiceImpl</code> 如何无缝操作 ShardingSphere 分片表。</p>
-<h2 id="关键：不继承-cloud-parent"><a href="#关键：不继承-cloud-parent" class="headerlink" title="关键：不继承 cloud-parent"></a>关键：不继承 cloud-parent</h2><p><code>cloud-order</code> 的 order-service 继承 cloud-parent，dependencyManagement 带入大量中间件（Redis&#x2F;Dubbo&#x2F;Seata）。<code>@SpringBootApplication</code> 会自动加载它们的自动配置，本地缺中间件就启动失败。</p>
+<h2 id="关键：不继承父工程"><a href="#关键：不继承父工程" class="headerlink" title="关键：不继承父工程"></a>关键：不继承父工程</h2><p>订单中台的 order-service 继承父工程，dependencyManagement 带入大量中间件（Redis&#x2F;Dubbo&#x2F;Seata）。<code>@SpringBootApplication</code> 会自动加载它们的自动配置，本地缺中间件就启动失败。</p>
 <p><strong>解法</strong>：新建独立模块，parent 用 <code>spring-boot-starter-parent</code>，只依赖干净的 starter：</p>
 <ul>
 <li><code>spring-boot-starter-web</code></li>
@@ -440,22 +453,22 @@
 <h2 id="核心3：业务代码完全无感"><a href="#核心3：业务代码完全无感" class="headerlink" title="核心3：业务代码完全无感"></a>核心3：业务代码完全无感</h2><p>实体只想逻辑表，分片透明：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@TableName(&quot;t_mp_order&quot;)</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">MpOrder</span> &#123;<br>    <span class="hljs-meta">@TableId(value = &quot;id&quot;, type = IdType.INPUT)</span>  <span class="hljs-comment">// 分片键</span><br>    <span class="hljs-keyword">private</span> Long id;<br>    <span class="hljs-keyword">private</span> String orderNo;<br>    <span class="hljs-keyword">private</span> Integer status;<br>&#125;<br></code></pre></td></tr></table></figure>
 
-<h2 id="实测结果（REST-闭环全通过）"><a href="#实测结果（REST-闭环全通过）" class="headerlink" title="实测结果（REST 闭环全通过）"></a>实测结果（REST 闭环全通过）</h2><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs routeros">POST /mp/order → <span class="hljs-attribute">id</span>=1→t_mp_order_1, <span class="hljs-attribute">id</span>=2→t_mp_order_2  ✅ save()分片路由<br><span class="hljs-built_in">GET</span>  /mp/order/3 → &#123;<span class="hljs-string">&quot;id&quot;</span>:3,<span class="hljs-string">&quot;orderNo&quot;</span>:<span class="hljs-string">&quot;MP3&quot;</span>&#125;             ✅ getById精准<br><span class="hljs-built_in">GET</span>  /mp/order/all → 4条                                 ✅ broadcast<br><span class="hljs-built_in">GET</span>  /mp/order/page?<span class="hljs-attribute">current</span>=1&amp;size=2 → <span class="hljs-attribute">total</span>=4, <span class="hljs-attribute">pages</span>=2  ✅ 分页跨分片归并<br>PUT  /mp/order/1 → updated <span class="hljs-literal">true</span>                          ✅ updateById<br>DELETE /mp/order/2 → deleted <span class="hljs-literal">true</span>                        ✅ removeById<br></code></pre></td></tr></table></figure>
+<h2 id="最小验证结果（4-条数据-4-分片，REST-闭环全通过）"><a href="#最小验证结果（4-条数据-4-分片，REST-闭环全通过）" class="headerlink" title="最小验证结果（4 条数据 &#x2F; 4 分片，REST 闭环全通过）"></a>最小验证结果（4 条数据 &#x2F; 4 分片，REST 闭环全通过）</h2><figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs routeros">POST /mp/order → <span class="hljs-attribute">id</span>=1→t_mp_order_1, <span class="hljs-attribute">id</span>=2→t_mp_order_2  ✅ save()分片路由<br><span class="hljs-built_in">GET</span>  /mp/order/3 → &#123;<span class="hljs-string">&quot;id&quot;</span>:3,<span class="hljs-string">&quot;orderNo&quot;</span>:<span class="hljs-string">&quot;MP3&quot;</span>&#125;             ✅ getById精准<br><span class="hljs-built_in">GET</span>  /mp/order/all → 4条                                 ✅ broadcast<br><span class="hljs-built_in">GET</span>  /mp/order/page?<span class="hljs-attribute">current</span>=1&amp;size=2 → <span class="hljs-attribute">total</span>=4, <span class="hljs-attribute">pages</span>=2  ✅ 分页跨分片归并<br>PUT  /mp/order/1 → updated <span class="hljs-literal">true</span>                          ✅ updateById<br>DELETE /mp/order/2 → deleted <span class="hljs-literal">true</span>                        ✅ removeById<br></code></pre></td></tr></table></figure>
 
-<p><strong>重点</strong>：分页返回 <code>total:4, pages:2</code>，说明 <strong>PaginationInnerInterceptor 与 ShardingSphere 分页改写正确协同</strong>——跨4个分片 LIMIT 后正确归并统计总数。这解决了”分页在分片下到底兼不兼容”的疑虑。</p>
+<p><strong>重点</strong>：分页返回 <code>total:4, pages:2</code>，说明 <strong>PaginationInnerInterceptor 与 ShardingSphere 分页改写在这个最小场景下正确协同</strong>——跨 4 个分片 LIMIT 后正确归并统计总数。它验证了基础分页可用；深分页&#x2F;大偏移仍需单独压测，不能据此外推所有分页场景。</p>
 <h2 id="⚠-两个关键坑"><a href="#⚠-两个关键坑" class="headerlink" title="⚠ 两个关键坑"></a>⚠ 两个关键坑</h2><ol>
 <li><p><strong>物理表必须先建，再构造 ShardingSphere 数据源</strong><br>否则 ShardingSphere 元数据是空白快照，MyBatis-Plus 查询逻辑表报”表不存在”。<br>要在 <code>shardingDataSource()</code> Bean 方法内部、构造数据源之前先建表。</p>
 </li>
 <li><p><strong>独立模块用普通 POJO，别依赖 Lombok</strong><br>独立模块编译时 Lombok 注解处理可能不生效，setter 生成不了。用显式 getter&#x2F;setter 最稳。</p>
 </li>
 </ol>
-<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p><strong>SpringBoot + MyBatis-Plus + ShardingSphere 完全兼容，是生产最推荐的接入方式。</strong></p>
+<h2 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h2><p><strong>在本模块的最小验证中，SpringBoot + MyBatis-Plus + ShardingSphere 可以跑通。</strong></p>
 <ul>
 <li>BaseMapper&#x2F;ServiceImpl 操作分片表，业务零改造</li>
-<li>分页插件与 ShardingSphere 协同正常（跨分片 total 正确）</li>
+<li>分页插件与 ShardingSphere 在基础场景协同正常（跨分片 total 正确）</li>
 <li>关键踩坑：物理表先建、独立模块规避中间件、不用 Lombok</li>
 </ul>
-<p>这套组合就是生产订单系统分库分表的落地范式。</p>
+<p>边界：这次只覆盖 4 条数据 &#x2F; 4 个分片的基础 CRUD 与分页，不能得出”完全兼容、生产最推荐”的结论。生产落地前还要验证连接池、事务边界、分布式 ID、深分页、监控与版本兼容；这套组合可作为候选接入方式。</p>
 
                 
               </div>
@@ -488,9 +501,9 @@
     <div class="post-meta post-meta--tags">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
       
-        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
-      
         <a href="/tags/Spring-Boot/" class="print-no-link">#Spring Boot</a>
+      
+        <a href="/tags/ShardingSphere/" class="print-no-link">#ShardingSphere</a>
       
         <a href="/tags/%E5%88%86%E9%A1%B5/" class="print-no-link">#分页</a>
       
@@ -642,7 +655,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -742,7 +755,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -757,7 +771,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

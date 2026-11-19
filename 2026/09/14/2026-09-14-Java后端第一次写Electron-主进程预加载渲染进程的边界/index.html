@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/14/2026-09-14-Java后端第一次写Electron-主进程预加载渲染进程的边界/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="写了七年 Java 后端，我的第一个桌面项目是 Electron。后端的直觉在这里一半有用、一半是坑。这篇文章讲 Electron 三个进程的边界怎么划，以及从后端视角最容易踩的几个点。  一、先建立心智模型Electron 不是”一个进程里跑前端”，它天然是三层的。用后端的语言类比，会瞬间清晰：    Electron 层 类比 能力    main（主进程） 后端服务 有 Node、能开窗口">
+    <meta name="description" content="写了七年 Java 后端，我的第一个桌面项目是 Electron。后端的直觉在这里一半有用、一半是坑。这篇文章讲 Electron 三个进程的边界怎么划，以及从后端视角最容易踩的几个点。 一、先建立心智模型Electron 不是”一个进程里跑前端”，它天然是三层的。用后端的语言类比，会瞬间清晰： Electron 层 类比 能力 main（主进程） 后端服务 有 Node、能开窗口、能读写文件、能">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="写了七年 Java 后端，我的第一个桌面项目是 Electron。后端的直觉在这里一半有用、一半是坑。这篇文章讲 Electron 三个进程的边界怎么划，以及从后端视角最容易踩的几个点。  一、先建立心智模型Electron 不是”一个进程里跑前端”，它天然是三层的。用后端的语言类比，会瞬间清晰：    Electron 层 类比 能力    main（主进程） 后端服务 有 Node、能开窗口">
+<meta property="og:description" content="写了七年 Java 后端，我的第一个桌面项目是 Electron。后端的直觉在这里一半有用、一半是坑。这篇文章讲 Electron 三个进程的边界怎么划，以及从后端视角最容易踩的几个点。 一、先建立心智模型Electron 不是”一个进程里跑前端”，它天然是三层的。用后端的语言类比，会瞬间清晰： Electron 层 类比 能力 main（主进程） 后端服务 有 Node、能开窗口、能读写文件、能">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b41e4a44a118cd86ad23770ab62d2632.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b41e4a44a118cd86ad23770ab62d2632.png">
 <meta property="article:published_time" content="2026-09-13T16:22:16.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.533Z">
+<meta property="article:modified_time" content="2026-09-13T16:22:16.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="IPC">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="桌面端">
 <meta property="article:tag" content="进程模型">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b41e4a44a118cd86ad23770ab62d2632.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b41e4a44a118cd86ad23770ab62d2632.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界","datePublished":"2026-09-13T16:22:16.000Z","dateModified":"2026-09-13T16:22:16.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/09/14/2026-09-14-Java%E5%90%8E%E7%AB%AF%E7%AC%AC%E4%B8%80%E6%AC%A1%E5%86%99Electron-%E4%B8%BB%E8%BF%9B%E7%A8%8B%E9%A2%84%E5%8A%A0%E8%BD%BD%E6%B8%B2%E6%9F%93%E8%BF%9B%E7%A8%8B%E7%9A%84%E8%BE%B9%E7%95%8C/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.4k 字
+          2.6k 字
         
       </span>
     
@@ -399,7 +408,7 @@
         
         
         
-          21 分钟
+          22 分钟
         
       </span>
     
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界</h1>
+            <p id="seo-header">Java 后端第一次写 Electron：主进程、预加载、渲染进程的边界</p>
             
             
               <div class="markdown-body">
@@ -465,6 +478,7 @@
 <p>这条约束有个直接推论，也是我们踩过的坑：<strong>给事件加字段时，必须同时改持久化类型和 renderer 的事件处理</strong>。只改一处，UI 和数据库就会静默不一致——这和后端”改了 DTO 忘了改 DAO”是同一类 bug。</p>
 <h2 id="五、两个容易翻车的细节"><a href="#五、两个容易翻车的细节" class="headerlink" title="五、两个容易翻车的细节"></a>五、两个容易翻车的细节</h2><p><strong>① preload 的依赖要放 <code>devDependencies</code>。</strong></p>
 <p>electron-vite 会把 <code>dependencies</code> 里的包<strong>外置</strong>（不打进 bundle），而 preload 是打进 bundle 的。所以 preload 用到的库如果错放进 <code>dependencies</code>，打包后会找不到。规则一句话：<strong>preload-only 的依赖放 devDependencies</strong>。</p>
+<p>但这条规则有边界：它只适用于 <strong>electron-vite + 纯 JS 依赖</strong>的打包方式。换成 webpack &#x2F; esbuild 自配，或者依赖里带 <code>.node</code> 原生二进制，外置与 bundle 的规则就变了——原生模块通常必须外置并用 <code>asarUnpack</code> 分发，这时放 <code>devDependencies</code> 反而会缺包。所以别把”preload-only 放 devDependencies”当成跨工具链的通用结论，换打包器要重新核对。</p>
 <p><strong>② 改了 preload，typecheck 不够，要用 CDP 验。</strong></p>
 <p>类型检查只检查类型，不检查”运行时的 <code>window.api</code> 是不是真的是个对象”。preload 一旦打包方式出错，最典型的表现是 <code>window.api</code> 变成 <code>undefined</code>——TS 完全看不出来。所以改完 preload，要用调试协议连上去，断言 <code>typeof window.api === &#39;object&#39;</code>。这是<strong>运行时验证</strong>，不是类型验证。</p>
 <h2 id="六、从后端带来的好习惯与坏直觉"><a href="#六、从后端带来的好习惯与坏直觉" class="headerlink" title="六、从后端带来的好习惯与坏直觉"></a>六、从后端带来的好习惯与坏直觉</h2><p><strong>有用的</strong>：</p>
@@ -488,7 +502,7 @@
 <li><strong>渲染进程不被信任</strong>：<code>contextIsolation</code> + <code>sandbox</code> + 关 <code>nodeIntegration</code> 是硬约束；</li>
 <li>renderer 只走 <code>window.api</code>，<strong>通道在 shared 声明、preload 实现、main 处理</strong>，禁止泛型透传；</li>
 <li><strong>main 是唯一状态源</strong>：启动拉一次快照，之后只推事件；加事件字段要同时改持久化和渲染层；</li>
-<li>两个细节坑：preload 依赖放 <code>devDependencies</code>；改 preload 后要用 CDP 断言 <code>window.api</code>，typecheck 不够；</li>
+<li>两个细节坑：preload 依赖放 <code>devDependencies</code>（仅限 electron-vite + 纯 JS 依赖）；改 preload 后要用 CDP 断言 <code>window.api</code>，typecheck 不够；</li>
 <li>后端的好习惯（分层 &#x2F; 契约 &#x2F; 失败显式化）能迁移；坏直觉（找框架 &#x2F; 上 ORM &#x2F; 加测试框架）要克制。</li>
 </ul>
 <hr>
@@ -679,7 +693,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -779,7 +793,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -794,7 +809,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

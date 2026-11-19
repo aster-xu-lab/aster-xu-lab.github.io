@@ -8,29 +8,35 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/08/04/2023-08-04-DDIA-03-关系模型vs文档模型/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/08/04/2023-08-04-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="从130万日订单实战出发，深度对比关系模型与文档模型在电商订单场景中的选型逻辑。不是二选一，是场景匹配。">
+    <meta name="description" content="从130万日订单峰值（历史口径）的实战出发，深度对比关系模型与文档模型在电商订单场景中的选型逻辑。不是二选一，是场景匹配。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-03-关系模型vs文档模型：电商订单该存MySQL还是MongoDB">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/08/04/2023-08-04-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="从130万日订单实战出发，深度对比关系模型与文档模型在电商订单场景中的选型逻辑。不是二选一，是场景匹配。">
+<meta property="og:description" content="从130万日订单峰值（历史口径）的实战出发，深度对比关系模型与文档模型在电商订单场景中的选型逻辑。不是二选一，是场景匹配。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57f372a4aae36d9df0636dc091881a04.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57f372a4aae36d9df0636dc091881a04.png">
 <meta property="article:published_time" content="2023-08-03T17:57:13.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.510Z">
+<meta property="article:modified_time" content="2023-08-03T17:57:13.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="MongoDB">
@@ -40,7 +46,10 @@
 <meta property="article:tag" content="架构选型">
 <meta property="article:tag" content="订单系统">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57f372a4aae36d9df0636dc091881a04.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/57f372a4aae36d9df0636dc091881a04.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-03-关系模型vs文档模型：电商订单该存MySQL还是MongoDB","datePublished":"2023-08-03T17:57:13.000Z","dateModified":"2023-08-03T17:57:13.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/08/04/2023-08-04-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/"}}</script>
   
   
   
@@ -215,7 +224,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -412,9 +421,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-03-关系模型vs文档模型：电商订单该存MySQL还是MongoDB</h1>
+            <p id="seo-header">DDIA-03-关系模型vs文档模型：电商订单该存MySQL还是MongoDB</p>
             
             
               <div class="markdown-body">
@@ -422,7 +435,7 @@
                 <h2 id="一、一个真实的深夜选型会"><a href="#一、一个真实的深夜选型会" class="headerlink" title="一、一个真实的深夜选型会"></a>一、一个真实的深夜选型会</h2><p>凌晨一点，会议室白板上画满了框线。</p>
 <p>CTO问了一个看似简单的问题：「订单数据用MySQL还是MongoDB？」</p>
 <p>这不是技术选秀。这是过去三个月第三次线上故障复盘后，架构组必须给出答案的问题。</p>
-<p>我们的系统当时跑着日订单峰值130万，MySQL单库已经扛不住了。有同事提议：订单JSON一把梭，存MongoDB，读得快、写得也快。</p>
+<p>我们的系统当时跑着日订单峰值130万（历史峰值口径，主口径见订单中台系列），MySQL单库已经扛不住了。有同事提议：订单JSON一把梭，存MongoDB，读得快、写得也快。</p>
 <p>听起来很诱人。但真相远比直觉复杂。</p>
 <p>这就是本文要讨论的核心：<strong>关系模型和文档模型的本质差异是什么？在电商订单这个具体场景下，你该怎么选？</strong></p>
 <hr>
@@ -513,7 +526,7 @@
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> `<span class="hljs-keyword">order</span>` (<br>  `order_id` <span class="hljs-type">bigint</span> <span class="hljs-keyword">NOT NULL</span>,<br>  `user_id` <span class="hljs-type">bigint</span> <span class="hljs-keyword">NOT NULL</span>,<br>  `total_amount` <span class="hljs-type">int</span> <span class="hljs-keyword">NOT NULL</span> COMMENT <span class="hljs-string">&#x27;分&#x27;</span>,<br>  `status` <span class="hljs-type">varchar</span>(<span class="hljs-number">32</span>) <span class="hljs-keyword">NOT NULL</span>,<br>  `extra` json <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span> COMMENT <span class="hljs-string">&#x27;扩展属性，透传&#x27;</span>,<br>  <span class="hljs-keyword">PRIMARY KEY</span> (`order_id`),<br>  KEY `idx_user_id` (`user_id`)<br>);<br></code></pre></td></tr></table></figure>
 
 <p>这样就做到了：**核心数据走关系模型，灵活扩展走JSON。**两者不是对立的，是可以组合的。</p>
-<h3 id="5-3-事务不是可选项，是必要条件"><a href="#5-3-事务不是可选项，是必要条件" class="headerlink" title="5.3 事务不是可选项，是必要条件"></a>5.3 事务不是可选项，是必要条件</h3><p>这一点在第二章已经说过，但值得重复。</p>
+<h3 id="5-3-事务不是可选项，是必要条件"><a href="#5-3-事务不是可选项，是必要条件" class="headerlink" title="5.3 事务不是可选项，是必要条件"></a>5.3 事务不是可选项，是必要条件</h3><p>这一点前面已经说过，但值得重复。</p>
 <p>130万日订单意味着什么？意味着每天有几百万次库存操作、几百万次支付回调、几百万次优惠券核销。任何一个环节的不一致都会被放大成上千个用户投诉。</p>
 <p>我们早期用过一个方案：订单主流程走MySQL，非关键流程（比如积分发放）异步走消息队列，最终一致性。结果呢？积分系统挂了三天，没人发现。用户来投诉，「我明明下单了为什么没有积分？」</p>
 <p>最终一致性不是不行，但要分场景。<strong>和钱相关的，和用户直接感知相关的，必须强一致。</strong></p>
@@ -587,7 +600,7 @@
 <p>这三个问题答完，答案基本上就出来了。</p>
 <p>但还有一个不容忽视的现实因素：**团队的数据库运维能力。**MySQL的DBA好找，MongoDB的专家稀缺。一个700人的技术团队可能有5个MySQL DBA，但MongoDB可能一个专职的人都没有。这不是技术问题，是组织问题——但组织问题往往是最终决策的决定性因素。</p>
 <hr>
-<h2 id="八、写在最后"><a href="#八、写在最后" class="headerlink" title="八、写在最后"></a>八、写在最后</h2><p>DDIA第五章有一句话我印象很深：</p>
+<h2 id="八、写在最后"><a href="#八、写在最后" class="headerlink" title="八、写在最后"></a>八、写在最后</h2><p>DDIA 第三章有一段话，大意（第3章）是：</p>
 <blockquote>
 <p>「数据模型的选择对系统能力有深远影响——它不仅影响软件的编写方式，也影响我们思考手中问题的方式。」</p>
 </blockquote>
@@ -634,9 +647,9 @@
       
         <a href="/tags/DDIA/" class="print-no-link">#DDIA</a>
       
-        <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" class="print-no-link">#数据模型</a>
-      
         <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#数据库</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E6%A8%A1%E5%9E%8B/" class="print-no-link">#数据模型</a>
       
         <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
       
@@ -788,7 +801,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -888,7 +901,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -903,7 +917,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

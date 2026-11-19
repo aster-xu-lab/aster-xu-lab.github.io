@@ -8,34 +8,43 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/11/30/2023-11-30-DDIA-05-SyncTask消息格式演化/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2023/11/30/2023-11-30-DDIA-05-SyncTask%E6%B6%88%E6%81%AF%E6%A0%BC%E5%BC%8F%E6%BC%94%E5%8C%96/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、一个被忽略的事实：消息格式不是一份契约，是九十三份读DDIA第五章”复制”的时候，大多数人第一反应是主从、多主、无主——在CAP的取舍间做架构决策。很少有人注意到，那一章花了整整一节讨论”格式演化”（Format Evolution），里面有一句很容易被翻过去的话： “Assume that the data is going to change over time, and design y">
+    <meta name="description" content="一、一个被忽略的事实：消息格式不是一份契约，是九十三份读DDIA第5章”编码与演化”的时候，大多数人第一反应是Thrift、Protobuf、Avro——在数据格式的取舍间做架构决策。那一章讨论”格式演化”（Format Evolution）时，有一句话大意是： “Assume that the data is going to change over time, and design your">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-05-实战：93个Handler的SyncTask引擎如何应对消息格式演化">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/11/30/2023-11-30-DDIA-05-SyncTask%E6%B6%88%E6%81%AF%E6%A0%BC%E5%BC%8F%E6%BC%94%E5%8C%96/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、一个被忽略的事实：消息格式不是一份契约，是九十三份读DDIA第五章”复制”的时候，大多数人第一反应是主从、多主、无主——在CAP的取舍间做架构决策。很少有人注意到，那一章花了整整一节讨论”格式演化”（Format Evolution），里面有一句很容易被翻过去的话： “Assume that the data is going to change over time, and design y">
+<meta property="og:description" content="一、一个被忽略的事实：消息格式不是一份契约，是九十三份读DDIA第5章”编码与演化”的时候，大多数人第一反应是Thrift、Protobuf、Avro——在数据格式的取舍间做架构决策。那一章讨论”格式演化”（Format Evolution）时，有一句话大意是： “Assume that the data is going to change over time, and design your">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2023-11-30T12:45:56.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.585Z">
+<meta property="article:modified_time" content="2023-11-30T12:45:56.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="SyncTask">
 <meta property="article:tag" content="实战">
 <meta property="article:tag" content="编码">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-05-实战：93个Handler的SyncTask引擎如何应对消息格式演化","datePublished":"2023-11-30T12:45:56.000Z","dateModified":"2023-11-30T12:45:56.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/11/30/2023-11-30-DDIA-05-SyncTask%E6%B6%88%E6%81%AF%E6%A0%BC%E5%BC%8F%E6%BC%94%E5%8C%96/"}}</script>
   
   
   
@@ -210,7 +219,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -385,7 +394,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          11k 字
+          10k 字
         
       </span>
     
@@ -407,24 +416,28 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-05-实战：93个Handler的SyncTask引擎如何应对消息格式演化</h1>
+            <p id="seo-header">DDIA-05-实战：93个Handler的SyncTask引擎如何应对消息格式演化</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="一、一个被忽略的事实：消息格式不是一份契约，是九十三份"><a href="#一、一个被忽略的事实：消息格式不是一份契约，是九十三份" class="headerlink" title="一、一个被忽略的事实：消息格式不是一份契约，是九十三份"></a>一、一个被忽略的事实：消息格式不是一份契约，是九十三份</h2><p>读DDIA第五章”复制”的时候，大多数人第一反应是主从、多主、无主——在CAP的取舍间做架构决策。很少有人注意到，那一章花了整整一节讨论”格式演化”（Format Evolution），里面有一句很容易被翻过去的话：</p>
+                <h2 id="一、一个被忽略的事实：消息格式不是一份契约，是九十三份"><a href="#一、一个被忽略的事实：消息格式不是一份契约，是九十三份" class="headerlink" title="一、一个被忽略的事实：消息格式不是一份契约，是九十三份"></a>一、一个被忽略的事实：消息格式不是一份契约，是九十三份</h2><p>读DDIA第5章”编码与演化”的时候，大多数人第一反应是Thrift、Protobuf、Avro——在数据格式的取舍间做架构决策。那一章讨论”格式演化”（Format Evolution）时，有一句话大意是：</p>
 <p><em>“Assume that the data is going to change over time, and design your system so that it can handle both old and new data gracefully.”</em></p>
 <p>翻译成人话：不要假设你的消息格式是一成不变的。它会变，而且会变得很频繁。</p>
 <p>我把这句话带进SyncTask引擎的日常运维里，发现它比任何一句架构箴言都更真实。</p>
-<p>SyncTask引擎是一个跨系统的异步任务编排组件。在我负责的电商供应链中台里，有两个系统接入：cloud-order（订单中台）和cloud-wms（仓储中台）。cloud-order接了<strong>49个Handler</strong>，cloud-wms接了<strong>44个Handler</strong>，总共93个Handler。</p>
+<p>SyncTask引擎是一个跨系统的异步任务编排组件。在我负责的电商供应链中台里，有两个系统接入：订单中台和仓储中台。订单中台接了<strong>49个Handler</strong>，仓储中台接了<strong>44个Handler</strong>，总共93个Handler。</p>
 <p>每个Handler对接一个外部系统——ERP、OMS、物流打单、财务核算、第三方跨境清关……随便数一数，50+个外部系统。这些系统的消息格式由不同的团队维护，不同的供应商控制，不同的合同周期决定升级节奏。没有一份”统一消息格式”能管住它们。</p>
 <p>这就是问题的起点：<strong>消息格式不是一份契约，是九十三份。每一份有自己的演化节奏，每一个字段的变更都可能影响另外一边的生产环境。</strong></p>
 <p>写本文的时候，SyncTask引擎已经在生产环境跑了两年多，经历过从V1到V2的大版本重构，踩过消息格式演化几乎所有的坑。这篇文章，我就把踩坑的过程、沉淀下来的设计策略、以及和DDIA第五章核心理论的呼应，完整地讲出来。</p>
 <hr>
 <h2 id="二、问题拆解：93个Handler同时演化，凭什么不崩？"><a href="#二、问题拆解：93个Handler同时演化，凭什么不崩？" class="headerlink" title="二、问题拆解：93个Handler同时演化，凭什么不崩？"></a>二、问题拆解：93个Handler同时演化，凭什么不崩？</h2><p>先看一个典型场景。</p>
-<p>cloud-order里有一个<code>OrderSyncHandler</code>，负责把订单推送到外部ERP。消息格式大概是这样的：</p>
+<p>订单中台里有一个<code>OrderSyncHandler</code>，负责把订单推送到外部ERP。消息格式大概是这样的：</p>
 <figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;orderNo&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SO20260815001&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;channelCode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;TMALL&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;amount&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">129900</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;items&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">[</span><br>    <span class="hljs-punctuation">&#123;</span><span class="hljs-attr">&quot;skuCode&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;SKU001&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;quantity&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">2</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">&quot;price&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">59900</span><span class="hljs-punctuation">&#125;</span><br>  <span class="hljs-punctuation">]</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
 
 <p>一切正常。直到有一个需求过来：ERP那边新增了”拆单标记”字段——一个订单如果被仓内拆单了，需要把拆单子单号传过去。ERP厂商说：”我们下个版本支持，你们提前准备好。”</p>
@@ -432,13 +445,13 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderSyncParam</span> &#123;<br>    <span class="hljs-keyword">private</span> String orderNo;<br>    <span class="hljs-keyword">private</span> String channelCode;<br>    <span class="hljs-keyword">private</span> Long amount;<br>    <span class="hljs-keyword">private</span> List&lt;OrderItem&gt; items;<br>    <span class="hljs-comment">// 新增</span><br>    <span class="hljs-keyword">private</span> String splitOrderNo;<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p>这个改动，看起来人畜无害。</p>
-<p>但问题是：同一天，cloud-wms那边的<code>StockSyncHandler</code>也要加字段——它对接的库存系统要升级接口协议，一个字段从<code>int</code>改成了<code>long</code>。还有另一个Handler，供应商那边说原来的枚举值”REFUND_FULL”要废弃，改成”REFUND_COMPLETE”。</p>
+<p>但问题是：同一天，仓储中台那边的<code>StockSyncHandler</code>也要加字段——它对接的库存系统要升级接口协议，一个字段从<code>int</code>改成了<code>long</code>。还有另一个Handler，供应商那边说原来的枚举值”REFUND_FULL”要废弃，改成”REFUND_COMPLETE”。</p>
 <p>如果这些改动全部挤在一周内上线，而你没有一套机制来管理——那上线那天晚上，你可能就要通宵了。</p>
 <p>说一个真实教训：曾经有一个Handler的参数类型从<code>Integer</code>改成了<code>Long</code>，改了代码忘了改数据库里的JSON序列化逻辑，结果Parser反序列化的时候，JSON里的数字被当成<code>int</code>处理，溢出后变成负数。这个Handler对接的是一个财务系统，负数金额传过去，被风控系统拦截，整条链路挂了六个小时。</p>
 <p><strong>所以这不是一个技术难题，是一组工程纪律问题。</strong></p>
 <hr>
 <h2 id="三、SyncTaskParam：每个Handler拥有独立Schema"><a href="#三、SyncTaskParam：每个Handler拥有独立Schema" class="headerlink" title="三、SyncTaskParam：每个Handler拥有独立Schema"></a>三、SyncTaskParam：每个Handler拥有独立Schema</h2><h3 id="3-1-设计理念"><a href="#3-1-设计理念" class="headerlink" title="3.1 设计理念"></a>3.1 设计理念</h3><p>问题的本质是什么？是”统一消息格式”这个假设本身就有问题。</p>
-<p>DDIA第4章讲编码（Encoding）的时候，对比了Thrift、Protocol Buffers和Avro三种框架的Schema演化策略。它们解决的是同一个问题：<strong>生产者和消费者之间的数据格式在时间轴上不一致时，如何保持兼容？</strong></p>
+<p>DDIA第5章讲编码（Encoding）的时候，对比了Thrift、Protocol Buffers和Avro三种框架的Schema演化策略。它们解决的是同一个问题：<strong>生产者和消费者之间的数据格式在时间轴上不一致时，如何保持兼容？</strong></p>
 <p>但这些框架有一个共同的前提——数据格式是中心化定义的。Thrift有IDL，Protobuf有<code>.proto</code>文件，Avro有Schema Registry。所有消费者遵循同一份Schema，演化是自上而下的。</p>
 <p>这个前提在SyncTask的场景里完全不成立。93个Handler，50+个外部系统，没有一个组织能够定义一份”统一消息格式”来涵盖所有场景。即使定义了，任何一个外部系统的升级都会导致全局Schema变更，这根本不可行。</p>
 <p>所以SyncTask引擎做了一件反直觉的事：<strong>不统一消息格式，而是让每个Handler拥有独立的Schema。</strong></p>
@@ -517,10 +530,10 @@
 <li><strong>默认值是命</strong>：每一个新增字段，先确定它在null时的行为</li>
 <li><strong>枚举只加不减</strong>：生产存在的枚举值，永生</li>
 </ol>
-<p>这些规律，和DDIA第4章讲的Protobuf&#x2F;Avro的兼容性规则异曲同工。但DDIA是从格式规范的角度讲”不该做什么”，而我是在生产事故的废墟里学到的同样道理。</p>
+<p>这些规律，和DDIA第5章讲的Protobuf&#x2F;Avro的兼容性规则异曲同工。但DDIA是从格式规范的角度讲”不该做什么”，而我是在生产事故的废墟里学到的同样道理。</p>
 <hr>
-<h2 id="七、Choreography-vs-Orchestration：架构减法的代价"><a href="#七、Choreography-vs-Orchestration：架构减法的代价" class="headerlink" title="七、Choreography vs. Orchestration：架构减法的代价"></a>七、Choreography vs. Orchestration：架构减法的代价</h2><p>这一节回到DDIA第五章的核心框架，谈谈架构模式的选择如何影响消息格式演化。</p>
-<p>DDIA第五章虽然没有直接使用”Choreography”和”Orchestration”这两个词，但在讨论多主复制和无主复制的冲突解决策略时，其实是在讨论同一个本质问题：<strong>谁来管理数据的演化状态？</strong></p>
+<h2 id="七、Choreography-vs-Orchestration：架构减法的代价"><a href="#七、Choreography-vs-Orchestration：架构减法的代价" class="headerlink" title="七、Choreography vs. Orchestration：架构减法的代价"></a>七、Choreography vs. Orchestration：架构减法的代价</h2><p>这一节回到DDIA第六章（复制）的核心框架，谈谈架构模式的选择如何影响消息格式演化。</p>
+<p>DDIA第六章虽然没有直接使用”Choreography”和”Orchestration”这两个词，但在讨论多主复制和无主复制的冲突解决策略时，其实是在讨论同一个本质问题：<strong>谁来管理数据的演化状态？</strong></p>
 <ul>
 <li><strong>Orchestration模式</strong>：有一个中心节点（编排器）知道全局状态，调度所有参与者的执行和数据演化。消息格式的变更在一个中心化的Schema Registry里完成，所有参与者被动适配。</li>
 <li><strong>Choreography模式</strong>：没有中心编排器，每个参与者自主决定自己的行为和演化节奏。消息格式的变更分散在各处，通过异步消息传递事件来协调。</li>
@@ -576,11 +589,11 @@
 <p>我的回答是：**93个Handler确实多，但大部分Handler之间没有直接依赖。**DAG管理的是”Step-1完成才能执行Step-2”的拓扑依赖，而SyncTask的Handler是”各自独立执行、结果通过afterExecute事件异步传递”。这种场景下，引入DAG是过度设计。</p>
 <p>消息格式演化的管理也是一样。93个Handler不需要一个统一的Schema Registry来管控所有字段变更——那是Orchestration的思维，会把演化节奏拖到最慢的那个Handler。<strong>真正需要的是：每个Handler自主定义自己的格式（独立Param），把校验前置（Validator），把外部依赖隔离（SPI），然后在演化时遵守三条纪律。</strong></p>
 <p>这套机制生产上跑了两年多。93个Handler，每个月平均有3-5次参数格式变更，没有发生过一次因为格式不兼容导致的线上事故（前面说的那些坑，都是V1时期没有这套机制时发生的）。</p>
-<p>DDIA第五章结尾有一段话，大意是：<strong>构建可演化的系统，不止是技术问题，更是组织和文化问题——工具可以提供保护，但最终依赖于开发者的意识。</strong></p>
+<p>DDIA 在讨论编码与演化时表达过相近的意思，大意是：<strong>构建可演化的系统，不止是技术问题，更是组织和文化问题——工具可以提供保护，但最终依赖于开发者的意识。</strong>（具体章节需确认）</p>
 <p>给93个Handler写一套DAG编排引擎，纯粹是技术活儿。但让一个4人团队养成”每个字段变更都考虑兼容性”的肌肉记忆，这是管理活儿。后者比前者难十倍，但也重要十倍。</p>
 <p><strong>架构的价值从来不在于它有多精巧，而在于它有多抗造。在消息格式演化的战场上，纪律才是最好的Schema Registry。</strong></p>
 <hr>
-<p><em>本文是DDIA实战系列第5篇。下一篇预告：DDIA-06-实战：SyncTask的afterExecute Choreography模式如何实现跨系统的最终一致性。</em></p>
+<p><em>本文是DDIA实战系列第5篇。下一篇聊 DDIA-05：编码与演化——数据格式的兼容性规则。</em></p>
 
                 
               </div>
@@ -765,7 +778,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -865,7 +878,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -880,7 +894,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

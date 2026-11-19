@@ -8,36 +8,45 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/01/06/2026-01-06-从零实现FunctionCalling-工具注册表/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/01/06/2026-01-06-%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0FunctionCalling-%E5%B7%A5%E5%85%B7%E6%B3%A8%E5%86%8C%E8%A1%A8/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="定位：这是一篇学习笔记——我为了搞懂 Agent 原理，自己动手实现了一遍 Function Calling 基础设施。它是个 demo，不是生产框架。  一、Function Calling 到底在做什么概念上，Function Calling 是”让 LLM 输出结构化 JSON，声明要调用哪个函数、传什么参数”（原理我在另一篇《Function Calling：结构化输出的工具调用》里讲透">
+    <meta name="description" content="定位：这是一篇学习笔记——我为了搞懂 Agent 原理，自己动手实现了一遍 Function Calling 基础设施。它是个 demo，不是生产框架。 一、Function Calling 到底在做什么概念上，Function Calling 是”让 LLM 输出结构化 JSON，声明要调用哪个函数、传什么参数”（原理我在另一篇《Function Calling：结构化输出的工具调用》里讲透了）">
 <meta property="og:type" content="article">
 <meta property="og:title" content="从零实现 Function Calling：一个 39 行的工具注册表">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/01/06/2026-01-06-%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0FunctionCalling-%E5%B7%A5%E5%85%B7%E6%B3%A8%E5%86%8C%E8%A1%A8/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="定位：这是一篇学习笔记——我为了搞懂 Agent 原理，自己动手实现了一遍 Function Calling 基础设施。它是个 demo，不是生产框架。  一、Function Calling 到底在做什么概念上，Function Calling 是”让 LLM 输出结构化 JSON，声明要调用哪个函数、传什么参数”（原理我在另一篇《Function Calling：结构化输出的工具调用》里讲透">
+<meta property="og:description" content="定位：这是一篇学习笔记——我为了搞懂 Agent 原理，自己动手实现了一遍 Function Calling 基础设施。它是个 demo，不是生产框架。 一、Function Calling 到底在做什么概念上，Function Calling 是”让 LLM 输出结构化 JSON，声明要调用哪个函数、传什么参数”（原理我在另一篇《Function Calling：结构化输出的工具调用》里讲透了）">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/cc1d50c7eac1dde3d1cfea332e97a735.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/cc1d50c7eac1dde3d1cfea332e97a735.png">
 <meta property="article:published_time" content="2026-01-06T14:10:20.000Z">
-<meta property="article:modified_time" content="2026-11-02T11:10:09.291Z">
+<meta property="article:modified_time" content="2026-01-06T14:10:20.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Agent">
 <meta property="article:tag" content="Function Calling">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="工具注册表">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/cc1d50c7eac1dde3d1cfea332e97a735.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/cc1d50c7eac1dde3d1cfea332e97a735.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"从零实现 Function Calling：一个 39 行的工具注册表","datePublished":"2026-01-06T14:10:20.000Z","dateModified":"2026-01-06T14:10:20.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/01/06/2026-01-06-%E4%BB%8E%E9%9B%B6%E5%AE%9E%E7%8E%B0FunctionCalling-%E5%B7%A5%E5%85%B7%E6%B3%A8%E5%86%8C%E8%A1%A8/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -387,7 +396,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          3.2k 字
+          3.6k 字
         
       </span>
     
@@ -398,7 +407,7 @@
         
         
         
-          27 分钟
+          30 分钟
         
       </span>
     
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/agent/">AI / Agent 工程</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">从零实现 Function Calling：一个 39 行的工具注册表</h1>
+            <p id="seo-header">从零实现 Function Calling：一个 39 行的工具注册表</p>
             
             
               <div class="markdown-body">
@@ -437,7 +450,7 @@
 
 <p>核心是 <code>getDefinitions()</code> 和 <code>execute()</code> 两个方法，正好对应 Function Calling 的两个方向：</p>
 <ul>
-<li><strong>告诉模型”我有啥”</strong>：<code>getDefinitions()</code> 把所有工具转成 <code>name/description/input_schema</code> 清单，随请求发给 LLM；</li>
+<li><strong>告诉模型”我有啥”</strong>：<code>getDefinitions()</code> 把所有工具转成 <code>name/description/input_schema</code> 清单，随请求发给 LLM。注意 <code>input_schema</code> 是 <strong>Anthropic 的字段名</strong>；OpenAI 用的是 <code>function.parameters</code>，结构也不一样，不要当成通用格式；</li>
 <li><strong>模型说”我要用 X”</strong>：<code>execute()</code> 按名字从注册表查到工具，把 LLM 填的参数传进去执行。</li>
 </ul>
 <h2 id="四、LlmClient：大脑的连接"><a href="#四、LlmClient：大脑的连接" class="headerlink" title="四、LlmClient：大脑的连接"></a>四、LlmClient：大脑的连接</h2><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">LlmClient</span> &#123;<br>    LlmResponse <span class="hljs-title function_">chat</span><span class="hljs-params">(List&lt;Message&gt; messages, List&lt;Map&lt;String, Object&gt;&gt; tools)</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
@@ -446,6 +459,8 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">record</span> <span class="hljs-title class_">LlmResponse</span><span class="hljs-params">(</span><br><span class="hljs-params">        String stopReason,          // 模型为什么停：end_turn / tool_use</span><br><span class="hljs-params">        String text,                // 最终文本（end_turn 时）</span><br><span class="hljs-params">        String toolName,            // 要调的工具（tool_use 时）</span><br><span class="hljs-params">        Map&lt;String, Object&gt; toolInput  // 工具参数（tool_use 时）</span><br><span class="hljs-params">)</span> &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">isDone</span><span class="hljs-params">()</span>     &#123; <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;end_turn&quot;</span>.equals(stopReason); &#125;<br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">isToolCall</span><span class="hljs-params">()</span> &#123; <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;tool_use&quot;</span>.equals(stopReason); &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
 <p><strong>模型每次响应只做两件事之一：要么完成任务输出文本（<code>end_turn</code>），要么想调一个工具（<code>tool_use</code>）。</strong> 把这两件事判出来，Agent 的循环逻辑就成立了。</p>
+<p>这里的 <code>end_turn</code> &#x2F; <code>tool_use</code> 是 <strong>Anthropic 的 stop_reason 取值</strong>；OpenAI 用 <code>finish_reason</code> 和 <code>tool_calls</code>，字段形态不同。</p>
+<p>还有一个容易漏的关联：回填工具结果时，Anthropic 要求 <code>tool_result</code> 块带上对应的 <code>tool_use_id</code>，OpenAI 用 <code>tool_call_id</code>。模型靠这个 id 知道”这条结果是哪次调用的”。<strong>如果丢了这个关联，并行调用多个工具时结果就会串。</strong></p>
 <h2 id="五、设计洞察：注册表模式，我在-SyncTask-里见过"><a href="#五、设计洞察：注册表模式，我在-SyncTask-里见过" class="headerlink" title="五、设计洞察：注册表模式，我在 SyncTask 里见过"></a>五、设计洞察：注册表模式，我在 SyncTask 里见过</h2><p>写完 <code>ToolRegistry</code> 我有种强烈的既视感——<strong>它和我做的 SyncTask 引擎的 HandlerRegistry 是同构的</strong>：</p>
 <table>
 <thead>
@@ -481,7 +496,8 @@
 <h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ul>
 <li>Tool 接口 4 个方法：<code>name/description/parameters/execute</code>，前两个给 LLM，后两个给程序；</li>
 <li>ToolRegistry 两个关键方法：<code>getDefinitions()</code>（告诉模型有啥）、<code>execute()</code>（执行模型选中的工具）；</li>
-<li>LlmResponse 判定：<code>end_turn</code> &#x3D; 完成，<code>tool_use</code> &#x3D; 想调工具——这是 Agent 循环成立的前提；</li>
+<li>LlmResponse 判定：<code>end_turn</code> &#x3D; 完成，<code>tool_use</code> &#x3D; 想调工具——这是 Agent 循环成立的前提（<code>tool_use</code> 和 <code>input_schema</code> 是 Anthropic 的字段名，OpenAI 不同）；</li>
+<li>回填工具结果要带调用 id（Anthropic <code>tool_use_id</code> &#x2F; OpenAI <code>tool_call_id</code>），否则并行工具结果会串；</li>
 <li>注册表模式与 SyncTask 的 HandlerRegistry <strong>同构</strong>，是迁移理解 Agent 的捷径；</li>
 <li>学习 demo 的骨架，生产级要补超时&#x2F;重试&#x2F;并发&#x2F;日志。</li>
 </ul>
@@ -521,11 +537,11 @@
       
         <a href="/tags/Java/" class="print-no-link">#Java</a>
       
+        <a href="/tags/Agent/" class="print-no-link">#Agent</a>
+      
         <a href="/tags/Function-Calling/" class="print-no-link">#Function Calling</a>
       
         <a href="/tags/%E5%B7%A5%E5%85%B7%E6%B3%A8%E5%86%8C%E8%A1%A8/" class="print-no-link">#工具注册表</a>
-      
-        <a href="/tags/Agent/" class="print-no-link">#Agent</a>
       
     </div>
   
@@ -671,7 +687,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -771,7 +787,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -786,7 +803,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

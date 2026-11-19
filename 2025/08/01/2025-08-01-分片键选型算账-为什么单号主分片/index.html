@@ -8,36 +8,45 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/08/01/2025-08-01-分片键选型算账-为什么单号主分片/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2025/08/01/2025-08-01-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E5%9E%8B%E7%AE%97%E8%B4%A6-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E5%8F%B7%E4%B8%BB%E5%88%86%E7%89%87/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、先回答”什么时候该分”分库分表最容易被问倒的第一题是：为什么分？ 我的判断信号有三个，缺一不可：  单表数据量逼近千万级：订单销售信息表累计接近 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级； 写入成为瓶颈：单库单库的写入能力到了上限； 目标是横向扩容，不是优化单点查询。  在到达这个信号之前，我们经历过一段”假分片”：早期是渠道垂直分表——拼多多一张表、京东">
+    <meta name="description" content="一、先回答”什么时候该分”分库分表最容易被问倒的第一题是：为什么分？ 我的判断信号有三个，缺一不可： 单表数据量逼近千万级：订单销售信息表上线前累计约 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级； 写入成为瓶颈：单库单表的写入能力到了上限； 目标是横向扩容，不是优化单点查询。 在到达这个信号之前，我们经历过一段”假分片”：早期是渠道垂直分表——拼多多一张表、京东">
 <meta property="og:type" content="article">
 <meta property="og:title" content="分片键选型的算账：为什么单号主分片，而不是时间主分片">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2025/08/01/2025-08-01-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E5%9E%8B%E7%AE%97%E8%B4%A6-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E5%8F%B7%E4%B8%BB%E5%88%86%E7%89%87/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、先回答”什么时候该分”分库分表最容易被问倒的第一题是：为什么分？ 我的判断信号有三个，缺一不可：  单表数据量逼近千万级：订单销售信息表累计接近 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级； 写入成为瓶颈：单库单库的写入能力到了上限； 目标是横向扩容，不是优化单点查询。  在到达这个信号之前，我们经历过一段”假分片”：早期是渠道垂直分表——拼多多一张表、京东">
+<meta property="og:description" content="一、先回答”什么时候该分”分库分表最容易被问倒的第一题是：为什么分？ 我的判断信号有三个，缺一不可： 单表数据量逼近千万级：订单销售信息表上线前累计约 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级； 写入成为瓶颈：单库单表的写入能力到了上限； 目标是横向扩容，不是优化单点查询。 在到达这个信号之前，我们经历过一段”假分片”：早期是渠道垂直分表——拼多多一张表、京东">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2f029ff1cdf342f472134f9cb5f6dd6f.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2f029ff1cdf342f472134f9cb5f6dd6f.png">
 <meta property="article:published_time" content="2025-08-01T13:26:42.000Z">
-<meta property="article:modified_time" content="2026-11-03T02:51:45.259Z">
+<meta property="article:modified_time" content="2025-08-01T13:26:42.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="分库分表">
 <meta property="article:tag" content="分片键">
 <meta property="article:tag" content="数据库">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2f029ff1cdf342f472134f9cb5f6dd6f.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2f029ff1cdf342f472134f9cb5f6dd6f.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"分片键选型的算账：为什么单号主分片，而不是时间主分片","datePublished":"2025-08-01T13:26:42.000Z","dateModified":"2025-08-01T13:26:42.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/08/01/2025-08-01-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E5%9E%8B%E7%AE%97%E8%B4%A6-%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E5%8F%B7%E4%B8%BB%E5%88%86%E7%89%87/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -409,9 +418,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">分片键选型的算账：为什么单号主分片，而不是时间主分片</h1>
+            <p id="seo-header">分片键选型的算账：为什么单号主分片，而不是时间主分片</p>
             
             
               <div class="markdown-body">
@@ -419,8 +432,8 @@
                 <h2 id="一、先回答”什么时候该分”"><a href="#一、先回答”什么时候该分”" class="headerlink" title="一、先回答”什么时候该分”"></a>一、先回答”什么时候该分”</h2><p>分库分表最容易被问倒的第一题是：<strong>为什么分？</strong></p>
 <p>我的判断信号有三个，缺一不可：</p>
 <ol>
-<li><strong>单表数据量逼近千万级</strong>：订单销售信息表累计接近 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级；</li>
-<li><strong>写入成为瓶颈</strong>：单库单库的写入能力到了上限；</li>
+<li><strong>单表数据量逼近千万级</strong>：订单销售信息表上线前累计约 6000 万行、单月增量约 380 万行——索引、缓存、读写分离都扛不住的量级；</li>
+<li><strong>写入成为瓶颈</strong>：单库单表的写入能力到了上限；</li>
 <li><strong>目标是横向扩容</strong>，不是优化单点查询。</li>
 </ol>
 <p>在到达这个信号之前，我们经历过一段”假分片”：早期是<strong>渠道垂直分表</strong>——拼多多一张表、京东一张表。问题很明显：手工拆分、没有分布式路由、每开一个新渠道要新建一套表、Schema 变更要同步 N 张表。这没有真正的扩容&#x2F;路由能力，只是把数据”物理上拆开”了。</p>
@@ -436,9 +449,9 @@
 <p><strong>单号主分片</strong>：订单号唯一、天然均匀 → 按它分片，每条写入和状态流转<strong>精准路由到单物理表</strong> → <strong>写路径零广播</strong>。</p>
 <p><strong>时间主分片</strong>：按创建时间分片，对统计查询友好、按时间扩容天然无感——但有个致命问题：<strong>每条写事件会广播到全部分片</strong>。为什么？因为一个订单从创建到发货到取消，跨越很长时间，按时间分片的话，订单状态流转时它的分片在变，业务方根本不知道去哪查，只能广播所有分片。</p>
 <p><strong>写广播是分片方案里最严重的问题</strong>：分片后写是高频路径，写一条数据若广播到所有分片，等于所有分片都要处理——白分片，还引入跨片一致性难题。所以主分片键<strong>一定选高频查写的那一个</strong>。</p>
-<p>一句话：<strong>单号对应”单点高频访问”，时间对应”范围统计访问”——前者是写路径的命脉，后者可以交给别处。</strong> 这就是”分片键匹配查询访问模式”（DDIA 第 6 章分区思想的精髓）。</p>
+<p>一句话：<strong>单号对应”单点高频访问”，时间对应”范围统计访问”——前者是写路径的命脉，后者可以交给别处。</strong> 这就是”分片键匹配查询访问模式”（DDIA 第 7 章分区思想的精髓）。</p>
 <h2 id="四、复杂统计查询：不硬扛，下沉-Doris"><a href="#四、复杂统计查询：不硬扛，下沉-Doris" class="headerlink" title="四、复杂统计查询：不硬扛，下沉 Doris"></a>四、复杂统计查询：不硬扛，下沉 Doris</h2><p>选了单号分片，代价是<strong>按时间&#x2F;多维度统计的查询变成广播</strong>。我的处理不是硬扛，而是<strong>异构存储</strong>：</p>
-<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">MySQL（<span class="hljs-number">8</span>片）──<span class="hljs-keyword">binlog──▶ </span>Canal ──▶ Kafka ──▶ Doris（OLAP 宽表）<br>  分片只解决<span class="hljs-string">&quot;写入 + 分片键单点查询&quot;</span><br>  Doris 承接所有复杂统计查询<br></code></pre></td></tr></table></figure>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">MySQL（上线时 <span class="hljs-number">8</span> 片）──<span class="hljs-keyword">binlog──▶ </span>Canal ──▶ Kafka ──▶ Doris（OLAP 宽表）<br>  分片只解决<span class="hljs-string">&quot;写入 + 分片键单点查询&quot;</span><br>  Doris 承接所有复杂统计查询<br></code></pre></td></tr></table></figure>
 
 <p><strong>OLTP 分片只解决”写入 + 分片键单点查询”，复杂查询给 OLAP。</strong> 这个分工清楚了，分片方案才站得住。</p>
 <h2 id="五、哈希算法：别裸用-String-hashCode"><a href="#五、哈希算法：别裸用-String-hashCode" class="headerlink" title="五、哈希算法：别裸用 String.hashCode()"></a>五、哈希算法：别裸用 String.hashCode()</h2><p>单号是字符串，直接 <code>orderNo.hashCode() % 8</code> 是大坑——<code>String.hashCode()</code> 的分布特性差，特定前缀可能扎堆。我用的是 <strong>HASH_MOD（ShardingSphere auto-tables）&#x2F; FNV &#x2F; Murmur</strong> 这类分布均匀的哈希。</p>
@@ -657,7 +670,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -757,7 +770,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -772,7 +786,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

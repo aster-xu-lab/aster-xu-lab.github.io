@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/07/22/2024-07-22-DDIA-10-2PC与共识/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/07/22/2024-07-22-DDIA-10-2PC%E4%B8%8E%E5%85%B1%E8%AF%86/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -28,9 +34,9 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="两阶段提交(2PC)和Raft&#x2F;Paxos共识算法看起来都涉及多节点协调，但它们的本质完全不同。本文从电商库存扣减场景切入，厘清原子提交与共识的边界。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4696969d4800cfb81b51cd08d1750f0.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4696969d4800cfb81b51cd08d1750f0.png">
 <meta property="article:published_time" content="2024-07-22T12:11:55.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.594Z">
+<meta property="article:modified_time" content="2024-07-22T12:11:55.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="2PC">
 <meta property="article:tag" content="DDIA">
@@ -38,7 +44,10 @@
 <meta property="article:tag" content="共识算法">
 <meta property="article:tag" content="分布式事务">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4696969d4800cfb81b51cd08d1750f0.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4696969d4800cfb81b51cd08d1750f0.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-10-两阶段提交与共识的边界：电商库存扣减为什么不能偷懒","datePublished":"2024-07-22T12:11:55.000Z","dateModified":"2024-07-22T12:11:55.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/07/22/2024-07-22-DDIA-10-2PC%E4%B8%8E%E5%85%B1%E8%AF%86/"}}</script>
   
   
   
@@ -213,7 +222,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -388,7 +397,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          7.1k 字
+          7.2k 字
         
       </span>
     
@@ -410,9 +419,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-10-两阶段提交与共识的边界：电商库存扣减为什么不能偷懒</h1>
+            <p id="seo-header">DDIA-10-两阶段提交与共识的边界：电商库存扣减为什么不能偷懒</p>
             
             
               <div class="markdown-body">
@@ -431,7 +444,7 @@
 <li><p>Phase 2（Commit&#x2F;Abort）：协调者根据所有参与者的投票结果，发送Commit或Abort。参与者按照指令执行最终操作并释放锁。</p>
 </li>
 </ol>
-<p>DDIA第9章有一个精确的表述：<strong>“两阶段提交将一个分布式事务的提交拆分为一个关键的、不可逆的决策点。”</strong> 这个决策点就是协调者收到所有YES之后、发送Commit之前的那一刻。从那一刻起，结果已经锁定，无法反悔。</p>
+<p>DDIA第8章（事务）有一个表述，大意（第8章）是：<strong>两阶段提交将一个分布式事务的提交拆分为一个关键的、不可逆的决策点。</strong> 这个决策点就是协调者收到所有YES之后、发送Commit之前的那一刻。从那一刻起，结果已经锁定，无法反悔。</p>
 <p>这里有一个容易混淆的点：2PC确实也有投票和多数派的概念（所有参与者都YES才提交），这和Paxos的Prepare&#x2F;Promise机制看似相似。但区别在于——2PC的”投票”是为了<strong>原子性的决策</strong>（全局是commit还是abort），而Paxos&#x2F;Raft的”投票”是为了<strong>在多个副本之间选出一个值</strong>，保证读到同一个值的人不会读到不同版本。目标和语义完全不同。</p>
 <h2 id="三、2PC的致命弱点：容错"><a href="#三、2PC的致命弱点：容错" class="headerlink" title="三、2PC的致命弱点：容错"></a>三、2PC的致命弱点：容错</h2><p>DDIA用了一整节讲2PC的容错问题，核心就一句话：<strong>2PC在协调者故障时，参与者会陷入in-doubt状态，无法自主恢复。</strong></p>
 <p>具体展开一下。假设协调者在发送了”YES”投票后崩溃，参与者就处于一个尴尬的位置：</p>
@@ -443,10 +456,10 @@
 <p>这个状态就是in-doubt。在实际系统中，in-doubt事务会一直持有行级锁，导致其他事务在争抢同一行时阻塞。如果协调者长时间不可用，阻塞会像雪崩一样扩散——库存表的某几行被锁死，扣减请求全部超时，上层重试再叠加，整个库存链路雪崩。</p>
 <p>这就是2PC的核心矛盾：<strong>它把系统正确性绑定在了协调者这一个单点上。</strong> 在CAP框架里，2PC是一个典型的选择C而放弃A的方案——网络分区时，为了保证一致性，多个分区会拒绝服务。协调者不是网络分区，但它的故障等同于网络分区：参与者联系不上协调者，必须阻塞。</p>
 <p>有人会问：数据库厂商不是有XA事务的自动恢复机制吗？MySQL的在in-doubt超时后可以自动回滚或提交，Oracle有DBA手动的<code>COMMIT FORCE</code>。这些是工程上的补救手段，但不是协议层面的解决方案。它们在超时后假设一个结果（通常是rollback），这已经违反了2PC的语义（协议上说必须等协调者通知）。</p>
-<p>这就是DDIA那句经典总结的出处：<strong>“2PC是一个共识协议——但它是一个容易受单点故障影响的、不完整的共识协议。”</strong> 这句话很妙，后面我们会回来。</p>
+<p>这就是DDIA第8章那段经典讨论的大意（第8章）：<strong>2PC可以看作一种共识协议——但它容易受协调者单点故障影响，是一个不完整的共识协议。</strong> 这个判断很妙，后面我们会回来。</p>
 <h2 id="四、Raft-Paxos解决什么问题？"><a href="#四、Raft-Paxos解决什么问题？" class="headerlink" title="四、Raft&#x2F;Paxos解决什么问题？"></a>四、Raft&#x2F;Paxos解决什么问题？</h2><p>现在看共识协议这一边。</p>
 <p>Multipaxos和Raft要解决的问题可以概括为：<strong>在一个有节点故障和网络分区的异步系统中，让多个节点对一系列值的顺序达成一致，并且保证任何时刻，任意多数的节点中至少有一个拥有全部已提交的日志。</strong></p>
-<p>典型的应用场景：一个Redis Cluster的三节点复制组，主节点接受写入，同步到两个从节点。当主节点宕机时，剩下的两个节点通过Raft选举出新的Leader，新的Leader保证它拥有所有已提交的日志条目，不会丢数据。</p>
+<p>典型的应用场景：一个基于 Raft 的三节点复制组（如 etcd、TiKV），主节点接受写入，同步到两个从节点。当主节点宕机时，剩下的两个节点通过 Raft 选举出新的 Leader，新的 Leader 保证它拥有所有已提交的日志条目，不会丢数据。注意，Redis Cluster 用的是 gossip 与故障转移选举，并不是 Raft。</p>
 <p>关键点：Raft操作的是<strong>同一个状态机的多个副本</strong>。每个副本运行的是完全相同的状态机逻辑，它们的差异仅限于日志的先后顺序。Raft保证的是这些副本的日志顺序一致，从而保证状态机输出一致。</p>
 <p>这和2PC的差异就非常明显了：</p>
 <table>
@@ -515,7 +528,7 @@
 <figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs crmsh">┌──────────────────────────────────────────┐<br>│         业务事务层 (TCC / Saga)            │<br>│   订单服务 ◄────协调器────► 库存服务       │<br>│   (状态机 + 幂等 + 补偿)                   │<br>├──────────────────────────────────────────┤<br>│         数据复制层 (Raft / Paxos)          │<br>│   订单DB副本组        库存DB副本组          │<br>│   (日志一致 + 自动切换)                    │<br>├──────────────────────────────────────────┤<br>│         元数据/协调层 (Raft)               │<br>│   配置中心  调度<span class="hljs-keyword">Master</span>  <span class="hljs-title">协调器HA</span>            │<br>└──────────────────────────────────────────┘<br></code></pre></td></tr></table></figure>
 
 <p>每一层都由不同的协议支撑，顶层和下层的关注点完全不交叉。这就是”偷懒”想用一层协议解决所有问题的荒谬之处——它把不同抽象层次的问题强行坍缩成了一个。</p>
-<h2 id="七、DDIA第9-10章的中心论题：从原子提交到共识的跃迁"><a href="#七、DDIA第9-10章的中心论题：从原子提交到共识的跃迁" class="headerlink" title="七、DDIA第9-10章的中心论题：从原子提交到共识的跃迁"></a>七、DDIA第9-10章的中心论题：从原子提交到共识的跃迁</h2><p>DDIA的第9章”一致性与共识”和第10章”原子提交与共识”其实是一个递进结构。第9章的结论是：需要线性一致性的场景（唯一ID、Leader选举、加锁）依赖共识。第10章则把这个结论反过来：<strong>原子提交是共识问题的特例——让多个节点对一个二值结果（commit&#x2F;abort）达成一致。</strong></p>
+<h2 id="七、DDIA第8章与第10章的中心论题：从原子提交到共识的跃迁"><a href="#七、DDIA第8章与第10章的中心论题：从原子提交到共识的跃迁" class="headerlink" title="七、DDIA第8章与第10章的中心论题：从原子提交到共识的跃迁"></a>七、DDIA第8章与第10章的中心论题：从原子提交到共识的跃迁</h2><p>DDIA的第8章（事务）用一节讲2PC与原子提交，第10章（一致性与共识）讨论共识，两者其实是一个递进结构。第8章的结论是：2PC的提交决策绑定在协调者上，协调者故障会让参与者陷入in-doubt。第10章则把这个结论反过来：<strong>原子提交可以转化为共识问题——让多个节点对一个二值结果（commit&#x2F;abort）达成一致。</strong></p>
 <p>这句话很漂亮，但需要细品。它不是说2PC可以当共识协议用（因为2PC不解决容错），而是说如果有一个足够健壮的共识协议，原子提交可以转化为共识问题。DDIA举的例子是ZooKeeper的原子广播（ZAB）和Google Spanner的TrueTime+Paxos组合。这些系统的做法是：<strong>把”所有参与者是否同意的决策”变成”把决策写入共识日志”</strong>——只要共识层保证了日志的一致性和容错，上层就不再需要协调者了，也不用担心in-doubt。</p>
 <p>换句话说：2PC的协调者是集中式的单点，而基于共识的原子提交把这个单点替换成了一个Raft Group。我们的TCC协调器做HA就是这个思路的具体落地——只是我们的共识范围仅限于协调器自身，没有囊括全部参与者的业务数据。</p>
 <p>这也解释了一个面试高频问题：”2PC和Raft都是两阶段协议，它们到底是什么关系？” 标准答案不是”没关系”，也不是”一回事”，而是：<strong>2PC是原子提交协议（不保证容错），Raft是共识协议（保证容错）。当你在一个容错的共识层上实现原子提交时，你就得到了一个没有单点故障的2PC。</strong></p>
@@ -719,7 +732,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -819,7 +832,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -834,7 +848,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

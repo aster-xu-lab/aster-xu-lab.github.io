@@ -8,16 +8,22 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/09/14/2024-09-14-DDIA-11-MapReduce灵魂/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/09/14/2024-09-14-DDIA-11-MapReduce%E7%81%B5%E9%AD%82/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
@@ -28,16 +34,19 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="MapReduce虽然用得少了，但分区→排序→归并的设计思想是Spark&#x2F;Hive&#x2F;Flink等所有现代批处理引擎的基石。本文从设计哲学出发，结合供应链日报表的实战场景，深入剖析为什么这个看似老掉牙的模型依然在支配着今天的海量数据处理。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ca9788469308b91a04398bfb8f2293c9.png#pic_center">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ca9788469308b91a04398bfb8f2293c9.png">
 <meta property="article:published_time" content="2024-09-13T22:14:30.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.596Z">
+<meta property="article:modified_time" content="2024-09-13T22:14:30.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="MapReduce">
 <meta property="article:tag" content="Spark">
 <meta property="article:tag" content="批处理">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ca9788469308b91a04398bfb8f2293c9.png#pic_center">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ca9788469308b91a04398bfb8f2293c9.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-11-MapReduce的灵魂：分区、排序、归并为什么是批处理的基石","datePublished":"2024-09-13T22:14:30.000Z","dateModified":"2024-09-13T22:14:30.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/09/14/2024-09-14-DDIA-11-MapReduce%E7%81%B5%E9%AD%82/"}}</script>
   
   
   
@@ -212,7 +221,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -409,14 +418,18 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-11-MapReduce的灵魂：分区、排序、归并为什么是批处理的基石</h1>
+            <p id="seo-header">DDIA-11-MapReduce的灵魂：分区、排序、归并为什么是批处理的基石</p>
             
             
               <div class="markdown-body">
                 
-                <h2 id="一、为什么要在2026年聊MapReduce？"><a href="#一、为什么要在2026年聊MapReduce？" class="headerlink" title="一、为什么要在2026年聊MapReduce？"></a>一、为什么要在2026年聊MapReduce？</h2><p>这个问题我问过自己很多次。MapReduce这个2004年发表的模型，在2026年看来已经是一个”古董级”的技术。日常开发中你大概率不会直接写MapReduce代码——Hive写SQL、Spark写DataFrame API、Flink写流式拓扑，都比手写Mapper和Reducer舒服得多。</p>
+                <h2 id="一、为什么今天还要聊MapReduce？"><a href="#一、为什么今天还要聊MapReduce？" class="headerlink" title="一、为什么今天还要聊MapReduce？"></a>一、为什么今天还要聊MapReduce？</h2><p>这个问题我问过自己很多次。MapReduce这个2004年发表的模型，在今天看来已经是一个”古董级”的技术。日常开发中你大概率不会直接写MapReduce代码——Hive写SQL、Spark写DataFrame API、Flink写流式拓扑，都比手写Mapper和Reducer舒服得多。</p>
 <p>但是，如果你问我近些年对分布式系统理解最深的一个顿悟瞬间，我会毫不犹豫地说：<strong>当我意识到Spark的Shuffle本质上就是MapReduce的Partition→Sort→Reduce三连击的时候。</strong></p>
 <p>那一刻突然就通了。原来你看过的所有批处理引擎——无论它披着SQL的外衣、Streaming的管道、还是DataFrame的API——骨子里都在执行同一套模式：分区、排序、归并。</p>
 <p>这也是《Designing Data-Intensive Applications》第11章花了整整一节讲MapReduce的原因。Martin Kleppmann不是在介绍一个落伍的技术，而是在解剖批处理系统最核心的DNA。</p>
@@ -472,7 +485,7 @@
 <p>你看，即便是”无限流”这种看起来跟批处理完全不同的场景，核心思路依然是分区→排序→归并。分区保证数据不散，排序保证数据有序，归并保证计算完整。</p>
 <h2 id="四、实战：从全量扫表到增量快照"><a href="#四、实战：从全量扫表到增量快照" class="headerlink" title="四、实战：从全量扫表到增量快照"></a>四、实战：从全量扫表到增量快照</h2><p>讲完理论，来一段我工作里碰到过的真实场景。供应链场景下，我们每天早上需要跑一份”前天订单汇总报表”——统计每个仓库&#x2F;品类的出库量、金额、时效等指标，推送给各仓负责人。</p>
 <h3 id="4-1-初期版本：一条SQL全量扫"><a href="#4-1-初期版本：一条SQL全量扫" class="headerlink" title="4.1 初期版本：一条SQL全量扫"></a>4.1 初期版本：一条SQL全量扫</h3><p>刚开始很简单，凌晨3点直接跑一条SQL：</p>
-<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> warehouse_id, category_code,<br>       <span class="hljs-built_in">COUNT</span>(order_id) <span class="hljs-keyword">AS</span> order_cnt,<br>       <span class="hljs-built_in">SUM</span>(order_amount) <span class="hljs-keyword">AS</span> total_amount,<br>       <span class="hljs-built_in">AVG</span>(delivery_hours) <span class="hljs-keyword">AS</span> avg_delivery_time<br><span class="hljs-keyword">FROM</span> t_order<br><span class="hljs-keyword">WHERE</span> create_time <span class="hljs-operator">&gt;=</span> <span class="hljs-string">&#x27;2025-01-01&#x27;</span> <span class="hljs-keyword">AND</span> create_time <span class="hljs-operator">&lt;</span> <span class="hljs-string">&#x27;2025-01-02&#x27;</span><br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> warehouse_id, category_code;<br></code></pre></td></tr></table></figure>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> warehouse_id, category_code,<br>       <span class="hljs-built_in">COUNT</span>(order_id) <span class="hljs-keyword">AS</span> order_cnt,<br>       <span class="hljs-built_in">SUM</span>(order_amount) <span class="hljs-keyword">AS</span> total_amount,<br>       <span class="hljs-built_in">AVG</span>(delivery_hours) <span class="hljs-keyword">AS</span> avg_delivery_time<br><span class="hljs-keyword">FROM</span> t_order<br><span class="hljs-keyword">WHERE</span> create_time <span class="hljs-operator">&gt;=</span> <span class="hljs-string">&#x27;2024-01-01&#x27;</span> <span class="hljs-keyword">AND</span> create_time <span class="hljs-operator">&lt;</span> <span class="hljs-string">&#x27;2024-01-02&#x27;</span><br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> warehouse_id, category_code;<br></code></pre></td></tr></table></figure>
 
 <p>随着订单量从日百万涨到日千万，这条SQL的执行时间也从2分钟慢慢爬到40多分钟。问题很明确：全量扫描越来越打不动了。</p>
 <h3 id="4-2-优化版本：按天分区-增量快照"><a href="#4-2-优化版本：按天分区-增量快照" class="headerlink" title="4.2 优化版本：按天分区 + 增量快照"></a>4.2 优化版本：按天分区 + 增量快照</h3><p>这个问题的解，恰好就是MapReduce思想的实战落地。</p>
@@ -527,7 +540,7 @@
 <p>二分查找依赖有序、归并排序依赖有序、LSM-Tree依赖有序、B+Tree也依赖有序。排序是让数据从混沌到有序的第一步。在批处理中，排序就是这个”让同key数据物理相邻”的那一步。</p>
 <h3 id="5-3-归并-聚合"><a href="#5-3-归并-聚合" class="headerlink" title="5.3 归并 &#x3D; 聚合"></a>5.3 归并 &#x3D; 聚合</h3><p>归并是把有序的东西合在一起进行处理。归并排序的merge步骤、MapReduce的reduce步骤、数据库的aggregation算子，都是同一个模式：<strong>输入有序序列，输出聚合结果。</strong></p>
 <p>换句话说，归并是”把局部有序转化为全局结果”的那一步。先分区让数据分散，再排序让数据局部有序，最后归并完成全局聚合——三步构成一个完整的”分→治→合”闭环。</p>
-<h2 id="六、DDIA第11章的呼应：批处理引擎的设计空间"><a href="#六、DDIA第11章的呼应：批处理引擎的设计空间" class="headerlink" title="六、DDIA第11章的呼应：批处理引擎的设计空间"></a>六、DDIA第11章的呼应：批处理引擎的设计空间</h2><p>DDIA第11章”Stream Processing”的姊妹章是第10章”Batch Processing”，两位一体讨论数据处理。第10章从MapReduce讲到Spark，核心观点是：<strong>批处理引擎的设计空间围绕三个轴展开——数据模型、执行模型和存储布局。</strong> 而MapReduce用最朴素的三个原语（partition、sort、reduce）就把这三根轴串在了一起：</p>
+<h2 id="六、DDIA第11章的呼应：批处理引擎的设计空间"><a href="#六、DDIA第11章的呼应：批处理引擎的设计空间" class="headerlink" title="六、DDIA第11章的呼应：批处理引擎的设计空间"></a>六、DDIA第11章的呼应：批处理引擎的设计空间</h2><p>DDIA第11章讲”Batch Processing”（批处理），第12章讲”Stream Processing”（流处理），两者是姊妹章。第11章从MapReduce讲到Spark，核心观点是：<strong>批处理引擎的设计空间围绕三个轴展开——数据模型、执行模型和存储布局。</strong> 而MapReduce用最朴素的三个原语（partition、sort、reduce）就把这三根轴串在了一起：</p>
 <ul>
 <li><strong>数据模型</strong>：key-value对是最简单的通用抽象，什么数据都可以表示成k-v。</li>
 <li><strong>执行模型</strong>：Map→Partition→Sort→Reduce的流水线是可组合的。一个Reduce的输出可以作为下一个Map的输入，形成DAG。</li>
@@ -735,7 +748,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -835,7 +848,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -850,7 +864,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });

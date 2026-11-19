@@ -8,34 +8,43 @@
 <head>
   <meta charset="UTF-8">
 
+  <link rel="preconnect" href="https://lib.baomitu.com">
+  <link rel="dns-prefetch" href="//lib.baomitu.com">
+  <link rel="preconnect" href="https://at.alicdn.com">
+  <link rel="dns-prefetch" href="//at.alicdn.com">
+
   <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
   <link rel="icon" href="/img/favicon.png">
   
-    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/04/17/2024-04-17-DDIA-08-ACID真正含义/"/>
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2024/04/17/2024-04-17-DDIA-08-ACID%E7%9C%9F%E6%AD%A3%E5%90%AB%E4%B9%89/"/>
   
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
   <meta http-equiv="x-ua-compatible" content="ie=edge">
   
-  <meta name="theme-color" content="#2f4154">
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="引言：ACID 是面试的起点，不是终点面试官问：”说一下事务的 ACID 特性”，大部分候选人的回答是标准八股文版本：  A（Atomicity）：要么全成功，要么全失败 C（Consistency）：事务前后数据满足约束 I（Isolation）：多个事务之间互不干扰 D（Durability）：提交后永久保存  这样的回答可以拿及格分，但也暴露了一个问题：候选人的理解停留在教科书层面，没有经历">
+    <meta name="description" content="引言：ACID 是面试的起点，不是终点面试官问：”说一下事务的 ACID 特性”，大部分候选人的回答是标准八股文版本： A（Atomicity）：要么全成功，要么全失败 C（Consistency）：事务前后数据满足约束 I（Isolation）：多个事务之间互不干扰 D（Durability）：提交后永久保存 这样的回答可以拿及格分，但也暴露了一个问题：候选人的理解停留在教科书层面，没有经历过大">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-08-ACID到底是什么意思：比面试官问的深一点">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/17/2024-04-17-DDIA-08-ACID%E7%9C%9F%E6%AD%A3%E5%90%AB%E4%B9%89/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="引言：ACID 是面试的起点，不是终点面试官问：”说一下事务的 ACID 特性”，大部分候选人的回答是标准八股文版本：  A（Atomicity）：要么全成功，要么全失败 C（Consistency）：事务前后数据满足约束 I（Isolation）：多个事务之间互不干扰 D（Durability）：提交后永久保存  这样的回答可以拿及格分，但也暴露了一个问题：候选人的理解停留在教科书层面，没有经历">
+<meta property="og:description" content="引言：ACID 是面试的起点，不是终点面试官问：”说一下事务的 ACID 特性”，大部分候选人的回答是标准八股文版本： A（Atomicity）：要么全成功，要么全失败 C（Consistency）：事务前后数据满足约束 I（Isolation）：多个事务之间互不干扰 D（Durability）：提交后永久保存 这样的回答可以拿及格分，但也暴露了一个问题：候选人的理解停留在教科书层面，没有经历过大">
 <meta property="og:locale" content="zh_CN">
 <meta property="article:published_time" content="2024-04-17T12:44:04.000Z">
-<meta property="article:modified_time" content="2026-11-16T03:33:29.591Z">
+<meta property="article:modified_time" content="2024-04-17T12:44:04.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ACID">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="事务">
 <meta property="article:tag" content="数据库">
 <meta name="twitter:card" content="summary_large_image">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-08-ACID到底是什么意思：比面试官问的深一点","datePublished":"2024-04-17T12:44:04.000Z","dateModified":"2024-04-17T12:44:04.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/04/17/2024-04-17-DDIA-08-ACID%E7%9C%9F%E6%AD%A3%E5%90%AB%E4%B9%89/"}}</script>
   
   
   
@@ -210,7 +219,7 @@
 </nav>
 
 <!-- Mobile grid menu overlay -->
-<div id="mobile-grid-menu" class="d-lg-none">
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
   <div class="mobile-grid-menu-inner">
     <div class="container">
       <div class="row">
@@ -407,9 +416,13 @@
 
 
             </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
+            
           </header>
           <article class="post-content ax-prose">
-            <h1 id="seo-header">DDIA-08-ACID到底是什么意思：比面试官问的深一点</h1>
+            <p id="seo-header">DDIA-08-ACID到底是什么意思：比面试官问的深一点</p>
             
             
               <div class="markdown-body">
@@ -425,7 +438,7 @@
 <p>本文尝试用”比面试官问的深一点”的深度，重新拆解 ACID 每一个字母。</p>
 <h2 id="Atomicity：不是”全或无”，而是”可中止性”"><a href="#Atomicity：不是”全或无”，而是”可中止性”" class="headerlink" title="Atomicity：不是”全或无”，而是”可中止性”"></a>Atomicity：不是”全或无”，而是”可中止性”</h2><h3 id="教科书版本的问题"><a href="#教科书版本的问题" class="headerlink" title="教科书版本的问题"></a>教科书版本的问题</h3><p>“要么全部执行成功，要么全部执行失败”——这句话在直觉上没问题，但它在技术上是<strong>错误的</strong>。</p>
 <p>你仔细想一下：事务已经执行了一半然后回滚了，这算是”全部没执行”吗？磁盘上被修改过的数据页甚至可能已经被刷到存储层，只不过 undo log 保证了逻辑上可以恢复。从物理上看，<strong>事务确实执行了一部分</strong>，只是被撤销了。</p>
-<h3 id="DDIA-的重新定义：Abortability"><a href="#DDIA-的重新定义：Abortability" class="headerlink" title="DDIA 的重新定义：Abortability"></a>DDIA 的重新定义：Abortability</h3><p>DDIA 第 8 章开篇就把 Atomicity 重新定义为 <strong>Abortability（可中止性）</strong>：</p>
+<h3 id="DDIA-的重新定义：Abortability"><a href="#DDIA-的重新定义：Abortability" class="headerlink" title="DDIA 的重新定义：Abortability"></a>DDIA 的重新定义：Abortability</h3><p>DDIA 第 8 章开篇就把 Atomicity 重新定义为 <strong>Abortability（可中止性）</strong>，大意（第8章）是：</p>
 <blockquote>
 <p>“Atomicity 的本质是：如果一个事务在中途出错，你可以安全地中止它，而不必担心它已经执行的那部分操作会留下永久性的副作用。”</p>
 </blockquote>
@@ -472,7 +485,7 @@
 </tr>
 </tbody></table>
 <p>这些含义之间的差异大到足以误导架构决策。<strong>ACID 里的 C 和 CAP 里的 C 完全是两回事。</strong></p>
-<h3 id="C-实际上是应用程序的责任"><a href="#C-实际上是应用程序的责任" class="headerlink" title="C 实际上是应用程序的责任"></a>C 实际上是应用程序的责任</h3><p>DDIA 的论述非常直白：</p>
+<h3 id="C-实际上是应用程序的责任"><a href="#C-实际上是应用程序的责任" class="headerlink" title="C 实际上是应用程序的责任"></a>C 实际上是应用程序的责任</h3><p>DDIA 的论述，大意（第8章）是：</p>
 <blockquote>
 <p>“ACID 中的 Consistency 是由应用程序通过定义外键、CHECK 约束、触发器、应用程序校验逻辑来保证的。数据库只负责不破坏数据的完整性（比如不让你插入一个指向不存在记录的外键），但它不知道什么数据是’正确’的。”</p>
 </blockquote>
@@ -519,7 +532,7 @@
 </tr>
 </tbody></table>
 <p>注意一个关键事实：<strong>没有任何一种隔离级别是”完美的”</strong>。即使是 Serializable，它也有代价——吞吐量、延迟、死锁率都会受影响。</p>
-<h3 id="容易被忽略的并发异常"><a href="#容易被忽略的并发异常" class="headerlink" title="容易被忽略的并发异常"></a>容易被忽略的并发异常</h3><p>面试一般只问脏读、不可重复读、幻读这三个。但 DDIA 第 7 章花了相当篇幅讨论两个更隐蔽的问题：</p>
+<h3 id="容易被忽略的并发异常"><a href="#容易被忽略的并发异常" class="headerlink" title="容易被忽略的并发异常"></a>容易被忽略的并发异常</h3><p>面试一般只问脏读、不可重复读、幻读这三个。但 DDIA 第 8 章花了相当篇幅讨论两个更隐蔽的问题：</p>
 <p><strong>写倾斜（Write Skew）</strong>：两个事务读到了相同的数据，然后各自基于读到的结果去修改不同的数据，导致最终状态违反业务约束。经典案例：医院值班系统——“至少有一名医生值班”，两个事务同时读到了”还有一名医生在值班”，然后各自把最后一名医生移出值班表。</p>
 <p><strong>丢失更新（Lost Update）</strong>：读-修改-写周期的竞争条件。经典案例：两个用户同时编辑同一个 wiki 页面，后保存的覆盖了先保存的。</p>
 <p>这两个问题在 Read Committed 和部分 Repeatable Read 实现中都无法解决，需要 SELECT … FOR UPDATE 或显式的应用层锁。</p>
@@ -563,7 +576,7 @@
 <td>几乎为零</td>
 </tr>
 </tbody></table>
-<p>对于订单系统（日订单 130 万），Durability 策略通常包括：</p>
+<p>对于订单系统（日订单 130 万，历史峰值口径，主口径见订单中台系列），Durability 策略通常包括：</p>
 <ul>
 <li>同步半同步复制（semi-synchronous replication）：保证至少一个从库收到 binlog 再返回客户端成功</li>
 <li>定时全量备份 + 实时 binlog 备份到异地机房</li>
@@ -680,8 +693,8 @@
 <p>如果能理解到这一层，面对面试官的追问就不慌了。更重要的是，在做架构决策时，你不会被数据库厂商的营销话术误导，而是能从第一性原理出发去判断：我的业务场景到底需要什么级别的 A、什么级别的 I、什么级别的 D。</p>
 <p>下一篇文章，我们深入 InnoDB 的 undo log 和 MVCC，看看这些抽象概念在存储引擎内部是怎么落地的。</p>
 <hr>
-<p><em>《DDIA》系列往期文章：<a target="_blank" rel="noopener" href="https://asterxu.com/ddia-01/">DDIA-01-开篇</a> · <a target="_blank" rel="noopener" href="https://asterxu.com/ddia-02/">DDIA-02-数据模型</a> · <a target="_blank" rel="noopener" href="https://asterxu.com/ddia-03/">DDIA-03-存储与检索</a></em></p>
-<p><em>文中未加引注的引用观点均来自 Martin Kleppmann, <em>Designing Data-Intensive Applications</em>, O’Reilly Media, 2017, Chapter 7-8.</em></p>
+<p><em>《DDIA》系列往期文章：<a href="/2023/06/01/2023-06-01-DDIA-01-%E4%BA%91%E5%8E%9F%E7%94%9F%E6%96%B0%E6%8C%91%E6%88%98/">DDIA-01-开篇</a> · <a href="/2023/08/04/2023-08-04-DDIA-03-%E5%85%B3%E7%B3%BB%E6%A8%A1%E5%9E%8Bvs%E6%96%87%E6%A1%A3%E6%A8%A1%E5%9E%8B/">DDIA-02-数据模型</a> · <a href="/2023/09/27/2023-09-27-DDIA-04-B-Tree%E7%B4%A2%E5%BC%95%E5%9F%BA%E7%A1%80%E8%AE%BE%E6%96%BD/">DDIA-03-存储与检索</a></em></p>
+<p><em>文中未加引注的引用观点均来自 Martin Kleppmann, <em>Designing Data-Intensive Applications</em>, Chapter 8 (Transactions).</em></p>
 
                 
               </div>
@@ -866,7 +879,7 @@
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
       <div class="modal-header text-center">
-        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <h4 class="modal-title w-100 font-weight-bold" id="ModalLabel">搜索</h4>
         <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -966,7 +979,8 @@
       var collapsed = $childList.hasClass('tocbot-is-collapsed');
       $toggle
         .toggleClass('toc-toggle-collapsed', collapsed)
-        .toggleClass('toc-toggle-expanded', !collapsed);
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
     }
     function bindTocToggle() {
       if (!isExpandAllEnabled()) { return; }
@@ -981,7 +995,7 @@
         }
 
         if ($li.children('.toc-toggle').length === 0) {
-          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
         }
         updateTocToggle($li, $childList);
       });
