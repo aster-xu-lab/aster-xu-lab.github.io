@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1960" viewBox="0 0 1200 980" role="img" aria-label="目录翻页终止判定：总数已到或空页结束为完整；短于声明总数或达到二十页上限为不完整">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94A3B8"/>
+    </marker>
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#047857"/>
+    </marker>
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#B91C1C"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="980" fill="#F7F9FC"/>
+  <text x="60" y="58" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="30" font-weight="700" fill="#1F2937">翻页：什么叫「拿全了」</text>
+  <text x="60" y="92" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="16" fill="#5B6B7C">先判失败，再按四条终止条件决定 complete / 不完整；不在残缺数据上做否定判断</text>
+
+  <!-- start / request -->
+  <rect x="450" y="105" width="180" height="46" rx="23" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"/>
+  <text x="540" y="134" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="16" font-weight="700" fill="#1E40AF" text-anchor="middle">开始：第 1 页</text>
+  <line x1="540" y1="151" x2="540" y2="168" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="400" y="170" width="240" height="52" rx="8" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+  <text x="520" y="202" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">请求第 N 页</text>
+
+  <!-- failure decision -->
+  <polygon points="520,252 610,290 520,328 430,290" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5"/>
+  <text x="520" y="295" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#1F2937" text-anchor="middle">本页失败？</text>
+  <text x="540" y="245" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#5B6B7C">否</text>
+
+  <path d="M 610 290 L 760 290" fill="none" stroke="#B91C1C" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <text x="670" y="282" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#B91C1C">是</text>
+  <rect x="760" y="262" width="300" height="56" rx="8" fill="#FEF2F2" stroke="#FCA5A5" stroke-width="1.2"/>
+  <text x="776" y="285" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="13" fill="#B91C1C">第一页：清空列表 → error</text>
+  <text x="776" y="305" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="13" fill="#B91C1C">后续页：保留已得行 → 不完整</text>
+
+  <!-- accumulate -->
+  <line x1="520" y1="328" x2="520" y2="372" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <rect x="400" y="374" width="240" height="52" rx="8" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+  <text x="520" y="406" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">累加 rows</text>
+
+  <!-- termination chain -->
+  <line x1="520" y1="426" x2="520" y2="452" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <polygon points="520,450 690,488 520,526 350,488" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5"/>
+  <text x="520" y="493" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#1F2937" text-anchor="middle">声明了 total 且 rows ≥ total？</text>
+  <path d="M 350 488 L 300 488" fill="none" stroke="#047857" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <text x="305" y="480" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#047857">是</text>
+
+  <line x1="520" y1="526" x2="520" y2="572" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="532" y="555" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#5B6B7C">否</text>
+
+  <polygon points="520,570 690,608 520,646 350,608" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5"/>
+  <text x="520" y="613" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#1F2937" text-anchor="middle">没有 total 且本页为空？</text>
+  <path d="M 350 608 L 300 608" fill="none" stroke="#047857" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+  <text x="305" y="600" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#047857">是</text>
+
+  <line x1="520" y1="646" x2="520" y2="692" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="532" y="675" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#5B6B7C">否</text>
+
+  <polygon points="520,690 690,728 520,766 350,728" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5"/>
+  <text x="520" y="733" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#1F2937" text-anchor="middle">有 total 且空页 / 短页？</text>
+  <path d="M 690 728 L 800 728" fill="none" stroke="#B91C1C" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <text x="730" y="720" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#B91C1C">是</text>
+
+  <line x1="520" y1="766" x2="520" y2="812" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="532" y="795" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#5B6B7C">否</text>
+
+  <polygon points="520,810 640,848 520,886 400,848" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5"/>
+  <text x="520" y="853" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#1F2937" text-anchor="middle">pageNum = 20？</text>
+  <path d="M 640 848 L 800 848" fill="none" stroke="#B91C1C" stroke-width="1.5" marker-end="url(#arrow-red)"/>
+  <text x="700" y="840" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#B91C1C">是</text>
+
+  <!-- incomplete outputs -->
+  <rect x="800" y="700" width="280" height="56" rx="8" fill="#FEF2F2" stroke="#FCA5A5" stroke-width="1.2"/>
+  <text x="816" y="724" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#B91C1C">不完整：短于声明总数</text>
+  <text x="816" y="744" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#B91C1C">保留已得行，提示去后台核对</text>
+
+  <rect x="800" y="820" width="280" height="56" rx="8" fill="#FEF2F2" stroke="#FCA5A5" stroke-width="1.2"/>
+  <text x="816" y="844" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#B91C1C">不完整：达到 20 页上限</text>
+  <text x="816" y="864" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#B91C1C">保留已得行，提示去后台核对</text>
+
+  <!-- next page loop -->
+  <line x1="520" y1="886" x2="520" y2="920" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="532" y="908" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#5B6B7C">否</text>
+  <rect x="400" y="922" width="240" height="46" rx="8" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+  <text x="520" y="951" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="15" font-weight="700" fill="#1F2937" text-anchor="middle">下一页（pageNum &lt; 20）</text>
+  <path d="M 400 945 L 340 945 L 340 196 L 390 196" fill="none" stroke="#2563EB" stroke-width="1.4" stroke-dasharray="6,3" marker-end="url(#arrow)"/>
+  <text x="330" y="560" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#2563EB" transform="rotate(90 330 560)">回到请求</text>
+
+  <!-- complete outputs -->
+  <rect x="120" y="460" width="180" height="56" rx="8" fill="#ECFDF5" stroke="#6EE7B7" stroke-width="1.2"/>
+  <text x="136" y="484" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#047857">complete</text>
+  <text x="136" y="504" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#047857">rows ≥ total</text>
+
+  <rect x="120" y="580" width="180" height="56" rx="8" fill="#ECFDF5" stroke="#6EE7B7" stroke-width="1.2"/>
+  <text x="136" y="604" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#047857">complete</text>
+  <text x="136" y="624" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#047857">无 total，空页结束</text>
+
+  <path d="M 120 488 L 60 488 L 60 728 L 72 728" fill="none" stroke="#047857" stroke-width="1.4"/>
+  <path d="M 120 608 L 60 608 L 60 728" fill="none" stroke="#047857" stroke-width="1.4"/>
+  <rect x="80" y="700" width="260" height="56" rx="8" fill="#D1FAE5" stroke="#047857" stroke-width="1.5"/>
+  <text x="96" y="724" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="15" font-weight="700" fill="#065F46">merchant（权威目录）</text>
+  <text x="96" y="744" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#065F46">可作为权威数据继续校验</text>
+
+  <!-- incomplete rail -->
+  <path d="M 1060 290 L 1110 290 L 1110 900 L 1080 900" fill="none" stroke="#B91C1C" stroke-width="1.2" stroke-dasharray="5,4"/>
+  <path d="M 1080 728 L 1110 728" fill="none" stroke="#B91C1C" stroke-width="1.2" stroke-dasharray="5,4"/>
+  <path d="M 1080 848 L 1110 848" fill="none" stroke="#B91C1C" stroke-width="1.2" stroke-dasharray="5,4"/>
+  <rect x="800" y="880" width="280" height="52" rx="8" fill="#FEE2E2" stroke="#B91C1C" stroke-width="1.5"/>
+  <text x="816" y="903" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="15" font-weight="700" fill="#991B1B">error（不完整）</text>
+  <text x="816" y="921" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#991B1B">保留已得行；不据此裁剪默认值</text>
+</svg>

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2400" height="1720" viewBox="0 0 1200 860" role="img" aria-label="仓储按域拆分的九个模块依赖图：任务域依赖 URL 行、输入归属、设置与完成闸门；完成闸门只依赖行映射">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94A3B8"/>
+    </marker>
+  </defs>
+
+  <rect width="1200" height="860" fill="#F7F9FC"/>
+  <text x="60" y="58" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="30" font-weight="700" fill="#1F2937">仓储拆分：九个域模块的依赖与归属</text>
+  <text x="60" y="92" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="16" fill="#5B6B7C">从叶子域开始抽；每个模块由工厂注入 DatabaseSync 与真正需要的回调</text>
+
+  <!-- root -->
+  <rect x="60" y="130" width="210" height="600" rx="12" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.8"/>
+  <text x="165" y="168" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="19" font-weight="700" fill="#1F2937" text-anchor="middle">ImportRepository</text>
+  <text x="165" y="194" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="13" fill="#5B6B7C" text-anchor="middle">薄转发 / 生命周期</text>
+  <line x1="85" y1="212" x2="245" y2="212" stroke="#E2E8F0" stroke-width="1"/>
+  <text x="165" y="240" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="14" font-weight="700" fill="#2563EB" text-anchor="middle">DatabaseSync</text>
+  <text x="165" y="262" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="13" fill="#5B6B7C" text-anchor="middle">工厂注入 + 回调</text>
+  <text x="165" y="300" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#3F4B5B" text-anchor="middle">只保留 DDL、版本重置、</text>
+  <text x="165" y="320" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#3F4B5B" text-anchor="middle">启动自愈、名称分配、</text>
+  <text x="165" y="340" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#3F4B5B" text-anchor="middle">snapshot() 聚合</text>
+
+  <!-- injection bus -->
+  <line x1="270" y1="200" x2="295" y2="200" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="5,4"/>
+  <line x1="295" y1="200" x2="295" y2="680" stroke="#2563EB" stroke-width="1.2" stroke-dasharray="5,4"/>
+  <text x="300" y="720" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#2563EB">→ 9 个域模块</text>
+
+  <!-- tier D -->
+  <rect x="610" y="170" width="260" height="80" rx="10" fill="#FFFFFF" stroke="#6D28D9" stroke-width="1.5"/>
+  <text x="740" y="201" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">任务域</text>
+  <text x="740" y="226" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12.5" fill="#5B6B7C" text-anchor="middle">事件应用 / 环快照 / 失败重试</text>
+
+  <!-- tier C -->
+  <rect x="320" y="320" width="220" height="80" rx="10" fill="#FFFFFF" stroke="#047857" stroke-width="1.5"/>
+  <text x="430" y="351" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">产品域</text>
+  <text x="430" y="376" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12.5" fill="#5B6B7C" text-anchor="middle">状态 / 失败 / 复核保存</text>
+
+  <rect x="610" y="320" width="240" height="80" rx="10" fill="#FFFFFF" stroke="#047857" stroke-width="1.5"/>
+  <text x="730" y="351" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">输入 / 实例归属</text>
+  <text x="730" y="376" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12.5" fill="#5B6B7C" text-anchor="middle">放弃 / 跳过 / owner</text>
+
+  <!-- tier B -->
+  <rect x="320" y="470" width="220" height="80" rx="10" fill="#FFFFFF" stroke="#B45309" stroke-width="1.5"/>
+  <text x="430" y="501" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">完成闸门</text>
+  <text x="430" y="526" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12.5" fill="#5B6B7C" text-anchor="middle">promote / demote / 对账</text>
+
+  <rect x="570" y="470" width="200" height="80" rx="10" fill="#FFFFFF" stroke="#2563EB" stroke-width="1.5"/>
+  <text x="670" y="501" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">URL 行结算</text>
+  <text x="670" y="526" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12.5" fill="#5B6B7C" text-anchor="middle">分母扣减 / 发现截断</text>
+
+  <!-- tier A -->
+  <rect x="320" y="620" width="200" height="80" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="420" y="651" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">行接口 / 编解码</text>
+  <text x="420" y="676" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12.5" fill="#5B6B7C" text-anchor="middle">四个 map*Row</text>
+
+  <rect x="550" y="620" width="170" height="80" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="635" y="651" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">捕获清理</text>
+  <text x="635" y="676" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12.5" fill="#5B6B7C" text-anchor="middle">无跨域依赖</text>
+
+  <rect x="750" y="620" width="180" height="80" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="840" y="651" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">任务设置</text>
+  <text x="840" y="676" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12.5" fill="#5B6B7C" text-anchor="middle">上次默认值 / 供应商映射</text>
+
+  <rect x="960" y="620" width="180" height="80" rx="10" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.5"/>
+  <text x="1050" y="651" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="17" font-weight="700" fill="#1F2937" text-anchor="middle">草稿冲突</text>
+  <text x="1050" y="676" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12.5" fill="#5B6B7C" text-anchor="middle">查询 / 兄弟放弃</text>
+
+  <!-- dependency arrows: dependent → dependency -->
+  <line x1="420" y1="558" x2="420" y2="612" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <path d="M 560 510 L 545 510 L 545 660 L 530 660" fill="none" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <line x1="430" y1="408" x2="430" y2="462" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <path d="M 610 360 L 555 360 L 555 500 L 548 500" fill="none" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <path d="M 600 250 L 590 250 L 590 425 L 500 425 L 500 462" fill="none" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <line x1="670" y1="258" x2="670" y2="462" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <line x1="730" y1="258" x2="730" y2="312" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <path d="M 880 210 L 930 210 L 930 580 L 840 580 L 840 612" fill="none" stroke="#94A3B8" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- legend -->
+  <rect x="60" y="780" width="150" height="20" rx="4" fill="#FFFFFF" stroke="#94A3B8" stroke-width="1.2"/>
+  <text x="140" y="795" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#5B6B7C" text-anchor="middle">叶子域</text>
+  <rect x="230" y="780" width="170" height="20" rx="4" fill="#FFFFFF" stroke="#B45309" stroke-width="1.2"/>
+  <text x="315" y="795" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#5B6B7C" text-anchor="middle">完成闸门</text>
+  <rect x="420" y="780" width="150" height="20" rx="4" fill="#FFFFFF" stroke="#047857" stroke-width="1.2"/>
+  <text x="495" y="795" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#5B6B7C" text-anchor="middle">有依赖域</text>
+  <rect x="590" y="780" width="150" height="20" rx="4" fill="#FFFFFF" stroke="#6D28D9" stroke-width="1.2"/>
+  <text x="665" y="795" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#5B6B7C" text-anchor="middle">任务域</text>
+  <text x="780" y="795" font-family="PingFang SC, Hiragino Sans GB, Microsoft YaHei, sans-serif" font-size="12" fill="#94A3B8">箭头 = 依赖方向（依赖方 → 被依赖方）</text>
+</svg>
