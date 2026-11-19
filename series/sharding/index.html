@@ -21,15 +21,13 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="从分片键选型、无停机迁移，到中台接入与上线一周年稳态运营。偏生产复盘，少理论堆砌。              共 16 篇。前五篇讲怎么选，中间四篇讲怎么迁，最后三篇是上线之后的账。 一、选型与接入 渠道垂直分表的困局与 ShardingSphere 破局订单中心对接 20+ 电商平台，最初按渠道垂直分表——这条路为什么走不通。 ShardingSphere-JDBC">
+    <meta name="description" content="从分片键选型、无停机迁移，到中台接入与上线一周年稳态运营。偏生产复盘，少理论堆砌。              共 30 篇。前 16 篇是选型、迁移和上线之后的账，最后一组是查询、对账和中台侧。 一、选型与接入 渠道垂直分表的困局与 ShardingSphere 破局订单中心对接 20+ 电商平台，最初按渠道垂直分表——这条路为什么走不通。 ShardingSpher">
 <meta property="og:type" content="website">
 <meta property="og:title" content="分库分表与订单中台">
 <meta property="og:url" content="https://aster-xu-lab.github.io/series/sharding/index.html">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="从分片键选型、无停机迁移，到中台接入与上线一周年稳态运营。偏生产复盘，少理论堆砌。              共 16 篇。前五篇讲怎么选，中间四篇讲怎么迁，最后三篇是上线之后的账。 一、选型与接入 渠道垂直分表的困局与 ShardingSphere 破局订单中心对接 20+ 电商平台，最初按渠道垂直分表——这条路为什么走不通。 ShardingSphere-JDBC">
+<meta property="og:description" content="从分片键选型、无停机迁移，到中台接入与上线一周年稳态运营。偏生产复盘，少理论堆砌。              共 30 篇。前 16 篇是选型、迁移和上线之后的账，最后一组是查询、对账和中台侧。 一、选型与接入 渠道垂直分表的困局与 ShardingSphere 破局订单中心对接 20+ 电商平台，最初按渠道垂直分表——这条路为什么走不通。 ShardingSpher">
 <meta property="og:locale" content="zh_CN">
-<meta property="article:published_time" content="2026-10-09T01:00:00.000Z">
-<meta property="article:modified_time" content="2026-11-16T06:07:24.539Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
 <meta name="twitter:card" content="summary_large_image">
@@ -74,7 +72,7 @@
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
     Fluid.ctx = Object.assign({}, Fluid.ctx)
-    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":false,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
 
     if (CONFIG.web_analytics.follow_dnt) {
       var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
@@ -97,7 +95,7 @@
   <header>
     
 
-<div class="header-inner" style="height: 25vh;">
+<div class="header-inner" style="height: 0vh;">
   <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
   <div class="container">
     <a class="navbar-brand" href="/">
@@ -133,7 +131,7 @@
             <li class="nav-item">
               <a class="nav-link" href="/archives/" target="_self">
                 <i class="iconfont icon-archive-fill"></i>
-                <span>归档</span>
+                <span>文章</span>
               </a>
             </li>
           
@@ -168,7 +166,7 @@
           
             <li class="nav-item">
               <a class="nav-link" href="/series/" target="_self">
-                <i class="iconfont icon-list"></i>
+                <i class="iconfont icon-books"></i>
                 <span>系列</span>
               </a>
             </li>
@@ -234,7 +232,7 @@
               <a href="/archives/" target="_self">
                 <div class="mobile-grid-item">
                   <i class="iconfont icon-archive-fill"></i>
-                  <span>归档</span>
+                  <span>文章</span>
                 </div>
               </a>
             </div>
@@ -275,7 +273,7 @@
             <div class="col-4 mobile-grid-cell">
               <a href="/series/" target="_self">
                 <div class="mobile-grid-item">
-                  <i class="iconfont icon-list"></i>
+                  <i class="iconfont icon-books"></i>
                   <span>系列</span>
                 </div>
               </a>
@@ -325,27 +323,6 @@
 
   
 
-<div id="banner" class="banner" parallax=true
-     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
-  <div class="full-bg-img">
-    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
-      <div class="banner-text text-center fade-in-up">
-        <div class="h2">
-          
-            <span id="subtitle" data-typed-text="分库分表与订单中台"></span>
-          
-        </div>
-
-        
-      </div>
-
-      
-    </div>
-  </div>
-</div>
-
-
-
 </div>
 
   </header>
@@ -361,14 +338,27 @@
               <div class="col-12 col-md-10 m-auto">
                 
 
-<article class="page-content">
-  <div class="markdown-body">
+<div class="ax-page ax-doc">
+  <section class="ax-hero ax-hero--slim" aria-labelledby="ax-doc-title">
+    <div class="ax-container">
+      <p class="ax-eyebrow">工程主线</p>
+      <h1 class="ax-title ax-title--small" id="ax-doc-title">分库分表与订单中台</h1>
+      
+        <p class="ax-lead">分片键、无停机迁移、查询对账，到订单中台</p>
+      
+    </div>
+  </section>
+
+  <section class="ax-section">
+    <div class="ax-container">
+      <article class="ax-doc__content ax-prose">
+        <div class="markdown-body">
 
 <div class="note note-info">
             <p>从分片键选型、无停机迁移，到中台接入与上线一周年稳态运营。偏生产复盘，少理论堆砌。</p> 
           </div>
 
-<p>共 16 篇。前五篇讲怎么选，中间四篇讲怎么迁，最后三篇是上线之后的账。</p>
+<p>共 30 篇。前 16 篇是选型、迁移和上线之后的账，最后一组是查询、对账和中台侧。</p>
 <h2 id="一、选型与接入"><a href="#一、选型与接入" class="headerlink" title="一、选型与接入"></a>一、选型与接入</h2><ol>
 <li><strong><a href="/2025/02/01/2025-02-01-ShardingSphere%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8/">渠道垂直分表的困局与 ShardingSphere 破局</a></strong><br>订单中心对接 20+ 电商平台，最初按渠道垂直分表——这条路为什么走不通。</li>
 <li><strong><a href="/2025/02/27/2025-02-27-ShardingSphere%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8%E4%B8%8E%E6%A0%B8%E5%BF%83%E6%A6%82%E5%BF%B5/">ShardingSphere-JDBC 快速入门与核心概念</a></strong><br>6000 万行的表撑不住了。手写路由、改所有 DAO 有多痛，以及核心概念怎么理解。</li>
@@ -383,39 +373,51 @@
 <li><strong><a href="/2025/08/11/2025-08-11-%E9%9D%9E%E5%88%86%E7%89%87%E9%94%AE%E6%9F%A5%E8%AF%A2-id-mapping%E4%B8%8EDoris%E7%9A%84%E8%BE%B9%E7%95%8C/">非分片键查询：id-mapping、Doris 与 ES 的边界</a></strong><br>按 user_id 查订单怎么办？”上 ES”是方案先行——正确顺序是先问业务要不要这个查询。</li>
 </ol>
 <h2 id="三、配套与踩坑"><a href="#三、配套与踩坑" class="headerlink" title="三、配套与踩坑"></a>三、配套与踩坑</h2><ol start="10">
-<li><strong><a href="/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/">SpringBoot + MyBatis-Plus + ShardingSphere 生产接入</a></strong><br>前面都是纯 JDBC 讲原理，这篇换到真实生产栈，验证 BaseMapper &#x2F; ServiceImpl 还灵不灵。</li>
-<li><strong><a href="/2025/06/10/2025-06-10-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/">ShardingSphere 与 ORM 兼容性踩坑合集</a></strong><br>分页插件、跨分片 total&#x2F;pages 这些最容易翻车的点，逐条实测。</li>
-<li><strong><a href="/2025/06/22/2025-06-22-%E5%88%86%E7%89%87%E4%B9%8B%E5%90%8E%E7%9A%84%E6%8E%92%E5%BA%8F%E4%B8%8E%E5%88%86%E9%A1%B5%E5%88%B0%E5%BA%95%E6%80%8E%E4%B9%88%E5%81%9A/">分片之后的排序与分页，到底怎么做</a></strong><br>单表一条 LIMIT 就完事，分片后要先改写再归并，深分页更是性能灾难。</li>
-<li><strong><a href="/2025/08/13/2025-08-13-Kafka%E5%9C%A8Canal%E5%88%B0Doris%E9%93%BE%E8%B7%AF%E4%B8%AD%E7%9A%84%E5%89%8A%E5%B3%B0%E8%A7%92%E8%89%B2/">Kafka 在 Canal→Doris 链路中的削峰角色</a></strong><br>按单号分片后，跨分片的复杂统计做不了——这条路怎么补。</li>
+<li><strong><a href="/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/">SpringBoot + MyBatis-Plus + ShardingSphere 生产接入</a></strong><br>   前面都是纯 JDBC 讲原理，这篇换到真实生产栈，验证 BaseMapper &#x2F; ServiceImpl 还灵不灵。</li>
+<li><strong><a href="/2025/06/10/2025-06-10-ShardingSphere%E5%85%BC%E5%AE%B9%E6%80%A7%E8%B8%A9%E5%9D%91%E5%90%88%E9%9B%86/">ShardingSphere 与 ORM 兼容性踩坑合集</a></strong><br>   分页插件、跨分片 total&#x2F;pages 这些最容易翻车的点，逐条实测。</li>
+<li><strong><a href="/2025/06/22/2025-06-22-%E5%88%86%E7%89%87%E4%B9%8B%E5%90%8E%E7%9A%84%E6%8E%92%E5%BA%8F%E4%B8%8E%E5%88%86%E9%A1%B5%E5%88%B0%E5%BA%95%E6%80%8E%E4%B9%88%E5%81%9A/">分片之后的排序与分页，到底怎么做</a></strong><br>   单表一条 LIMIT 就完事，分片后要先改写再归并，深分页更是性能灾难。</li>
+<li><strong><a href="/2025/08/13/2025-08-13-Kafka%E5%9C%A8Canal%E5%88%B0Doris%E9%93%BE%E8%B7%AF%E4%B8%AD%E7%9A%84%E5%89%8A%E5%B3%B0%E8%A7%92%E8%89%B2/">Kafka 在 Canal→Doris 链路中的削峰角色</a></strong><br>   按单号分片后，跨分片的复杂统计做不了——这条路怎么补。</li>
 </ol>
 <h2 id="四、中台与周年复盘"><a href="#四、中台与周年复盘" class="headerlink" title="四、中台与周年复盘"></a>四、中台与周年复盘</h2><ol start="14">
-<li><strong><a href="/2025/11/12/2025-11-12-%E4%BB%8E%E5%8D%95%E4%BD%93%E5%88%B0%E4%B8%AD%E5%8F%B0-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/">从传统 OMS 到订单中台</a></strong><br>不是换个名字，是架构范式的升级：单体→多平台接入，垂直分表→水平分片，手工同步→编排引擎。</li>
-<li><strong><a href="/2026/07/15/2026-07-15-%E4%BB%8ECAP%E5%88%B0%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0-%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%9E%B6%E6%9E%84%E7%9A%84%E5%8F%96%E8%88%8D%E4%B8%8E%E5%AE%9E%E8%B7%B5/">从 CAP 到订单中台：最终一致架构的取舍与实践</a> <span class="label label-primary">必读</span></strong><br>落地时”三选二”是错的——应该按操作类型分流，每条链路单独选。</li>
-<li><strong><a href="/2026/08/24/2026-08-24-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E4%B8%8A%E7%BA%BF%E4%B8%80%E5%91%A8%E5%B9%B4%E5%A4%8D%E7%9B%98-%E7%A8%B3%E6%80%81%E8%BF%90%E8%90%A5%E4%B8%8E%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%92/">分库分表上线一周年复盘：稳态运营、对账与扩容规划</a> <span class="label label-primary">必读</span></strong><br>不复盘”怎么迁移”（前文讲过），只复盘上线之后：稳态运营、对账机制、8→16 扩容推演。</li>
+<li><strong><a href="/2025/11/12/2025-11-12-%E4%BB%8E%E5%8D%95%E4%BD%93%E5%88%B0%E4%B8%AD%E5%8F%B0-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E7%9A%84%E6%9E%B6%E6%9E%84%E6%BC%94%E8%BF%9B/">从传统 OMS 到订单中台</a></strong><br>   不是换个名字，是架构范式的升级：单体→多平台接入，垂直分表→水平分片，手工同步→编排引擎。</li>
+<li><strong><a href="/2026/07/15/2026-07-15-%E4%BB%8ECAP%E5%88%B0%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0-%E6%9C%80%E7%BB%88%E4%B8%80%E8%87%B4%E6%9E%B6%E6%9E%84%E7%9A%84%E5%8F%96%E8%88%8D%E4%B8%8E%E5%AE%9E%E8%B7%B5/">从 CAP 到订单中台：最终一致架构的取舍与实践</a> <span class="label label-primary">必读</span></strong><br>   落地时”三选二”是错的——应该按操作类型分流，每条链路单独选。</li>
+<li><strong><a href="/2026/08/24/2026-08-24-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E4%B8%8A%E7%BA%BF%E4%B8%80%E5%91%A8%E5%B9%B4%E5%A4%8D%E7%9B%98-%E7%A8%B3%E6%80%81%E8%BF%90%E8%90%A5%E4%B8%8E%E6%89%A9%E5%AE%B9%E8%A7%84%E5%88%92/">分库分表上线一周年复盘：稳态运营、对账与扩容规划</a> <span class="label label-primary">必读</span></strong><br>   不复盘”怎么迁移”（前文讲过），只复盘上线之后：稳态运营、对账机制、8→16 扩容推演。</li>
+</ol>
+<h2 id="五、查询、对账与中台侧"><a href="#五、查询、对账与中台侧" class="headerlink" title="五、查询、对账与中台侧"></a>五、查询、对账与中台侧</h2><ol start="17">
+<li><strong><a href="/2025/03/12/2025-03-12-ShardingSphere%E7%BB%91%E5%AE%9A%E8%A1%A8%E4%B8%8E%E5%B9%BF%E6%92%AD%E8%A1%A8/">ShardingSphere 绑定表与广播表：JOIN 与配置表的两大解法</a></strong><br>   关联查询用绑定表，全局配置用广播表，两条路不要混。</li>
+<li><strong><a href="/2025/03/24/2025-03-24-ShardingSphere%E6%97%B6%E9%97%B4%E5%88%86%E7%89%87%E5%AE%9E%E6%88%98/">ShardingSphere 时间分片实战：INTERVAL vs AUTO_INTERVAL 与跨年处理</a></strong><br>   时间分片本身的算法选择，以及跨年边界怎么处理。</li>
+<li><strong><a href="/2025/04/06/2025-04-06-ShardingSphere%E8%BF%9B%E9%98%B6%E7%89%B9%E6%80%A7-%E5%8A%A0%E5%AF%86%E8%AF%BB%E5%86%99%E5%88%86%E7%A6%BB%E5%BD%B1%E5%AD%90%E5%BA%93/">ShardingSphere 进阶特性实战：数据加密 &#x2F; 读写分离 &#x2F; 影子库</a></strong><br>   分片之外，加密、读写分离和影子库各自卡在哪。</li>
+<li><strong><a href="/2025/05/15/2025-05-15-ShardingSphere%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90-SQL%E5%A6%82%E4%BD%95%E8%A2%AB%E6%94%B9%E5%86%99%E8%B7%AF%E7%94%B1/">ShardingSphere 源码解析：一条 SQL 是如何被改写路由的</a></strong><br>   从解析到改写再到路由，看一条 SQL 实际走过的路径。</li>
+<li><strong><a href="/2025/07/31/2025-07-31-%E8%AE%A2%E5%8D%95%E8%A1%A8%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E5%8F%96%E8%88%8D-%E4%BC%9A%E4%B8%8D%E4%BC%9A%E8%A1%A8%E5%A4%AA%E5%A4%9A%E5%86%99%E5%86%97%E4%BD%99/">订单表反向索引的取舍：会不会表太多、写逻辑太冗余？</a></strong><br>   非分片键查询要不要加反向索引，先算表数量和写入成本。</li>
+<li><strong><a href="/2025/07/05/2025-07-05-%E5%88%86%E7%89%87%E6%89%A9%E5%AE%B9%E4%B8%8D%E9%87%8D%E6%9D%A5-%E5%8F%8D%E5%90%91%E7%B4%A2%E5%BC%95%E8%A1%A8%E5%8F%8C%E5%86%99%E7%81%B0%E5%BA%A6%E6%89%A9%E5%AE%B9/">分片扩容不重来：反向索引表用双写 + 灰度切流优雅扩容</a></strong><br>   反向索引扩容不必把主表迁移再做一遍。</li>
+<li><strong><a href="/2025/07/20/2025-07-20-Doris%E5%90%8C%E6%AD%A5%E9%93%BE%E8%B7%AF%E7%9A%84%E5%AF%B9%E8%B4%A6%E4%B8%8E%E6%BC%8F%E5%8D%95%E5%85%9C%E5%BA%95/">Doris 同步链路的对账与漏单兜底：增量 + 对账的完整闭环</a></strong><br>   增量同步会漏，对账不过就不算完成。</li>
+<li><strong><a href="/2025/09/01/2025-09-01-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%BF%83%E6%85%A2SQL%E6%B2%BB%E7%90%86/">订单中心慢SQL治理：从日均1124条到6条的实战总结</a></strong><br>   这一轮慢 SQL 是怎么压下去的。</li>
+<li><strong><a href="/2025/10/10/2025-10-10-%E6%85%A2SQL%E6%B2%BB%E7%90%86%E4%B8%80%E5%B9%B4%E5%A4%8D%E7%9B%98-%E4%BB%8E%E5%8D%83%E6%9D%A1%E5%88%B0%E4%B8%AA%E4%BD%8D%E6%95%B0/">慢 SQL 治理一年复盘：从日均千条级到个位数</a></strong><br>   治理一年之后，剩下的是稳态，不是再找一轮银弹。</li>
+<li><strong><a href="/2022/12/14/2022-12-14-%E7%99%BE%E4%B8%87%E8%AE%A2%E5%8D%95%E7%BC%93%E5%AD%98%E4%B8%8E%E9%99%8D%E7%BA%A7%E7%AD%96%E7%95%A5/">百万订单系统的缓存与降级策略</a></strong><br>   缓存和降级怎么配，才不会在大促时互相拆台。</li>
+<li><strong><a href="/2023/05/09/2023-05-09-%E5%A4%A7%E4%BF%83%E4%BF%9D%E9%9A%9C%E4%B8%8E%E7%A7%92%E6%9D%80%E8%AE%BE%E8%AE%A1-%E9%99%90%E6%B5%81%E9%99%8D%E7%BA%A7%E7%86%94%E6%96%AD%E7%BC%93%E5%AD%98/">大促保障与秒杀设计：限流、降级、熔断、缓存的组合拳</a></strong><br>   四个手段各自挡住哪一种故障。</li>
+<li><strong><a href="/2025/07/18/2025-07-18-%E5%A4%A7%E5%8E%82%E8%AE%A2%E5%8D%95%E6%9F%A5%E8%AF%A2%E6%9E%B6%E6%9E%84%E5%AF%B9%E9%BD%90/">大厂订单查询架构对齐：淘宝、京东、拼多多、抖音是怎么处理的</a></strong><br>   用公开架构对照自己的查询路径，看差在哪一层。</li>
+<li><strong><a href="/2024/06/12/2024-06-12-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%9A%E5%B9%B3%E5%8F%B0%E6%8E%A5%E5%85%A5-Handler%E6%8A%BD%E8%B1%A1%E4%B8%8E%E4%B8%89%E7%BB%B4%E8%B7%AF%E7%94%B1/">订单中台的多平台接入：Handler抽象与三维路由</a></strong><br>   新平台进来时，变的是 Handler，不是主流程。</li>
+<li><strong><a href="/2025/09/10/2025-09-10-%E8%AE%A2%E5%8D%95%E4%B8%AD%E5%8F%B0%E5%A4%A7%E4%BF%83%E5%A4%8D%E7%9B%98-%E5%8F%AF%E7%94%A8%E6%80%A7%E4%BB%8E999%E5%88%B09999/">订单中台大促复盘：可用性从 99.9% 到 99.99%，我做了四件事</a></strong><br>   这一跳靠的是四件具体的事，不是把目标改得更漂亮。</li>
 </ol>
 <hr>
 <p><a href="/series/">← 返回系列导读</a></p>
 </div>
-
-
+        
   
-
-</article>
-
-
   
+    <article id="comments" lazyload>
+      
 
-
-
+    </article>
   
 
 
+      </article>
+    </div>
+  </section>
+</div>
 
-  
 
-
-
-  
 
 
 
@@ -425,6 +427,17 @@
 
   
 
+
+
+  
+
+
+
+  
+
+
+
+  
 
 
 
@@ -474,7 +487,7 @@
     <div class="footer-inner">
   
     <div class="footer-content">
-       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+       <span class="ax-footer__brand">AsterXu Lab</span> <span class="ax-footer__sep">·</span> <span>Java 后端 / 中台 / AI 系统工程</span> <span class="ax-footer__sep">·</span> <a href="https://github.com/aster-xu-lab" target="_blank" rel="noopener">GitHub</a> 
     </div>
   
   
