@@ -1,0 +1,923 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/11/20/2026-11-20-跨域iframe里的商品描述-读不到DOM时怎么取/"/>
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="商品详情页的正文不在主文档里，而在一个跨域 iframe 中。contentDocument 是 null，选择器再准也读不到。遇到这种情况，常见的错误是「加等待」「换选择器」「开调试协议硬读」。这篇讲我们最后选的另一条路：找到 iframe 背后的公开文档，直接取它，取不到就留空。  一、先确认「读不到」是结构问题新版商品页把卖家描述放在： 1&lt;iframe id&#x3D;&quot;desc_">
+<meta property="og:type" content="article">
+<meta property="og:title" content="跨域 iframe 里的商品描述：读不到 DOM 时怎么取">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/20/2026-11-20-%E8%B7%A8%E5%9F%9Fiframe%E9%87%8C%E7%9A%84%E5%95%86%E5%93%81%E6%8F%8F%E8%BF%B0-%E8%AF%BB%E4%B8%8D%E5%88%B0DOM%E6%97%B6%E6%80%8E%E4%B9%88%E5%8F%96/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="商品详情页的正文不在主文档里，而在一个跨域 iframe 中。contentDocument 是 null，选择器再准也读不到。遇到这种情况，常见的错误是「加等待」「换选择器」「开调试协议硬读」。这篇讲我们最后选的另一条路：找到 iframe 背后的公开文档，直接取它，取不到就留空。  一、先确认「读不到」是结构问题新版商品页把卖家描述放在： 1&lt;iframe id&#x3D;&quot;desc_">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-19T17:49:51.000Z">
+<meta property="article:modified_time" content="2026-11-19T07:30:35.971Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="eBay">
+<meta property="article:tag" content="容错">
+<meta property="article:tag" content="工程实践">
+<meta property="article:tag" content="数据抽取">
+<meta property="article:tag" content="爬虫">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>跨域 iframe 里的商品描述：读不到 DOM 时怎么取 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":false,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 0vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>文章</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-books"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>文章</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-books"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<svg class="ax-sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="ax-ico-category" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+    </g>
+  </symbol>
+  <symbol id="ax-ico-tag" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 4.5h6l9 9-6 6-9-9z"></path>
+      <circle cx="8.5" cy="8.5" r="1.2"></circle>
+    </g>
+  </symbol>
+</svg>
+
+<div class="container-fluid nopadding-x ax-page ax-post">
+  <div class="row nomargin-x ax-post-row">
+    <div class="side-col ax-post-aside d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md ax-post-main">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <header class="ax-post-head">
+            <p class="ax-eyebrow">架构设计</p>
+            <h1 class="ax-post-head__title">跨域 iframe 里的商品描述：读不到 DOM 时怎么取</h1>
+            <div class="ax-post-head__meta">
+              
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-20 01:49" pubdate>
+          2026年11月20日 凌晨
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          18 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+            </div>
+          </header>
+          <article class="post-content ax-prose">
+            <h1 id="seo-header">跨域 iframe 里的商品描述：读不到 DOM 时怎么取</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>商品详情页的正文不在主文档里，而在一个跨域 iframe 中。<code>contentDocument</code> 是 <code>null</code>，选择器再准也读不到。遇到这种情况，常见的错误是「加等待」「换选择器」「开调试协议硬读」。这篇讲我们最后选的另一条路：找到 iframe 背后的公开文档，直接取它，取不到就留空。</p>
+</blockquote>
+<h2 id="一、先确认「读不到」是结构问题"><a href="#一、先确认「读不到」是结构问题" class="headerlink" title="一、先确认「读不到」是结构问题"></a>一、先确认「读不到」是结构问题</h2><p>新版商品页把卖家描述放在：</p>
+<figure class="highlight html"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs html"><span class="hljs-tag">&lt;<span class="hljs-name">iframe</span> <span class="hljs-attr">id</span>=<span class="hljs-string">&quot;desc_ifr&quot;</span> <span class="hljs-attr">src</span>=<span class="hljs-string">&quot;https://itm.ebaydesc.com/...&quot;</span>&gt;</span><span class="hljs-tag">&lt;/<span class="hljs-name">iframe</span>&gt;</span><br></code></pre></td></tr></table></figure>
+
+<p>这是跨域 iframe。主文档里的脚本既拿不到 <code>contentDocument</code>，也读不到 <code>contentWindow.document</code>。这不是加载没完成，也不是选择器写错——<strong>同源策略决定了它永远读不到。</strong></p>
+<p>在这个前提下，继续在 iframe 外面等、重试、换选择器，都是无效动作。正确的第一步是承认：这条路走不通，需要换数据源。</p>
+<h2 id="二、iframe-背后是一份公开文档"><a href="#二、iframe-背后是一份公开文档" class="headerlink" title="二、iframe 背后是一份公开文档"></a>二、iframe 背后是一份公开文档</h2><p><code>itm.ebaydesc.com</code> 返回的是卖家描述文档本身。它不需要登录态，也不依赖商品页的会话。只要知道商品 ID，就可以直接请求：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">const</span> itemId = product.<span class="hljs-property">sourceProductId</span>?.<span class="hljs-title function_">trim</span>() || <span class="hljs-string">&#x27;&#x27;</span><br><span class="hljs-keyword">if</span> (!<span class="hljs-regexp">/^\d&#123;6,18&#125;$/</span>.<span class="hljs-title function_">test</span>(itemId)) <span class="hljs-keyword">return</span><br><br><span class="hljs-keyword">const</span> response = <span class="hljs-keyword">await</span> <span class="hljs-title function_">fetch</span>(<span class="hljs-string">`https://itm.ebaydesc.com/itmdesc/<span class="hljs-subst">$&#123;itemId&#125;</span>`</span>, &#123;<br>  <span class="hljs-attr">headers</span>: &#123;<br>    <span class="hljs-attr">accept</span>: <span class="hljs-string">&#x27;text/html,application/xhtml+xml&#x27;</span>,<br>    <span class="hljs-attr">referer</span>: <span class="hljs-string">&#x27;https://www.ebay.com/&#x27;</span><br>  &#125;,<br>  <span class="hljs-attr">signal</span>: <span class="hljs-title class_">AbortSignal</span>.<span class="hljs-title function_">timeout</span>(<span class="hljs-number">8000</span>)<br>&#125;)<br></code></pre></td></tr></table></figure>
+
+<p>这里有两条硬约束：</p>
+<ol>
+<li><strong>只接受数字 ID。</strong> 正则 <code>^\d{6,18}$</code> 同时挡住了空值、变体后缀和任意字符串。URL 只用这个校验过的 ID 拼接，不会去请求一个调用方传入的任意主机。</li>
+<li><strong>失败不阻塞导入。</strong> 请求异常、超时、非 2xx，全部吞掉，<code>descriptionText</code> 保持空。描述是增强信息，不是商品能否导入的前提。</li>
+</ol>
+<h2 id="三、HTML-转文本要保结构"><a href="#三、HTML-转文本要保结构" class="headerlink" title="三、HTML 转文本要保结构"></a>三、HTML 转文本要保结构</h2><p>直接 <code>textContent</code> 会把段落和列表压成一坨。我们写了一个小的结构转换：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs text">注释 / script / style / noscript / template → 删除<br>&lt;li&gt;          → 换行 + &quot;- &quot;<br>&lt;br&gt; / &lt;hr&gt;   → 换行<br>块级闭合标签   → 空行<br>&lt;td&gt; / &lt;th&gt;   → 换行<br>其余标签       → 空格<br></code></pre></td></tr></table></figure>
+
+<p>然后解码实体（<code>&amp;amp;</code>、<code>&amp;nbsp;</code>、数字实体等），再按行归一化：</p>
+<ul>
+<li>CRLF 统一成 LF；</li>
+<li>连续空格压成一个；</li>
+<li>每行去首尾空白；</li>
+<li>三个以上连续换行压成两个；</li>
+<li>上限 8000 字符。</li>
+</ul>
+<p>结果是可读的纯文本，段落和列表都还在。这个转换是纯函数，不依赖网络，所以可以离线断言。</p>
+<h2 id="四、错误页也是「空」"><a href="#四、错误页也是「空」" class="headerlink" title="四、错误页也是「空」"></a>四、错误页也是「空」</h2><p>描述文档不总是卖家正文。有时会返回一个通用错误壳：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">Error Page<br>Something went wrong<br>Pardon our interruption<br>Access denied<br></code></pre></td></tr></table></figure>
+
+<p>如果直接把这段文本当成描述，复核页会出现一段和商品无关的英文。转换函数在归一化后做一次前缀判断，命中就返回空：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">if</span> (<span class="hljs-regexp">/^(error page|something went wrong|pardon our interruption|access denied)\b/i</span>.<span class="hljs-title function_">test</span>(normalized)) &#123;<br>  <span class="hljs-keyword">return</span> <span class="hljs-string">&#x27;&#x27;</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>宁可没有描述，也不要一段假的描述。</strong> 空的语义是「没取到」，后续可以回退到商品参数；假文本的语义是「取到了」，会把错误数据带进草稿。</p>
+<h2 id="五、验证"><a href="#五、验证" class="headerlink" title="五、验证"></a>五、验证</h2><p>离线断言覆盖了四类输入：</p>
+<table>
+<thead>
+<tr>
+<th>输入</th>
+<th>期望</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>两个 <code>&lt;p&gt;</code></td>
+<td>保留空行分段</td>
+</tr>
+<tr>
+<td><code>&lt;ul&gt;&lt;li&gt;</code> 列表</td>
+<td>每项一行，<code>- </code> 前缀</td>
+</tr>
+<tr>
+<td>含 <code>&lt;script&gt;</code> 和实体</td>
+<td>脚本删除，实体解码</td>
+</tr>
+<tr>
+<td>通用错误页</td>
+<td>返回空</td>
+</tr>
+</tbody></table>
+<p>实机验收时，一条真实商品取到 3734 字符的描述文本，复核页生成的说明以「商品说明」开头，段落空行保留，后面接「商品参数」，总长 4391 字符。</p>
+<h2 id="六、边界"><a href="#六、边界" class="headerlink" title="六、边界"></a>六、边界</h2><ul>
+<li><strong>只覆盖 eBay。</strong> 其他平台的描述结构不同，不能直接复用这个回退。</li>
+<li><strong>依赖 iframe 背后的文档路径。</strong> 如果平台改了 <code>itm.ebaydesc.com</code> 的路径或返回格式，回退会失效；失效时保持空，不会污染数据。</li>
+<li><strong>没有做频率控制。</strong> 每条商品只在主文档没有描述时请求一次，但批量导入时的并发行为没有单独压测。</li>
+<li><strong>不是「绕过反爬」。</strong> 请求的是公开描述文档，不带账号凭据；主文档该走的会话和验证流程不变。这里只是换了一个能读的数据源。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>跨域 iframe 读不到 DOM 是结构限制，不是等待或选择器问题。</li>
+<li>找到 iframe 背后的公开文档，用校验过的 ID 直接取；失败保持空。</li>
+<li>HTML 转文本要保段落和列表，错误壳要识别成空——宁可没有，也不要假数据。</li>
+</ol>
+
+                
+              </div>
+            
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
+      <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta post-meta--tags">
+      <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" class="print-no-link">#工程实践</a>
+      
+        <a href="/tags/%E7%88%AC%E8%99%AB/" class="print-no-link">#爬虫</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E6%8A%BD%E5%8F%96/" class="print-no-link">#数据抽取</a>
+      
+        <a href="/tags/eBay/" class="print-no-link">#eBay</a>
+      
+        <a href="/tags/%E5%AE%B9%E9%94%99/" class="print-no-link">#容错</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>跨域 iframe 里的商品描述：读不到 DOM 时怎么取</div>
+      <div>https://aster-xu-lab.github.io/2026/11/20/2026-11-20-跨域iframe里的商品描述-读不到DOM时怎么取/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月20日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/11/20/2026-11-20-IPC%E4%B8%8D%E8%AF%A5%E6%9C%8945%E7%A7%8D%E5%85%A5%E5%8F%A3-%E5%8D%95%E4%B8%80%E6%B3%A8%E5%86%8C%E7%BC%9D%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%97%B6%E6%A0%A1%E9%AA%8C/" title="IPC 不该有 45 种入口：单一注册缝与运行时校验">
+                        <span class="hidden-mobile">IPC 不该有 45 种入口：单一注册缝与运行时校验</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span class="ax-footer__brand">AsterXu Lab</span> <span class="ax-footer__sep">·</span> <span>分布式系统 / 中台架构 / AI 系统工程</span> <span class="ax-footer__sep">·</span> <a href="https://github.com/aster-xu-lab" target="_blank" rel="noopener">GitHub</a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

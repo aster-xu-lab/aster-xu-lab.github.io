@@ -1,0 +1,1006 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-借道商家会话-桌面端不再自己签API请求/"/>
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。  一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读">
+<meta property="og:type" content="article">
+<meta property="og:title" content="借道商家会话：桌面端不再自己签 API 请求">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-%E5%80%9F%E9%81%93%E5%95%86%E5%AE%B6%E4%BC%9A%E8%AF%9D-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E4%B8%8D%E5%86%8D%E8%87%AA%E5%B7%B1%E7%AD%BEAPI%E8%AF%B7%E6%B1%82/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。  一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-19T13:47:36.000Z">
+<meta property="article:modified_time" content="2026-11-19T07:23:25.076Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="API 设计">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="一致性">
+<meta property="article:tag" content="会话管理">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>借道商家会话：桌面端不再自己签 API 请求 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":false,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 0vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>文章</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-books"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>文章</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-books"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<svg class="ax-sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="ax-ico-category" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+    </g>
+  </symbol>
+  <symbol id="ax-ico-tag" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 4.5h6l9 9-6 6-9-9z"></path>
+      <circle cx="8.5" cy="8.5" r="1.2"></circle>
+    </g>
+  </symbol>
+</svg>
+
+<div class="container-fluid nopadding-x ax-page ax-post">
+  <div class="row nomargin-x ax-post-row">
+    <div class="side-col ax-post-aside d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md ax-post-main">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <header class="ax-post-head">
+            <p class="ax-eyebrow">架构设计</p>
+            <h1 class="ax-post-head__title">借道商家会话：桌面端不再自己签 API 请求</h1>
+            <div class="ax-post-head__meta">
+              
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-19 21:47" pubdate>
+          2026年11月19日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          45 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+            </div>
+          </header>
+          <article class="post-content ax-prose">
+            <h1 id="seo-header">借道商家会话：桌面端不再自己签 API 请求</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。</p>
+</blockquote>
+<h2 id="一、签名通道的问题不在签名"><a href="#一、签名通道的问题不在签名" class="headerlink" title="一、签名通道的问题不在签名"></a>一、签名通道的问题不在签名</h2><p>最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读目录是一条链路，提交草稿是另一条链路，和浏览器里的商家后台互不相干。</p>
+<p>问题出在「互不相干」。同一份数据，浏览器里走的是商家会话，桌面端走的是 OpenAPI 客户端；两套身份、两套权限、两套错误模型。目录的可见范围、字段的枚举、草稿的归属校验，只要有一边变了，另一边就可能悄悄对不上。签名本身不是难点，<strong>难的是让两条链路长期保持同一个语义</strong>。</p>
+<p>所以这次的方向反过来：桌面端不再自己证明「我是谁」，而是借用已经登录的商家页面，让请求以页面自己的身份发出去。</p>
+<h2 id="二、请求在页面里发，token-不出页面"><a href="#二、请求在页面里发，token-不出页面" class="headerlink" title="二、请求在页面里发，token 不出页面"></a>二、请求在页面里发，token 不出页面</h2><p><code>WebContentsView</code> 里加载的就是商家站点。页面登录后，<code>ACCESS_TOKEN</code>、<code>tenantId</code>、<code>visitTenantId</code> 都在它自己的 <code>localStorage</code> 里。我们要做的，是把一段脚本送进页面执行：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">const</span> result = <span class="hljs-keyword">await</span> webContents.<span class="hljs-title function_">executeJavaScript</span>(<span class="hljs-string">`(async () =&gt; &#123;</span><br><span class="hljs-string">  const token = readCache(&#x27;ACCESS_TOKEN&#x27;)</span><br><span class="hljs-string">  if (typeof token !== &#x27;string&#x27; || !token) return &#123; error: &#x27;SESSION_MISSING&#x27; &#125;</span><br><span class="hljs-string"></span><br><span class="hljs-string">  const headers = &#123;</span><br><span class="hljs-string">    Authorization: &#x27;Bearer &#x27; + token,</span><br><span class="hljs-string">    Accept: &#x27;application/json&#x27;</span><br><span class="hljs-string">  &#125;</span><br><span class="hljs-string">  // tenant-id / visit-tenant-id 也从页面读取后放进请求头</span><br><span class="hljs-string"></span><br><span class="hljs-string">  const res = await fetch(window.location.origin + path, &#123; headers &#125;)</span><br><span class="hljs-string">  return &#123; status: res.status, text: await res.text() &#125;</span><br><span class="hljs-string">&#125;)()`</span>)<br></code></pre></td></tr></table></figure>
+
+<p>有三条边界是刻意守住的：</p>
+<ol>
+<li><strong>主进程不读 token。</strong> 它只接收 <code>{ status, text }</code>，或者一个错误标记。token 从页面读、在页面用，不跨进程。</li>
+<li><strong>身份头在页面里拼。</strong> 商家、店铺、租户这些头部字段和页面当前会话保持一致，不依赖主进程缓存。</li>
+<li><strong>先校验 origin。</strong> 脚本执行前确认页面还在商家域名下，避免在错误的页面上发起请求。</li>
+</ol>
+<p>这和之前那篇《把商家后台嵌进桌面端》里的登录判定守的是同一条边界：<strong>token 不跨进程。</strong> 那篇只判断「登录没有」，不读值；这篇要在登录之后真正用会话，读值也只在页面内发生。</p>
+<p>代价也很直接：</p>
+<ul>
+<li>页面必须活着、加载完、且停在商家域名下。页面导航走或视图销毁，在途请求就应当失败。</li>
+<li>返回值只能是可序列化的文本。响应体、上传文件都要跨一次进程边界。</li>
+<li>文件上传得用 base64 把字节送进页面，再由页面构造 <code>FormData</code>。内存占用会翻倍，所以图片按 8 个一批上传，每批 120 秒超时，并核对返回的 URL 数量。</li>
+</ul>
+<h2 id="三、会话不只是「登录了没有」"><a href="#三、会话不只是「登录了没有」" class="headerlink" title="三、会话不只是「登录了没有」"></a>三、会话不只是「登录了没有」</h2><p>一旦开始借道，会话就不再是一个布尔值。它至少有三层含义：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">页面层：origin + 身份 + token 是否存在<br>主进程层：这次请求绑定的是哪一代会话<br>业务层：当前商家 / 店铺 / 租户是否还是发起时的那个<br></code></pre></td></tr></table></figure>
+
+<p>页面脚本里有一个每 100ms 检查一次的守卫：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">const</span> <span class="hljs-title function_">sessionChanged</span> = (<span class="hljs-params"></span>) =&gt;<br>  !<span class="hljs-title function_">identityMatches</span>() ||<br>  !<span class="hljs-title function_">readCache</span>(<span class="hljs-string">&#x27;ACCESS_TOKEN&#x27;</span>) ||<br>  <span class="hljs-title class_">String</span>(<span class="hljs-title function_">readCache</span>(<span class="hljs-string">&#x27;tenantId&#x27;</span>) ?? <span class="hljs-string">&#x27;&#x27;</span>) !== <span class="hljs-title class_">String</span>(tenantId ?? <span class="hljs-string">&#x27;&#x27;</span>) ||<br>  <span class="hljs-title class_">String</span>(<span class="hljs-title function_">readCache</span>(<span class="hljs-string">&#x27;visitTenantId&#x27;</span>) ?? <span class="hljs-string">&#x27;&#x27;</span>) !== <span class="hljs-title class_">String</span>(visitTenantId ?? <span class="hljs-string">&#x27;&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>一旦变化，页面内的 <code>AbortController</code> 会中断在途请求。主进程侧另有一个代次（generation）计数器：每次会话失效就加一，并终止当前代次的所有请求。每个关键 <code>await</code>（上传、提交）之后都要重新确认代次和 <code>webContents</code> 没变，否则丢掉结果并返回 <code>MERCHANT_SESSION_CHANGED</code>。</p>
+<p>这里有个容易被写错的细节：<strong>token 值变化不等于会话变化。</strong></p>
+<p>商家前端在遇到 401 时会自己调用刷新接口，重写 <code>ACCESS_TOKEN</code>。如果守卫把「token 变了」一律当成切账号，一次正常的刷新就会把已经成功的提交标成「结果未知」。我们最后只认三种真正的会话变化：</p>
+<ul>
+<li>token 消失（退出登录）；</li>
+<li>商家 &#x2F; 店铺身份变化；</li>
+<li>租户或访问租户变化。</li>
+</ul>
+<p>同身份、同租户下的 token 轮换，放行。</p>
+<p>同样，401 的处理也只退掉「这次请求用过的那一个 token」：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">if</span> (<span class="hljs-title function_">readCache</span>(<span class="hljs-string">&#x27;ACCESS_TOKEN&#x27;</span>) === token) &#123;<br>  <span class="hljs-variable language_">localStorage</span>.<span class="hljs-title function_">removeItem</span>(<span class="hljs-string">&#x27;ACCESS_TOKEN&#x27;</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这样不会因为一个迟到的 401，把用户刚重新登录拿到的新 token 清掉。</p>
+<h2 id="四、迟到结果比失败更危险"><a href="#四、迟到结果比失败更危险" class="headerlink" title="四、迟到结果比失败更危险"></a>四、迟到结果比失败更危险</h2><p>异步请求最怕的不是报错，而是<strong>结果回来得太晚</strong>。用户已经切了商家，旧的读请求才返回；或者已经退出登录，旧的写请求才成功。此时如果直接采用结果，数据会落到错误的作用域里。</p>
+<p>我们的处理分两层：</p>
+<ol>
+<li>页面内的守卫在会话变化时 <code>abort</code>，尽量让请求不要完成。</li>
+<li>主进程在 <code>await</code> 之后再次核对代次；即使页面已经把结果送回来，只要代次变了，也按 <code>SESSION_CHANGED</code> 丢弃。</li>
+</ol>
+<p>第二层是兜底。<code>abort</code> 是尽力而为，网络请求可能已经到达服务端，响应也可能已经在路上。<strong>只有主进程的代次检查能保证「迟到的结果不会被采用」。</strong></p>
+<p>失效的触发点也列清楚，避免漏掉：</p>
+<ul>
+<li>主 frame 的整页导航（<code>isInPlace</code> 的页内跳转不算）；</li>
+<li><code>webContents</code> 销毁；</li>
+<li>切商家 &#x2F; 切店铺 &#x2F; 换登录账号；</li>
+<li>会话重建。</li>
+</ul>
+<p>每次失效还会把页面里登记的请求统一 <code>abort</code> 掉。请求在页面里用一个随机 key 注册到 <code>window</code> 上的 <code>Map</code>，清理时连同定时器一起删掉，避免长会话里越积越多。</p>
+<h2 id="五、失败先分类，再决定重试"><a href="#五、失败先分类，再决定重试" class="headerlink" title="五、失败先分类，再决定重试"></a>五、失败先分类，再决定重试</h2><p>借道之后，失败可能来自四层：网络、HTTP、业务信封、会话。把它们压成一个 <code>catch</code>，重试策略就只能靠猜。我们的分类大致是这样：</p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>归类</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HTTP 401 或信封 code&#x3D;401</td>
+<td><code>MERCHANT_SESSION_EXPIRED</code></td>
+<td>清理当前 token，触发登录探测</td>
+</tr>
+<tr>
+<td>HTTP 403</td>
+<td><code>MERCHANT_PERMISSION_DENIED</code></td>
+<td>不重试，提示权限</td>
+</tr>
+<tr>
+<td>HTTP 404</td>
+<td><code>MERCHANT_ENDPOINT_NOT_FOUND</code></td>
+<td>路径或版本不匹配</td>
+</tr>
+<tr>
+<td>413 &#x2F; 502 &#x2F; 503 &#x2F; 504</td>
+<td><code>MERCHANT_BAD_RESPONSE:&lt;status&gt;</code></td>
+<td>保留状态码，按服务端异常处理</td>
+</tr>
+<tr>
+<td>其它 4xx &#x2F; 5xx</td>
+<td><code>&lt;failCode&gt;:HTTP &lt;status&gt;</code></td>
+<td>带业务动作前缀，便于定位</td>
+</tr>
+<tr>
+<td>超时</td>
+<td><code>MERCHANT_TIMEOUT</code></td>
+<td>写操作按「结果未知」处理</td>
+</tr>
+<tr>
+<td>信封矛盾 &#x2F; 缺 <code>data</code></td>
+<td><code>MERCHANT_BAD_RESPONSE</code></td>
+<td>拒绝，不猜</td>
+</tr>
+</tbody></table>
+<p>业务信封的校验比 HTTP 状态更严格。成功码只认 <code>0</code>、<code>200</code>、<code>&quot;0&quot;</code>、<code>&quot;200&quot;</code>、<code>&quot;0000&quot;</code>；<code>success</code> 必须是布尔值，为 <code>false</code> 直接失败；<code>data</code> 字段必须存在（哪怕是 <code>null</code>）。早期那种「HTTP 200 就当成功」的写法，会把服务端的业务失败静默吞掉。</p>
+<p>草稿提交还多一条：返回值必须是严格的布尔值，<strong>只有 <code>true</code> 才算成功</strong>。字符串 <code>&quot;false&quot;</code>、缺字段、<code>null</code>，全部按异常处理。原因很简单：这是写操作，误判成功的代价比误判失败大。</p>
+<h2 id="六、批量提交：一条会话错误毒化整批"><a href="#六、批量提交：一条会话错误毒化整批" class="headerlink" title="六、批量提交：一条会话错误毒化整批"></a>六、批量提交：一条会话错误毒化整批</h2><p>草稿是批量提交的。一批几十条，如果第 3 条发现会话已经失效，继续把剩下的逐条打一遍，只会得到一串一模一样的失败记录，还会让用户误以为每条都单独出过问题。</p>
+<p>所以会话级错误直接中止整批：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">if</span> (code === <span class="hljs-string">&#x27;MERCHANT_SESSION_CHANGED&#x27;</span> || code === <span class="hljs-string">&#x27;MERCHANT_SESSION_EXPIRED&#x27;</span>) &#123;<br>  <span class="hljs-keyword">throw</span> error<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>已经处理完的行保留结果，<strong>没碰到的行保持可重试</strong>。用户重新登录后再提交，不需要先清理一批假失败。</p>
+<p>另一类要单独处理的是「结果未知」。上传完成、<code>batchAdd</code> 已发出，但客户端超时、网关返回 5xx、或者信封无法解析——这时服务端可能已经建了草稿，也可能没有。平台并不保证同一个 <code>outGoodsNo</code> 的幂等，客户端不能把它当成「没生成」：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">结果未知，平台可能已生成，请先在商家后台草稿箱核对，再决定是否重试<br></code></pre></td></tr></table></figure>
+
+<p>同时保留本次使用的 <code>outGoodsNo</code>。重试时复用原标识，至少让平台侧的去重逻辑有东西可比对，而不是每次生成一个新的。</p>
+<p>同一商品身份的并发提交也要收口：一个来源在生成中时，其它兄弟记录不再提交，也不直接放弃——因为<strong>生成中的结果同样是未知的</strong>，先等结果，或者让用户去后台核对。</p>
+<h2 id="七、退出和更新：先失效会话，再关库"><a href="#七、退出和更新：先失效会话，再关库" class="headerlink" title="七、退出和更新：先失效会话，再关库"></a>七、退出和更新：先失效会话，再关库</h2><p>这条链路的收尾顺序，比请求本身更容易出事。</p>
+<p>应用退出或准备安装更新时，<code>stopImportTasks</code> 的顺序是：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">关闭辅助窗口<br>→ 释放 Browser4<br>→ 失效商家会话<br>→ 关闭 SQLite<br></code></pre></td></tr></table></figure>
+
+<p>为什么会话要在关库之前失效？因为会话失效会触发 <code>webContents</code> 的 <code>destroyed</code> 事件，而在途提交的回调可能还要写数据库。如果先关库，回调就会写到一个已经关闭的连接上。把失效放在前面，在途提交会先按「会话变化、结果未知」落库，再关连接。</p>
+<p>Windows 更新安装走的是同一个入口。旧卸载器会把数据目录改名，任何还开着的 SQLite 连接或 Browser4 进程都会让改名失败，安装目录就可能停在半新半旧的状态。</p>
+<h2 id="八、验证到了哪一步"><a href="#八、验证到了哪一步" class="headerlink" title="八、验证到了哪一步"></a>八、验证到了哪一步</h2><p>这次没有只靠「手动点一遍」。</p>
+<p><strong>离线回归</strong>用两套探针：</p>
+<ul>
+<li>一个探针把真实的 <code>MerchantApiClient</code> 放进 VM 页面环境执行，只替换 <code>WebContents</code>、origin 和网络响应。覆盖矛盾信封、<code>false</code>、缺字段、401&#x2F;403&#x2F;404&#x2F;413、身份与 origin 不匹配、读正文过程中切账号、显式取消、导航、销毁、超时和 multipart 上传。</li>
+<li>另一个探针使用真实草稿服务和 SQLite，覆盖字符串 <code>false</code> 不标成功、上传&#x2F;提交延迟期间关闭旧库、迟到成功被丢弃、未知结果落库。</li>
+</ul>
+<p><strong>实机验证</strong>在测试环境的真实商家页面上完成：</p>
+<ul>
+<li>10 个读接口（类目、品牌、车系、车型、批量车型、配件匹配、公共元数据、运费模板、属性字段、商家上下文）返回的 <code>source</code> 都是 <code>merchant</code>；</li>
+<li>注入真实 401 后，返回 <code>MERCHANT_SESSION_EXPIRED</code>，token 被移除、登录页出现，重新登录后数据恢复；</li>
+<li>A → B → A 切商家，B 看不到 A 的任务和商品，回到 A 后数据恢复；</li>
+<li>一次真实草稿写入，通过主进程日志、SQLite 和商家后台草稿箱三方核对。</li>
+</ul>
+<p><strong>没有被证明的部分</strong>也要写清楚：</p>
+<ul>
+<li>没有等到 token 自然过期，401 是故障注入；</li>
+<li>没有验证真实 403 权限矩阵；</li>
+<li>没有在生产账号、安装包和 Windows 上验证；</li>
+<li>token 轮换的守卫语义由离线探针覆盖，没有在真实刷新发生的瞬间做端到端复验；</li>
+<li>没有在真实 <code>batchAdd</code> 写入过程中切商家。取消只能停止客户端等待并尽力中断传输，<strong>不能撤回已经到达服务端的写入</strong>。</li>
+</ul>
+<h2 id="九、代价与边界"><a href="#九、代价与边界" class="headerlink" title="九、代价与边界"></a>九、代价与边界</h2><p>借道不是免费的：</p>
+<ul>
+<li><strong>强耦合。</strong> 桌面端的接口行为跟着商家前端走。前端改路径、改信封、改刷新逻辑，桌面端都可能受影响。这是选择复用会话的代价，不是意外。</li>
+<li><strong>页面是运行前提。</strong> 页面没加载完、导航走了、视图销毁了，请求就应当失败。我们接受这个前提，而不是偷偷绕过它。</li>
+<li><strong>上传要多一次编码。</strong> base64 和分批是明确的内存换安全；如果以后要传更大的文件，需要重新设计这一层。</li>
+<li><strong>服务端的责任没有消失。</strong> 客户端能做的只是「不采用错误结果」和「不谎报成功」。草稿归属、权限校验、重复提交的幂等，仍然必须由服务端自己保证。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>会话不是一个布尔值，而是「身份 + 租户 + 代次 + 失效时机」的组合；只判断登录与否，撑不起写操作。</li>
+<li>迟到结果必须用主进程的代次检查兜底，页面里的 <code>abort</code> 只能算尽力而为。</li>
+<li>借道换来的是一致性，付出的是耦合；把未验证的边界写清楚，比把它包装成「已完成」更有用。</li>
+</ol>
+
+                
+              </div>
+            
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
+      <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta post-meta--tags">
+      <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
+      
+        <a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7/" class="print-no-link">#一致性</a>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E4%BC%9A%E8%AF%9D%E7%AE%A1%E7%90%86/" class="print-no-link">#会话管理</a>
+      
+        <a href="/tags/API-%E8%AE%BE%E8%AE%A1/" class="print-no-link">#API 设计</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>借道商家会话：桌面端不再自己签 API 请求</div>
+      <div>https://aster-xu-lab.github.io/2026/11/19/2026-11-19-借道商家会话-桌面端不再自己签API请求/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月19日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/11/19/2026-11-19-%E6%97%A0%E8%A1%8C%E4%B8%BA%E5%8F%98%E5%8C%96%E5%9C%B0%E6%8B%86%E6%8E%892800%E8%A1%8C-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E6%80%8E%E4%B9%88%E8%AF%81%E6%98%8E%E9%87%8D%E6%9E%84%E6%B2%A1%E6%94%B9%E8%A1%8C%E4%B8%BA/" title="无行为变化地拆掉 2800 行：没有测试框架时怎么证明重构没改行为">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">无行为变化地拆掉 2800 行：没有测试框架时怎么证明重构没改行为</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/11/04/2026-11-04-%E5%8C%85%E5%86%85%E5%8C%85%E5%A4%96-%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E4%B8%8D%E8%AF%A5%E4%BB%8EPATH%E6%89%BE%E8%87%AA%E5%B7%B1%E7%9A%84%E5%B7%A5%E5%85%B7/" title="包内包外：桌面应用不该从 PATH 找自己的工具">
+                        <span class="hidden-mobile">包内包外：桌面应用不该从 PATH 找自己的工具</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span class="ax-footer__brand">AsterXu Lab</span> <span class="ax-footer__sep">·</span> <span>分布式系统 / 中台架构 / AI 系统工程</span> <span class="ax-footer__sep">·</span> <a href="https://github.com/aster-xu-lab" target="_blank" rel="noopener">GitHub</a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

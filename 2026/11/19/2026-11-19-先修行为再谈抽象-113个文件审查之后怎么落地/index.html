@@ -1,0 +1,961 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-先修行为再谈抽象-113个文件审查之后怎么落地/"/>
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一次只读的全库审查扫了 6 批、113 个文件、36,452 行，列出一张既有行为缺陷、也有重复逻辑的清单。真正难的不是找出问题，而是按什么顺序改。我们的顺序是：先修行为，再收敛常量，最后才碰规则和结构。这篇文章讲这个顺序为什么重要，以及哪些「看起来一样」的东西我们最后没有合并。  一、审查产出不是一张待办清单清单里混着四类东西：    类型 例子 处理方式    行为缺陷 异常不回滚、空槽位被">
+<meta property="og:type" content="article">
+<meta property="og:title" content="先修行为，再谈抽象：113 个文件审查之后怎么落地">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-%E5%85%88%E4%BF%AE%E8%A1%8C%E4%B8%BA%E5%86%8D%E8%B0%88%E6%8A%BD%E8%B1%A1-113%E4%B8%AA%E6%96%87%E4%BB%B6%E5%AE%A1%E6%9F%A5%E4%B9%8B%E5%90%8E%E6%80%8E%E4%B9%88%E8%90%BD%E5%9C%B0/index.html">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一次只读的全库审查扫了 6 批、113 个文件、36,452 行，列出一张既有行为缺陷、也有重复逻辑的清单。真正难的不是找出问题，而是按什么顺序改。我们的顺序是：先修行为，再收敛常量，最后才碰规则和结构。这篇文章讲这个顺序为什么重要，以及哪些「看起来一样」的东西我们最后没有合并。  一、审查产出不是一张待办清单清单里混着四类东西：    类型 例子 处理方式    行为缺陷 异常不回滚、空槽位被">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2026-11-19T15:18:42.000Z">
+<meta property="article:modified_time" content="2026-11-19T07:32:25.540Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="代码审查">
+<meta property="article:tag" content="代码质量">
+<meta property="article:tag" content="工程实践">
+<meta property="article:tag" content="重构">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>先修行为，再谈抽象：113 个文件审查之后怎么落地 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":false,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+</head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 0vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>文章</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self">
+                <i class="iconfont icon-books"></i>
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>文章</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-books"></i>
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<svg class="ax-sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="ax-ico-category" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+    </g>
+  </symbol>
+  <symbol id="ax-ico-tag" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 4.5h6l9 9-6 6-9-9z"></path>
+      <circle cx="8.5" cy="8.5" r="1.2"></circle>
+    </g>
+  </symbol>
+</svg>
+
+<div class="container-fluid nopadding-x ax-page ax-post">
+  <div class="row nomargin-x ax-post-row">
+    <div class="side-col ax-post-aside d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md ax-post-main">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <header class="ax-post-head">
+            <p class="ax-eyebrow">工程方法论</p>
+            <h1 class="ax-post-head__title">先修行为，再谈抽象：113 个文件审查之后怎么落地</h1>
+            <div class="ax-post-head__meta">
+              
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-11-19 23:18" pubdate>
+          2026年11月19日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          25 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+            </div>
+          </header>
+          <article class="post-content ax-prose">
+            <h1 id="seo-header">先修行为，再谈抽象：113 个文件审查之后怎么落地</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>一次只读的全库审查扫了 6 批、113 个文件、36,452 行，列出一张既有行为缺陷、也有重复逻辑的清单。真正难的不是找出问题，而是<strong>按什么顺序改</strong>。我们的顺序是：先修行为，再收敛常量，最后才碰规则和结构。这篇文章讲这个顺序为什么重要，以及哪些「看起来一样」的东西我们最后没有合并。</p>
+</blockquote>
+<h2 id="一、审查产出不是一张待办清单"><a href="#一、审查产出不是一张待办清单" class="headerlink" title="一、审查产出不是一张待办清单"></a>一、审查产出不是一张待办清单</h2><p>清单里混着四类东西：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>例子</th>
+<th>处理方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>行为缺陷</td>
+<td>异常不回滚、空槽位被回填、翻页越界</td>
+<td>先修，单独验证</td>
+</tr>
+<tr>
+<td>重复常量</td>
+<td>上限散落在 10 个文件</td>
+<td>收敛到 shared</td>
+</tr>
+<tr>
+<td>重复逻辑</td>
+<td>冲突匹配有 4 种写法</td>
+<td>先补样本，再合并</td>
+</tr>
+<tr>
+<td>口径冲突</td>
+<td>两套阶段集合，<code>processing</code> 含义不同</td>
+<td>保留，等产品确认</td>
+</tr>
+<tr>
+<td>死代码</td>
+<td>无调用方的接口与字段</td>
+<td>删除，grep 确认零残留</td>
+</tr>
+</tbody></table>
+<p>如果把它们混在一个「重构 PR」里，一旦行为变化，你无法判断是修 bug 改的，还是抽公共函数改的。所以第一批不是结构，是行为。</p>
+<h2 id="二、批-0：先把「错」修对"><a href="#二、批-0：先把「错」修对" class="headerlink" title="二、批 0：先把「错」修对"></a>二、批 0：先把「错」修对</h2><p>批 0 的准入标准只有一条：<strong>每条都能独立描述「输入 X → 现在错成 Y → 应是 Z」</strong>，不依赖其他条目。</p>
+<p>九个缺陷里，有几类很典型：</p>
+<ul>
+<li><strong>异常没有终态。</strong> <code>runTask</code> 只有 <code>finally</code> 没有 <code>catch</code>，异常时任务永久占槽，UI 停在「进行中」，只能重启应用。</li>
+<li><strong>显式清空被回填。</strong> 用户清空主图&#x2F;副图后保存，再打开又被采集图填满。修复要先区分「字段缺失」和「显式空数组」。</li>
+<li><strong>多表写入没有事务。</strong> 事件应用依次写三张表，中途失败就留下半套状态；补 <code>BEGIN IMMEDIATE</code> 后要验证回滚。</li>
+<li><strong>await 之后没复查作用域。</strong> 请求 LLM 期间切了商家，回来继续写旧库，抛的是 SQLite 内部错误，而不是明确的会话错误。</li>
+<li><strong>成功被判成失败。</strong> 主进程在全为「已有草稿」时返回 <code>ok:true, submittedCount:0</code>，渲染层却要求 <code>submittedCount &gt; 0</code>，于是弹错误提示。</li>
+</ul>
+<p>这些修复的共同点是：<strong>先别抽公共函数</strong>。如果先抽，等于把一个错误行为固化进共享代码，后面所有调用方一起错。</p>
+<h2 id="三、收敛重复，但不是合并所有「看起来一样」"><a href="#三、收敛重复，但不是合并所有「看起来一样」" class="headerlink" title="三、收敛重复，但不是合并所有「看起来一样」"></a>三、收敛重复，但不是合并所有「看起来一样」</h2><p>第二批开始搬常量与纯函数，判据是「不改行为」。合并前先用 fixture 记录当前输出，改后逐字节对照。</p>
+<h3 id="只共享基底，不合并差异"><a href="#只共享基底，不合并差异" class="headerlink" title="只共享基底，不合并差异"></a>只共享基底，不合并差异</h3><p>项目里有四套「无效值」集合，形状几乎一样：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs text">review-description : does not apply, not applicable, n/a, na, -<br>oe-numbers         : does not apply, unknown<br>ebay-match-rules   : does not apply, &#x27;&#x27;, n/a, na, none, unknown, not applicable<br>product-review     : does not apply, unknown<br></code></pre></td></tr></table></figure>
+
+<p>四套的交集只有 <code>does not apply</code>。如果图省事合成一个大集合，某些字段会把 <code>none</code> 当成空值，匹配结果就变了。</p>
+<p>最终只抽共享基底：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> <span class="hljs-variable constant_">BASE_EMPTY_VALUES</span> = [<span class="hljs-string">&#x27;does not apply&#x27;</span>]<br><span class="hljs-comment">// 各用途保留自己的 extras，集合内容逐项不变</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>重复不等于可以合并。相同的形状，可能承载不同的业务知识。</strong></p>
+<h3 id="上限、哨兵、判定函数"><a href="#上限、哨兵、判定函数" class="headerlink" title="上限、哨兵、判定函数"></a>上限、哨兵、判定函数</h3><ul>
+<li>输入&#x2F;变体 1000、派生 500、主图&#x2F;副图 15&#x2F;20，原来散在 10 个文件里，收敛到 <code>shared/limits.ts</code>，UI 文案改成插值。</li>
+<li>品牌哨兵 <code>NO_BRAND_ID</code> &#x2F; <code>NO_BRAND_LABEL</code> 替换 9 个文件；<code>isCertifiedBrandId</code> 统一「什么算已选品牌」。</li>
+<li>集运&#x2F;自发货判定收敛成 <code>shippingModeOf</code> &#x2F; <code>isCollectShipping</code>，<strong>未知值的行为作为显式参数</strong>，而不是悄悄落成某一种。</li>
+<li>任务阶段集合、暂停&#x2F;恢复&#x2F;取消、冻结时间格式化收敛到 <code>shared/migration-task.ts</code>。</li>
+</ul>
+<p>每收敛一项，验证脚本就加一组断言。冲突匹配抽完后加了 10 条，航运判定 8 条，阶段与时钟 10 条，品牌 4 条。</p>
+<h2 id="四、口径冲突：先保留，别急着统一"><a href="#四、口径冲突：先保留，别急着统一" class="headerlink" title="四、口径冲突：先保留，别急着统一"></a>四、口径冲突：先保留，别急着统一</h2><p>最值得说的一条是任务阶段集合。</p>
+<p>工作台和任务详情里各有一套「采集已完成」的阶段集合，差别在 <code>processing</code>：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">集合 A：processing 算已结束<br>集合 B：processing 算未结束<br></code></pre></td></tr></table></figure>
+
+<p><code>processing</code> 表示采集队列已排空、但完成闸门还没关。它到底算不算结束，取决于产品定义，不取决于代码看起来像不像。</p>
+<p>第一批修复时，我们<strong>没有合并</strong>，而是把两套集合都建出来、保留差异并加注释，等产品确认。后来口径明确为「未结束」，才删掉多余的那套：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">refactor(shr-05): 删除 TASK_SCRAPE_FINISHED_STAGES<br>processing 表示采集队列已排空但门未关，统一按「未结束」处理<br></code></pre></td></tr></table></figure>
+
+<p>如果一开始强行合并，要么工作台徽标提前消失，要么详情页永远不结束。<strong>重构时最危险的动作，是在语义没定之前替业务做决定。</strong></p>
+<h2 id="五、规则收敛：先补样本，再改实现"><a href="#五、规则收敛：先补样本，再改实现" class="headerlink" title="五、规则收敛：先补样本，再改实现"></a>五、规则收敛：先补样本，再改实现</h2><p>规则类逻辑最容易「静默改行为」。我们的顺序是：</p>
+<ol>
+<li>先导出全部现有样本的归一化结果，存成黄金文件；</li>
+<li>改实现；</li>
+<li>逐行 diff 黄金文件。</li>
+</ol>
+<p>比如匹配键规范化原来有 5 份，合并成 <code>normalizeMatchKey</code> &#x2F; <code>oeLabelKey</code> &#x2F; <code>normalizeCountryKey</code>，HTML 实体解码改成显式 profile。黄金文件里 30 条用例，改完逐行一致才算通过。</p>
+<p>eBay 站点判定原来有 3 套（7 &#x2F; 4 &#x2F; 2 个站点）。这次只统一主进程侧，采集脚本不动——因为改脚本必须同步 adapter 版本和规则哈希，而这一轮不打算发版。<strong>能不碰的边界就不碰，哪怕它也是重复的。</strong></p>
+<h2 id="六、结构拆分放在最后"><a href="#六、结构拆分放在最后" class="headerlink" title="六、结构拆分放在最后"></a>六、结构拆分放在最后</h2><p>等到行为修完、常量与规则收敛完，才做第四步：拆文件。</p>
+<ul>
+<li><code>import-ipc</code> 拆出事件总线、复核窗管理、商家作用域、生命周期、更新门禁；</li>
+<li><code>import-repository</code> 拆成 9 个域模块；</li>
+<li><code>browser4-service</code> 拆成 8 个模块；</li>
+<li>复核页按 section 拆成 7 个组件，窄 context 按用途拆成 7 个 key。</li>
+</ul>
+<p>顺序很重要：<strong>先让语义稳定，再让结构稳定。</strong> 反过来做，拆到一半发现口径要改，所有模块都得跟着返工。</p>
+<h2 id="七、每一步的验证基线"><a href="#七、每一步的验证基线" class="headerlink" title="七、每一步的验证基线"></a>七、每一步的验证基线</h2><p>这次整改没有「改完一起测」：</p>
+<ul>
+<li>批 0：每个修复带自己的探针，比如 <code>replacementNo</code> 的 <code>match</code> 状态、原产国 5 个样例、事务回滚；</li>
+<li>批 1a&#x2F;1b：<code>verify:rule-samples</code> 逐行对照，<code>check-input-layer</code> 累计新增 30+ 条断言；</li>
+<li>批 2&#x2F;3：<code>typecheck</code>、<code>lint:errors</code>、<code>prettier</code>、<code>verify:ready</code> 每轮都跑；</li>
+<li>最终 <code>verify:ready</code> 从 20 条增加到 21 条。</li>
+</ul>
+<h2 id="八、边界"><a href="#八、边界" class="headerlink" title="八、边界"></a>八、边界</h2><ul>
+<li>没有真实采集、出包和 UI 手测；部分模块只有间接覆盖；</li>
+<li>审查清单里的行号基于旧快照，开工前要重新核对；</li>
+<li>「不做」也是结论：四套无效值集合不合并，<code>App.vue</code> 不拆，采集脚本不动。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>先修行为，再抽公共代码；否则等于把 bug 写进基础设施。</li>
+<li>重复逻辑先问「形状相同是否知识相同」，只共享真正共享的那部分。</li>
+<li>语义冲突先保留并记录，等产品口径明确再收口；结构拆分永远放在最后。</li>
+</ol>
+
+                
+              </div>
+            
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
+      <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E5%B7%A5%E7%A8%8B%E6%96%B9%E6%B3%95%E8%AE%BA/" class="category-chain-item">工程方法论</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta post-meta--tags">
+      <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
+      
+        <a href="/tags/%E4%BB%A3%E7%A0%81%E5%AE%A1%E6%9F%A5/" class="print-no-link">#代码审查</a>
+      
+        <a href="/tags/%E4%BB%A3%E7%A0%81%E8%B4%A8%E9%87%8F/" class="print-no-link">#代码质量</a>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" class="print-no-link">#工程实践</a>
+      
+        <a href="/tags/%E9%87%8D%E6%9E%84/" class="print-no-link">#重构</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>先修行为，再谈抽象：113 个文件审查之后怎么落地</div>
+      <div>https://aster-xu-lab.github.io/2026/11/19/2026-11-19-先修行为再谈抽象-113个文件审查之后怎么落地/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月19日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-cc-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/11/20/2026-11-20-%E7%A9%BA%E6%9C%AA%E7%9F%A5%E5%A4%B1%E8%B4%A5%E6%98%AF%E4%B8%89%E4%BB%B6%E4%BA%8B-%E7%9B%AE%E5%BD%95%E5%8A%A0%E8%BD%BD%E7%9A%84%E4%B8%89%E6%80%81%E8%AE%BE%E8%AE%A1/" title="空、未知、失败是三件事：目录加载的三态设计">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">空、未知、失败是三件事：目录加载的三态设计</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/11/19/2026-11-19-%E6%97%A0%E8%A1%8C%E4%B8%BA%E5%8F%98%E5%8C%96%E5%9C%B0%E6%8B%86%E6%8E%892800%E8%A1%8C-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E6%80%8E%E4%B9%88%E8%AF%81%E6%98%8E%E9%87%8D%E6%9E%84%E6%B2%A1%E6%94%B9%E8%A1%8C%E4%B8%BA/" title="无行为变化地拆掉 2800 行：没有测试框架时怎么证明重构没改行为">
+                        <span class="hidden-mobile">无行为变化地拆掉 2800 行：没有测试框架时怎么证明重构没改行为</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span class="ax-footer__brand">AsterXu Lab</span> <span class="ax-footer__sep">·</span> <span>分布式系统 / 中台架构 / AI 系统工程</span> <span class="ax-footer__sep">·</span> <a href="https://github.com/aster-xu-lab" target="_blank" rel="noopener">GitHub</a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
