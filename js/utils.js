@@ -129,11 +129,20 @@ Fluid.utils = {
     }
   },
 
-  createScript: function(url, onload) {
+  createScript: function(url, onload, integrity) {
     var s = document.createElement('script');
     s.setAttribute('src', url);
     s.setAttribute('type', 'text/javascript');
     s.setAttribute('charset', 'UTF-8');
+    var hash = integrity;
+    if (!hash && window.__SRI__) {
+      try {
+        hash = window.__SRI__[new URL(url, window.location.href).pathname];
+      } catch (e) {}
+    }
+    if (hash) {
+      s.setAttribute('integrity', hash);
+    }
     s.async = false;
     if (typeof onload === 'function') {
       if (window.attachEvent) {
@@ -153,11 +162,20 @@ Fluid.utils = {
     e.parentNode.insertBefore(s, e.nextSibling);
   },
 
-  createCssLink: function(url) {
+  createCssLink: function(url, integrity) {
     var l = document.createElement('link');
     l.setAttribute('rel', 'stylesheet');
     l.setAttribute('type', 'text/css');
     l.setAttribute('href', url);
+    var hash = integrity;
+    if (!hash && window.__SRI__) {
+      try {
+        hash = window.__SRI__[new URL(url, window.location.href).pathname];
+      } catch (e) {}
+    }
+    if (hash) {
+      l.setAttribute('integrity', hash);
+    }
     var e = document.getElementsByTagName('link')[0]
       || document.getElementsByTagName('head')[0]
       || document.head || document.documentElement;
