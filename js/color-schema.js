@@ -10,7 +10,6 @@
   var userColorSchemaAttributeName = 'data-user-color-scheme';
   var defaultColorSchemaAttributeName = 'data-default-color-scheme';
   var colorToggleButtonSelector = '#color-toggle-btn';
-  var colorToggleIconSelector = '#color-toggle-icon';
   var iframeSelector = 'iframe';
 
   function setLS(k, v) {
@@ -114,10 +113,6 @@
     light: 'dark'
   };
 
-  function getIconClass(scheme) {
-    return 'icon-' + scheme;
-  }
-
   function toggleCustomColorSchema() {
     var currentSetting = getLS(colorSchemaStorageKey);
 
@@ -125,16 +120,8 @@
       // 从 localStorage 中读取模式，并取相反的模式
       currentSetting = invertColorSchemaObj[currentSetting];
     } else if (currentSetting === null) {
-      // 当 localStorage 中没有相关值，或者 localStorage 抛了 Error
-      // 先按照按钮的状态进行切换
-      var iconElement = document.querySelector(colorToggleIconSelector);
-      if (iconElement) {
-        currentSetting = iconElement.getAttribute('data');
-      }
-      if (!iconElement || !validColorSchemaKeys[currentSetting]) {
-        // 当 localStorage 中没有相关值，或者 localStorage 抛了 Error，则读取默认值并切换到相反的模式
-        currentSetting = invertColorSchemaObj[getSchemaFromCSSMediaQuery()];
-      }
+      // 当 localStorage 中没有相关值，或者 localStorage 抛了 Error，按默认模式取反
+      currentSetting = invertColorSchemaObj[getDefaultColorSchema()];
     } else {
       return;
     }
@@ -146,23 +133,9 @@
 
   function setButtonIcon(schema) {
     if (validColorSchemaKeys[schema]) {
-      // 切换图标
-      var icon = getIconClass('dark');
-      if (schema) {
-        icon = getIconClass(schema);
-      }
-      var iconElement = document.querySelector(colorToggleIconSelector);
-      if (iconElement) {
-        iconElement.setAttribute('class', 'iconfont ' + icon);
-        iconElement.setAttribute('data', invertColorSchemaObj[schema]);
-      } else {
-        Fluid.utils.waitElementLoaded(colorToggleIconSelector, function() {
-          var iconElement = document.querySelector(colorToggleIconSelector);
-          if (iconElement) {
-            iconElement.setAttribute('class', 'iconfont ' + icon);
-            iconElement.setAttribute('data', invertColorSchemaObj[schema]);
-          }
-        });
+      var button = document.querySelector(colorToggleButtonSelector);
+      if (button) {
+        button.setAttribute('aria-pressed', schema === 'dark' ? 'true' : 'false');
       }
 
       // 同步更新移动端按钮文字：light 状态显示"关灯"，dark 状态显示"开灯"
@@ -174,11 +147,6 @@
           label.textContent = schema === 'dark'
             ? (mobileBtn.getAttribute('data-label-light') || '')
             : (mobileBtn.getAttribute('data-label-dark') || '');
-        }
-        // 同步图标
-        var mobileIcon = document.querySelector('#mobile-color-toggle-icon');
-        if (mobileIcon) {
-          mobileIcon.setAttribute('class', 'iconfont ' + icon);
         }
       }
 
@@ -261,7 +229,7 @@
   // 当页面加载时，将显示模式设置为 localStorage 中自定义的值（如果有的话）
   applyCustomColorSchemaSettings();
 
-  Fluid.utils.waitElementLoaded(colorToggleIconSelector, function() {
+  Fluid.utils.waitElementLoaded(colorToggleButtonSelector, function() {
     applyCustomColorSchemaSettings();
     var button = document.querySelector(colorToggleButtonSelector);
     if (button) {
@@ -269,18 +237,6 @@
       button.addEventListener('click', function() {
         applyCustomColorSchemaSettings(toggleCustomColorSchema());
       });
-      var icon = document.querySelector(colorToggleIconSelector);
-      if (icon) {
-        // 光标悬停在按钮上时，切换图标
-        button.addEventListener('mouseenter', function() {
-          var current = icon.getAttribute('data');
-          icon.classList.replace(getIconClass(invertColorSchemaObj[current]), getIconClass(current));
-        });
-        button.addEventListener('mouseleave', function() {
-          var current = icon.getAttribute('data');
-          icon.classList.replace(getIconClass(current), getIconClass(invertColorSchemaObj[current]));
-        });
-      }
     }
 
     // 绑定移动端菜单按钮的事件

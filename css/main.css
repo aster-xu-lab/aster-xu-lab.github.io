@@ -2676,6 +2676,7 @@ body:has(.ax-page) {
   overflow-x: hidden;
 }
 body:has(.ax-page) #navbar {
+  height: 68px;
   padding-left: 0;
   padding-right: 0;
   background-color: var(--ax-bg);
@@ -2688,19 +2689,101 @@ body:has(.ax-page) #navbar .container {
   padding-left: 24px;
   padding-right: 24px;
 }
+body:has(.ax-page) #navbar .navbar-collapse {
+  gap: 16px;
+}
 body:has(.ax-page) #navbar.top-nav-collapse,
 body:has(.ax-page) #navbar.scrolling-navbar {
   background-color: var(--ax-bg);
 }
-body:has(.ax-page) #navbar .navbar-brand,
-body:has(.ax-page) #navbar .nav-item .nav-link {
+body:has(.ax-page) #navbar .navbar-brand {
   color: var(--ax-ink);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+body:has(.ax-page) #navbar .navbar-brand strong {
+  font-weight: 600;
+}
+body:has(.ax-page) #navbar .navbar-nav {
+  gap: 2px;
+}
+body:has(.ax-page) #navbar .nav-item .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ax-ink);
+  padding: 8px 10px;
+  white-space: nowrap;
 }
 body:has(.ax-page) #navbar .navbar-toggler .animated-icon span {
   background-color: var(--ax-ink);
 }
 body:has(.ax-page) #navbar .nav-item .nav-link i {
   color: var(--ax-ink);
+  font-size: 0.9375rem;
+}
+body:has(.ax-page) #navbar .nav-item .nav-link.active,
+body:has(.ax-page) #navbar .nav-item .nav-link[aria-current="page"],
+body:has(.ax-page) #navbar .nav-item .nav-link.active i,
+body:has(.ax-page) #navbar .nav-item .nav-link[aria-current="page"] i {
+  color: var(--ax-accent);
+}
+@media (hover: hover) {
+  body:has(.ax-page) #navbar .navbar-brand:hover,
+  body:has(.ax-page) #navbar .nav-item .nav-link:hover,
+  body:has(.ax-page) #navbar .nav-item .nav-link:hover i {
+    color: var(--ax-accent);
+  }
+}
+body:has(.ax-page) #navbar .ax-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+}
+body:has(.ax-page) #navbar .ax-iconbtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--ax-radius-chip);
+  background-color: transparent;
+  color: var(--ax-ink);
+  cursor: pointer;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+body:has(.ax-page) #navbar .ax-iconbtn i {
+  font-size: 1.125rem;
+  line-height: 1;
+}
+body:has(.ax-page) #navbar .ax-iconbtn:hover {
+  background-color: var(--ax-tint);
+  color: var(--ax-accent);
+}
+body:has(.ax-page) #navbar .nav-item .nav-link .ax-nav-ico {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+body:has(.ax-page) #navbar .ax-iconbtn .ax-nav-ico {
+  width: 18px;
+  height: 18px;
+}
+body:has(.ax-page) #navbar .ax-theme__moon,
+body:has(.ax-page) #mobile-grid-menu .ax-theme__moon {
+  display: none;
+}
+[data-user-color-scheme="dark"] body:has(.ax-page) #navbar .ax-theme__sun,
+[data-user-color-scheme="dark"] body:has(.ax-page) #mobile-grid-menu .ax-theme__sun {
+  display: none;
+}
+[data-user-color-scheme="dark"] body:has(.ax-page) #navbar .ax-theme__moon,
+[data-user-color-scheme="dark"] body:has(.ax-page) #mobile-grid-menu .ax-theme__moon {
+  display: block;
 }
 body:has(.ax-page) #scroll-top-button {
   display: none;
@@ -2721,6 +2804,18 @@ body:has(.ax-page) #mobile-grid-menu .mobile-grid-item {
   border: 1px solid var(--ax-line);
 }
 body:has(.ax-page) #mobile-grid-menu .mobile-grid-item i {
+  color: var(--ax-accent);
+}
+body:has(.ax-page) #mobile-grid-menu .mobile-grid-item .ax-nav-ico {
+  width: 18px;
+  height: 18px;
+  margin-bottom: 0.4rem;
+  color: var(--ax-accent);
+}
+body:has(.ax-page) #mobile-grid-menu .mobile-grid-group-header .ax-nav-ico {
+  width: 15px;
+  height: 15px;
+  margin-right: 0.3rem;
   color: var(--ax-accent);
 }
 body:has(.ax-page) #mobile-grid-menu .mobile-grid-item span,
@@ -3780,6 +3875,9 @@ body:has(.ax-404) footer {
   border-color: var(--ax-line);
 }
 @media (max-width: 991px) {
+  body:has(.ax-page) #navbar .ax-actions {
+    display: none;
+  }
   .ax-post-row {
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
