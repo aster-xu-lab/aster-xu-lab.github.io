@@ -380,7 +380,7 @@
             <h1 class="ax-post-head__title">3.2、synchronized关键字 解决竞争的方案</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -392,7 +392,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -447,7 +447,7 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-variable">counter</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">times</span> <span class="hljs-operator">=</span> <span class="hljs-number">5000</span>;<br><span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">Object</span> <span class="hljs-variable">lock</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Object</span>();<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br><br>    <span class="hljs-type">Thread</span> <span class="hljs-variable">t1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; times; i++) &#123;<br>            <span class="hljs-keyword">synchronized</span> (lock) &#123;<br>                counter++;<br><br>            &#125;<br>        &#125;<br>    &#125;, <span class="hljs-string">&quot;t1&quot;</span>);<br><br>    <span class="hljs-type">Thread</span> <span class="hljs-variable">t2</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(() -&gt; &#123;<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; times; i++) &#123;<br>            <span class="hljs-keyword">synchronized</span> (lock) &#123;<br>                counter--;<br>            &#125;<br>        &#125;<br>    &#125;, <span class="hljs-string">&quot;t2&quot;</span>);<br>    t1.start();<br>    t2.start();<br>    t1.join();<br>    t2.join();<br>    log.debug(<span class="hljs-string">&quot;结果：&#123;&#125;&quot;</span>, counter);<br>&#125;<br><br></code></pre></td></tr></table></figure>
 <p>输出</p>
 <figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">2022</span>/<span class="hljs-number">03</span>/<span class="hljs-number">04</span>-<span class="hljs-number">00</span>:<span class="hljs-number">37</span>:<span class="hljs-number">24</span>.<span class="hljs-number">840</span><span class="hljs-meta"> [main] c.Test1 - 结果：0</span><br></code></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/47de0f0db842880e86922e5903921eca.png" srcset="/img/loading.gif" lazyload alt="对象锁互斥示意简图"><br>你可以做这样的对比：</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/47de0f0db842880e86922e5903921eca.png" srcset="/img/loading.gif" lazyload alt="对象锁互斥示意简图" width="1102" height="295"><br>你可以做这样的对比：</p>
 <ul>
 <li><code>synchronized(对象)</code>中的对象，可以想象成一个房间，有唯一入口（门），房间只能一次进入一人进行计算，线程t1，t2想象成两个人</li>
 <li>当线程t1执行到<code>synchronized(lock)</code>时就好比t1进入了这个房间，并锁住门，拿走了钥匙，在门内执行<code>counter++</code></li>
@@ -455,7 +455,7 @@
 <li>这中间即使t1的cpu时间片不幸用完，被提出了门外（不要错误理解为锁住了对象就能一直执行下去哦），这时门还是所著的，t1仍然拿着钥匙，t2线程还是阻塞状态进不来，只有下次轮到t1自己再次获得时间片时才能开门进入</li>
 <li>当t1执行完<code>synchronized(lock)</code>块内的代码，这时才会从obj房间出来并解开门上的锁，唤醒t2线程把钥匙给他，t2线程这时才可以进入obj房间，执行他的<code>counter--</code>代码</li>
 </ul>
-<p>用图来表示<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c034cb82ba5b2f4b372bb0df4182c07f.png" srcset="/img/loading.gif" lazyload alt="对象锁房间类比示意图"></p>
+<p>用图来表示<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c034cb82ba5b2f4b372bb0df4182c07f.png" srcset="/img/loading.gif" lazyload alt="对象锁房间类比示意图" width="777" height="1006"></p>
 <h3 id="思考"><a href="#思考" class="headerlink" title="思考"></a>思考</h3><p>synchronized实际是用<strong>对象锁</strong>保证了<strong>临界区内代码的原子性</strong>，临界区内的代码对外是不可分割的，不会被线程切换锁打断。<br>为了加深理解，请思考下面的问题</p>
 <ul>
 <li>如果把<code>synchronized(obj)</code>放在for循环的外面，如何理解？ – 原子性</li>
@@ -490,7 +490,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -576,7 +576,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

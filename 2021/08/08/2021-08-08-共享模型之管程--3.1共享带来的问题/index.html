@@ -385,7 +385,7 @@
             <h1 class="ax-post-head__title">3、共享模型之管程 -- 3.1、共享带来的问题</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -397,7 +397,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -437,23 +437,23 @@
                 
                 <h2 id="1、共享带来的问题"><a href="#1、共享带来的问题" class="headerlink" title="1、共享带来的问题"></a>1、共享带来的问题</h2><h3 id="小故事"><a href="#小故事" class="headerlink" title="小故事"></a>小故事</h3><ul>
 <li>老王（操作系统）有一个功能强大的算盘（CPU），现在想把它租出去，赚一点外快</li>
-<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/226feb641c0b0e9a3a1fb99600d96279.png" srcset="/img/loading.gif" lazyload alt="算盘与CPU类比示意图"></li>
+<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/226feb641c0b0e9a3a1fb99600d96279.png" srcset="/img/loading.gif" lazyload alt="算盘与CPU类比示意图" width="670" height="287"></li>
 <li>小南、小女（线程）来使用这个算盘进行一些计算，并按照时间给老王支付费用</li>
 <li>但小南不能一天24小事使用算盘，他经常要小憩一会儿（sleep），又或者是去吃饭上厕所（阻塞io操作），有时还需要一根烟，没烟的时候思绪全无（wait），这些情况称为阻塞</li>
-<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f208fe0ddfc89d0d2e16214954173c87.png" srcset="/img/loading.gif" lazyload alt="线程阻塞场景示意图"></li>
+<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f208fe0ddfc89d0d2e16214954173c87.png" srcset="/img/loading.gif" lazyload alt="线程阻塞场景示意图" width="833" height="396"></li>
 <li>在这些时候，算盘没有利用起来（不能收钱了），老王觉得有点不划算</li>
 <li>另外，小女也想用用算盘，如果总是让小南占着算盘，小女觉得不公平</li>
 <li>于是，老王灵机一动，想了个办法[让他们每个人用一会，轮流着使用算盘]</li>
 <li>这样，小南阻塞的时候，算盘可以分给小女使用，反之亦然</li>
 <li>最近执行的计算比较复杂，需要存储一些中间结果，而学生们的脑容量（工作内存）不够，所以老王申请了一个笔记本（主内存），把一些中间结果先记在本上</li>
 <li>计算流程是这样的</li>
-<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7aca2f8c442ab4cf327c4cbe79f2b908.png" srcset="/img/loading.gif" lazyload alt="主内存与工作内存交互图"></li>
+<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7aca2f8c442ab4cf327c4cbe79f2b908.png" srcset="/img/loading.gif" lazyload alt="主内存与工作内存交互图" width="969" height="325"></li>
 <li>但是由于分时系统，有一天还是发生了事故</li>
 <li>小南刚读取到初始值0做了个+1运算，还没来得及写会结果</li>
 <li>老王说[小南，你的时间到了，该别人了，记住结果走吧]，于是小南念叨着[结果是1，结果是1…]，不甘心的到一边待着去了（上下文切换）</li>
 <li>老王说[小女，该你了]，小女看到笔记本上还写着0做了个-1运算，将结果-1写入笔记本</li>
 <li>这时小女的时间也用完了，老王又叫醒了小南[小南，把你上次的题目算完吧]，小南将他脑中的结果1写入了笔记本</li>
-<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/09c00785ce0ad885cf324f8ce710b8ac.png" srcset="/img/loading.gif" lazyload alt="共享变量读写交错示意图"></li>
+<li><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/09c00785ce0ad885cf324f8ce710b8ac.png" srcset="/img/loading.gif" lazyload alt="共享变量读写交错示意图" width="933" height="331"></li>
 <li>小南和小女都觉得自己没做错，单笔记本里的结果是1而不是0</li>
 </ul>
 <h3 id="Java的体现"><a href="#Java的体现" class="headerlink" title="Java的体现"></a>Java的体现</h3><p>两个线程对初始值为0的静态变量一个做自增，一个做自建，各做5000次，结果是0吗？</p>
@@ -465,7 +465,7 @@
 <figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs less"><span class="hljs-selector-tag">getstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 获取静态变量i的值</span><br><span class="hljs-selector-tag">iconst_1</span> <span class="hljs-comment">// 准备常量1</span><br><span class="hljs-selector-tag">iadd</span> <span class="hljs-comment">// 自增</span><br><span class="hljs-selector-tag">putstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 将修改后的值存入静态变量i</span><br></code></pre></td></tr></table></figure>
 <p>而对应<code>i--</code>也是类似的：</p>
 <figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs less"><span class="hljs-selector-tag">getstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 获取静态变量i的值</span><br><span class="hljs-selector-tag">iconst_1</span> <span class="hljs-comment">// 准备常量1</span><br><span class="hljs-selector-tag">isub</span> <span class="hljs-comment">// 自减</span><br><span class="hljs-selector-tag">putstatic</span> <span class="hljs-selector-tag">i</span> <span class="hljs-comment">// 将修改后的值存入静态变量i</span><br></code></pre></td></tr></table></figure>
-<p>Java的内存模型如下，完成静态变量的自增、自减需要在主内存和工作内存中进行数据交换（这块会在别的章节进行叙述）：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3b1995e5662821a23c1fec6c9c9e6c0b.png" srcset="/img/loading.gif" lazyload alt="Java 内存模型结构示意图"><br>如果单线程，以上8行代码是顺序执行（不会交错）没有问题：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/dafe09f04fdb03becd8318044ccc3287.png" srcset="/img/loading.gif" lazyload alt="单线程字节码顺序执行图"><br>但多线程下这8航大吗可能交错运行：<br>出现负数的情况：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5ca2d7d4423c741afaa4bb9094650d97.png" srcset="/img/loading.gif" lazyload alt="多线程交错出现负数示意图"><br>出现正数的情况：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a9f50f13054a3138f4bc9ba8ac03833b.png" srcset="/img/loading.gif" lazyload alt="多线程交错出现正数示意图"></p>
+<p>Java的内存模型如下，完成静态变量的自增、自减需要在主内存和工作内存中进行数据交换（这块会在别的章节进行叙述）：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3b1995e5662821a23c1fec6c9c9e6c0b.png" srcset="/img/loading.gif" lazyload alt="Java 内存模型结构示意图" width="965" height="422"><br>如果单线程，以上8行代码是顺序执行（不会交错）没有问题：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/dafe09f04fdb03becd8318044ccc3287.png" srcset="/img/loading.gif" lazyload alt="单线程字节码顺序执行图" width="557" height="657"><br>但多线程下这8航大吗可能交错运行：<br>出现负数的情况：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5ca2d7d4423c741afaa4bb9094650d97.png" srcset="/img/loading.gif" lazyload alt="多线程交错出现负数示意图" width="690" height="724"><br>出现正数的情况：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a9f50f13054a3138f4bc9ba8ac03833b.png" srcset="/img/loading.gif" lazyload alt="多线程交错出现正数示意图" width="679" height="727"></p>
 <h3 id="临界区-Critical-Section"><a href="#临界区-Critical-Section" class="headerlink" title="临界区 Critical Section"></a>临界区 Critical Section</h3><ul>
 <li>一个程序运行多个线程本身是没有偶问题的</li>
 <li>问题出在多个线程访问<strong>共享资源</strong><ul>
@@ -482,7 +482,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -566,7 +566,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

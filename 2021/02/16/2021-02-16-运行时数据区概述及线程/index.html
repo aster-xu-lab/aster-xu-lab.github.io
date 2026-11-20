@@ -383,7 +383,7 @@
             <h1 class="ax-post-head__title">运行时数据区概述及线程</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -395,7 +395,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -433,11 +433,11 @@
             
               <div class="markdown-body">
                 
-                <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>运行时数据区，也就是下图这部分，它是在类加载完成后的阶段<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6756bd367254f3188ed0393a827fa0c1.png#pic_center" srcset="/img/loading.gif" lazyload alt="运行时数据区在JVM中的位置图"><br>当我们通过前面的：类的加载-&gt; 验证 -&gt; 准备 -&gt; 解析 -&gt; 初始化 这几个阶段完成后，就会用到执行引擎对我们的类进行使用，同时执行引擎将会使用到我们运行时数据区<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/10f21d07ec45901c6b75b25420d3e58d.png#pic_center" srcset="/img/loading.gif" lazyload alt="类加载与执行引擎关系示意图"><br>也就是大厨做饭，我们把大厨后面的东西（切好的菜，刀，调料），比作是运行时数据区。而厨师可以类比于执行引擎，将通过准备的东西进行制作成精美的菜品<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e9fda2a4d41d2c2a1b788a4f9d001576.png#pic_center" srcset="/img/loading.gif" lazyload alt="运行时数据区大厨类比示意图"><br>内存是非常重要的系统资源，是硬盘和CPU的中间仓库及桥梁，承载着操作系统和应用程序的实时运行JVM内存布局规定了Java在运行过程中内存申请、分配、管理的策略，保证了JVM的高效稳定运行。不同的JVM对于内存的划分方式和管理机制存在着部分差异。结合JVM虚拟机规范，来探讨一下经典的JVM内存布局。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/573b39370e64c2940ea0600566be0fea.png#pic_center" srcset="/img/loading.gif" lazyload alt="经典JVM内存布局示意图"><br>Java虚拟机定义了若干种程序运行期间会使用到的运行时数据区（如下所示），其中有一些会随着虚拟机启动而创建，随着虚拟机退出而销毁。另外一些则是与线程一一对应的，这些与线程对应的数据区域会随着线程开始和结束而创建和销毁。</p>
+                <h2 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h2><p>运行时数据区，也就是下图这部分，它是在类加载完成后的阶段<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6756bd367254f3188ed0393a827fa0c1.png#pic_center" srcset="/img/loading.gif" lazyload alt="运行时数据区在JVM中的位置图" width="867" height="509"><br>当我们通过前面的：类的加载-&gt; 验证 -&gt; 准备 -&gt; 解析 -&gt; 初始化 这几个阶段完成后，就会用到执行引擎对我们的类进行使用，同时执行引擎将会使用到我们运行时数据区<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/10f21d07ec45901c6b75b25420d3e58d.png#pic_center" srcset="/img/loading.gif" lazyload alt="类加载与执行引擎关系示意图" width="806" height="409"><br>也就是大厨做饭，我们把大厨后面的东西（切好的菜，刀，调料），比作是运行时数据区。而厨师可以类比于执行引擎，将通过准备的东西进行制作成精美的菜品<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e9fda2a4d41d2c2a1b788a4f9d001576.png#pic_center" srcset="/img/loading.gif" lazyload alt="运行时数据区大厨类比示意图" width="701" height="544"><br>内存是非常重要的系统资源，是硬盘和CPU的中间仓库及桥梁，承载着操作系统和应用程序的实时运行JVM内存布局规定了Java在运行过程中内存申请、分配、管理的策略，保证了JVM的高效稳定运行。不同的JVM对于内存的划分方式和管理机制存在着部分差异。结合JVM虚拟机规范，来探讨一下经典的JVM内存布局。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/573b39370e64c2940ea0600566be0fea.png#pic_center" srcset="/img/loading.gif" lazyload alt="经典JVM内存布局示意图" width="1052" height="479"><br>Java虚拟机定义了若干种程序运行期间会使用到的运行时数据区（如下所示），其中有一些会随着虚拟机启动而创建，随着虚拟机退出而销毁。另外一些则是与线程一一对应的，这些与线程对应的数据区域会随着线程开始和结束而创建和销毁。</p>
 <p>灰色的为单独线程私有的，红色的为多个线程共享的。即：</p>
 <ul>
 <li>每个线程：独立包括程序计数器、栈、本地栈。</li>
-<li>线程间共享：堆、堆外内存（永久代或元空间、代码缓存）<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06c1ffc10d5e264b985353269bbc2481.png#pic_center" srcset="/img/loading.gif" lazyload alt="线程私有与共享区域划分图"><br>关于内存间共享的说明<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/13fd6851ce9f3612320a02cb02ce92a0.png#pic_center" srcset="/img/loading.gif" lazyload alt="运行时数据区共享内存说明图"><br>每个JVM只有一个Runtime实例。即运行时环境，相当于内存结构中的框框：运行时环境</li>
+<li>线程间共享：堆、堆外内存（永久代或元空间、代码缓存）<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06c1ffc10d5e264b985353269bbc2481.png#pic_center" srcset="/img/loading.gif" lazyload alt="线程私有与共享区域划分图" width="367" height="360"><br>关于内存间共享的说明<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/13fd6851ce9f3612320a02cb02ce92a0.png#pic_center" srcset="/img/loading.gif" lazyload alt="运行时数据区共享内存说明图" width="563" height="214"><br>每个JVM只有一个Runtime实例。即运行时环境，相当于内存结构中的框框：运行时环境</li>
 </ul>
 <h2 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h2><p>线程是一个程序里的运行单元。JVM允许一个应用有多个线程并行的执行。 在Hotspot JVM里，每个线程都与操作系统的本地线程直接映射。</p>
 <ul>
@@ -457,7 +457,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -541,7 +541,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

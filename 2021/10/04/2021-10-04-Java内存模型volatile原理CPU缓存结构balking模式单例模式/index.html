@@ -398,7 +398,7 @@
             <h1 class="ax-post-head__title">4、Java内存模型、volatile原理、CPU缓存结构、balking模式、单例模式</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -410,7 +410,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -462,11 +462,11 @@
 <p>t线程没有如预期的停下来</p>
 <p>分析一下：</p>
 <ol>
-<li><p>初始状态，t线程刚开始从主内存读取了run的值到工作内存<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7ae16d2166e14e013880cbf7cbbcb26.png" srcset="/img/loading.gif" lazyload alt="t 线程从主存读取 run 初始状态图"></p>
+<li><p>初始状态，t线程刚开始从主内存读取了run的值到工作内存<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7ae16d2166e14e013880cbf7cbbcb26.png" srcset="/img/loading.gif" lazyload alt="t 线程从主存读取 run 初始状态图" width="892" height="460"></p>
 </li>
-<li><p>因为t线程要频繁的从主内存中读取run的值，JIT编译器会将run的值缓存至自己工作内存的高速缓存中，减少对主存run的访问，提高效率<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/026880714100968b89d8d0f2649e3977.png" srcset="/img/loading.gif" lazyload alt="run 被缓存至工作内存高速缓存图"></p>
+<li><p>因为t线程要频繁的从主内存中读取run的值，JIT编译器会将run的值缓存至自己工作内存的高速缓存中，减少对主存run的访问，提高效率<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/026880714100968b89d8d0f2649e3977.png" srcset="/img/loading.gif" lazyload alt="run 被缓存至工作内存高速缓存图" width="1018" height="450"></p>
 </li>
-<li><p>1秒之后，main线程修改了run的值，并同步至主存，而t 是从自己工作内存的高速缓存中读取这个变量的值，结果永远是旧值<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7fc7d8fb8a981ce434e1ab5d435d5fd.png" srcset="/img/loading.gif" lazyload alt="main 修改 run 后 t 线程读到旧值图"></p>
+<li><p>1秒之后，main线程修改了run的值，并同步至主存，而t 是从自己工作内存的高速缓存中读取这个变量的值，结果永远是旧值<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f7fc7d8fb8a981ce434e1ab5d435d5fd.png" srcset="/img/loading.gif" lazyload alt="main 修改 run 后 t 线程读到旧值图" width="1023" height="414"></p>
 </li>
 </ol>
 <h3 id="解决办法"><a href="#解决办法" class="headerlink" title="解决办法"></a>解决办法</h3><p>volatile （易变关键字）</p>
@@ -479,13 +479,13 @@
 <p><strong>注意</strong><br>synchronized语句块既可以保证代码的原子性，也同时保证代码块内变量的可见性，但缺点是synchronized是属于重量级的，性能相对更低<br>如果在前面示例的死循环中加入System.out.println()会发现及时不加volatile修饰乳，线程t也能正确看到对run变量的修改，为什么？</p>
 </blockquote>
 <p>println内部有synchronized关键字</p>
-<h2 id="3、CPU缓存结构原理"><a href="#3、CPU缓存结构原理" class="headerlink" title="3、CPU缓存结构原理"></a>3、CPU缓存结构原理</h2><h3 id="1、CPU缓存结构"><a href="#1、CPU缓存结构" class="headerlink" title="1、CPU缓存结构"></a>1、CPU缓存结构</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/100154e7c30968c355512fd7c98fed1d.png" srcset="/img/loading.gif" lazyload alt="CPU 多级缓存结构图"><br>查看cpu缓存</p>
+<h2 id="3、CPU缓存结构原理"><a href="#3、CPU缓存结构原理" class="headerlink" title="3、CPU缓存结构原理"></a>3、CPU缓存结构原理</h2><h3 id="1、CPU缓存结构"><a href="#1、CPU缓存结构" class="headerlink" title="1、CPU缓存结构"></a>1、CPU缓存结构</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/100154e7c30968c355512fd7c98fed1d.png" srcset="/img/loading.gif" lazyload alt="CPU 多级缓存结构图" width="1019" height="661"><br>查看cpu缓存</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-string">⚡</span> <span class="hljs-string">root@&lt;host&gt;</span> <span class="hljs-string">~</span> <span class="hljs-string">lscpu</span><br><span class="hljs-attr">Architecture:</span> <span class="hljs-string">x86_64</span><br><span class="hljs-attr">CPU op-mode(s):</span> <span class="hljs-number">32</span><span class="hljs-string">-bit,</span> <span class="hljs-number">64</span><span class="hljs-string">-bit</span><br><span class="hljs-attr">Byte Order:</span> <span class="hljs-string">Little</span> <span class="hljs-string">Endian</span><br><span class="hljs-attr">CPU(s):</span> <span class="hljs-number">1</span><br><span class="hljs-attr">On-line CPU(s) list:</span> <span class="hljs-number">0</span><br><span class="hljs-attr">Thread(s) per core:</span> <span class="hljs-number">1</span><br><span class="hljs-attr">Core(s) per socket:</span> <span class="hljs-number">1</span><br><span class="hljs-attr">Socket(s):</span> <span class="hljs-number">1</span><br><span class="hljs-attr">NUMA node(s):</span> <span class="hljs-number">1</span><br><span class="hljs-attr">Vendor ID:</span> <span class="hljs-string">GenuineIntel</span><br><span class="hljs-attr">CPU family:</span> <span class="hljs-number">6</span><br><span class="hljs-attr">Model:</span> <span class="hljs-number">142</span><br><span class="hljs-attr">Model name:</span> <span class="hljs-string">Intel(R)</span> <span class="hljs-string">Core(TM)</span> <span class="hljs-string">i7-8565U</span> <span class="hljs-string">CPU</span> <span class="hljs-string">@</span> <span class="hljs-number">1.</span><span class="hljs-string">80GHz</span><br><span class="hljs-attr">Stepping:</span> <span class="hljs-number">11</span><br><span class="hljs-attr">CPU MHz:</span> <span class="hljs-number">1992.002</span><br><span class="hljs-attr">BogoMIPS:</span> <span class="hljs-number">3984.00</span><br><span class="hljs-attr">Hypervisor vendor:</span> <span class="hljs-string">VMware</span><br><span class="hljs-attr">Virtualization type:</span> <span class="hljs-string">full</span><br><span class="hljs-attr">L1d cache:</span> <span class="hljs-string">32K</span><br><span class="hljs-attr">L1i cache:</span> <span class="hljs-string">32K</span><br><span class="hljs-attr">L2 cache:</span> <span class="hljs-string">256K</span><br><span class="hljs-attr">L3 cache:</span> <span class="hljs-string">8192K</span><br><span class="hljs-attr">NUMA node0 CPU(s):</span> <span class="hljs-number">0</span><br></code></pre></td></tr></table></figure>
-<p>速度比较<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/420fc5c64dda900c64168e44b2cf648b.png" srcset="/img/loading.gif" lazyload alt="CPU 各级缓存访问速度比较图"><br>查看cpu缓存行</p>
+<p>速度比较<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/420fc5c64dda900c64168e44b2cf648b.png" srcset="/img/loading.gif" lazyload alt="CPU 各级缓存访问速度比较图" width="1025" height="336"><br>查看cpu缓存行</p>
 <figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs awk">⚡ root@&lt;host&gt; ~ cat <span class="hljs-regexp">/sys/</span>devices<span class="hljs-regexp">/system/</span>cpu<span class="hljs-regexp">/cpu0/</span>cache<span class="hljs-regexp">/index0/</span>coherency_line_size<br><span class="hljs-number">64</span><br></code></pre></td></tr></table></figure>
 <p>cpu拿到的内存地址格式是这样的</p>
 <figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-attr">[高位组标记]</span><span class="hljs-selector-attr">[低位索引]</span><span class="hljs-selector-attr">[偏移量]</span><br></code></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1a53c271a18336df2cec5e6ad9253e16.png" srcset="/img/loading.gif" lazyload alt="CPU 内存地址格式示意图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1a53c271a18336df2cec5e6ad9253e16.png" srcset="/img/loading.gif" lazyload alt="CPU 内存地址格式示意图" width="1029" height="467"></p>
 <h3 id="2、CPU缓存读"><a href="#2、CPU缓存读" class="headerlink" title="2、CPU缓存读"></a>2、CPU缓存读</h3><p>读取数据流程如下</p>
 <ul>
 <li>根据低位，计算在缓存中的索引</li>
@@ -503,11 +503,11 @@
 <ol>
 <li>E、S、M状态的缓存行都可以满足CPU的读请求</li>
 <li>E状态的缓存行，有写请求，会将状态改为M，这时并不触发主存的写</li>
-<li>E状态的缓存行，必须监听该缓存行的读操作，如果有，要变为S状态<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/52aad32f98837a5b42f59004a7bcd4e9.png" srcset="/img/loading.gif" lazyload alt="MESI 协议缓存行状态转换图"></li>
+<li>E状态的缓存行，必须监听该缓存行的读操作，如果有，要变为S状态<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/52aad32f98837a5b42f59004a7bcd4e9.png" srcset="/img/loading.gif" lazyload alt="MESI 协议缓存行状态转换图" width="1594" height="546"></li>
 <li>M状态的缓存行，必须监听该缓存行的读操作，如果有，先将其它缓存（S状态）中该缓存行变成 I 状态（即6的流程），写入主存，自己变为S状态</li>
 <li>S状态的缓存行，有写请求，走4.流程</li>
 <li>S状态的缓存行，必须监听该缓存行的失效操作，如果有，自己变为I状态</li>
-<li>I状态的缓存行，有读请求，必须从主存读取<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ef73a96f232ab6bf1c379c03258fcf9e.png" srcset="/img/loading.gif" lazyload alt="MESI 缓存行失效流程示意图"><br>这边有点绕，，有时间在细看吧。</li>
+<li>I状态的缓存行，有读请求，必须从主存读取<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ef73a96f232ab6bf1c379c03258fcf9e.png" srcset="/img/loading.gif" lazyload alt="MESI 缓存行失效流程示意图" width="1585" height="700"><br>这边有点绕，，有时间在细看吧。</li>
 </ol>
 <h3 id="4、内存屏障"><a href="#4、内存屏障" class="headerlink" title="4、内存屏障"></a>4、内存屏障</h3><p>Memory Barrier （Memory Fence）</p>
 <ul>
@@ -518,7 +518,7 @@
 </li>
 <li>有序性<ul>
 <li>写屏障会确保指令重排序时，不会将写屏障之前的代码排在写屏障之后</li>
-<li>读屏障会确保指令重排序时，不会将读屏障之后的代码写在读屏障之前<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c16f9ae513dd9a5f1e571958d8c94ee6.png" srcset="/img/loading.gif" lazyload alt="内存屏障读写顺序示意图"></li>
+<li>读屏障会确保指令重排序时，不会将读屏障之后的代码写在读屏障之前<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c16f9ae513dd9a5f1e571958d8c94ee6.png" srcset="/img/loading.gif" lazyload alt="内存屏障读写顺序示意图" width="1585" height="414"></li>
 </ul>
 </li>
 </ul>
@@ -540,7 +540,7 @@
 <h5 id="CPU执行时间"><a href="#CPU执行时间" class="headerlink" title="CPU执行时间"></a>CPU执行时间</h5><p>程序的CPU执行时间，即我们前面提到的user + system时间，可以用下面的公式表示</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">程序 CPU执行时间 <span class="hljs-operator">=</span> 指令数 <span class="hljs-operator">*</span> CPI <span class="hljs-operator">*</span> Clock <span class="hljs-keyword">Cycle</span> <span class="hljs-type">Time</span><br></code></pre></td></tr></table></figure>
 
-<h4 id="2、鱼罐头的故事"><a href="#2、鱼罐头的故事" class="headerlink" title="2、鱼罐头的故事"></a>2、鱼罐头的故事</h4><p>加工一条鱼需要50分钟，只能一条鱼，一条鱼顺序加工…<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0a9fe42fe3c0ca0e39ca08b8b8d8c7cb.png" srcset="/img/loading.gif" lazyload alt="鱼罐头顺序加工耗时示意图"><br>可以将每个鱼罐头的加工流程细分为5个步骤：</p>
+<h4 id="2、鱼罐头的故事"><a href="#2、鱼罐头的故事" class="headerlink" title="2、鱼罐头的故事"></a>2、鱼罐头的故事</h4><p>加工一条鱼需要50分钟，只能一条鱼，一条鱼顺序加工…<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0a9fe42fe3c0ca0e39ca08b8b8d8c7cb.png" srcset="/img/loading.gif" lazyload alt="鱼罐头顺序加工耗时示意图" width="1577" height="427"><br>可以将每个鱼罐头的加工流程细分为5个步骤：</p>
 <ul>
 <li>去鳞清洗 10分钟</li>
 <li>蒸煮沥水 10分钟</li>
@@ -548,8 +548,8 @@
 <li>杀菌出锅 10分钟</li>
 <li>真空封罐 10分钟</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c22c3a3625125ab2ae8485c5b8073a9f.png" srcset="/img/loading.gif" lazyload alt="鱼罐头五步流水线加工示意图"><br>即是只有一个工人，最理想的情况：他能够在10分钟内做好这五件事，因为对第一条鱼的真空封罐，不影响第二条鱼的杀菌出锅</p>
-<h4 id="3、指令重排序优化"><a href="#3、指令重排序优化" class="headerlink" title="3、指令重排序优化"></a>3、指令重排序优化</h4><p>事实上，现代处理器会设计为一个时钟周期完成执行一条执行时间最长的CPU指令。为什么这么做呢？可以想到指令还可以再划分为一个个更小的阶段，例如，没跳指令可以分为 <code>取指令 - 指令译码 - 执行指令 - 内存访问 - 数据写回 </code> 这个五个阶段<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e16cefecbbe12fb45497497107ad235d.png" srcset="/img/loading.gif" lazyload alt="指令五个执行阶段划分示意图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c22c3a3625125ab2ae8485c5b8073a9f.png" srcset="/img/loading.gif" lazyload alt="鱼罐头五步流水线加工示意图" width="1573" height="556"><br>即是只有一个工人，最理想的情况：他能够在10分钟内做好这五件事，因为对第一条鱼的真空封罐，不影响第二条鱼的杀菌出锅</p>
+<h4 id="3、指令重排序优化"><a href="#3、指令重排序优化" class="headerlink" title="3、指令重排序优化"></a>3、指令重排序优化</h4><p>事实上，现代处理器会设计为一个时钟周期完成执行一条执行时间最长的CPU指令。为什么这么做呢？可以想到指令还可以再划分为一个个更小的阶段，例如，没跳指令可以分为 <code>取指令 - 指令译码 - 执行指令 - 内存访问 - 数据写回 </code> 这个五个阶段<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e16cefecbbe12fb45497497107ad235d.png" srcset="/img/loading.gif" lazyload alt="指令五个执行阶段划分示意图" width="1619" height="321"></p>
 <blockquote>
 <p><strong>术语参考</strong></p>
 <ul>
@@ -573,8 +573,8 @@
 <blockquote>
 <p><strong>提示</strong><br>奔腾四支持高达35级流水线，但由于功耗太高被废弃</p>
 </blockquote>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/426bbd79dadfa28432afe2e2062ae80e.png" srcset="/img/loading.gif" lazyload alt="五级指令流水线执行示意图"></p>
-<h4 id="5、SuperScalar-处理器"><a href="#5、SuperScalar-处理器" class="headerlink" title="5、SuperScalar 处理器"></a>5、SuperScalar 处理器</h4><p>大多数处理器包含多个执行单元，并不是所有计算功能都能集中在一起，可以再细分为整数运算单元、浮点数运算单元等，这样可以吧多条指令也做到并行获取、译码等，CPU可以在一个时钟周期内，执行多于一条指令，IPC &gt; 1<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6bb357ac976d101f7758f53cbf91f885.png" srcset="/img/loading.gif" lazyload alt="超标量处理器执行单元划分图"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5bc90806c0b0f4d50707cd27f268be2f.png" srcset="/img/loading.gif" lazyload alt="超标量处理器指令并行执行图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/426bbd79dadfa28432afe2e2062ae80e.png" srcset="/img/loading.gif" lazyload alt="五级指令流水线执行示意图" width="1617" height="489"></p>
+<h4 id="5、SuperScalar-处理器"><a href="#5、SuperScalar-处理器" class="headerlink" title="5、SuperScalar 处理器"></a>5、SuperScalar 处理器</h4><p>大多数处理器包含多个执行单元，并不是所有计算功能都能集中在一起，可以再细分为整数运算单元、浮点数运算单元等，这样可以吧多条指令也做到并行获取、译码等，CPU可以在一个时钟周期内，执行多于一条指令，IPC &gt; 1<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6bb357ac976d101f7758f53cbf91f885.png" srcset="/img/loading.gif" lazyload alt="超标量处理器执行单元划分图" width="1175" height="739"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5bc90806c0b0f4d50707cd27f268be2f.png" srcset="/img/loading.gif" lazyload alt="超标量处理器指令并行执行图" width="1226" height="723"></p>
 <h3 id="诡异的结果"><a href="#诡异的结果" class="headerlink" title="诡异的结果"></a>诡异的结果</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">int</span> <span class="hljs-variable">num</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br><span class="hljs-type">boolean</span> <span class="hljs-variable">ready</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;<br><span class="hljs-comment">// 线程1 执行此方法</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor1</span><span class="hljs-params">(I_Result r)</span> &#123;<br> <span class="hljs-keyword">if</span>(ready) &#123;<br> r.r1 = num + num;<br> &#125; <span class="hljs-keyword">else</span> &#123;<br> r.r1 = <span class="hljs-number">1</span>;<br> &#125;<br>&#125;<br><span class="hljs-comment">// 线程2 执行此方法</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor2</span><span class="hljs-params">(I_Result r)</span> &#123; <br> num = <span class="hljs-number">2</span>;<br> ready = <span class="hljs-literal">true</span>; <br>&#125;<br><br></code></pre></td></tr></table></figure>
 <p>I_Result是一个对象，有一个属性r1用来保存结果，问，可能有几种结果？</p>
 <p>有同学这么分析</p>
@@ -611,7 +611,7 @@
 <li>而读屏障（lfence）保证在该屏障之后，对共享变量的读取，加载的是主存中最新的数据</li>
 </ul>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor1</span><span class="hljs-params">(I_Result r)</span>&#123;<br>	<span class="hljs-comment">// 读屏障</span><br>	<span class="hljs-comment">// ready 是volatile 读取值带读屏障</span><br>	<span class="hljs-keyword">if</span>(ready) &#123;<br>		r.r1 = num + num;<br>	&#125; <span class="hljs-keyword">else</span> &#123;<br>		r.r1 = <span class="hljs-number">1</span>;<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6ac5d9d989b69ea29743a183a480eec1.png" srcset="/img/loading.gif" lazyload alt="volatile 读写屏障可见性示意图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6ac5d9d989b69ea29743a183a480eec1.png" srcset="/img/loading.gif" lazyload alt="volatile 读写屏障可见性示意图" width="1154" height="677"></p>
 <h4 id="2、如何保证有序性"><a href="#2、如何保证有序性" class="headerlink" title="2、如何保证有序性"></a>2、如何保证有序性</h4><ul>
 <li>写屏障会确保指令重排序时，不会将写屏障之前的代码排在写屏障后</li>
 </ul>
@@ -620,12 +620,12 @@
 <li>读屏障会确保指令重排序时，不会将读屏障之后的代码排在读屏障之前</li>
 </ul>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">actor1</span><span class="hljs-params">(I_Result r)</span>&#123;<br>	<span class="hljs-comment">// 读屏障</span><br>	<span class="hljs-comment">// ready 是volatile 读取值带读屏障</span><br>	<span class="hljs-keyword">if</span>(ready) &#123;<br>		r.r1 = num + num;<br>	&#125; <span class="hljs-keyword">else</span> &#123;<br>		r.r1 = <span class="hljs-number">1</span>;<br>	&#125;<br>&#125;<br></code></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e7187b94f766e348842b3d4322300468.png" srcset="/img/loading.gif" lazyload alt="volatile 读写屏障有序性示意图"><br>还是那句话，不能解决指令交错：</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e7187b94f766e348842b3d4322300468.png" srcset="/img/loading.gif" lazyload alt="volatile 读写屏障有序性示意图" width="1148" height="677"><br>还是那句话，不能解决指令交错：</p>
 <ul>
 <li>写屏障仅仅是保证之后的度能够读到最新的结果，单不能保证读报道它的前面去</li>
 <li>而有序性的保证也只是保证了本线程内相关代码不被重排序</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7807e2f1ec588a5e152cb7a837c5dad6.png" srcset="/img/loading.gif" lazyload alt="volatile 无法解决指令交错图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7807e2f1ec588a5e152cb7a837c5dad6.png" srcset="/img/loading.gif" lazyload alt="volatile 无法解决指令交错图" width="788" height="601"></p>
 <h4 id="3、double-checked-locking问题"><a href="#3、double-checked-locking问题" class="headerlink" title="3、double-checked locking问题"></a>3、double-checked locking问题</h4><p>以著名的double-checked locking单例模式为例</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Singleton</span> &#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-title function_">Singleton</span><span class="hljs-params">()</span> &#123;<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">Singleton</span> <span class="hljs-variable">INSTANCE</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Singleton <span class="hljs-title function_">getInstance</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (INSTANCE == <span class="hljs-literal">null</span>) &#123;<br>            <span class="hljs-keyword">synchronized</span> (Singleton.class) &#123;<br>                <span class="hljs-keyword">if</span> (INSTANCE == <span class="hljs-literal">null</span>)<br>                    INSTANCE = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Singleton</span>();<br>            &#125;<br>        &#125;<br>        <span class="hljs-keyword">return</span> INSTANCE;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>以上实现的特点是：</p>
@@ -643,7 +643,7 @@
 <li>21 表示利用一个对象的引用，调用构造方法</li>
 <li>24 表示利用一个对象引用，赋值给static INSTANCE</li>
 </ul>
-<p>也许JVM会优化成：先执行24，在执行21，如果两个线程t1，t2按如下时间序执行<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ad80968a8985bd8c7116ef4c3a874f9d.png" srcset="/img/loading.gif" lazyload alt="双重检查锁线程执行时序图"><br>关键在于 0 getstatic这行代码在monitor控制之外（所以多线程可能有问题），他就像之前不守规则的人，可以越过monitor读取INSTANCE的值</p>
+<p>也许JVM会优化成：先执行24，在执行21，如果两个线程t1，t2按如下时间序执行<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ad80968a8985bd8c7116ef4c3a874f9d.png" srcset="/img/loading.gif" lazyload alt="双重检查锁线程执行时序图" width="1412" height="758"><br>关键在于 0 getstatic这行代码在monitor控制之外（所以多线程可能有问题），他就像之前不守规则的人，可以越过monitor读取INSTANCE的值</p>
 <p>这是t1还没有完全将构造方法执行完毕，如果在构造方法中药执行很多初始化操作，那么t2拿到的将是一个未初始化完毕的单例</p>
 <p>对INSTANCE使用volatile修饰即可，可以禁用指令重排，但要注意在JDK5以上版本的volatile才会真正生效</p>
 <h4 id="4、double-checked-locking解决"><a href="#4、double-checked-locking解决" class="headerlink" title="4、double-checked locking解决"></a>4、double-checked locking解决</h4><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Singleton</span> &#123;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-title function_">Singleton</span><span class="hljs-params">()</span> &#123;<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">Singleton</span> <span class="hljs-variable">INSTANCE</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Singleton <span class="hljs-title function_">getInstance</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (INSTANCE == <span class="hljs-literal">null</span>) &#123;<br>            <span class="hljs-keyword">synchronized</span> (Singleton.class) &#123;<br>                <span class="hljs-keyword">if</span> (INSTANCE == <span class="hljs-literal">null</span>)<br>                    INSTANCE = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Singleton</span>();<br>            &#125;<br>        &#125;<br>        <span class="hljs-keyword">return</span> INSTANCE;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
@@ -663,7 +663,7 @@
 </li>
 <li>更低层是读写变量时使用lock指令来保证多核CPU之间的可见性和有序性</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5f6c5efc68e5aa7b79e34dc496f7c561.png" srcset="/img/loading.gif" lazyload alt="lock 指令保证可见性有序性图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5f6c5efc68e5aa7b79e34dc496f7c561.png" srcset="/img/loading.gif" lazyload alt="lock 指令保证可见性有序性图" width="1300" height="706"></p>
 <h3 id="happens-before"><a href="#happens-before" class="headerlink" title="happens-before"></a>happens-before</h3><p>happens-before规定了对共享变量的写操作对其他线程的读操作可见，它是可见性与有序性的一套规则总结，抛开以下happens-before规则，JVM并不能保证一个线程对共享变量的写，对于其他线程对改共享变量的读可见</p>
 <ul>
 <li>线程解锁m之前对变量的写，对于接下来对m加锁的其他线程对该变量的读可见</li>
@@ -719,7 +719,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -805,7 +805,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

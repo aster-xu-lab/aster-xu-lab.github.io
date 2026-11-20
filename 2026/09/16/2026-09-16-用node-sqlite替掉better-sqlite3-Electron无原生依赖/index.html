@@ -380,7 +380,7 @@
             <h1 class="ax-post-head__title">用 node:sqlite 替掉 better-sqlite3：Electron 里告别原生模块</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -392,7 +392,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -441,7 +441,7 @@
 <li>构建流水线多一步”依赖原生工具链”的环境要求。</li>
 </ul>
 <p>这些代价平时不明显，但一旦进了打包链路，就会变成”换个 Node 版本就构建失败”这类烦人问题。</p>
-<h2 id="二、node-sqlite：内置、零原生依赖"><a href="#二、node-sqlite：内置、零原生依赖" class="headerlink" title="二、node:sqlite：内置、零原生依赖"></a>二、node:sqlite：内置、零原生依赖</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ad336afc01a544f5f97e593bef08002.png#pic_center" srcset="/img/loading.gif" lazyload alt="用 node:sqlite 替掉 better-sqlite3"></p>
+<h2 id="二、node-sqlite：内置、零原生依赖"><a href="#二、node-sqlite：内置、零原生依赖" class="headerlink" title="二、node:sqlite：内置、零原生依赖"></a>二、node:sqlite：内置、零原生依赖</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ad336afc01a544f5f97e593bef08002.png#pic_center" srcset="/img/loading.gif" lazyload alt="用 node:sqlite 替掉 better-sqlite3" width="1520" height="860"></p>
 <p>Electron 内置了自己的 Node 运行时，而较新的 Node 提供了内置的 <code>node:sqlite</code>。版本前提要写清楚：<code>node:sqlite</code> 从 <strong>Node 22.5</strong> 起提供，22.5–22.12 需要 <code>--experimental-sqlite</code>；<strong>Node 22.13 &#x2F; 23.4 起默认可用</strong>，但仍会打 <code>ExperimentalWarning</code>（Stability 1.1）。对应到 Electron 还不能只看 Node 版本：Electron 35&#x2F;36 内置的是 Node 22.14，但 <code>require(&#39;node:sqlite&#39;)</code> 在 <strong>36.7.3 之前</strong>的 Electron 构建里会失败（SQLite builtin 没有编进去），修复直到 <a target="_blank" rel="noopener" href="https://releases.electronjs.org/release/v36.7.3">36.7.3</a> &#x2F; 37.2.3 才落地；Electron 33&#x2F;34 还是 Node 20.18，更没有这个模块。所以实际可用下限是 <strong>Electron 36.7.3+ 或 37.2.3+</strong>。升级 Electron 或 Node 时仍要重新核对 API 与稳定性，不能把”能 require 到”当成”已经稳定”。</p>
 <p>于是可以做到：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">主进程：只用 Electron + node:*，不引任何原生 npm 数据库依赖<br>打包：npmRebuild: false<br></code></pre></td></tr></table></figure>
@@ -489,7 +489,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -577,7 +577,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

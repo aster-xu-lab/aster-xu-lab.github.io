@@ -380,7 +380,7 @@
             <h1 class="ax-post-head__title">SyncTask Starter 的工程细节：零配置接入是怎么做到的</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -392,7 +392,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -438,7 +438,7 @@
 <figure class="highlight dart"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs dart">① 引入 <span class="hljs-keyword">sync</span>-task-engine-spring-boot-starter<br>② 实现一个业务 Handler（核心业务逻辑）<br>③ 配置 param-<span class="hljs-class"><span class="hljs-keyword">class</span>、建表</span><br></code></pre></td></tr></table></figure>
 
 <p><strong>没有一行 @Configuration，没有 XML</strong>。其余（调度、锁、存储、通知、归档）全部用 Starter 默认实现。</p>
-<h2 id="二、三个工程机制"><a href="#二、三个工程机制" class="headerlink" title="二、三个工程机制"></a>二、三个工程机制</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/38cbeea58e5ca4aa6afdabb1511a1995.png#pic_center" srcset="/img/loading.gif" lazyload alt="SyncTask Starter：零配置接入的三个机制"></p>
+<h2 id="二、三个工程机制"><a href="#二、三个工程机制" class="headerlink" title="二、三个工程机制"></a>二、三个工程机制</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/38cbeea58e5ca4aa6afdabb1511a1995.png#pic_center" srcset="/img/loading.gif" lazyload alt="SyncTask Starter：零配置接入的三个机制" width="1520" height="860"></p>
 <h3 id="1-自动配置：-EnableAutoConfiguration"><a href="#1-自动配置：-EnableAutoConfiguration" class="headerlink" title="1. 自动配置：@EnableAutoConfiguration"></a>1. 自动配置：@EnableAutoConfiguration</h3><p>Starter 的核心是一个自动配置类：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@AutoConfiguration</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">SyncTaskEngineAutoConfiguration</span> &#123;<br><br>    <span class="hljs-meta">@Bean</span><br>    <span class="hljs-meta">@ConditionalOnMissingBean</span><br>    <span class="hljs-keyword">public</span> SyncTaskEngine <span class="hljs-title function_">syncTaskEngine</span><span class="hljs-params">(ToolRegistry registry, ...)</span> &#123;<br>        <span class="hljs-keyword">return</span> SyncTaskEngine.builder()<br>                .handlerRegistry(registry)<br>                .build();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 
@@ -512,7 +512,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -600,7 +600,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

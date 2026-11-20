@@ -394,7 +394,7 @@
             <h1 class="ax-post-head__title">垃圾回收相关算法</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -406,7 +406,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -452,7 +452,7 @@
 <p>优点：实现简单，垃圾对象便于辨识；判定效率高，回收没有延迟性。</p>
 <p>缺点：它需要单独的字段存储计数器，这样的做法增加了存储空间的开销。</p>
 <p>每次赋值都需要更新计数器，伴随着加法和减法操作，这增加了时间开销。 引用计数器有一个严重的问题，即无法处理循环引用的情况。这是一条致命缺陷，导致在Java的垃圾回收器中没有使用这类算法。</p>
-<h3 id="循环引用"><a href="#循环引用" class="headerlink" title="循环引用"></a>循环引用</h3><p>当p的指针断开的时候，内部的引用形成一个循环，这就是循环引用，从而造成内存泄漏<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0c3f7115f65ed8ae474ef871f8de7c39.png" srcset="/img/loading.gif" lazyload alt="循环引用导致内存泄漏示意图"></p>
+<h3 id="循环引用"><a href="#循环引用" class="headerlink" title="循环引用"></a>循环引用</h3><p>当p的指针断开的时候，内部的引用形成一个循环，这就是循环引用，从而造成内存泄漏<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0c3f7115f65ed8ae474ef871f8de7c39.png" srcset="/img/loading.gif" lazyload alt="循环引用导致内存泄漏示意图" width="942" height="516"></p>
 <h2 id="举例"><a href="#举例" class="headerlink" title="举例"></a>举例</h2><p>我们使用一个案例来测试Java中是否采用的是引用计数算法</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 引用计数算法测试</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">RefCountGC</span> &#123;<br>    <span class="hljs-comment">// 这个成员属性的唯一作用就是占用一点内存</span><br>    <span class="hljs-keyword">private</span> <span class="hljs-type">byte</span>[] bigSize = <span class="hljs-keyword">new</span> <span class="hljs-title class_">byte</span>[<span class="hljs-number">5</span>*<span class="hljs-number">1024</span>*<span class="hljs-number">1024</span>];<br>    <span class="hljs-comment">// 引用</span><br>    <span class="hljs-type">Object</span> <span class="hljs-variable">reference</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">RefCountGC</span> <span class="hljs-variable">obj1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RefCountGC</span>();<br>        <span class="hljs-type">RefCountGC</span> <span class="hljs-variable">obj2</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RefCountGC</span>();<br>        obj1.reference = obj2;<br>        obj2.reference = obj1;<br>        obj1 = <span class="hljs-literal">null</span>;<br>        obj2 = <span class="hljs-literal">null</span>;<br>        <span class="hljs-comment">// 显示的执行垃圾收集行为，判断obj1 和 obj2是否被回收？</span><br>        System.gc();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>运行结果</p>
@@ -463,7 +463,7 @@
 <blockquote>
 <p>PSYoungGen: 15490K-&gt;808K(76288K)] 15490K-&gt;816K(251392K)</p>
 </blockquote>
-<p>如果使用引用计数算法，那么这两个对象将会无法回收。而现在两个对象被回收了，说明Java使用的不是引用计数算法来进行标记的。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0d9d40f9208dfe3ec95bcf591160a4fd.png" srcset="/img/loading.gif" lazyload alt="循环引用对象被正常回收示意图"></p>
+<p>如果使用引用计数算法，那么这两个对象将会无法回收。而现在两个对象被回收了，说明Java使用的不是引用计数算法来进行标记的。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0d9d40f9208dfe3ec95bcf591160a4fd.png" srcset="/img/loading.gif" lazyload alt="循环引用对象被正常回收示意图" width="1057" height="512"></p>
 <h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>引用计数算法，是很多语言的资源回收选择，例如因人工智能而更加火热的Python，它更是同时支持引用计数和垃圾收集机制。</p>
 <p>具体哪种最优是要看场景的，业界有大规模实践中仅保留引用计数机制，以提高吞吐量的尝试。</p>
 <p>Java并没有选择引用计数，是因为其存在一个基本的难题，也就是很难处理循环引用关系。Python如何解决循环引用？</p>
@@ -479,7 +479,7 @@
 <li>可达性分析算法是以根对象集合（GCRoots）为起始点，按照从上至下的方式搜索被根对象集合所连接的目标对象是否可达。</li>
 <li>使用可达性分析算法后，内存中的存活对象都会被根对象集合直接或间接连接着，搜索所走过的路径称为引用链（Reference Chain）</li>
 <li>如果目标对象没有任何引用链相连，则是不可达的，就意味着该对象己经死亡，可以标记为垃圾对象。</li>
-<li>在可达性分析算法中，只有能够被根对象集合直接或者间接连接的对象才是存活对象。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0260a523567b57c86e27d29d1c492613.png" srcset="/img/loading.gif" lazyload alt="可达性分析算法搜索示意图"><br>官场上的裙带关系，可达性分析在人类关系网中<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c8a680bd399ba56bf68f80c400901b07.png" srcset="/img/loading.gif" lazyload alt="可达性分析人际关系网类比图"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/cd276dca9585b80d47d29fcda143f57d.png" srcset="/img/loading.gif" lazyload alt="可达性分析引用链类比示意图"></li>
+<li>在可达性分析算法中，只有能够被根对象集合直接或者间接连接的对象才是存活对象。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0260a523567b57c86e27d29d1c492613.png" srcset="/img/loading.gif" lazyload alt="可达性分析算法搜索示意图" width="920" height="502"><br>官场上的裙带关系，可达性分析在人类关系网中<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c8a680bd399ba56bf68f80c400901b07.png" srcset="/img/loading.gif" lazyload alt="可达性分析人际关系网类比图" width="373" height="654"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/cd276dca9585b80d47d29fcda143f57d.png" srcset="/img/loading.gif" lazyload alt="可达性分析引用链类比示意图" width="373" height="654"></li>
 </ul>
 <h3 id="GC-Roots可以是哪些？"><a href="#GC-Roots可以是哪些？" class="headerlink" title="GC Roots可以是哪些？"></a>GC Roots可以是哪些？</h3><ul>
 <li>虚拟机栈中引用的对象<ul>
@@ -499,7 +499,7 @@
 <li>基本数据类型对应的Class对象，一些常驻的异常对象（如：NullPointerException、outofMemoryError），系统类加载器。</li>
 </ul>
 </li>
-<li>反映java虚拟机内部情况的JMXBean、JVMTI中注册的回调、本地代码缓存等。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b8b74f7f9515ffa4270c2c1aa9237f69.png" srcset="/img/loading.gif" lazyload alt="GC Roots 对象类型示意图"></li>
+<li>反映java虚拟机内部情况的JMXBean、JVMTI中注册的回调、本地代码缓存等。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b8b74f7f9515ffa4270c2c1aa9237f69.png" srcset="/img/loading.gif" lazyload alt="GC Roots 对象类型示意图" width="756" height="539"></li>
 </ul>
 <h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>总结一句话就是，除了堆空间外的一些结构，比如 虚拟机栈、本地方法栈、方法区、字符串常量池 等地方对堆空间进行引用的，都可以作为GC Roots进行可达性分析</p>
 <p>除了这些固定的GC Roots集合以外，根据用户所选用的垃圾收集器以及当前回收的内存区域不同，还可以有其他对象“临时性”地加入，共同构成完整GC Roots集合。比如：分代收集和局部回收（PartialGC）。</p>
@@ -541,7 +541,7 @@
 </ul>
 </li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4df110bee5fc7df2c71b48d8f784cfad.png" srcset="/img/loading.gif" lazyload alt="Finalizer 线程执行流程示意图"><br>上图就是我们看到的Finalizer线程</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4df110bee5fc7df2c71b48d8f784cfad.png" srcset="/img/loading.gif" lazyload alt="Finalizer 线程执行流程示意图" width="1654" height="729"><br>上图就是我们看到的Finalizer线程</p>
 <h3 id="代码演示"><a href="#代码演示" class="headerlink" title="代码演示"></a>代码演示</h3><p>我们使用重写 finalize()方法，然后在方法的内部，重写将其存放到GC Roots中</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 测试Object类中finalize()方法</span><br><span class="hljs-comment"> * 对象复活场景</span><br><span class="hljs-comment"> *</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CanReliveObj</span> &#123;<br>    <span class="hljs-comment">// 类变量，属于GC Roots的一部分</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> CanReliveObj canReliveObj;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">finalize</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Throwable &#123;<br>        <span class="hljs-built_in">super</span>.finalize();<br>        System.out.println(<span class="hljs-string">&quot;调用当前类重写的finalize()方法&quot;</span>);<br>        canReliveObj = <span class="hljs-built_in">this</span>;<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> <span class="hljs-keyword">throws</span> InterruptedException &#123;<br>        canReliveObj = <span class="hljs-keyword">new</span> <span class="hljs-title class_">CanReliveObj</span>();<br>        canReliveObj = <span class="hljs-literal">null</span>;<br>        System.gc();<br>        System.out.println(<span class="hljs-string">&quot;-----------------第一次gc操作------------&quot;</span>);<br>        <span class="hljs-comment">// 因为Finalizer线程的优先级比较低，暂停2秒，以等待它</span><br>        Thread.sleep(<span class="hljs-number">2000</span>);<br>        <span class="hljs-keyword">if</span> (canReliveObj == <span class="hljs-literal">null</span>) &#123;<br>            System.out.println(<span class="hljs-string">&quot;obj is dead&quot;</span>);<br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            System.out.println(<span class="hljs-string">&quot;obj is still alive&quot;</span>);<br>        &#125;<br><br>        System.out.println(<span class="hljs-string">&quot;-----------------第二次gc操作------------&quot;</span>);<br>        canReliveObj = <span class="hljs-literal">null</span>;<br>        System.gc();<br>        <span class="hljs-comment">// 下面代码和上面代码是一样的，但是 canReliveObj却自救失败了</span><br>        Thread.sleep(<span class="hljs-number">2000</span>);<br>        <span class="hljs-keyword">if</span> (canReliveObj == <span class="hljs-literal">null</span>) &#123;<br>            System.out.println(<span class="hljs-string">&quot;obj is dead&quot;</span>);<br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            System.out.println(<span class="hljs-string">&quot;obj is still alive&quot;</span>);<br>        &#125;<br><br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>最后运行结果</p>
@@ -550,18 +550,18 @@
 <h2 id="MAT与JProfiler的GC-Roots溯源"><a href="#MAT与JProfiler的GC-Roots溯源" class="headerlink" title="MAT与JProfiler的GC Roots溯源"></a>MAT与JProfiler的GC Roots溯源</h2><h3 id="MAT是什么？"><a href="#MAT是什么？" class="headerlink" title="MAT是什么？"></a>MAT是什么？</h3><p>MAT是Memory Analyzer的简称，它是一款功能强大的Java堆内存分析器。用于查找内存泄漏以及查看内存消耗情况。</p>
 <p>MAT是基于Eclipse开发的，是一款免费的性能分析工具。</p>
 <p>大家可以在<a target="_blank" rel="noopener" href="http://www.eclipse.org/mat/%E4%B8%8B%E8%BD%BD%E5%B9%B6%E4%BD%BF%E7%94%A8MAT">http://www.eclipse.org/mat/下载并使用MAT</a></p>
-<h3 id="命令行使用-jmap"><a href="#命令行使用-jmap" class="headerlink" title="命令行使用 jmap"></a>命令行使用 jmap</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/59b3268a27581f798947aa73fae23905.png" srcset="/img/loading.gif" lazyload alt="jmap 命令查看堆信息示意图"></p>
+<h3 id="命令行使用-jmap"><a href="#命令行使用-jmap" class="headerlink" title="命令行使用 jmap"></a>命令行使用 jmap</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/59b3268a27581f798947aa73fae23905.png" srcset="/img/loading.gif" lazyload alt="jmap 命令查看堆信息示意图" width="914" height="370"></p>
 <h3 id="使用JVIsualVM"><a href="#使用JVIsualVM" class="headerlink" title="使用JVIsualVM"></a>使用JVIsualVM</h3><p>捕获的heap dump文件是一个临时文件，关闭JVisualVM后自动删除，若要保留，需要将其另存为文件。可通过以下方法捕获heap dump：</p>
 <p>在左侧“Application”（应用程序）子窗口中右击相应的应用程序，选择Heap Dump（堆Dump）。</p>
 <p>在Monitor（监视）子标签页中点击Heap Dump（堆Dump）按钮。本地应用程序的Heap dumps作为应用程序标签页的一个子标签页打开。同时，heap dump在左侧的Application（应用程序）栏中对应一个含有时间戳的节点。</p>
 <p>右击这个节点选择save as（另存为）即可将heap dump保存到本地。</p>
-<h3 id="使用MAT打开Dump文件"><a href="#使用MAT打开Dump文件" class="headerlink" title="使用MAT打开Dump文件"></a>使用MAT打开Dump文件</h3><p>打开后，我们就可以看到有哪些可以作为GC Roots的对象<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/714b007111b2afdc283ccf6ac1c2c88f.png" srcset="/img/loading.gif" lazyload alt="MAT 工具查看 GC Roots 对象图"><br>里面我们能够看到有一些常用的Java类，然后Thread线程。</p>
-<h3 id="JProfiler的GC-Roots溯源"><a href="#JProfiler的GC-Roots溯源" class="headerlink" title="JProfiler的GC Roots溯源"></a>JProfiler的GC Roots溯源</h3><p>我们在实际的开发中，一般不会查找全部的GC Roots，可能只是查找某个对象的整个链路，或者称为GC Roots溯源，这个时候，我们就可以使用JProfiler<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a53859383592f5e64dae9200958b7ac0.png" srcset="/img/loading.gif" lazyload alt="JProfiler 工具 GC Roots 溯源图"></p>
+<h3 id="使用MAT打开Dump文件"><a href="#使用MAT打开Dump文件" class="headerlink" title="使用MAT打开Dump文件"></a>使用MAT打开Dump文件</h3><p>打开后，我们就可以看到有哪些可以作为GC Roots的对象<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/714b007111b2afdc283ccf6ac1c2c88f.png" srcset="/img/loading.gif" lazyload alt="MAT 工具查看 GC Roots 对象图" width="1350" height="446"><br>里面我们能够看到有一些常用的Java类，然后Thread线程。</p>
+<h3 id="JProfiler的GC-Roots溯源"><a href="#JProfiler的GC-Roots溯源" class="headerlink" title="JProfiler的GC Roots溯源"></a>JProfiler的GC Roots溯源</h3><p>我们在实际的开发中，一般不会查找全部的GC Roots，可能只是查找某个对象的整个链路，或者称为GC Roots溯源，这个时候，我们就可以使用JProfiler<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a53859383592f5e64dae9200958b7ac0.png" srcset="/img/loading.gif" lazyload alt="JProfiler 工具 GC Roots 溯源图" width="1677" height="866"></p>
 <h3 id="如何判断什么原因造成OOM"><a href="#如何判断什么原因造成OOM" class="headerlink" title="如何判断什么原因造成OOM"></a>如何判断什么原因造成OOM</h3><p>当我们程序出现OOM的时候，我们就需要进行排查，我们首先使用下面的例子进行说明</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * 内存溢出排查</span><br><span class="hljs-comment"> * -Xms8m -Xmx8m -XX:HeapDumpOnOutOfMemoryError</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">HeapOOM</span> &#123;<br>    <span class="hljs-comment">// 创建1M的文件</span><br>    <span class="hljs-type">byte</span> [] buffer = <span class="hljs-keyword">new</span> <span class="hljs-title class_">byte</span>[<span class="hljs-number">1</span> * <span class="hljs-number">1024</span> * <span class="hljs-number">1024</span>];<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        ArrayList&lt;HeapOOM&gt; list = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;&gt;();<br>        <span class="hljs-type">int</span> <span class="hljs-variable">count</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>                list.add(<span class="hljs-keyword">new</span> <span class="hljs-title class_">HeapOOM</span>());<br>                count++;<br>            &#125;<br>        &#125; <span class="hljs-keyword">catch</span> (Exception e) &#123;<br>            e.getStackTrace();<br>            System.out.println(<span class="hljs-string">&quot;count:&quot;</span> + count);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>上述代码就是不断的创建一个1M小字节数组，然后让内存溢出，我们需要限制一下内存大小，同时使用HeapDumpOnOutOfMemoryError将出错时候的dump文件输出</p>
 <figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs diff"><span class="hljs-deletion">-Xms8m -Xmx8m -XX:HeapDumpOnOutOfMemoryError</span><br></code></pre></td></tr></table></figure>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ceb097dca15251270f7fa66ee6e758a5.png" srcset="/img/loading.gif" lazyload alt="OOM 时导出 dump 文件示意图"><br>然后我们通过线程，还能够定位到哪里出现OOM<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d461b7818a42ec7ecacf9ff7b661044d.png" srcset="/img/loading.gif" lazyload alt="通过线程定位 OOM 出现位置图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ceb097dca15251270f7fa66ee6e758a5.png" srcset="/img/loading.gif" lazyload alt="OOM 时导出 dump 文件示意图" width="1670" height="830"><br>然后我们通过线程，还能够定位到哪里出现OOM<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d461b7818a42ec7ecacf9ff7b661044d.png" srcset="/img/loading.gif" lazyload alt="通过线程定位 OOM 出现位置图" width="1675" height="812"></p>
 <h2 id="清除阶段：标记-清除算法"><a href="#清除阶段：标记-清除算法" class="headerlink" title="清除阶段：标记-清除算法"></a>清除阶段：标记-清除算法</h2><p>当成功区分出内存中存活对象和死亡对象后，GC接下来的任务就是执行垃圾回收，释放掉无用对象所占用的内存空间，以便有足够的可用内存空间为新对象分配内存。目前在JVM中比较常见的三种垃圾收集算法是</p>
 <ul>
 <li>标记一清除算法（Mark-Sweep）</li>
@@ -575,7 +575,7 @@
 <li>标记的是引用的对象，不是垃圾！！</li>
 </ul>
 </li>
-<li>清除：Collector对堆内存从头到尾进行线性的遍历，如果发现某个对象在其Header中没有标记为可达对象，则将其回收<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b0285372dc1537b10997e5bc45a86528.png" srcset="/img/loading.gif" lazyload alt="标记-清除算法执行过程示意图"></li>
+<li>清除：Collector对堆内存从头到尾进行线性的遍历，如果发现某个对象在其Header中没有标记为可达对象，则将其回收<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b0285372dc1537b10997e5bc45a86528.png" srcset="/img/loading.gif" lazyload alt="标记-清除算法执行过程示意图" width="832" height="652"></li>
 </ul>
 <h3 id="什么是清除？"><a href="#什么是清除？" class="headerlink" title="什么是清除？"></a>什么是清除？</h3><p>这里所谓的清除并不是真的置空，而是把需要清除的对象地址保存在空闲的地址列表里。下次有新对象需要加载时，判断垃圾的位置空间是否够，如果够，就存放覆盖原有的地址。</p>
 <p>关于空闲列表是在为对象分配内存的时候 提过</p>
@@ -596,7 +596,7 @@
 <li>这种方式清理出来的空闲内存是不连续的，产生内碎片，需要维护一个空闲列表</li>
 </ul>
 <h2 id="清除阶段：复制算法"><a href="#清除阶段：复制算法" class="headerlink" title="清除阶段：复制算法"></a>清除阶段：复制算法</h2><h3 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h3><p>为了解决标记-清除算法在垃圾收集效率方面的缺陷，M.L.Minsky于1963年发表了著名的论文，“使用双存储区的Lisp语言垃圾收集器CA LISP Garbage Collector Algorithm Using Serial Secondary Storage）”。M.L.Minsky在该论文中描述的算法被人们称为复制（Copying）算法，它也被M.L.Minsky本人成功地引入到了Lisp语言的一个实现版本中。</p>
-<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><p>将活着的内存空间分为两块，每次只使用其中一块，在垃圾回收时将正在使用的内存中的存活对象复制到未被使用的内存块中，之后清除正在使用的内存块中的所有对象，交换两个内存的角色，最后完成垃圾回收<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be806a921dfe41ab65bcccc4271f95f5.png" srcset="/img/loading.gif" lazyload alt="复制算法内存区域划分示意图"><br>把可达的对象，直接复制到另外一个区域中复制完成后，A区就没有用了，里面的对象可以直接清除掉，其实里面的新生代里面就用到了复制算法<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/407e31ac5d43fd657bd80f5e5469f3f9.png" srcset="/img/loading.gif" lazyload alt="复制算法对象复制过程示意图"></p>
+<h3 id="核心思想"><a href="#核心思想" class="headerlink" title="核心思想"></a>核心思想</h3><p>将活着的内存空间分为两块，每次只使用其中一块，在垃圾回收时将正在使用的内存中的存活对象复制到未被使用的内存块中，之后清除正在使用的内存块中的所有对象，交换两个内存的角色，最后完成垃圾回收<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/be806a921dfe41ab65bcccc4271f95f5.png" srcset="/img/loading.gif" lazyload alt="复制算法内存区域划分示意图" width="1040" height="539"><br>把可达的对象，直接复制到另外一个区域中复制完成后，A区就没有用了，里面的对象可以直接清除掉，其实里面的新生代里面就用到了复制算法<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/407e31ac5d43fd657bd80f5e5469f3f9.png" srcset="/img/loading.gif" lazyload alt="复制算法对象复制过程示意图" width="1003" height="407"></p>
 <h3 id="优点"><a href="#优点" class="headerlink" title="优点"></a>优点</h3><ul>
 <li>没有标记和清除过程，实现简单，运行高效</li>
 <li>复制过去以后保证空间的连续性，不会出现“碎片”问题。</li>
@@ -607,13 +607,13 @@
 </ul>
 <h3 id="注意-2"><a href="#注意-2" class="headerlink" title="注意"></a>注意</h3><p>如果系统中的垃圾对象很多，复制算法需要复制的存活对象数量并不会太大，或者说非常低才行（老年代大量的对象存活，那么复制的对象将会有很多，效率会很低）</p>
 <p>在新生代，对常规应用的垃圾回收，一次通常可以回收70% - 99% 的内存空间。回收性价比很高。所以现在的商业虚拟机都是用这种收集算法回收新生代。</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6f0d8f8e6dc52229e8db3ecfebe1767b.png" srcset="/img/loading.gif" lazyload alt="新生代复制算法回收过程图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6f0d8f8e6dc52229e8db3ecfebe1767b.png" srcset="/img/loading.gif" lazyload alt="新生代复制算法回收过程图" width="799" height="415"></p>
 <h2 id="清除阶段：标记-整理算法"><a href="#清除阶段：标记-整理算法" class="headerlink" title="清除阶段：标记-整理算法"></a>清除阶段：标记-整理算法</h2><h3 id="背景-1"><a href="#背景-1" class="headerlink" title="背景"></a>背景</h3><p>复制算法的高效性是建立在存活对象少、垃圾对象多的前提下的。这种情况在新生代经常发生，但是在老年代，更常见的情况是大部分对象都是存活对象。如果依然使用复制算法，由于存活对象较多，复制的成本也将很高。因此，基于老年代垃圾回收的特性，需要使用其他的算法。</p>
 <p>标记一清除算法的确可以应用在老年代中，但是该算法不仅执行效率低下，而且在执行完内存回收后还会产生内存碎片，所以JvM的设计者需要在此基础之上进行改进。标记-压缩（Mark-Compact）算法由此诞生。</p>
 <p>1970年前后，G.L.Steele、C.J.Chene和D.s.Wise等研究者发布标记-压缩算法。在许多现代的垃圾收集器中，人们都使用了标记-压缩算法或其改进版本。</p>
 <h3 id="执行过程-1"><a href="#执行过程-1" class="headerlink" title="执行过程"></a>执行过程</h3><p>第一阶段和标记清除算法一样，从根节点开始标记所有被引用对象</p>
 <p>第二阶段将所有的存活对象压缩到内存的一端，按顺序排放。之后，清理边界外所有的空间。</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fd955e03e2e73a0a4adfad0cf3676e10.png" srcset="/img/loading.gif" lazyload alt="标记-整理算法执行过程示意图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fd955e03e2e73a0a4adfad0cf3676e10.png" srcset="/img/loading.gif" lazyload alt="标记-整理算法执行过程示意图" width="667" height="538"></p>
 <h3 id="标清和标整的区别"><a href="#标清和标整的区别" class="headerlink" title="标清和标整的区别"></a>标清和标整的区别</h3><p>标记-压缩算法的最终效果等同于标记-清除算法执行完成后，再进行一次内存碎片整理，因此，也可以把它称为标记-清除-压缩（Mark-Sweep-Compact）算法。</p>
 <p>二者的本质差异在于标记-清除算法是一种非移动式的回收算法，标记-压缩是移动式的。是否移动回收后的存活对象是一项优缺点并存的风险决策。可以看到，标记的存活对象将会被整理，按照内存地址依次排列，而未被标记的内存会被清理掉。如此一来，当我们需要给新对象分配内存时，JVM只需要持有一个内存的起始地址即可，这比维护一个空闲列表显然少了许多开销。</p>
 <h3 id="优点-1"><a href="#优点-1" class="headerlink" title="优点"></a>优点</h3><ul>
@@ -688,14 +688,14 @@
 <p>总的来说，增量收集算法的基础仍是传统的标记-清除和复制算法。增量收集算法通过对线程间冲突的妥善处理，允许垃圾收集线程以分阶段的方式完成标记、清理或复制工作</p>
 <h3 id="缺点-3"><a href="#缺点-3" class="headerlink" title="缺点"></a>缺点</h3><p>使用这种方式，由于在垃圾回收过程中，间断性地还执行了应用程序代码，所以能减少系统的停顿时间。但是，因为线程切换和上下文转换的消耗，会使得垃圾回收的总体成本上升，造成系统吞吐量的下降。</p>
 <h2 id="分区算法"><a href="#分区算法" class="headerlink" title="分区算法"></a>分区算法</h2><p>一般来说，在相同条件下，堆空间越大，一次Gc时所需要的时间就越长，有关GC产生的停顿也越长。为了更好地控制GC产生的停顿时间，将一块大的内存区域分割成多个小块，根据目标的停顿时间，每次合理地回收若干个小区间，而不是整个堆空间，从而减少一次GC所产生的停顿。</p>
-<p>分代算法将按照对象的生命周期长短划分成两个部分，分区算法将整个堆空间划分成连续的不同小区间。 每一个小区间都独立使用，独立回收。这种算法的好处是可以控制一次回收多少个小区间。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4f6b515dfb9efe184d7f666c19a894eb.png" srcset="/img/loading.gif" lazyload alt="分区算法堆内存划分示意图"></p>
+<p>分代算法将按照对象的生命周期长短划分成两个部分，分区算法将整个堆空间划分成连续的不同小区间。 每一个小区间都独立使用，独立回收。这种算法的好处是可以控制一次回收多少个小区间。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4f6b515dfb9efe184d7f666c19a894eb.png" srcset="/img/loading.gif" lazyload alt="分区算法堆内存划分示意图" width="781" height="517"></p>
 <h2 id="写到最后"><a href="#写到最后" class="headerlink" title="写到最后"></a>写到最后</h2><p>注意，这些只是基本的算法思路，实际GC实现过程要复杂的多，目前还在发展中的前沿GC都是复合算法，并且并行和并发兼备。</p>
 
                 
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -777,7 +777,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

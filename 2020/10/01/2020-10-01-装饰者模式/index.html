@@ -378,7 +378,7 @@
             <h1 class="ax-post-head__title">装饰者模式</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -390,7 +390,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -435,7 +435,7 @@
 <li>ConcreteComponent和Decorator<br> ConcreteComponent：具体的主体<br> Decorator：装饰者</li>
 <li>在Component和ConcreteComponent之间，如果ConcreteComponent类很多，还可以设计一个缓冲层，将共有的部分提取出来，抽象层一个类</li>
 </ol>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31b54c640ea1ad72fc1f6d092b6cb24c.png#pic_center" srcset="/img/loading.gif" lazyload alt="装饰者模式原理结构图"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b4250a46e3e39a2d12aabbd4bff2a386.png#pic_center" srcset="/img/loading.gif" lazyload alt="装饰者模式原理示意图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/31b54c640ea1ad72fc1f6d092b6cb24c.png#pic_center" srcset="/img/loading.gif" lazyload alt="装饰者模式原理结构图" width="894" height="500"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b4250a46e3e39a2d12aabbd4bff2a386.png#pic_center" srcset="/img/loading.gif" lazyload alt="装饰者模式原理示意图" width="884" height="457"></p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>	<span class="hljs-comment">// TODO Auto-generated method stub</span><br>	<span class="hljs-comment">// 装饰者模式下的订单：2份巧克力+一份牛奶的LongBlack</span><br><br>	<span class="hljs-comment">// 1. 点一份 LongBlack</span><br>	<span class="hljs-type">Drink</span> <span class="hljs-variable">order</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">LongBlack</span>();<br>	System.out.println(<span class="hljs-string">&quot;费用1=&quot;</span> + order.cost());<br>	System.out.println(<span class="hljs-string">&quot;描述=&quot;</span> + order.getDes());<br><br>	<span class="hljs-comment">// 2. order 加入一份牛奶</span><br>	order = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Milk</span>(order);<br><br>	System.out.println(<span class="hljs-string">&quot;order 加入一份牛奶 费用 =&quot;</span> + order.cost());<br>	System.out.println(<span class="hljs-string">&quot;order 加入一份牛奶 描述 = &quot;</span> + order.getDes());<br><br>	<span class="hljs-comment">// 3. order 加入一份巧克力</span><br><br>	order = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Chocolate</span>(order);<br><br>	System.out.println(<span class="hljs-string">&quot;order 加入一份牛奶 加入一份巧克力  费用 =&quot;</span> + order.cost());<br>	System.out.println(<span class="hljs-string">&quot;order 加入一份牛奶 加入一份巧克力 描述 = &quot;</span> + order.getDes());<br><br>	<span class="hljs-comment">// 3. order 加入一份巧克力</span><br><br>	order = <span class="hljs-keyword">new</span> <span class="hljs-title class_">Chocolate</span>(order);<br><br>	System.out.println(<span class="hljs-string">&quot;order 加入一份牛奶 加入2份巧克力   费用 =&quot;</span> + order.cost());<br>	System.out.println(<span class="hljs-string">&quot;order 加入一份牛奶 加入2份巧克力 描述 = &quot;</span> + order.getDes());<br>&#125;	<br></code></pre></td></tr></table></figure>
 
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Drink</span> &#123;<br><br>	<span class="hljs-keyword">public</span> String des; <span class="hljs-comment">// 描述</span><br>	<span class="hljs-keyword">private</span> <span class="hljs-type">float</span> <span class="hljs-variable">price</span> <span class="hljs-operator">=</span> <span class="hljs-number">0.0f</span>;<br>	<span class="hljs-keyword">public</span> String <span class="hljs-title function_">getDes</span><span class="hljs-params">()</span> &#123;<br>		<span class="hljs-keyword">return</span> des;<br>	&#125;<br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setDes</span><span class="hljs-params">(String des)</span> &#123;<br>		<span class="hljs-built_in">this</span>.des = des;<br>	&#125;<br>	<span class="hljs-keyword">public</span> <span class="hljs-type">float</span> <span class="hljs-title function_">getPrice</span><span class="hljs-params">()</span> &#123;<br>		<span class="hljs-keyword">return</span> price;<br>	&#125;<br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setPrice</span><span class="hljs-params">(<span class="hljs-type">float</span> price)</span> &#123;<br>		<span class="hljs-built_in">this</span>.price = price;<br>	&#125;<br>	<br>	<span class="hljs-comment">//计算费用的抽象方法</span><br>	<span class="hljs-comment">//子类来实现</span><br>	<span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-type">float</span> <span class="hljs-title function_">cost</span><span class="hljs-params">()</span>;<br>	<br>&#125;<br></code></pre></td></tr></table></figure>
@@ -449,7 +449,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -531,7 +531,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

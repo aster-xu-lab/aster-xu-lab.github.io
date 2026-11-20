@@ -382,7 +382,7 @@
             <h1 class="ax-post-head__title">程序计数器</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -394,7 +394,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -432,7 +432,7 @@
             
               <div class="markdown-body">
                 
-                <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>JVM中的程序计数寄存器（Program Counter Register）中，Register的命名源于CPU的寄存器，寄存器存储指令相关的现场信息。CPU只有把数据装载到寄存器才能够运行。这里，并非是广义上所指的物理寄存器，或许将其翻译为PC计数器（或指令计数器）会更加贴切（也称为程序钩子），并且也不容易引起一些不必要的误会。JVM中的PC寄存器是对物理PC寄存器的一种抽象模拟。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebb82966f2eddb3deec5c4356372b022.png#pic_center" srcset="/img/loading.gif" lazyload alt="JVM程序计数器概念示意图"></p>
+                <h2 id="介绍"><a href="#介绍" class="headerlink" title="介绍"></a>介绍</h2><p>JVM中的程序计数寄存器（Program Counter Register）中，Register的命名源于CPU的寄存器，寄存器存储指令相关的现场信息。CPU只有把数据装载到寄存器才能够运行。这里，并非是广义上所指的物理寄存器，或许将其翻译为PC计数器（或指令计数器）会更加贴切（也称为程序钩子），并且也不容易引起一些不必要的误会。JVM中的PC寄存器是对物理PC寄存器的一种抽象模拟。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebb82966f2eddb3deec5c4356372b022.png#pic_center" srcset="/img/loading.gif" lazyload alt="JVM程序计数器概念示意图" width="1016" height="292"></p>
 <ul>
 <li>它是一块很小的内存空间，几乎可以忽略不记。也是运行速度最快的存储区域。</li>
 <li>在JVM规范中，每个线程都有它自己的程序计数器，是线程私有的，生命周期与线程的生命周期保持一致。</li>
@@ -441,27 +441,27 @@
 <li>字节码解释器工作时就是通过改变这个计数器的值来选取下一条需要执行的字节码指令。</li>
 <li>它是唯一一个在Java虚拟机规范中没有规定任何outotMemoryError情况的区域。</li>
 </ul>
-<h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><p>PC寄存器用来存储指向下一条指令的地址，也即将要执行的指令代码。由执行引擎读取下一条指令。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2d58dd8817f1f7d89f815129c3593ad7.png#pic_center" srcset="/img/loading.gif" lazyload alt="PC寄存器指向下一条指令示意图"></p>
+<h2 id="作用"><a href="#作用" class="headerlink" title="作用"></a>作用</h2><p>PC寄存器用来存储指向下一条指令的地址，也即将要执行的指令代码。由执行引擎读取下一条指令。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2d58dd8817f1f7d89f815129c3593ad7.png#pic_center" srcset="/img/loading.gif" lazyload alt="PC寄存器指向下一条指令示意图" width="604" height="520"></p>
 <h3 id="举例说明"><a href="#举例说明" class="headerlink" title="举例说明"></a>举例说明</h3><p>我们首先写一个简单的代码</p>
 <figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs arduino"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">PCRegisterTest</span> &#123;<br>    <span class="hljs-function"><span class="hljs-keyword">public</span> <span class="hljs-type">static</span> <span class="hljs-type">void</span> <span class="hljs-title">main</span><span class="hljs-params">(<span class="hljs-type">String</span>[] args)</span> </span>&#123;<br>        <span class="hljs-type">int</span> i = <span class="hljs-number">10</span>;<br>        <span class="hljs-type">int</span> j = <span class="hljs-number">20</span>;<br>        <span class="hljs-type">int</span> k = i + j;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>然后将代码进行编译成字节码文件，我们再次查看 ，发现在字节码的左边有一个行号标识，它其实就是指令地址，用于指向当前执行到哪里。</p>
 <figure class="highlight ldif"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs ldif"><span class="hljs-attribute">0</span>: bipush        10<br><span class="hljs-attribute">2</span>: istore_1<br><span class="hljs-attribute">3</span>: bipush        20<br><span class="hljs-attribute">5</span>: istore_2<br><span class="hljs-attribute">6</span>: iload_1<br><span class="hljs-attribute">7</span>: iload_2<br><span class="hljs-attribute">8</span>: iadd<br><span class="hljs-attribute">9</span>: istore_3<br><span class="hljs-attribute">10</span>: return<br></code></pre></td></tr></table></figure>
-<p>通过PC寄存器，我们就可以知道当前程序执行到哪一步了<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7b8b4533e9d94c8c27e0e14a98a24939.png#pic_center" srcset="/img/loading.gif" lazyload alt="字节码指令与PC寄存器对应图"></p>
+<p>通过PC寄存器，我们就可以知道当前程序执行到哪一步了<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7b8b4533e9d94c8c27e0e14a98a24939.png#pic_center" srcset="/img/loading.gif" lazyload alt="字节码指令与PC寄存器对应图" width="1034" height="448"></p>
 <h2 id="常见问题"><a href="#常见问题" class="headerlink" title="常见问题"></a>常见问题</h2><h3 id="使用PC寄存器存储字节码指令地址有什么用呢？"><a href="#使用PC寄存器存储字节码指令地址有什么用呢？" class="headerlink" title="使用PC寄存器存储字节码指令地址有什么用呢？"></a>使用PC寄存器存储字节码指令地址有什么用呢？</h3><p>因为CPU需要不停的切换各个线程，这时候切换回来以后，就得知道接着从哪开始继续执行。</p>
-<p>JVM的字节码解释器就需要通过改变PC寄存器的值来明确下一条应该执行什么样的字节码指令。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fc3c39600a512d5d9c13828d656aaeea.png#pic_center" srcset="/img/loading.gif" lazyload alt="PC寄存器支持线程切换恢复图"></p>
+<p>JVM的字节码解释器就需要通过改变PC寄存器的值来明确下一条应该执行什么样的字节码指令。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/fc3c39600a512d5d9c13828d656aaeea.png#pic_center" srcset="/img/loading.gif" lazyload alt="PC寄存器支持线程切换恢复图" width="432" height="339"></p>
 <h3 id="PC寄存器为什么被设定为私有的？"><a href="#PC寄存器为什么被设定为私有的？" class="headerlink" title="PC寄存器为什么被设定为私有的？"></a>PC寄存器为什么被设定为私有的？</h3><p>我们都知道所谓的多线程在一个特定的时间段内只会执行其中某一个线程的方法，CPU会不停地做任务切换，这样必然导致经常中断或恢复，如何保证分毫无差呢？为了能够准确地记录各个线程正在执行的当前字节码指令地址，最好的办法自然是为每一个线程都分配一个PC寄存器，这样一来各个线程之间便可以进行独立计算，从而不会出现相互干扰的情况。</p>
 <p>由于CPU时间片轮限制，众多线程在并发执行过程中，任何一个确定的时刻，一个处理器或者多核处理器中的一个内核，只会执行某个线程中的一条指令。</p>
-<p>这样必然导致经常中断或恢复，如何保证分毫无差呢？每个线程在创建后，都会产生自己的程序计数器和栈帧，程序计数器在各个线程之间互不影响。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/81dcbfc9187c4693d65a3aa630e9101d.png#pic_center" srcset="/img/loading.gif" lazyload alt="各线程独立程序计数器示意图"></p>
+<p>这样必然导致经常中断或恢复，如何保证分毫无差呢？每个线程在创建后，都会产生自己的程序计数器和栈帧，程序计数器在各个线程之间互不影响。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/81dcbfc9187c4693d65a3aa630e9101d.png#pic_center" srcset="/img/loading.gif" lazyload alt="各线程独立程序计数器示意图" width="691" height="542"></p>
 <h2 id="CPU时间片"><a href="#CPU时间片" class="headerlink" title="CPU时间片"></a>CPU时间片</h2><p>CPU时间片即CPU分配给各个程序的时间，每个线程被分配一个时间段，称作它的时间片。</p>
 <p>在宏观上：我们可以同时打开多个应用程序，每个程序并行不悖，同时运行。</p>
 <p>但在微观上：由于只有一个CPU，一次只能处理程序要求的一部分，如何处理公平，一种方法就是引入时间片，每个程序轮流执行。</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2041e304b62427d71720ae07f8a4330c.png#pic_center" srcset="/img/loading.gif" lazyload alt="CPU时间片轮转执行示意图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2041e304b62427d71720ae07f8a4330c.png#pic_center" srcset="/img/loading.gif" lazyload alt="CPU时间片轮转执行示意图" width="417" height="123"></p>
 
                 
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -543,7 +543,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

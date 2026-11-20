@@ -381,7 +381,7 @@
             <h1 class="ax-post-head__title">7、共享模型之工具 - 2、ThreadPoolExecutor</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -393,7 +393,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -431,7 +431,7 @@
             
               <div class="markdown-body">
                 
-                <h2 id="2、ThreadPoolExecutor"><a href="#2、ThreadPoolExecutor" class="headerlink" title="2、ThreadPoolExecutor"></a>2、ThreadPoolExecutor</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/550d5c27e60e75c7e27f3b1b75dd46fb.png" srcset="/img/loading.gif" lazyload alt="线程池核心结构与状态示意图"></p>
+                <h2 id="2、ThreadPoolExecutor"><a href="#2、ThreadPoolExecutor" class="headerlink" title="2、ThreadPoolExecutor"></a>2、ThreadPoolExecutor</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/550d5c27e60e75c7e27f3b1b75dd46fb.png" srcset="/img/loading.gif" lazyload alt="线程池核心结构与状态示意图" width="1191" height="465"></p>
 <h3 id="1）线程池状态"><a href="#1）线程池状态" class="headerlink" title="1）线程池状态"></a>1）线程池状态</h3><p>ThreadPoolExecutor使用int的高3位表示线程池状态，低29位表示线程数量</p>
 <table>
 <thead>
@@ -493,7 +493,7 @@
 <li>threadFactory 线程工厂 - 可以为线程创建时起一个好名字</li>
 <li>handler 拒绝策略</li>
 </ul>
-<p>工作方式：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff0bee697bffe1c2a8398087f7fb972a.png" srcset="/img/loading.gif" lazyload alt="线程池任务提交流程示意图"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0c35bc1bd60e85ffff54205c4a2b7103.png" srcset="/img/loading.gif" lazyload alt="线程池工作方式示意图"></p>
+<p>工作方式：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff0bee697bffe1c2a8398087f7fb972a.png" srcset="/img/loading.gif" lazyload alt="线程池任务提交流程示意图" width="609" height="577"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0c35bc1bd60e85ffff54205c4a2b7103.png" srcset="/img/loading.gif" lazyload alt="线程池工作方式示意图" width="307" height="573"></p>
 <ul>
 <li>线程池中刚开始没有线程，当一个任务提交给线程池后，线程池会创建一个新的线程来执行任务</li>
 <li>当线程数达到corePoolSize并没有线程空闲，这时候再加入任务，新加的任务会被加入到workQueue队列排队，直到有空闲的线程</li>
@@ -509,7 +509,7 @@
 <li>PinPoint实现，使用了一个拒绝策略链，会逐一尝试策略链中的每种拒绝策略</li>
 </ul>
 </li>
-<li>当高峰过去后，超过corePoolSize的救急线程如果一段时间没有任务做，需要结束节省资源，这个时间由keepAliveTime和unit来控制<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3e977a8c4040ff8da2317f24e7e1de9d.png" srcset="/img/loading.gif" lazyload alt="线程池参数与线程存活示意图"><br>根据这个构造的方法，JDK Executors类中提供了众多工厂方法来创建各种用途的线程池</li>
+<li>当高峰过去后，超过corePoolSize的救急线程如果一段时间没有任务做，需要结束节省资源，这个时间由keepAliveTime和unit来控制<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3e977a8c4040ff8da2317f24e7e1de9d.png" srcset="/img/loading.gif" lazyload alt="线程池参数与线程存活示意图" width="1191" height="241"><br>根据这个构造的方法，JDK Executors类中提供了众多工厂方法来创建各种用途的线程池</li>
 </ul>
 <h3 id="3）newFixedThreadPool"><a href="#3）newFixedThreadPool" class="headerlink" title="3）newFixedThreadPool"></a>3）newFixedThreadPool</h3><figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> ExecutorService <span class="hljs-title function_">newFixedThreadPool</span><span class="hljs-params">(<span class="hljs-type">int</span> nThreads)</span> &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadPoolExecutor</span>(nThreads, nThreads,<br>                                      <span class="hljs-number">0L</span>, TimeUnit.MILLISECONDS,<br>                                      <span class="hljs-keyword">new</span> <span class="hljs-title class_">LinkedBlockingQueue</span>&lt;Runnable&gt;());<br>    &#125;<br></code></pre></td></tr></table></figure>
 <p> 特点：</p>
@@ -702,13 +702,13 @@
 <td>核心线程是否在服务器启动时启动</td>
 </tr>
 </tbody></table>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3360b713a5ca3a686383695bfa01aaef.png" srcset="/img/loading.gif" lazyload alt="Tomcat线程池结构示意图"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/3360b713a5ca3a686383695bfa01aaef.png" srcset="/img/loading.gif" lazyload alt="Tomcat线程池结构示意图" width="1143" height="354"></p>
 
                 
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -790,7 +790,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

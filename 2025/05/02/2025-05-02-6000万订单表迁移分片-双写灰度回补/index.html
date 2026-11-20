@@ -381,7 +381,7 @@
             <h1 class="ax-post-head__title">6000万订单表迁移到分片：双写 + 灰度 + 回补 + 回滚全流程</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -393,7 +393,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -433,7 +433,7 @@
                 
                 <h2 id="迁移的难点：不能停服"><a href="#迁移的难点：不能停服" class="headerlink" title="迁移的难点：不能停服"></a>迁移的难点：不能停服</h2><p><code>or_sales_info</code> 上线前约 6000 万存量数据，要从单表改成分片表。最难的<strong>不是写分片代码</strong>，而是<strong>存量数据怎么在业务不停服的情况下迁移过去</strong>。</p>
 <p>我写了一个综合演练，模拟完整迁移流程（造数 → 双写 → 回补 → 灰度 → 校验 → 性能 → 回滚），下面拆解每一步。<strong>这是本地演练，不是生产执行</strong>；生产迁移复盘见《分库分表迁移复盘：从分片键决策到无停机上线》。</p>
-<h2 id="整体流程"><a href="#整体流程" class="headerlink" title="整体流程"></a>整体流程</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8857f0c9bb69840e229badf9603659.png#pic_center" srcset="/img/loading.gif" lazyload alt="6000 万订单表迁移：双写 + 灰度 + 回补 + 回滚全流程"></p>
+<h2 id="整体流程"><a href="#整体流程" class="headerlink" title="整体流程"></a>整体流程</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8857f0c9bb69840e229badf9603659.png#pic_center" srcset="/img/loading.gif" lazyload alt="6000 万订单表迁移：双写 + 灰度 + 回补 + 回滚全流程" width="1520" height="960"></p>
 <h2 id="1-造数：生成存量单表数据"><a href="#1-造数：生成存量单表数据" class="headerlink" title="1. 造数：生成存量单表数据"></a>1. 造数：生成存量单表数据</h2><p>模拟 6000 万存量（演示用小量，逻辑等价）。or_sales_info 已确认<strong>单号主分片</strong>（业务事件都按单号），迁移到单号 hash 分片表。</p>
 <h2 id="2-双写：新老表同时写入（核心）"><a href="#2-双写：新老表同时写入（核心）" class="headerlink" title="2. 双写：新老表同时写入（核心）"></a>2. 双写：新老表同时写入（核心）</h2><p>迁移期间<strong>新订单要同时写老单表和新分片表</strong>，保证任何时候数据两边都有：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 写老单表 + 写分片表</span><br>writeLegacy(order);   <span class="hljs-comment">// 老表(存量持续增长)</span><br>writeSharded(order);  <span class="hljs-comment">// 分片表(走 ShardingSphere 路由)</span><br></code></pre></td></tr></table></figure>
@@ -503,7 +503,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -593,7 +593,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

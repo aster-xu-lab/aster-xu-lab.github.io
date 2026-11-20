@@ -380,7 +380,7 @@
             <h1 class="ax-post-head__title">ShardingSphere 绑定表与广播表：JOIN 与配置表的两大解法</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -392,7 +392,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -431,7 +431,7 @@
               <div class="markdown-body">
                 
                 <h2 id="JOIN-在分片下的尴尬"><a href="#JOIN-在分片下的尴尬" class="headerlink" title="JOIN 在分片下的尴尬"></a>JOIN 在分片下的尴尬</h2><p>分库分表后，JOIN 是个老大难。以订单为例：<code>or_sales_info</code> 和 <code>or_sales_item</code> 都在分片，按 <code>order_no</code> 关联。如果两张表的分片规则相同，但 ShardingSphere 不知道它们”按同一口径分片”，就会产生<strong>笛卡尔积</strong>——4分片 × 4分片 &#x3D; 16 种组合，结果大量重复且几乎必然错误。</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/db686b5d74404a62a627c699c92d5346.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片下的 JOIN：绑定表与广播表"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/db686b5d74404a62a627c699c92d5346.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片下的 JOIN：绑定表与广播表" width="1520" height="860"></p>
 <h2 id="绑定表：解决分片表-JOIN"><a href="#绑定表：解决分片表-JOIN" class="headerlink" title="绑定表：解决分片表 JOIN"></a>绑定表：解决分片表 JOIN</h2><p>绑定表的本质是：<strong>告诉 ShardingSphere，这两张表按相同的分片键路由</strong>，JOIN 只在各自对应的分片内进行。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 主表和明细表用同一个分片键 order_no、同一算法</span><br>shardingRuleConfig.getBindingTableGroups().add(<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">ShardingTableReferenceRuleConfiguration</span>(<br>                <span class="hljs-string">&quot;sales_binding&quot;</span>, <span class="hljs-string">&quot;t_bt_sales_info,t_bt_sales_item&quot;</span>));<br></code></pre></td></tr></table></figure>
 
@@ -490,7 +490,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -578,7 +578,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

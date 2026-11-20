@@ -379,7 +379,7 @@
             <h1 class="ax-post-head__title">分片键选型的算账：为什么单号主分片，而不是时间主分片</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -391,7 +391,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -444,7 +444,7 @@
 <li><strong>核对慢查询与执行计划</strong>：确认主路径是不是 <code>WHERE order_no = ?</code> 单点查询。</li>
 </ol>
 <p>分析结果很明确：<strong>所有业务事件都按订单号定位</strong>。那么分片键的选择就水到渠成了。</p>
-<h2 id="三、为什么是单号，不是时间"><a href="#三、为什么是单号，不是时间" class="headerlink" title="三、为什么是单号，不是时间"></a>三、为什么是单号，不是时间</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2f029ff1cdf342f472134f9cb5f6dd6f.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片键选型算账：为什么单号主分片"></p>
+<h2 id="三、为什么是单号，不是时间"><a href="#三、为什么是单号，不是时间" class="headerlink" title="三、为什么是单号，不是时间"></a>三、为什么是单号，不是时间</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2f029ff1cdf342f472134f9cb5f6dd6f.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片键选型算账：为什么单号主分片" width="1520" height="860"></p>
 <p>两个候选摆上台面：</p>
 <p><strong>单号主分片</strong>：订单号唯一、天然均匀 → 按它分片，每条写入和状态流转<strong>精准路由到单物理表</strong> → <strong>写路径零广播</strong>。</p>
 <p><strong>时间主分片</strong>：按创建时间分片，对统计查询友好、按时间扩容天然无感——但有个致命问题：<strong>每条写事件会广播到全部分片</strong>。为什么？因为一个订单从创建到发货到取消，跨越很长时间，按时间分片的话，订单状态流转时它的分片在变，业务方根本不知道去哪查，只能广播所有分片。</p>
@@ -491,7 +491,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -577,7 +577,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

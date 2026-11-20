@@ -381,7 +381,7 @@
             <h1 class="ax-post-head__title">DDIA-10-Raft共识算法图解：选主+日志复制+安全性</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -393,7 +393,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -456,7 +456,7 @@
 <li><strong>Leader</strong>：唯一的领导者，处理所有客户端请求，向Follower复制日志</li>
 </ol>
 <p>角色转换规则如下图：</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1882078a7768a321ec8e2bcf95748f5c.png#pic_center" srcset="/img/loading.gif" lazyload alt="Raft 的三种角色与状态转换"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1882078a7768a321ec8e2bcf95748f5c.png#pic_center" srcset="/img/loading.gif" lazyload alt="Raft 的三种角色与状态转换" width="1520" height="840"></p>
 <p><strong>Follower → Candidate</strong>：Follower在选举超时时间内未收到Leader心跳，递增Term，转换为Candidate，为自己投票，向所有节点发送RequestVote。</p>
 <p><strong>Candidate → Leader</strong>：若同一个Term内获得多数票，升级为Leader，立即发送心跳（空AppendEntries）宣告自己的权威。</p>
 <p><strong>Candidate&#x2F;Leader → Follower</strong>：若收到来自更高Term的RequestVote或AppendEntries（RPC中的Term字段），立即退回为Follower。</p>
@@ -474,13 +474,13 @@
 <p>为什么要随机？</p>
 <p>如果所有节点的超时时间相同，Leader挂掉后，所有Follower会在同一时刻同时变成Candidate。N个节点竞逐N票，必然平票，进入下一轮，再次同时苏醒同时平票……系统陷入死锁。</p>
 <p>随机超时打破了这种同步。每个节点的超时不同，超时最早的先变成Candidate，在自己Term内拿到多数票的概率极高。这就是”随机化解决分布式死锁”的经典案例。</p>
-<h3 id="3-3-选举流程详解"><a href="#3-3-选举流程详解" class="headerlink" title="3.3 选举流程详解"></a>3.3 选举流程详解</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f33add80e98e7b855c476d9edafe2d20.png#pic_center" srcset="/img/loading.gif" lazyload alt="Leader 选举：一次成功的 RequestVote"></p>
+<h3 id="3-3-选举流程详解"><a href="#3-3-选举流程详解" class="headerlink" title="3.3 选举流程详解"></a>3.3 选举流程详解</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f33add80e98e7b855c476d9edafe2d20.png#pic_center" srcset="/img/loading.gif" lazyload alt="Leader 选举：一次成功的 RequestVote" width="1440" height="1240"></p>
 <p>这里日志比较是关键：<strong>Raft确保只有包含所有已提交日志的节点才能当选Leader</strong>。这是安全性保证的核心。</p>
 <h2 id="四、日志复制：AppendEntries的全部奥秘"><a href="#四、日志复制：AppendEntries的全部奥秘" class="headerlink" title="四、日志复制：AppendEntries的全部奥秘"></a>四、日志复制：AppendEntries的全部奥秘</h2><h3 id="4-1-日志的结构"><a href="#4-1-日志的结构" class="headerlink" title="4.1 日志的结构"></a>4.1 日志的结构</h3><p>每个日志条目格式：</p>
 <figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs nix">&#123; <span class="hljs-params">Term:</span> <span class="hljs-number">3</span>, <span class="hljs-params">Command:</span> <span class="hljs-string">&quot;SET order_status=shipped WHERE order_id=10086&quot;</span>, <span class="hljs-params">Index:</span> <span class="hljs-number">15</span> &#125;<br></code></pre></td></tr></table></figure>
 
 <p><code>(Term, Index)</code> 构成全局唯一的坐标，Raft保证：<strong>相同Index的日志条目必然来自相同的Term，而且有相同的Command</strong>。</p>
-<h3 id="4-2-复制流程"><a href="#4-2-复制流程" class="headerlink" title="4.2 复制流程"></a>4.2 复制流程</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/dfedbbd0c1c63b71857cab288d4078e8.png#pic_center" srcset="/img/loading.gif" lazyload alt="日志复制：一次 AppendEntries 的完整路径"></p>
+<h3 id="4-2-复制流程"><a href="#4-2-复制流程" class="headerlink" title="4.2 复制流程"></a>4.2 复制流程</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/dfedbbd0c1c63b71857cab288d4078e8.png#pic_center" srcset="/img/loading.gif" lazyload alt="日志复制：一次 AppendEntries 的完整路径" width="1520" height="840"></p>
 <h3 id="4-3-日志回溯——Raft的强制覆盖"><a href="#4-3-日志回溯——Raft的强制覆盖" class="headerlink" title="4.3 日志回溯——Raft的强制覆盖"></a>4.3 日志回溯——Raft的强制覆盖</h3><p>当Follower和Leader不一致（如Follower落后或多了未提交的旧Leader日志），AppendEntries中的一致性检查会失败。Leader的对策是：</p>
 <p>每次失败后，<code>prevLogIndex</code> 减1重试。最终找到一个完全匹配的日志位置，然后Leader用本地日志覆盖Follower该位置之后的所有日志。</p>
 <p>这意味着：<strong>Follower上任何与Leader不一致的日志都会被覆盖</strong>。只要某条日志被复制到多数节点，它就安全了——因为后续的Leader必然包含它。未被复制到多数的日志，可能在重新选举后被覆盖。</p>
@@ -662,7 +662,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -748,7 +748,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

@@ -381,7 +381,7 @@
             <h1 class="ax-post-head__title">分片键怎么选？从&#34;时间主分片&#34;修正为&#34;单号主分片&#34;的选型复盘</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -393,7 +393,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -448,7 +448,7 @@
 <figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs lasso">创建: INSERT <span class="hljs-params">...</span> ORDER_NO 生成 → 后续按单号<br>发货: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br>取消: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br>签收: UPDATE <span class="hljs-params">...</span> <span class="hljs-keyword">WHERE</span> order_no = ?<br></code></pre></td></tr></table></figure>
 
 <p>这意味着<strong>单号是业务操作的主维度</strong>，比”按时间查报表”高频得多。而如果表按时间分片，<strong>每一次发货&#x2F;取消&#x2F;签收都会广播所有月表——写路径广播比读更严重</strong>（要锁、要事务）。</p>
-<h2 id="三、修正结论：单号主分片"><a href="#三、修正结论：单号主分片" class="headerlink" title="三、修正结论：单号主分片"></a>三、修正结论：单号主分片</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/53fac84f70019c6c23bad5b21e999e5f.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片键选型：从时间主分片修正为单号主分片"></p>
+<h2 id="三、修正结论：单号主分片"><a href="#三、修正结论：单号主分片" class="headerlink" title="三、修正结论：单号主分片"></a>三、修正结论：单号主分片</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/53fac84f70019c6c23bad5b21e999e5f.png#pic_center" srcset="/img/loading.gif" lazyload alt="分片键选型：从时间主分片修正为单号主分片" width="1520" height="860"></p>
 <p>既然所有事件都按单号，<strong>单号必须是主分片键</strong>：</p>
 <figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs arcade">主分片表  t_sales_info_&#123;单号<span class="hljs-built_in">hash</span>&#125;  分片键=order_no<br>       承载写入 + 所有按单号的业务事件(创建/发货/取消/签收)精准路由零广播<br><br>时间统计  Doris/ES 宽表(OLAP)<br>       按时间/多维度复杂查询(广播在MySQL不可接受, 交给查询库)<br></code></pre></td></tr></table></figure>
 
@@ -506,7 +506,7 @@
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -596,7 +596,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     

@@ -380,7 +380,7 @@
             <h1 class="ax-post-head__title">JUC-AQS(AbstractQueuedSynchronizer)原理</h1>
             <div class="ax-post-head__meta">
               
-  <div class="mt-3">
+  <div>
     
     
       <span class="post-meta">
@@ -392,7 +392,7 @@
     
   </div>
 
-  <div class="mt-1">
+  <div>
     
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
@@ -503,7 +503,7 @@
 <li>使用了FIFO先入先出队列，并不支持优先级队列</li>
 <li>设计时借鉴了CLH队列，它是一种单向无锁队列</li>
 </ul>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b59aae9866cf8daaf84c8facc827ce6c.png" srcset="/img/loading.gif" lazyload alt="CLH 单向队列结构示意图"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6e2947faefc3b50caadc6089ecffa823.png" srcset="/img/loading.gif" lazyload alt="AQS 同步队列指针结构图"><br>队列中有head和tail两个指针结点，都用volatile修饰配合cas使用，每个结点有state维护结点状态</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b59aae9866cf8daaf84c8facc827ce6c.png" srcset="/img/loading.gif" lazyload alt="CLH 单向队列结构示意图" width="459" height="437"><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6e2947faefc3b50caadc6089ecffa823.png" srcset="/img/loading.gif" lazyload alt="AQS 同步队列指针结构图" width="796" height="461"><br>队列中有head和tail两个指针结点，都用volatile修饰配合cas使用，每个结点有state维护结点状态</p>
 <p>入队伪代码</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">do</span> &#123;<br>	<span class="hljs-comment">// 原来的tail</span><br>	<span class="hljs-type">Node</span> <span class="hljs-variable">prev</span> <span class="hljs-operator">=</span> tail;<br>	<span class="hljs-comment">// 用cas在原来的tail基础上改为node</span><br>&#125; <span class="hljs-keyword">while</span>(!tail.compareAndSet(prev, node));<br></code></pre></td></tr></table></figure>
 <p>出队伪代码</p>
@@ -516,13 +516,13 @@
 <p>AQS在一些方面改进了CLH</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">private</span> Node <span class="hljs-title function_">enq</span><span class="hljs-params">(<span class="hljs-keyword">final</span> Node node)</span> &#123;<br>       <span class="hljs-keyword">for</span> (;;) &#123;<br>           <span class="hljs-type">Node</span> <span class="hljs-variable">t</span> <span class="hljs-operator">=</span> tail;<br>           <span class="hljs-comment">// 队列中还没有元素 tail 为 null</span><br>           <span class="hljs-keyword">if</span> (t == <span class="hljs-literal">null</span>) &#123;<br>               <span class="hljs-comment">// 将 head 从 null -&gt; dummy</span><br>               <span class="hljs-keyword">if</span> (compareAndSetHead(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Node</span>()))<br>                   tail = head;<br>           &#125; <span class="hljs-keyword">else</span> &#123;<br>               <span class="hljs-comment">// 将 node 的 prev 设置为原来的 tail</span><br>               node.prev = t;<br>               <span class="hljs-comment">// 将 tail 从原来的 tail 设置为 node</span><br>               <span class="hljs-keyword">if</span> (compareAndSetTail(t, node)) &#123;<br>                   <span class="hljs-comment">// 原来 tail 的 next 设置为 node</span><br>                   t.next = node;<br>                   <span class="hljs-keyword">return</span> t;<br>               &#125;<br>           &#125;<br>       &#125;<br>   &#125;<br></code></pre></td></tr></table></figure>
 
-<p><strong>主要用到AQS的并发工具类</strong><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/047adb05ab88df40b53021f360498cc1.png" srcset="/img/loading.gif" lazyload alt="基于 AQS 的并发工具类图"></p>
+<p><strong>主要用到AQS的并发工具类</strong><br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/047adb05ab88df40b53021f360498cc1.png" srcset="/img/loading.gif" lazyload alt="基于 AQS 的并发工具类图" width="1312" height="513"></p>
 
                 
               </div>
             
             <div>
-              <div class="post-metas my-3">
+              <div class="post-metas">
   
     <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
       <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
@@ -606,7 +606,7 @@
 
 
               
-                <div class="post-prevnext my-3">
+                <div class="post-prevnext">
                   <article class="post-prev col-6">
                     
                     
