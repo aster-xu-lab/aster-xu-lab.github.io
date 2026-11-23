@@ -28,6 +28,18 @@
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
+  function escapeHTML(str) {
+    return String(str).replace(/[&<>"']/g, function(ch) {
+      return {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      }[ch];
+    });
+  }
+
   function showLoading() {
     $result.html('<div class="m-auto text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div><br/>Loading...</div>');
   }
@@ -91,7 +103,7 @@
       }
       // 0x03. show search results
       if (isMatch) {
-        resultHTML += '<a href=\'' + data_url + '\' class=\'list-group-item list-group-item-action font-weight-bolder search-list-title\'>' + orig_data_title + '</a>';
+        resultHTML += '<a href=\'' + escapeHTML(data_url) + '\' class=\'list-group-item list-group-item-action font-weight-bolder search-list-title\'>' + escapeHTML(orig_data_title) + '</a>';
         if (first_occur >= 0) {
           // cut out 100 characters
           var start = first_occur - 20;
@@ -109,13 +121,14 @@
             end = orig_data_content.length;
           }
 
-          var match_content = orig_data_content.substring(start, end);
+          var match_content = escapeHTML(orig_data_content.substring(start, end));
 
-          // highlight all keywords, escaping each one for use in RegExp
+          // 索引是纯文本，先转义再高亮，避免正文里的 <、>、& 被当作 HTML 渲染
           keywords.forEach(function(keyword) {
-            var regS = new RegExp(escapeRegExp(keyword), 'gi');
+            var safeKeyword = escapeHTML(keyword);
+            var regS = new RegExp(escapeRegExp(safeKeyword), 'gi');
             match_content = match_content.replace(regS, function() {
-              return '<span class="search-word">' + keyword + '</span>';
+              return '<span class="search-word">' + safeKeyword + '</span>';
             });
           });
 
