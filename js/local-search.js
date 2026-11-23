@@ -8,6 +8,7 @@
   var modal = jQuery('#modalSearch');
   var $input = jQuery(searchSelector);
   var $result = jQuery(resultSelector);
+  var $status = jQuery('#local-search-status');
 
   if ($input.length === 0) {
     // eslint-disable-next-line no-console
@@ -40,12 +41,23 @@
     });
   }
 
+  function setStatus(text) {
+    $status.text(text);
+  }
+
   function showLoading() {
+    setStatus('正在加载搜索索引');
     $result.html('<div class="m-auto text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div><br/>Loading...</div>');
   }
 
   function showError() {
+    setStatus('搜索索引加载失败');
     $result.html('<div class="m-auto text-center local-search-error" role="alert">搜索索引加载失败，请稍后重试。</div>');
+  }
+
+  function showEmpty(term) {
+    setStatus('未找到相关的内容');
+    $result.html('<div class="local-search-empty">未找到与「' + escapeHTML(term) + '」相关的内容</div>');
   }
 
   // 0x01. perform local searching with the cached index
@@ -53,6 +65,7 @@
     var content = $input.val();
     if (content.trim().length <= 0) {
       $result.html('');
+      setStatus('');
       $input.removeClass('invalid').removeClass('valid');
       return;
     }
@@ -137,10 +150,12 @@
       }
     });
     if (resultHTML.indexOf('list-group-item') === -1) {
+      showEmpty(content.trim());
       return $input.addClass('invalid').removeClass('valid');
     }
     $input.addClass('valid').removeClass('invalid');
     $result.html(resultHTML);
+    setStatus('找到 ' + $result.find('a.search-list-title').length + ' 条结果');
   }
 
   // 0x04. load the index once and cache it
@@ -177,6 +192,10 @@
     });
   }
 
+  function resultLinks() {
+    return $result.find('a.search-list-title');
+  }
+
   // 0x05. bind input once, debounce the query
   function bindInput() {
     if (inputBound) {
@@ -187,7 +206,48 @@
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(performSearch, 200);
     });
+    $input.on('keydown', function(event) {
+      if (event.key !== 'ArrowDown') {
+        return;
+      }
+      var $links = resultLinks();
+      if (!$links.length) {
+        return;
+      }
+      event.preventDefault();
+      $links.first().focus();
+    });
+    $result.on('keydown', 'a.search-list-title', function(event) {
+      var $links = resultLinks();
+      var index = $links.index(this);
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        $links.eq(Math.min(index + 1, $links.length - 1)).focus();
+      } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        if (index <= 0) {
+          $input.focus();
+        } else {
+          $links.eq(index - 1).focus();
+        }
+      }
+    });
   }
+
+  document.addEventListener('keydown', function(event) {
+    if (event.shiftKey || event.altKey || !(event.ctrlKey || event.metaKey)) {
+      return;
+    }
+    if (String(event.key).toLowerCase() !== 'k') {
+      return;
+    }
+    event.preventDefault();
+    if (modal.hasClass('show')) {
+      $input.focus();
+      return;
+    }
+    modal.modal('show');
+  });
 
   modal.on('show.bs.modal', function() {
     bindInput();
@@ -204,5 +264,6 @@
     clearTimeout(debounceTimer);
     $input.val('').removeClass('invalid').removeClass('valid');
     $result.html('');
+    setStatus('');
   });
 })();

@@ -136,7 +136,7 @@ Fluid.plugins = {
 
       var bgClass = getBgClass($pre[0]);
       if (enableCopy) {
-        $pre.append('<button type="button" class="code-widget ' + bgClass + ' copy-btn" data-clipboard-snippet aria-label="Copy code"><i class="iconfont icon-copy"></i>' + lang + '</button>');
+        $pre.append('<button type="button" class="code-widget ' + bgClass + ' copy-btn" data-clipboard-snippet aria-label="Copy code"><svg class="ax-inline-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-copy"></use></svg>' + lang + '</button>');
       } else {
         $pre.append('<div class="code-widget ' + bgClass + '">' + lang + '</div>');
       }
