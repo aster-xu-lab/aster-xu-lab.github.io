@@ -26,21 +26,23 @@
     <meta name="description" content="引言：故障是必然的，不是偶然的 大意（第9章）：”在分布式系统中，部分失效是常态，而不是例外。” DDIA第9章用整整一章来讲述这个问题。Martin Kleppmann反复强调一个观点：单机系统要么全好，要么全坏——你写一个函数，要么返回正确结果，要么抛出异常。但分布式系统不是这样，它可能部分正常、部分故障，就像一艘漏水的船，你永远在舀水。 我职业生涯中处理过的生产事故不下几十次。每一次复盘，都">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-09-分布式系统故障排查：你没见过不代表没发生过">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2024/06/20/2024-06-20-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/06/20/2024-06-20-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="引言：故障是必然的，不是偶然的 大意（第9章）：”在分布式系统中，部分失效是常态，而不是例外。” DDIA第9章用整整一章来讲述这个问题。Martin Kleppmann反复强调一个观点：单机系统要么全好，要么全坏——你写一个函数，要么返回正确结果，要么抛出异常。但分布式系统不是这样，它可能部分正常、部分故障，就像一艘漏水的船，你永远在舀水。 我职业生涯中处理过的生产事故不下几十次。每一次复盘，都">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:published_time" content="2024-06-19T17:14:01.000Z">
-<meta property="article:modified_time" content="2024-06-19T17:14:01.000Z">
+<meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="分布式">
 <meta property="article:tag" content="可观测性">
 <meta property="article:tag" content="故障排查">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
   
   
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-09-分布式系统故障排查：你没见过不代表没发生过","datePublished":"2024-06-19T17:14:01.000Z","dateModified":"2024-06-19T17:14:01.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/06/20/2024-06-20-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-09-分布式系统故障排查：你没见过不代表没发生过","datePublished":"2024-06-19T17:14:01.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/06/20/2024-06-20-DDIA-09-%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/"}}</script>
   
   
   
@@ -213,6 +215,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -617,6 +622,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">DDIA-09-分布式系统故障排查：你没见过不代表没发生过</p>
             
@@ -956,7 +966,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -985,7 +995,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -1003,16 +1016,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -1064,6 +1074,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1138,9 +1158,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1151,9 +1174,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

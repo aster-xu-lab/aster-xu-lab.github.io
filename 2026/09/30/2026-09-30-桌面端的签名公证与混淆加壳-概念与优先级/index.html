@@ -26,7 +26,7 @@
     <meta name="description" content="商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。 一、三个概念先分清 概念 在干什么 实际效果 代码混淆 改 JS 可读性（改名、平坦化、字符串加密） 抬高逆向成本；逻辑仍在客户端 加壳 静态看起来不像明文，运行时解开 容易触发杀软误报、破坏签名和更新；对 Electron 收益有限 加固">
 <meta property="og:type" content="article">
 <meta property="og:title" content="桌面端的签名、公证与混淆加壳：先分清这三件事">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/09/30/2026-09-30-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E7%9A%84%E7%AD%BE%E5%90%8D%E5%85%AC%E8%AF%81%E4%B8%8E%E6%B7%B7%E6%B7%86%E5%8A%A0%E5%A3%B3-%E6%A6%82%E5%BF%B5%E4%B8%8E%E4%BC%98%E5%85%88%E7%BA%A7/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="商用桌面端外发前，一定会被问：要不要混淆、要不要加壳？这三个词经常被混为一谈，但手段、成本和真实收益差很多。这篇文章把它们拆开，讲清楚”加固”到底该先做什么。 一、三个概念先分清 概念 在干什么 实际效果 代码混淆 改 JS 可读性（改名、平坦化、字符串加密） 抬高逆向成本；逻辑仍在客户端 加壳 静态看起来不像明文，运行时解开 容易触发杀软误报、破坏签名和更新；对 Electron 收益有限 加固">
 <meta property="og:locale" content="zh_CN">
@@ -212,6 +212,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -616,6 +619,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">桌面端的签名、公证与混淆加壳：先分清这三件事</p>
             
@@ -865,7 +873,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -894,7 +902,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -912,16 +923,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -973,6 +981,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1047,9 +1065,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1060,9 +1081,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

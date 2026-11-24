@@ -23,22 +23,24 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="渲染进程调主进程，四十多个通道散在 4 个文件里（整改时是 45 个），有的校验、有的不校验，有的手写 if，有的直接信类型。TypeScript 在进程边界就失效了——ipcMain.handle 收到的 unknown，编译器不会替你检查。这篇讲我们怎么把注册收成一个缝，并让脚本保证「有参数的通道一定带校验」。 一、类型系统止于进程边界平时写主进程代码，类型很好用： 1function sav">
+    <meta name="description" content="渲染进程调主进程，四十多个通道散在 4 个文件里（整改时是 45 个），有的校验、有的不校验，有的手写 if，有的直接信类型。TypeScript 的声明不会在运行时校验跨进程数据，所以主进程把收到的业务参数当作 unknown 解析。这篇讲我们怎么把注册收成一个缝，并让脚本保证「有参数的通道一定带校验」。 一、类型系统止于进程边界平时写主进程代码，类型很好用： 1function saveRev">
 <meta property="og:type" content="article">
 <meta property="og:title" content="IPC 不该有 45 种入口：单一注册缝与运行时校验">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/20/2026-11-20-IPC%E4%B8%8D%E8%AF%A5%E6%9C%8945%E7%A7%8D%E5%85%A5%E5%8F%A3-%E5%8D%95%E4%B8%80%E6%B3%A8%E5%86%8C%E7%BC%9D%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%97%B6%E6%A0%A1%E9%AA%8C/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/20/2026-11-20-IPC%E4%B8%8D%E8%AF%A5%E6%9C%8945%E7%A7%8D%E5%85%A5%E5%8F%A3-%E5%8D%95%E4%B8%80%E6%B3%A8%E5%86%8C%E7%BC%9D%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%97%B6%E6%A0%A1%E9%AA%8C/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="渲染进程调主进程，四十多个通道散在 4 个文件里（整改时是 45 个），有的校验、有的不校验，有的手写 if，有的直接信类型。TypeScript 在进程边界就失效了——ipcMain.handle 收到的 unknown，编译器不会替你检查。这篇讲我们怎么把注册收成一个缝，并让脚本保证「有参数的通道一定带校验」。 一、类型系统止于进程边界平时写主进程代码，类型很好用： 1function sav">
+<meta property="og:description" content="渲染进程调主进程，四十多个通道散在 4 个文件里（整改时是 45 个），有的校验、有的不校验，有的手写 if，有的直接信类型。TypeScript 的声明不会在运行时校验跨进程数据，所以主进程把收到的业务参数当作 unknown 解析。这篇讲我们怎么把注册收成一个缝，并让脚本保证「有参数的通道一定带校验」。 一、类型系统止于进程边界平时写主进程代码，类型很好用： 1function saveRev">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:published_time" content="2026-11-19T17:26:09.000Z">
-<meta property="article:modified_time" content="2026-11-19T17:26:09.000Z">
+<meta property="article:modified_time" content="2026-11-24T07:57:26.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="工程实践">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
   
   
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"IPC 不该有 45 种入口：单一注册缝与运行时校验","datePublished":"2026-11-19T17:26:09.000Z","dateModified":"2026-11-19T17:26:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/11/20/2026-11-20-IPC%E4%B8%8D%E8%AF%A5%E6%9C%8945%E7%A7%8D%E5%85%A5%E5%8F%A3-%E5%8D%95%E4%B8%80%E6%B3%A8%E5%86%8C%E7%BC%9D%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%97%B6%E6%A0%A1%E9%AA%8C/"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"IPC 不该有 45 种入口：单一注册缝与运行时校验","datePublished":"2026-11-19T17:26:09.000Z","dateModified":"2026-11-24T07:57:26.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/11/20/2026-11-20-IPC%E4%B8%8D%E8%AF%A5%E6%9C%8945%E7%A7%8D%E5%85%A5%E5%8F%A3-%E5%8D%95%E4%B8%80%E6%B3%A8%E5%86%8C%E7%BC%9D%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%97%B6%E6%A0%A1%E9%AA%8C/"}}</script>
   
   
   
@@ -211,6 +213,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -588,7 +593,7 @@
       <span class="post-meta mr-2">
         <svg class="ax-inline-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-chart"></use></svg>
         
-          2.9k 字
+          3k 字
         
       </span>
     
@@ -615,6 +620,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">IPC 不该有 45 种入口：单一注册缝与运行时校验</p>
             
@@ -622,12 +632,12 @@
               <div class="markdown-body">
                 
                 <blockquote>
-<p>渲染进程调主进程，四十多个通道散在 4 个文件里（整改时是 45 个），有的校验、有的不校验，有的手写 <code>if</code>，有的直接信类型。TypeScript 在进程边界就失效了——<code>ipcMain.handle</code> 收到的 <code>unknown</code>，编译器不会替你检查。这篇讲我们怎么把注册收成一个缝，并让脚本保证「有参数的通道一定带校验」。</p>
+<p>渲染进程调主进程，四十多个通道散在 4 个文件里（整改时是 45 个），有的校验、有的不校验，有的手写 <code>if</code>，有的直接信类型。TypeScript 的声明不会在运行时校验跨进程数据，所以主进程把收到的业务参数当作 <code>unknown</code> 解析。这篇讲我们怎么把注册收成一个缝，并让脚本保证「有参数的通道一定带校验」。</p>
 </blockquote>
 <h2 id="一、类型系统止于进程边界"><a href="#一、类型系统止于进程边界" class="headerlink" title="一、类型系统止于进程边界"></a>一、类型系统止于进程边界</h2><p>平时写主进程代码，类型很好用：</p>
 <figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">function</span> <span class="hljs-title function_">saveReview</span>(<span class="hljs-params"><span class="hljs-attr">input</span>: <span class="hljs-title class_">SaveReviewInput</span></span>) &#123; ... &#125;<br></code></pre></td></tr></table></figure>
 
-<p>但 IPC 不是函数调用。渲染进程传过来的是结构化克隆后的普通对象，<code>ipcMain.handle</code> 的第二个参数在类型上可以被写成任何东西。开发期有类型提示，运行时没有任何保证：</p>
+<p>渲染进程通过 IPC 发送的值会经过结构化克隆。<code>ipcMain.handle(channel, listener)</code> 的第二个参数是监听器。Electron 调用监听器时先传 <code>event</code>，再传业务参数（<code>(event, ...args)</code>）。业务参数的类型声明只在开发期生效，实际值还需要运行时校验：</p>
 <ul>
 <li>preload 拼错了字段名，主进程读到 <code>undefined</code>；</li>
 <li>渲染进程升级后多传了一个字段，主进程静默忽略；</li>
@@ -715,7 +725,7 @@
 <li>脚本负责防止退化，schema 负责挡住异常帧，类型负责开发体验——三者不能互相替代。</li>
 </ol>
 <hr>
-<p><em>发表于 2026 年 11 月 · 标签: Electron, IPC, 类型安全, 运行时校验, 工程实践</em></p>
+<p><em>发表于 2026 年 11 月</em></p>
 
                 
               </div>
@@ -860,7 +870,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -889,7 +899,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -907,16 +920,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -968,6 +978,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1042,9 +1062,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1055,9 +1078,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

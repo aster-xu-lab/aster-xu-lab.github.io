@@ -26,7 +26,7 @@
     <meta name="description" content="Agent 三层架构里，Memory 是最容易被低估的一层。很多人以为 Memory 就是”把对话历史塞进 prompt”——但上下文窗口有限、历史一长就爆，跨会话更是无从谈起。这篇讲 Memory 的工程实现：短期上下文怎么管理、长期记忆怎么设计。 一、两个 Memory，两个问题 Agent 的 Memory 分两层，解决不同问题： 短期上下文 长期记忆 是什么 当前对话历史 跨会话的持久化信">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Agent 的 Memory 设计：短期上下文与长期记忆的工程实现">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2026/07/22/2026-07-22-Agent%E7%9A%84Memory%E8%AE%BE%E8%AE%A1-%E7%9F%AD%E6%9C%9F%E4%B8%8A%E4%B8%8B%E6%96%87%E4%B8%8E%E9%95%BF%E6%9C%9F%E8%AE%B0%E5%BF%86/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/07/22/2026-07-22-Agent%E7%9A%84Memory%E8%AE%BE%E8%AE%A1-%E7%9F%AD%E6%9C%9F%E4%B8%8A%E4%B8%8B%E6%96%87%E4%B8%8E%E9%95%BF%E6%9C%9F%E8%AE%B0%E5%BF%86/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="Agent 三层架构里，Memory 是最容易被低估的一层。很多人以为 Memory 就是”把对话历史塞进 prompt”——但上下文窗口有限、历史一长就爆，跨会话更是无从谈起。这篇讲 Memory 的工程实现：短期上下文怎么管理、长期记忆怎么设计。 一、两个 Memory，两个问题 Agent 的 Memory 分两层，解决不同问题： 短期上下文 长期记忆 是什么 当前对话历史 跨会话的持久化信">
 <meta property="og:locale" content="zh_CN">
@@ -214,6 +214,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -618,6 +621,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/agent/">AI / Agent 工程</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">Agent 的 Memory 设计：短期上下文与长期记忆的工程实现</p>
             
@@ -877,7 +885,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -906,7 +914,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -924,16 +935,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -985,6 +993,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1059,9 +1077,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1072,9 +1093,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

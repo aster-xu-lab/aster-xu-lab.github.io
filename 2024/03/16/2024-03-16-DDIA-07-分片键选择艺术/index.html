@@ -26,13 +26,13 @@
     <meta name="description" content="分片键绝不是随便挑一个字段就行的，它决定了你未来两年的系统容量上限和运维复杂度。本文从查询模式、数据均匀性、扩缩容三个维度拆解分片键选择，并以电商订单系统为实战场景，推演user_id vs order_id的取舍与异构索引补偿方案。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2024/03/16/2024-03-16-DDIA-07-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E6%8B%A9%E8%89%BA%E6%9C%AF/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2024/03/16/2024-03-16-DDIA-07-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E6%8B%A9%E8%89%BA%E6%9C%AF/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="分片键绝不是随便挑一个字段就行的，它决定了你未来两年的系统容量上限和运维复杂度。本文从查询模式、数据均匀性、扩缩容三个维度拆解分片键选择，并以电商订单系统为实战场景，推演user_id vs order_id的取舍与异构索引补偿方案。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png">
 <meta property="article:published_time" content="2024-03-16T13:55:19.000Z">
-<meta property="article:modified_time" content="2024-03-16T13:55:19.000Z">
+<meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="DDIA">
 <meta property="article:tag" content="ShardingSphere">
@@ -41,7 +41,7 @@
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d496474e6c8ab38a06ed142e5b1d65cd.png">
   
   
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合","datePublished":"2024-03-16T13:55:19.000Z","dateModified":"2024-03-16T13:55:19.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/03/16/2024-03-16-DDIA-07-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E6%8B%A9%E8%89%BA%E6%9C%AF/"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合","datePublished":"2024-03-16T13:55:19.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/03/16/2024-03-16-DDIA-07-%E5%88%86%E7%89%87%E9%94%AE%E9%80%89%E6%8B%A9%E8%89%BA%E6%9C%AF/"}}</script>
   
   
   
@@ -214,6 +214,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -618,6 +621,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/ddia/">DDIA 读书笔记</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">DDIA-07-分片键的选择艺术：为什么user_id比order_id更适合</p>
             
@@ -963,7 +971,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -992,7 +1000,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -1010,16 +1021,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -1071,6 +1079,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1145,9 +1163,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1158,9 +1179,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

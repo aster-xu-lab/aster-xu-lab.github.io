@@ -23,16 +23,16 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承父工程订单中台的 order-service 继承">
+    <meta name="description" content="真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承父工程订单服务的依赖树包含 Redis、Dubbo">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承父工程订单中台的 order-service 继承">
+<meta property="og:description" content="真实环境都是 SpringBoot + MyBatis-Plus前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 Spring Boot + MyBatis-Plus。本文用一个独立模块，验证 MyBatis-Plus 的 BaseMapper&#x2F;ServiceImpl 如何无缝操作 ShardingSphere 分片表。 关键：不继承父工程订单服务的依赖树包含 Redis、Dubbo">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebbabb3c76b3a32ab7f90ce3e5d374cf.png">
 <meta property="article:published_time" content="2025-05-27T16:27:50.000Z">
-<meta property="article:modified_time" content="2025-05-27T16:27:50.000Z">
+<meta property="article:modified_time" content="2026-11-24T07:57:26.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="ShardingSphere">
 <meta property="article:tag" content="Spring Boot">
@@ -42,7 +42,7 @@
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ebbabb3c76b3a32ab7f90ce3e5d374cf.png">
   
   
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战","datePublished":"2025-05-27T16:27:50.000Z","dateModified":"2025-05-27T16:27:50.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战","datePublished":"2025-05-27T16:27:50.000Z","dateModified":"2026-11-24T07:57:26.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2025/05/28/2025-05-28-SpringBoot-MyBatisPlus-ShardingSphere%E7%94%9F%E4%BA%A7%E6%8E%A5%E5%85%A5/"}}</script>
   
   
   
@@ -215,6 +215,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -619,6 +622,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/sharding/">分库分表与订单中台</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">SpringBoot + MyBatis-Plus + ShardingSphere 生产接入实战</p>
             
@@ -626,7 +634,7 @@
               <div class="markdown-body">
                 
                 <h2 id="真实环境都是-SpringBoot-MyBatis-Plus"><a href="#真实环境都是-SpringBoot-MyBatis-Plus" class="headerlink" title="真实环境都是 SpringBoot + MyBatis-Plus"></a>真实环境都是 SpringBoot + MyBatis-Plus</h2><p>前面几篇都是纯 JDBC 讲原理。但真实生产基本都是 <strong>Spring Boot + MyBatis-Plus</strong>。本文用一个独立模块，验证 MyBatis-Plus 的 <code>BaseMapper</code>&#x2F;<code>ServiceImpl</code> 如何无缝操作 ShardingSphere 分片表。</p>
-<h2 id="关键：不继承父工程"><a href="#关键：不继承父工程" class="headerlink" title="关键：不继承父工程"></a>关键：不继承父工程</h2><p>订单中台的 order-service 继承父工程，dependencyManagement 带入大量中间件（Redis&#x2F;Dubbo&#x2F;Seata）。<code>@SpringBootApplication</code> 会自动加载它们的自动配置，本地缺中间件就启动失败。</p>
+<h2 id="关键：不继承父工程"><a href="#关键：不继承父工程" class="headerlink" title="关键：不继承父工程"></a>关键：不继承父工程</h2><p>订单服务的依赖树包含 Redis、Dubbo 和 Seata 等中间件。本地直接启动时，类路径中的相关自动配置会在满足条件时启用，部分组件依赖外部服务。Maven 的 <code>dependencyManagement</code> 负责管理依赖声明的版本等默认配置，实际引入由依赖声明及其传递关系决定。</p>
 <p><strong>解法</strong>：新建独立模块，parent 用 <code>spring-boot-starter-parent</code>，只依赖干净的 starter：</p>
 <ul>
 <li><code>spring-boot-starter-web</code></li>
@@ -812,7 +820,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -841,7 +849,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -859,16 +870,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -920,6 +928,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -994,9 +1012,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1007,9 +1028,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

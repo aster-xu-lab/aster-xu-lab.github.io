@@ -24,6 +24,7 @@
   var failed = false;
   var inputBound = false;
   var debounceTimer = null;
+  var focusReturn = null;
 
   function escapeRegExp(str) {
     return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -76,86 +77,65 @@
       return;
     }
 
-    // 0x02. parse query to keywords list
-    var resultHTML = '';
-    var keywords = content.trim().toLowerCase().split(/[\s-]+/);
-    $result.html('');
+      var keywords = Array.from(new Set(content.trim().toLowerCase().split(/[\s-]+/).filter(Boolean)));
+    if (!keywords.length) {
+      $result.empty();
+      setStatus('');
+      $input.removeClass('invalid valid');
+      return;
+    }
+
+    var highlight = new RegExp(keywords.slice().sort(function(a, b) {
+      return b.length - a.length;
+    }).map(escapeRegExp).join('|'), 'gi');
+    var matches = [];
 
     dataList.forEach(function(data) {
-      var isMatch = true;
-      if (!data.title || data.title.trim() === '') {
-        data.title = 'Untitled';
+      var title = data.title.trim() || 'Untitled';
+      var body = data.content.trim();
+      var lowerTitle = title.toLowerCase();
+      var lowerBody = body.toLowerCase();
+      var titleHits = 0;
+      var firstBodyHit = Infinity;
+
+      for (var keyword of keywords) {
+        var inTitle = lowerTitle.includes(keyword);
+        var inBody = lowerBody.indexOf(keyword);
+        if (!inTitle && inBody < 0) return;
+        if (inTitle) titleHits += 1;
+        if (inBody >= 0) firstBodyHit = Math.min(firstBodyHit, inBody);
       }
-      var orig_data_title = data.title.trim();
-      var data_title = orig_data_title.toLowerCase();
-      var orig_data_content = data.content.trim();
-      var data_content = orig_data_content.toLowerCase();
-      var data_url = data.url;
-      var index_title = -1;
-      var index_content = -1;
-      var first_occur = -1;
-      // Skip matching when content is included in search and content is empty
-      if (CONFIG.include_content_in_search && data_content === '') {
-        isMatch = false;
-      } else {
-        keywords.forEach(function(keyword, i) {
-          index_title = data_title.indexOf(keyword);
-          index_content = data_content.indexOf(keyword);
 
-          if (index_title < 0 && index_content < 0) {
-            isMatch = false;
-          } else {
-            if (index_content < 0) {
-              index_content = 0;
-            }
-            if (i === 0) {
-              first_occur = index_content;
-            }
-          }
-        });
-      }
-      // 0x03. show search results
-      if (isMatch) {
-        resultHTML += '<a href=\'' + escapeHTML(data_url) + '\' class=\'list-group-item list-group-item-action font-weight-bolder search-list-title\'>' + escapeHTML(orig_data_title) + '</a>';
-        if (first_occur >= 0) {
-          // cut out 100 characters
-          var start = first_occur - 20;
-          var end = first_occur + 80;
-
-          if (start < 0) {
-            start = 0;
-          }
-
-          if (start === 0) {
-            end = 100;
-          }
-
-          if (end > orig_data_content.length) {
-            end = orig_data_content.length;
-          }
-
-          var match_content = escapeHTML(orig_data_content.substring(start, end));
-
-          // 索引是纯文本，先转义再高亮，避免正文里的 <、>、& 被当作 HTML 渲染
-          keywords.forEach(function(keyword) {
-            var safeKeyword = escapeHTML(keyword);
-            var regS = new RegExp(escapeRegExp(safeKeyword), 'gi');
-            match_content = match_content.replace(regS, function() {
-              return '<span class="search-word">' + safeKeyword + '</span>';
-            });
-          });
-
-          resultHTML += '<p class=\'search-list-content\'>' + match_content + '...</p>';
-        }
-      }
+      matches.push({ title: title, body: body, url: data.url, titleHits: titleHits, firstBodyHit: firstBodyHit });
     });
-    if (resultHTML.indexOf('list-group-item') === -1) {
+
+    // 搜索索引按发布日期倒序，稳定排序保留同等级文章的顺序。
+    matches.sort(function(a, b) { return b.titleHits - a.titleHits; });
+    var resultHTML = matches.map(function(match) {
+      var link = '<a href="' + escapeHTML(match.url) + '" class="list-group-item list-group-item-action font-weight-bolder search-list-title">' + escapeHTML(match.title) + '</a>';
+      if (!match.body) return link;
+
+      var start = Number.isFinite(match.firstBodyHit) ? Math.max(0, match.firstBodyHit - 20) : 0;
+      var excerpt = match.body.slice(start, start + 100);
+      var marked = '';
+      var cursor = 0;
+      for (var found of excerpt.matchAll(highlight)) {
+        marked += escapeHTML(excerpt.slice(cursor, found.index));
+        marked += '<span class="search-word">' + escapeHTML(found[0]) + '</span>';
+        cursor = found.index + found[0].length;
+      }
+      marked += escapeHTML(excerpt.slice(cursor));
+      return link + '<p class="search-list-content">' + (start ? '…' : '') + marked +
+        (start + excerpt.length < match.body.length ? '…' : '') + '</p>';
+    }).join('');
+
+    if (!matches.length) {
       showEmpty(content.trim());
       return $input.addClass('invalid').removeClass('valid');
     }
     $input.addClass('valid').removeClass('invalid');
     $result.html(resultHTML);
-    setStatus('找到 ' + $result.find('a.search-list-title').length + ' 条结果');
+    setStatus('找到 ' + matches.length + ' 条结果');
   }
 
   // 0x04. load the index once and cache it
@@ -235,7 +215,7 @@
   }
 
   document.addEventListener('keydown', function(event) {
-    if (event.shiftKey || event.altKey || !(event.ctrlKey || event.metaKey)) {
+    if (event.isComposing || event.shiftKey || event.altKey || !(event.ctrlKey || event.metaKey)) {
       return;
     }
     if (String(event.key).toLowerCase() !== 'k') {
@@ -249,11 +229,11 @@
     modal.modal('show');
   });
 
-  modal.on('show.bs.modal', function() {
+  modal.on('show.bs.modal', function(event) {
+    var opener = event.relatedTarget || document.activeElement;
+    focusReturn = jQuery(opener).closest('#mobile-grid-menu').length
+      ? document.getElementById('navbar-toggler-btn') : opener;
     bindInput();
-    if (!dataList) {
-      showLoading();
-    }
     var path = CONFIG.search_path || '/local-search.xml';
     loadIndex(path, performSearch);
   });
@@ -265,5 +245,9 @@
     $input.val('').removeClass('invalid').removeClass('valid');
     $result.html('');
     setStatus('');
+    if (focusReturn && focusReturn.isConnected && jQuery(focusReturn).is(':visible')) {
+      focusReturn.focus();
+    }
+    focusReturn = null;
   });
 })();

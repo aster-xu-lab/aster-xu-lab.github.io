@@ -26,15 +26,17 @@
     <meta name="description" content="定位：学习笔记。目前我用 Docker 部署，还没系统用 K8s——先把容器原理这一层搞清楚，是我投大厂想补的一块。 一、容器是什么一句话：容器不是”轻量虚拟机”，是”被隔离的进程”。 它靠两个内核机制实现隔离： Namespace（命名空间）：让容器里的进程”以为自己在独立机器上”； Cgroups（控制组）：限制容器”能占多少资源”。 二、Namespace：隔离”看到什么”容器里的进程看起来">
 <meta property="og:type" content="article">
 <meta property="og:title" content="容器原理：Namespace 隔离&quot;看到什么&quot;，Cgroups 限制&quot;能用多少&quot;">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2023/04/01/2023-04-01-%E5%AE%B9%E5%99%A8%E5%8E%9F%E7%90%86-Namespace%E4%B8%8ECgroups/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2023/04/01/2023-04-01-%E5%AE%B9%E5%99%A8%E5%8E%9F%E7%90%86-Namespace%E4%B8%8ECgroups/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="定位：学习笔记。目前我用 Docker 部署，还没系统用 K8s——先把容器原理这一层搞清楚，是我投大厂想补的一块。 一、容器是什么一句话：容器不是”轻量虚拟机”，是”被隔离的进程”。 它靠两个内核机制实现隔离： Namespace（命名空间）：让容器里的进程”以为自己在独立机器上”； Cgroups（控制组）：限制容器”能占多少资源”。 二、Namespace：隔离”看到什么”容器里的进程看起来">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:published_time" content="2023-03-31T21:23:46.000Z">
 <meta property="article:modified_time" content="2023-03-31T21:23:46.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="云原生">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"容器原理：Namespace 隔离\"看到什么\"，Cgroups 限制\"能用多少\"","datePublished":"2023-03-31T21:23:46.000Z","dateModified":"2023-03-31T21:23:46.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/04/01/2023-04-01-%E5%AE%B9%E5%99%A8%E5%8E%9F%E7%90%86-Namespace%E4%B8%8ECgroups/"}}</script>
@@ -210,6 +212,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -614,6 +619,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/service/">微服务与云原生</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">容器原理：Namespace 隔离&#34;看到什么&#34;，Cgroups 限制&#34;能用多少&#34;</p>
             
@@ -847,7 +857,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -876,7 +886,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -894,16 +907,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -955,6 +965,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1029,9 +1049,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1042,9 +1065,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

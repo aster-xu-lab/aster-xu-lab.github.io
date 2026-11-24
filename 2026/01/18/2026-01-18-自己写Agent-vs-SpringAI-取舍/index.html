@@ -26,13 +26,13 @@
     <meta name="description" content="定位：学习笔记。同一个 Agent 功能，我写了两遍——一遍自己实现，一遍用 Spring AI。差异本身就是最好的教材。 一、同一个功能，两种实现 我先把 Agent 的核心循环自己实现了一遍（30 行，见上一篇），再用 Spring AI 写了一遍。对比下来： 自己实现 Spring AI Agent 核心 ~30 行（显式 ReAct 循环） ~8 行（一个方法调用） LLM 客户端 ~10">
 <meta property="og:type" content="article">
 <meta property="og:title" content="自己写 Agent vs Spring AI：210 行和 30 行的取舍">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2026/01/18/2026-01-18-%E8%87%AA%E5%B7%B1%E5%86%99Agent-vs-SpringAI-%E5%8F%96%E8%88%8D/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/01/18/2026-01-18-%E8%87%AA%E5%B7%B1%E5%86%99Agent-vs-SpringAI-%E5%8F%96%E8%88%8D/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="定位：学习笔记。同一个 Agent 功能，我写了两遍——一遍自己实现，一遍用 Spring AI。差异本身就是最好的教材。 一、同一个功能，两种实现 我先把 Agent 的核心循环自己实现了一遍（30 行，见上一篇），再用 Spring AI 写了一遍。对比下来： 自己实现 Spring AI Agent 核心 ~30 行（显式 ReAct 循环） ~8 行（一个方法调用） LLM 客户端 ~10">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b29b7ccaeeeafe4bf13929907af58fa.png">
 <meta property="article:published_time" content="2026-01-18T12:58:27.000Z">
-<meta property="article:modified_time" content="2026-01-18T12:58:27.000Z">
+<meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Agent">
 <meta property="article:tag" content="Java">
@@ -42,7 +42,7 @@
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b29b7ccaeeeafe4bf13929907af58fa.png">
   
   
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"自己写 Agent vs Spring AI：210 行和 30 行的取舍","datePublished":"2026-01-18T12:58:27.000Z","dateModified":"2026-01-18T12:58:27.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/01/18/2026-01-18-%E8%87%AA%E5%B7%B1%E5%86%99Agent-vs-SpringAI-%E5%8F%96%E8%88%8D/"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"自己写 Agent vs Spring AI：210 行和 30 行的取舍","datePublished":"2026-01-18T12:58:27.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/01/18/2026-01-18-%E8%87%AA%E5%B7%B1%E5%86%99Agent-vs-SpringAI-%E5%8F%96%E8%88%8D/"}}</script>
   
   
   
@@ -215,6 +215,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -619,6 +622,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/agent/">AI / Agent 工程</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">自己写 Agent vs Spring AI：210 行和 30 行的取舍</p>
             
@@ -875,7 +883,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -904,7 +912,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -922,16 +933,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -983,6 +991,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1057,9 +1075,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1070,9 +1091,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

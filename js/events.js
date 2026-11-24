@@ -32,16 +32,20 @@ Fluid.events = {
 
     var mobileGridMenu = jQuery('#mobile-grid-menu');
     var navbarToggler = jQuery('#navbar-toggler-btn');
+    var background = jQuery('body > main, body > footer');
+    var searchModal = jQuery('#modalSearch');
 
     function setMobileGridMenu(open) {
       mobileGridMenu.toggleClass('show', open);
       mobileGridMenu.attr('aria-hidden', open ? 'false' : 'true');
       mobileGridMenu[0].inert = !open;
+      background.prop('inert', open);
       navbarToggler.attr('aria-expanded', open ? 'true' : 'false');
       jQuery('.animated-icon').toggleClass('open', open);
       jQuery('body').toggleClass('mobile-menu-open', open);
       navbar.toggleClass('top-nav-collapse', open);
       if (open) {
+        mobileGridMenu.find('a[href]').first().trigger('focus');
         // Apply staggered animation delays when opening
         mobileGridMenu.find('.mobile-grid-cell, .mobile-grid-group-header').each(function(i, el) {
           el.style.animationDelay = (i * 20) + 'ms';
@@ -58,7 +62,9 @@ Fluid.events = {
 
       // On mobile use grid menu; on desktop keep original collapse behavior
       if (window.innerWidth < 992) {
-        setMobileGridMenu(!mobileGridMenu.hasClass('show'));
+        var open = !mobileGridMenu.hasClass('show');
+        setMobileGridMenu(open);
+        if (!open) navbarToggler.trigger('focus');
       } else {
         jQuery('.animated-icon').toggleClass('open');
         jQuery('#navbar').toggleClass('navbar-col-show');
@@ -82,11 +88,28 @@ Fluid.events = {
       }
     });
 
-    // Close grid menu on Escape and return focus to the toggler
-    jQuery(document).on('keydown', function(e) {
-      if ((e.key === 'Escape' || e.keyCode === 27) && mobileGridMenu.hasClass('show')) {
-        setMobileGridMenu(false);
+    searchModal.on('show.bs.modal', function() {
+      if (mobileGridMenu.hasClass('show')) {
         navbarToggler.trigger('focus');
+        setMobileGridMenu(false);
+      }
+    });
+
+    jQuery(document).on('keydown', function(e) {
+      if (!mobileGridMenu.hasClass('show')) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        navbarToggler.trigger('focus');
+        setMobileGridMenu(false);
+      } else if (e.key === 'Tab') {
+        var links = mobileGridMenu.find('a[href]:visible');
+        if (e.shiftKey && document.activeElement === navbarToggler[0]) {
+          e.preventDefault();
+          links.last().trigger('focus');
+        } else if (!e.shiftKey && document.activeElement === links.last()[0]) {
+          e.preventDefault();
+          navbarToggler.trigger('focus');
+        }
       }
     });
   },

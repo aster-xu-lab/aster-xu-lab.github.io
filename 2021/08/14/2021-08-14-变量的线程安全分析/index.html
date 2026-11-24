@@ -26,7 +26,7 @@
     <meta name="description" content="变量的线程安全分析成员变量和静态变量是否线程安全？ 如果它们没有共享，则线程安全 如果它们被共享了，根据它们的状态是否能够改变，又分两种情况 如果只有读操作，则线程安全 如果有读写操作，则这段代码是临界区，需要考虑线程安全 局部变量是否线程安全 局部变量是线程安全的 单局部变量引用的对象则未必 如果该对象没有逃离方法的作用访问，它是线程安全的 如果该对象逃离方法的作用范围，需要考虑线程安全 局部变">
 <meta property="og:type" content="article">
 <meta property="og:title" content="3.3、变量的线程安全分析">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2021/08/14/2021-08-14-%E5%8F%98%E9%87%8F%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%88%86%E6%9E%90/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2021/08/14/2021-08-14-%E5%8F%98%E9%87%8F%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%88%86%E6%9E%90/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="变量的线程安全分析成员变量和静态变量是否线程安全？ 如果它们没有共享，则线程安全 如果它们被共享了，根据它们的状态是否能够改变，又分两种情况 如果只有读操作，则线程安全 如果有读写操作，则这段代码是临界区，需要考虑线程安全 局部变量是否线程安全 局部变量是线程安全的 单局部变量引用的对象则未必 如果该对象没有逃离方法的作用访问，它是线程安全的 如果该对象逃离方法的作用范围，需要考虑线程安全 局部变">
 <meta property="og:locale" content="zh_CN">
@@ -35,14 +35,14 @@
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/84c7659311df8b8953ddc4693d4322f5.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/dc66b40d9e447a8426f830534567c877.png">
 <meta property="article:published_time" content="2021-08-13T23:57:48.000Z">
-<meta property="article:modified_time" content="2021-08-13T23:57:48.000Z">
+<meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java并发">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/b0cfc8a2e68f59f1e26b1cd1b8da224b.png">
   
   
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"3.3、变量的线程安全分析","datePublished":"2021-08-13T23:57:48.000Z","dateModified":"2021-08-13T23:57:48.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/08/14/2021-08-14-%E5%8F%98%E9%87%8F%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%88%86%E6%9E%90/"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"3.3、变量的线程安全分析","datePublished":"2021-08-13T23:57:48.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/08/14/2021-08-14-%E5%8F%98%E9%87%8F%E7%9A%84%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8%E5%88%86%E6%9E%90/"}}</script>
   
   
   
@@ -215,6 +215,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -619,6 +622,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/concurrency/">Java 并发</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">3.3、变量的线程安全分析</p>
             
@@ -837,7 +845,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -866,7 +874,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -884,16 +895,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -945,6 +953,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1019,9 +1037,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1032,9 +1053,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

@@ -26,18 +26,20 @@
     <meta name="description" content="该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用 加解读锁 12long stamp &#x3D; lock.readLock();lock.unlockRead(stamp); 加解写锁 12long stamp &#x3D; lock.writeLock();lock.unlockWrite(stamp); 乐观读，StampedLock支持tryOptimisticR">
 <meta property="og:type" content="article">
 <meta property="og:title" content="JUC-StampedLock">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2021/12/12/2021-12-12-JUC-StampedLock/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2021/12/12/2021-12-12-JUC-StampedLock/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="该类自JDK8加入，是为了进一步优化读性能，他的特点是在使用读锁、写锁时都必须配合【戳】使用 加解读锁 12long stamp &#x3D; lock.readLock();lock.unlockRead(stamp); 加解写锁 12long stamp &#x3D; lock.writeLock();lock.unlockWrite(stamp); 乐观读，StampedLock支持tryOptimisticR">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:published_time" content="2021-12-11T16:37:41.000Z">
-<meta property="article:modified_time" content="2021-12-11T16:37:41.000Z">
+<meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java并发">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
   
   
-    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"JUC-StampedLock","datePublished":"2021-12-11T16:37:41.000Z","dateModified":"2021-12-11T16:37:41.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/12/12/2021-12-12-JUC-StampedLock/"}}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"JUC-StampedLock","datePublished":"2021-12-11T16:37:41.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2021/12/12/2021-12-12-JUC-StampedLock/"}}</script>
   
   
   
@@ -210,6 +212,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -614,6 +619,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/concurrency/">Java 并发</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">JUC-StampedLock</p>
             
@@ -790,7 +800,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -819,7 +829,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -837,16 +850,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -898,6 +908,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -972,9 +992,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -985,9 +1008,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

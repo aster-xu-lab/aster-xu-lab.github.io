@@ -136,7 +136,7 @@ Fluid.plugins = {
 
       var bgClass = getBgClass($pre[0]);
       if (enableCopy) {
-        $pre.append('<button type="button" class="code-widget ' + bgClass + ' copy-btn" data-clipboard-snippet aria-label="Copy code"><svg class="ax-inline-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-copy"></use></svg>' + lang + '</button>');
+        $pre.append('<button type="button" class="code-widget ' + bgClass + ' copy-btn" data-clipboard-snippet aria-label="复制代码"><svg class="ax-inline-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-copy"></use></svg>' + lang + '</button>');
       } else {
         $pre.append('<div class="code-widget ' + bgClass + '">' + lang + '</div>');
       }
@@ -154,12 +154,22 @@ Fluid.plugins = {
           }
         }
       });
+      var copyStatus = document.getElementById('code-copy-status');
+      var statusTimer;
+      var iconTimers = new WeakMap();
       Fluid.plugins._clipboard.on('success', function(e) {
         e.clearSelection();
-        e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-copy', 'icon-success');
-        setTimeout(function() {
-          e.trigger.innerHTML = e.trigger.innerHTML.replace('icon-success', 'icon-copy');
-        }, 2000);
+        var icon = e.trigger.querySelector('use');
+        icon.setAttribute('href', '#ax-icon-success');
+        clearTimeout(iconTimers.get(icon));
+        iconTimers.set(icon, setTimeout(function() {
+          icon.setAttribute('href', '#ax-icon-copy');
+        }, 2000));
+        if (copyStatus) {
+          copyStatus.textContent = '代码已复制';
+          clearTimeout(statusTimer);
+          statusTimer = setTimeout(function() { copyStatus.textContent = ''; }, 2000);
+        }
       });
     }
   }

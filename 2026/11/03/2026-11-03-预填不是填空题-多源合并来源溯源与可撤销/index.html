@@ -26,7 +26,7 @@
     <meta name="description" content="外部页面上的一个字段，往往不是一个值，而是多个来源、多个标签、多种格式的号码。把它们塞进一个输入框，用户看到的是拼接后的字符串，系统丢掉的却是「这个值从哪来」。更麻烦的是删除：用户删掉一个号，下一次重新识别又把它带回来。这篇讲一条预填管线怎么同时解决合并、溯源和撤销。 一、单值字段装不下多源假设目标字段是「零件号」。来源页面上可能同时出现： OE Part Number Manufacturer">
 <meta property="og:type" content="article">
 <meta property="og:title" content="预填不是填空题：多源合并、来源溯源与可撤销">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E9%A2%84%E5%A1%AB%E4%B8%8D%E6%98%AF%E5%A1%AB%E7%A9%BA%E9%A2%98-%E5%A4%9A%E6%BA%90%E5%90%88%E5%B9%B6%E6%9D%A5%E6%BA%90%E6%BA%AF%E6%BA%90%E4%B8%8E%E5%8F%AF%E6%92%A4%E9%94%80/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E9%A2%84%E5%A1%AB%E4%B8%8D%E6%98%AF%E5%A1%AB%E7%A9%BA%E9%A2%98-%E5%A4%9A%E6%BA%90%E5%90%88%E5%B9%B6%E6%9D%A5%E6%BA%90%E6%BA%AF%E6%BA%90%E4%B8%8E%E5%8F%AF%E6%92%A4%E9%94%80/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="外部页面上的一个字段，往往不是一个值，而是多个来源、多个标签、多种格式的号码。把它们塞进一个输入框，用户看到的是拼接后的字符串，系统丢掉的却是「这个值从哪来」。更麻烦的是删除：用户删掉一个号，下一次重新识别又把它带回来。这篇讲一条预填管线怎么同时解决合并、溯源和撤销。 一、单值字段装不下多源假设目标字段是「零件号」。来源页面上可能同时出现： OE Part Number Manufacturer">
 <meta property="og:locale" content="zh_CN">
@@ -216,6 +216,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -620,6 +623,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">预填不是填空题：多源合并、来源溯源与可撤销</p>
             
@@ -975,7 +983,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -1004,7 +1012,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -1022,16 +1033,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -1083,6 +1091,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1157,9 +1175,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1170,9 +1191,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }

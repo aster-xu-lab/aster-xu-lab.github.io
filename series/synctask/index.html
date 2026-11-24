@@ -26,13 +26,15 @@
     <meta name="description" content="主动不做 DAG，以及调度、可靠性与 Starter">
 <meta property="og:type" content="website">
 <meta property="og:title" content="SyncTask 任务编排">
-<meta property="og:url" content="https://aster-xu-lab.github.io/series/synctask/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/series/synctask/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="主动不做 DAG，以及调度、可靠性与 Starter">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Java, Hexo, 博客, AsterXu">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
   
   
   
@@ -206,6 +208,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -563,8 +568,8 @@
 
 <h2 id="一、设计取舍"><a href="#一、设计取舍" class="headerlink" title="一、设计取舍"></a>一、设计取舍</h2><ol>
 <li><strong><a href="/2024/03/01/2024-03-01-sync-task-engine-design/">轻量级业务任务编排引擎 SyncTask Engine 设计手记</a></strong><br>为什么自研而不用现成方案，引擎的核心设计是什么，SPI 扩展点怎么玩。</li>
-<li><strong><a href="/2024/03/22/2024-03-22-%E6%94%BE%E5%BC%83DAG%E9%80%89%E6%8B%A9Choreography/">放弃 DAG：为什么我用 afterExecute 埋点替代了编排引擎</a></strong><br>同步链只有 11 个 Handler、链结构半年才变一次——为这种规模引入 DAG 值不值。</li>
-<li><strong><a href="/2026/06/03/2026-06-03-SyncTask%E5%BC%95%E6%93%8E%E8%AE%BE%E8%AE%A1%E5%A4%8D%E7%9B%98-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%81%9ADAG/">SyncTask 引擎设计复盘：为什么主动选择「不做 DAG」</a> <span class="label label-primary">必读</span></strong><br>49 + 44 个 Handler、80% 逻辑重复的业务现场，以及”主动不做三件事”背后的决策逻辑。</li>
+<li><strong><a href="/2024/03/22/2024-03-22-%E6%94%BE%E5%BC%83DAG%E9%80%89%E6%8B%A9Choreography/">放弃DAG：为什么我用afterExecute埋点替代了编排引擎</a></strong><br>同步链只有 11 个 Handler、链结构半年才变一次——为这种规模引入 DAG 值不值。</li>
+<li><strong><a href="/2026/06/03/2026-06-03-SyncTask%E5%BC%95%E6%93%8E%E8%AE%BE%E8%AE%A1%E5%A4%8D%E7%9B%98-%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%8D%E5%81%9ADAG/">SyncTask 引擎设计复盘：为什么主动选择”不做 DAG”</a> <span class="label label-primary">必读</span></strong><br>49 + 44 个 Handler、80% 逻辑重复的业务现场，以及”主动不做三件事”背后的决策逻辑。</li>
 </ol>
 <h2 id="二、调度与可靠性"><a href="#二、调度与可靠性" class="headerlink" title="二、调度与可靠性"></a>二、调度与可靠性</h2><ol start="4">
 <li><strong><a href="/2024/03/15/2024-03-15-SyncTaskJob%E5%BC%95%E6%93%8EV2%E5%8D%87%E7%BA%A7/">SyncTaskJob 引擎 V2：从 CountDownLatch 到 CompletableFuture</a></strong><br>93 个 Handler 的并行控制。V1 用 CountDownLatch 踩到的坑，以及 V2 换来的超时控制。</li>
@@ -574,7 +579,7 @@
 </ol>
 <h2 id="三、和消息表、中间件的关系"><a href="#三、和消息表、中间件的关系" class="headerlink" title="三、和消息表、中间件的关系"></a>三、和消息表、中间件的关系</h2><ol start="8">
 <li><strong><a href="/2024/04/09/2024-04-09-synctask-local-message-table/">SyncTaskJob 就是一张本地消息表</a></strong><br>从 <code>sync_task</code> 这张表的角度，重新理解整个引擎的设计。</li>
-<li><strong><a href="/2024/04/23/2024-04-23-synctask-mq-persistence-comparison/">SyncTask Job 与基于日志的消息中间件：持久化机制对比</a></strong><br>“状态持久化”和”数据持久化”是两种东西——为什么它不能和 RocketMQ 直接类比。</li>
+<li><strong><a href="/2024/04/23/2024-04-23-synctask-mq-persistence-comparison/">SyncTask Job 与基于日志的消息中间件 - 持久化机制对比</a></strong><br>“状态持久化”和”数据持久化”是两种东西——为什么它不能和 RocketMQ 直接类比。</li>
 <li><strong><a href="/2024/04/16/2024-04-16-synctask-vs-nflow/">SyncTaskJob vs nFlow：两套编排引擎的架构对照</a></strong><br>   和北欧开源引擎 nFlow（2014 年起用于生产）逐项对比后的取舍。</li>
 </ol>
 <h2 id="四、工程接入"><a href="#四、工程接入" class="headerlink" title="四、工程接入"></a>四、工程接入</h2><ol start="11">
@@ -612,7 +617,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -644,7 +649,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -662,16 +670,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">

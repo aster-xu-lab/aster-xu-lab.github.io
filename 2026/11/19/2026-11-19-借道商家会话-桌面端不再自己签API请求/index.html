@@ -26,7 +26,7 @@
     <meta name="description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。 一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读目录">
 <meta property="og:type" content="article">
 <meta property="og:title" content="借道商家会话：桌面端不再自己签 API 请求">
-<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-%E5%80%9F%E9%81%93%E5%95%86%E5%AE%B6%E4%BC%9A%E8%AF%9D-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E4%B8%8D%E5%86%8D%E8%87%AA%E5%B7%B1%E7%AD%BEAPI%E8%AF%B7%E6%B1%82/index.html">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-%E5%80%9F%E9%81%93%E5%95%86%E5%AE%B6%E4%BC%9A%E8%AF%9D-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E4%B8%8D%E5%86%8D%E8%87%AA%E5%B7%B1%E7%AD%BEAPI%E8%AF%B7%E6%B1%82/">
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。 一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读目录">
 <meta property="og:locale" content="zh_CN">
@@ -35,9 +35,9 @@
 <meta property="article:modified_time" content="2026-11-19T13:47:36.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="API 设计">
-<meta property="article:tag" content="Agent">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="一致性">
+<meta property="article:tag" content="会话管理">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/153d0fe0e67ce257b638b474bf045856.png">
   
@@ -215,6 +215,9 @@
       <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
       <path d="M15.5 8.5v-3h-11v11h3"></path>
     </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
   </symbol>
   <symbol id="ax-icon-link" viewBox="0 0 24 24">
     <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -619,6 +622,11 @@
               <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
             
           </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
           <article class="post-content ax-prose">
             <p id="seo-header">借道商家会话：桌面端不再自己签 API 请求</p>
             
@@ -780,7 +788,7 @@
 <li>借道换来的是一致性，付出的是耦合；把未验证的边界写清楚，比把它包装成「已完成」更有用。</li>
 </ol>
 <hr>
-<p><em>发表于 2026 年 11 月 · 标签: Electron, 会话管理, API 设计, 一致性</em></p>
+<p><em>发表于 2026 年 11 月</em></p>
 
                 
               </div>
@@ -815,9 +823,9 @@
       
         <a href="/tags/%E4%B8%80%E8%87%B4%E6%80%A7/" class="print-no-link">#一致性</a>
       
-        <a href="/tags/Agent/" class="print-no-link">#Agent</a>
-      
         <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+        <a href="/tags/%E4%BC%9A%E8%AF%9D%E7%AE%A1%E7%90%86/" class="print-no-link">#会话管理</a>
       
         <a href="/tags/API-%E8%AE%BE%E8%AE%A1/" class="print-no-link">#API 设计</a>
       
@@ -875,9 +883,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/2026/11/19/2026-11-19-%E6%97%A0%E8%A1%8C%E4%B8%BA%E5%8F%98%E5%8C%96%E5%9C%B0%E6%8B%86%E6%8E%892800%E8%A1%8C-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E6%80%8E%E4%B9%88%E8%AF%81%E6%98%8E%E9%87%8D%E6%9E%84%E6%B2%A1%E6%94%B9%E8%A1%8C%E4%B8%BA/" title="无行为变化地拆掉 2800 行：没有测试框架时怎么证明重构没改行为">
+                      <a href="/2026/11/19/2026-11-19-%E6%97%A0%E8%A1%8C%E4%B8%BA%E5%8F%98%E5%8C%96%E5%9C%B0%E6%8B%86%E6%8E%892800%E8%A1%8C-%E6%B2%A1%E6%9C%89%E6%B5%8B%E8%AF%95%E6%A1%86%E6%9E%B6%E6%80%8E%E4%B9%88%E8%AF%81%E6%98%8E%E9%87%8D%E6%9E%84%E6%B2%A1%E6%94%B9%E8%A1%8C%E4%B8%BA/" title="拆掉 2800 行之后：没有测试框架时怎么验证行为没变">
                         <svg class="ax-inline-ico ax-prevnext-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-arrow-left"></use></svg>
-                        <span class="hidden-mobile">无行为变化地拆掉 2800 行：没有测试框架时怎么证明重构没改行为</span>
+                        <span class="hidden-mobile">拆掉 2800 行之后：没有测试框架时怎么验证行为没变</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -929,7 +937,7 @@
 
 
 
-  
+  <span class="sr-only" id="code-copy-status" role="status"></span>
 
 
 
@@ -958,7 +966,10 @@
     
 
     
-      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
      aria-hidden="true">
   <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
     <div class="modal-content">
@@ -976,16 +987,13 @@
         </div>
         <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
         <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
-        <div class="list-group" id="local-search-result" aria-label="搜索结果"></div>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
       </div>
     </div>
   </div>
 </div>
 
-    
-
-    
-  </main>
+  
 
   <footer>
     <div class="footer-inner">
@@ -1037,6 +1045,16 @@
     if (toc.length === 0 || !window.tocbot) { return; }
     var boardCtn = jQuery('#board-ctn');
     var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
 
     function isExpandAllEnabled() {
       return CONFIG.toc && CONFIG.toc.expand_all === true;
@@ -1111,9 +1129,12 @@
       tocConfig.collapseDepth = 6;
     }
     window.tocbot.init(tocConfig);
-    if (toc.find('.toc-list-item').length > 0) {
-      toc.css('visibility', 'visible');
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
     }
+    updateTocVisibility();
     expandAllToc();
     bindTocToggle();
 
@@ -1124,9 +1145,7 @@
         if (toc.length === 0 || !tocbot) {
           return;
         }
-        if (toc.find('.toc-list-item').length > 0) {
-          toc.css('visibility', 'visible');
-        }
+        updateTocVisibility();
         expandAllToc();
         bindTocToggle();
       }
