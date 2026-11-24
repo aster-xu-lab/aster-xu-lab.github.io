@@ -1,4 +1,4 @@
-/* global CONFIG, Fluid */
+/* global CONFIG, AsterXuTheme */
 
 (function(window, document) {
   'use strict';
@@ -100,7 +100,7 @@
   }
 
   function addCount() {
-    const enableIncr = CONFIG.web_analytics.enable && (!window.Fluid || !Fluid.ctx.dnt) && validHost();
+    const enableIncr = CONFIG.web_analytics.enable && (!window.AsterXuTheme || !AsterXuTheme.ctx.dnt) && validHost();
     const getterArr = [];
     const incrArr = [];
 

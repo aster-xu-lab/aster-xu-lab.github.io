@@ -92,7 +92,7 @@
   }
 
   function addCount(Counter) {
-    var enableIncr = CONFIG.web_analytics.enable && !Fluid.ctx.dnt && validHost();
+    var enableIncr = CONFIG.web_analytics.enable && !AsterXuTheme.ctx.dnt && validHost();
     var getterArr = [];
     var incrArr = [];
 

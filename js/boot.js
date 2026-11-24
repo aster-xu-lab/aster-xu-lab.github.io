@@ -1,22 +1,22 @@
-/* global Fluid */
+/* global AsterXuTheme */
 
-Fluid.boot = {};
+AsterXuTheme.boot = {};
 
-Fluid.boot.registerEvents = function() {
-  Fluid.events.billboard();
-  Fluid.events.registerNavbarEvent();
-  Fluid.events.registerParallaxEvent();
-  Fluid.events.registerScrollDownArrowEvent();
-  Fluid.events.registerScrollTopArrowEvent();
-  Fluid.events.registerImageLoadedEvent();
+AsterXuTheme.boot.registerEvents = function() {
+  AsterXuTheme.events.billboard();
+  AsterXuTheme.events.registerNavbarEvent();
+  AsterXuTheme.events.registerParallaxEvent();
+  AsterXuTheme.events.registerScrollDownArrowEvent();
+  AsterXuTheme.events.registerScrollTopArrowEvent();
+  AsterXuTheme.events.registerImageLoadedEvent();
 };
 
-Fluid.boot.refresh = function() {
-  Fluid.plugins.fancyBox();
-  Fluid.plugins.codeWidget();
-  Fluid.events.refresh();
+AsterXuTheme.boot.refresh = function() {
+  AsterXuTheme.plugins.fancyBox();
+  AsterXuTheme.plugins.codeWidget();
+  AsterXuTheme.events.refresh();
 };
 
 document.addEventListener('DOMContentLoaded', function() {
-  Fluid.boot.registerEvents();
+  AsterXuTheme.boot.registerEvents();
 });

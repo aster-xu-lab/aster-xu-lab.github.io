@@ -1,11 +1,11 @@
-/* global Fluid */
+/* global AsterXuTheme */
 
 /**
  * Modified from https://blog.skk.moe/post/hello-darkmode-my-old-friend/
  */
 (function(window, document) {
   var rootElement = document.documentElement;
-  var colorSchemaStorageKey = 'Fluid_Color_Scheme';
+  var colorSchemaStorageKey = 'AsterXu_Color_Scheme';
   var colorSchemaMediaQueryKey = '--color-mode';
   var userColorSchemaAttributeName = 'data-user-color-scheme';
   var defaultColorSchemaAttributeName = 'data-default-color-scheme';
@@ -180,7 +180,7 @@
     setTimeout(function() {
       // 设置代码块组件样式
       document.querySelectorAll('.markdown-body pre').forEach((pre) => {
-        var cls = Fluid.utils.getBackgroundLightness(pre) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+        var cls = AsterXuTheme.utils.getBackgroundLightness(pre) >= 0 ? 'code-widget-light' : 'code-widget-dark';
         var widget = pre.querySelector('.code-widget-light, .code-widget-dark');
         if (widget) {
           widget.classList.remove('code-widget-light', 'code-widget-dark');
@@ -229,7 +229,7 @@
   // 当页面加载时，将显示模式设置为 localStorage 中自定义的值（如果有的话）
   applyCustomColorSchemaSettings();
 
-  Fluid.utils.waitElementLoaded(colorToggleButtonSelector, function() {
+  AsterXuTheme.utils.waitElementLoaded(colorToggleButtonSelector, function() {
     applyCustomColorSchemaSettings();
     var button = document.querySelector(colorToggleButtonSelector);
     if (button) {
@@ -248,7 +248,7 @@
     }
   });
 
-  Fluid.utils.waitElementLoaded(iframeSelector, function() {
+  AsterXuTheme.utils.waitElementLoaded(iframeSelector, function() {
     applyCustomColorSchemaSettings();
   });
 

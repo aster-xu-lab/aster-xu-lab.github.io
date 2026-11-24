@@ -1,4 +1,4 @@
-/* global Fluid, CONFIG */
+/* global AsterXuTheme, CONFIG */
 
 HTMLElement.prototype.wrap = function(wrapper) {
   this.parentNode.insertBefore(wrapper, this);
@@ -6,7 +6,7 @@ HTMLElement.prototype.wrap = function(wrapper) {
   wrapper.appendChild(this);
 };
 
-Fluid.plugins = {
+AsterXuTheme.plugins = {
 
   typing: function(text) {
     if (!('Typed' in window)) { return; }
@@ -105,7 +105,7 @@ Fluid.plugins = {
     }
 
     function getBgClass(ele) {
-      return Fluid.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
+      return AsterXuTheme.utils.getBackgroundLightness(ele) >= 0 ? 'code-widget-light' : 'code-widget-dark';
     }
 
     jQuery('.markdown-body pre').each(function() {
@@ -143,8 +143,8 @@ Fluid.plugins = {
     });
 
     // Initialize ClipboardJS once for all copy buttons
-    if (enableCopy && !Fluid.plugins._clipboard) {
-      Fluid.plugins._clipboard = new ClipboardJS('.copy-btn', {
+    if (enableCopy && !AsterXuTheme.plugins._clipboard) {
+      AsterXuTheme.plugins._clipboard = new ClipboardJS('.copy-btn', {
         target: function(trigger) {
           var nodes = trigger.parentNode.childNodes;
           for (var i = 0; i < nodes.length; i++) {
@@ -157,7 +157,7 @@ Fluid.plugins = {
       var copyStatus = document.getElementById('code-copy-status');
       var statusTimer;
       var iconTimers = new WeakMap();
-      Fluid.plugins._clipboard.on('success', function(e) {
+      AsterXuTheme.plugins._clipboard.on('success', function(e) {
         e.clearSelection();
         var icon = e.trigger.querySelector('use');
         icon.setAttribute('href', '#ax-icon-success');

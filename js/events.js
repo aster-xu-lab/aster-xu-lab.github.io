@@ -1,4 +1,4 @@
-/* global Fluid */
+/* global AsterXuTheme */
 
 HTMLElement.prototype.wrap = function(wrapper) {
   this.parentNode.insertBefore(wrapper, this);
@@ -6,7 +6,7 @@ HTMLElement.prototype.wrap = function(wrapper) {
   wrapper.appendChild(this);
 };
 
-Fluid.events = {
+AsterXuTheme.events = {
 
   registerNavbarEvent: function() {
     var navbar = jQuery('#navbar');
@@ -18,7 +18,7 @@ Fluid.events = {
       navbar.removeClass('navbar-dark');
       submenu.removeClass('navbar-dark');
     }
-    Fluid.utils.listenScroll(function() {
+    AsterXuTheme.utils.listenScroll(function() {
       navbar[navbar.offset().top > 50 ? 'addClass' : 'removeClass']('top-nav-collapse');
       submenu[navbar.offset().top > 50 ? 'addClass' : 'removeClass']('dropdown-collapse');
       if (navbar.offset().top > 0) {
@@ -140,7 +140,7 @@ Fluid.events = {
         });
       }
     };
-    Fluid.utils.listenScroll(parallax);
+    AsterXuTheme.utils.listenScroll(parallax);
   },
 
   registerScrollDownArrowEvent: function() {
@@ -149,7 +149,7 @@ Fluid.events = {
       return;
     }
     scrollbar.on('click', function() {
-      Fluid.utils.scrollToElement('#board', -jQuery('#navbar').height());
+      AsterXuTheme.utils.scrollToElement('#board', -jQuery('#navbar').height());
     });
   },
 
@@ -179,7 +179,7 @@ Fluid.events = {
     jQuery(window).resize(setTopArrowPos);
     // Display
     var headerHeight = board.offset().top;
-    Fluid.utils.listenScroll(function() {
+    AsterXuTheme.utils.listenScroll(function() {
       var scrollHeight = document.body.scrollTop + document.documentElement.scrollTop;
       scrollDisplay = scrollHeight >= headerHeight;
       topArrow.css({
@@ -223,15 +223,15 @@ Fluid.events = {
   },
 
   registerRefreshCallback: function(callback) {
-    if (!Array.isArray(Fluid.events._refreshCallbacks)) {
-      Fluid.events._refreshCallbacks = [];
+    if (!Array.isArray(AsterXuTheme.events._refreshCallbacks)) {
+      AsterXuTheme.events._refreshCallbacks = [];
     }
-    Fluid.events._refreshCallbacks.push(callback);
+    AsterXuTheme.events._refreshCallbacks.push(callback);
   },
 
   refresh: function() {
-    if (Array.isArray(Fluid.events._refreshCallbacks)) {
-      for (var callback of Fluid.events._refreshCallbacks) {
+    if (Array.isArray(AsterXuTheme.events._refreshCallbacks)) {
+      for (var callback of AsterXuTheme.events._refreshCallbacks) {
         if (callback instanceof Function) {
           callback();
         }
@@ -244,20 +244,6 @@ Fluid.events = {
       return;
     }
     // eslint-disable-next-line no-console
-    console.log(`
--------------------------------------------------
-|                                               |
-|      ________  __            _        __      |
-|     |_   __  |[  |          (_)      |  ]     |
-|       | |_ \\_| | | __   _   __   .--.| |      |
-|       |  _|    | |[  | | | [  |/ /'\`\\' |      |
-|      _| |_     | | | \\_/ |, | || \\__/  |      |
-|     |_____|   [___]'.__.'_/[___]'.__.;__]     |
-|                                               |
-|            Powered by Hexo x Fluid            |
-| https://github.com/fluid-dev/hexo-theme-fluid |
-|                                               |
--------------------------------------------------
-    `);
+    console.log('AsterXu Theme · Hexo');
   }
 };

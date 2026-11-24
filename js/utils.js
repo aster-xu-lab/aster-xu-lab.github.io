@@ -1,8 +1,8 @@
-/* global Fluid, CONFIG */
+/* global AsterXuTheme, CONFIG */
 
 window.requestAnimationFrame = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame;
 
-Fluid.utils = {
+AsterXuTheme.utils = {
 
   listenScroll: function(callback) {
     var dbc = new Debouncer(callback);
@@ -60,8 +60,8 @@ Fluid.utils = {
     offsetFactor = offsetFactor && offsetFactor >= 0 ? offsetFactor : 0;
 
     function waitInViewport(element) {
-      Fluid.utils.listenDOMLoaded(function() {
-        if (Fluid.utils.elementVisible(element, offsetFactor)) {
+      AsterXuTheme.utils.listenDOMLoaded(function() {
+        if (AsterXuTheme.utils.elementVisible(element, offsetFactor)) {
           callback();
           return;
         }
@@ -78,9 +78,9 @@ Fluid.utils = {
           });
           io.observe(element);
         } else {
-          var wrapper = Fluid.utils.listenScroll(function() {
-            if (Fluid.utils.elementVisible(element, offsetFactor)) {
-              Fluid.utils.unlistenScroll(wrapper);
+          var wrapper = AsterXuTheme.utils.listenScroll(function() {
+            if (AsterXuTheme.utils.elementVisible(element, offsetFactor)) {
+              AsterXuTheme.utils.unlistenScroll(wrapper);
               callback();
             }
           });
@@ -115,7 +115,7 @@ Fluid.utils = {
       });
       mo.observe(document, { childList: true, subtree: true });
     } else {
-      Fluid.utils.listenDOMLoaded(function() {
+      AsterXuTheme.utils.listenDOMLoaded(function() {
         var waitLoop = function() {
           var ele = document.querySelector(selector);
           if (ele) {
@@ -189,7 +189,7 @@ Fluid.utils = {
         loadFunc();
         ele.removeAttribute('lazyload');
       };
-      Fluid.utils.waitElementVisible(selector, callback, CONFIG.lazyload.offset_factor);
+      AsterXuTheme.utils.waitElementVisible(selector, callback, CONFIG.lazyload.offset_factor);
     } else {
       loadFunc();
     }
