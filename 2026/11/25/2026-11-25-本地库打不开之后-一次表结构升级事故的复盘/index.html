@@ -1,0 +1,1280 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/apple-touch-icon.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+    <link rel="canonical" href="https://aster-xu-lab.github.io/2026/11/25/2026-11-25-%E6%9C%AC%E5%9C%B0%E5%BA%93%E6%89%93%E4%B8%8D%E5%BC%80%E4%B9%8B%E5%90%8E-%E4%B8%80%E6%AC%A1%E8%A1%A8%E7%BB%93%E6%9E%84%E5%8D%87%E7%BA%A7%E4%BA%8B%E6%95%85%E7%9A%84%E5%A4%8D%E7%9B%98/"/>
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0C1118" media="(prefers-color-scheme: dark)">
+  <meta name="author" content="AsterXu">
+  <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
+  
+    <meta name="description" content="一次版本升级之后，应用能启动，窗口也在，但所有导入相关功能都没了：顶部显示「已登录」，任何操作都提示「请先登录」，重装也没用。最后在错误框里找到一行：IMPORT_IPC_INIT_FAILED: no such column: capture_rel_dir。这篇复盘讲三件事：旧库为什么会在升级后少一列，这一列为什么能让整块功能消失，以及最后怎么把「结构」变成一个可收敛的状态。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="本地库打不开之后：一次表结构升级事故的复盘">
+<meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/25/2026-11-25-%E6%9C%AC%E5%9C%B0%E5%BA%93%E6%89%93%E4%B8%8D%E5%BC%80%E4%B9%8B%E5%90%8E-%E4%B8%80%E6%AC%A1%E8%A1%A8%E7%BB%93%E6%9E%84%E5%8D%87%E7%BA%A7%E4%BA%8B%E6%95%85%E7%9A%84%E5%A4%8D%E7%9B%98/">
+<meta property="og:site_name" content="AsterXu Lab">
+<meta property="og:description" content="一次版本升级之后，应用能启动，窗口也在，但所有导入相关功能都没了：顶部显示「已登录」，任何操作都提示「请先登录」，重装也没用。最后在错误框里找到一行：IMPORT_IPC_INIT_FAILED: no such column: capture_rel_dir。这篇复盘讲三件事：旧库为什么会在升级后少一列，这一列为什么能让整块功能消失，以及最后怎么把「结构」变成一个可收敛的状态。">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="article:published_time" content="2026-11-25T12:27:36.000Z">
+<meta property="article:modified_time" content="2026-11-25T12:27:36.000Z">
+<meta property="article:author" content="AsterXu">
+<meta property="article:tag" content="Electron">
+<meta property="article:tag" content="工程实践">
+<meta property="article:tag" content="故障排查">
+<meta property="article:tag" content="数据库">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+  
+  
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"本地库打不开之后：一次表结构升级事故的复盘","datePublished":"2026-11-25T12:27:36.000Z","dateModified":"2026-11-25T12:27:36.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/11/25/2026-11-25-%E6%9C%AC%E5%9C%B0%E5%BA%93%E6%89%93%E4%B8%8D%E5%BC%80%E4%B9%8B%E5%90%8E-%E4%B8%80%E6%AC%A1%E8%A1%A8%E7%BB%93%E6%9E%84%E5%8D%87%E7%BA%A7%E4%BA%8B%E6%95%85%E7%9A%84%E5%A4%8D%E7%9B%98/"}}</script>
+  
+  
+  
+  <title>本地库打不开之后：一次表结构升级事故的复盘 - AsterXu Lab</title>
+
+  <link  rel="stylesheet" href="/lib/bootstrap/4.6.1/css/bootstrap.min.css" integrity="sha384-+JfswC+36cAZttJPvHK2bujZTAdmwWVhxZ1Skd5GVKaCSmZbLl/+CAp6atbRFBEx" />
+
+
+
+  <link  rel="stylesheet" href="/lib/github-markdown-css/4.0.0/github-markdown.min.css" integrity="sha384-41TLk51mEPibuqZ3qC5guTOeo30Zt7UUaWLUn0/VdpGRO6b3SXA6AaKxj1mYzgAT" />
+
+  <link  rel="stylesheet" href="/lib/hint.css/2.7.0/hint.min.css" integrity="sha384-U3QS2A+2VCArKSTPvCSvSwqMUhHjJkB3UTS6cWqcnmgeF0A5lwg9FylCL7XcIrKY" />
+
+  <link  rel="stylesheet" href="/lib/fancybox/3.5.7/jquery.fancybox.min.css" integrity="sha384-Q8BgkilbsFGYNNiDqJm69hvDS7NCJWOodvfK/cwTyQD4VQA0qKzuPpvqNER1UC0F" />
+
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="theme-configs">
+    var AsterXuTheme = window.AsterXuTheme || {};
+    AsterXuTheme.ctx = Object.assign({}, AsterXuTheme.ctx)
+    var CONFIG = {"hostname":"aster-xu-lab.github.io","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":false,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      AsterXuTheme.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"><link rel="alternate" href="/atom.xml" title="AsterXu Lab" type="application/atom+xml">
+<script>window.__SRI__ = {"/lib/anchor-js/5.0.0/anchor.min.js":"sha384-jSRyD8wNnUz5C4NoTBYsKI6tN7xI3kanaqGb3XNbQyioKv0Syqx5uPDEasUzZYGy","/lib/bootstrap/4.6.1/css/bootstrap.min.css":"sha384-+JfswC+36cAZttJPvHK2bujZTAdmwWVhxZ1Skd5GVKaCSmZbLl/+CAp6atbRFBEx","/lib/bootstrap/4.6.1/js/bootstrap.min.js":"sha384-VHvPCCyXqtD5DqJeNxl2dtTyhF78xXNXdkwX1CZeRusQfRKp+tA7hAShOK/B/fQ2","/lib/clipboard.js/2.0.11/clipboard.min.js":"sha384-J08i8An/QeARD9ExYpvphB8BsyOj3Gh2TSh1aLINKO3L0cMSH2dN3E22zFoXEi0Q","/lib/fancybox/3.5.7/jquery.fancybox.min.css":"sha384-Q8BgkilbsFGYNNiDqJm69hvDS7NCJWOodvfK/cwTyQD4VQA0qKzuPpvqNER1UC0F","/lib/fancybox/3.5.7/jquery.fancybox.min.js":"sha384-Zm+UU4tdcfAm29vg+MTbfu//q5B/lInMbMCr4T8c9rQFyOv6PlfQYpB5wItcXWe7","/lib/github-markdown-css/4.0.0/github-markdown.min.css":"sha384-41TLk51mEPibuqZ3qC5guTOeo30Zt7UUaWLUn0/VdpGRO6b3SXA6AaKxj1mYzgAT","/lib/hint.css/2.7.0/hint.min.css":"sha384-U3QS2A+2VCArKSTPvCSvSwqMUhHjJkB3UTS6cWqcnmgeF0A5lwg9FylCL7XcIrKY","/lib/jquery/3.6.4/jquery.min.js":"sha384-UG8ao2jwOWB7/oDdObZc6ItJmwUkR/PfMyt9Qs5AwX7PsnYn1CRKCTWyncPTWvaS","/lib/mermaid/8.14.0/mermaid.min.js":"sha384-atOyb0FxAgN9LyAc6PEf9BjgwLISyansgdH8/VXQH8p2o5vfrRgmGIJ2Sg22L0A0","/lib/nprogress/0.2.0/nprogress.min.css":"sha384-QUGa0w7S89w/V+840rnBtrQYyUEd1VHb88E0/8vc9FvgRy7b7wHlk8S+o0bNJcv0","/lib/nprogress/0.2.0/nprogress.min.js":"sha384-WVrcwN/kiINFnwTi170GvMPVLHVBao1WfcXL/BZAK3VaUaaWX0OOsxMgCiFmrIb1","/lib/tocbot/4.20.1/tocbot.min.js":"sha384-eYitcT+zAqBx9Kj6zpAfFjdLfuc4XJxK6abBQrcsSlF3sBSdhtD0pp1ELBnnM9TV","/lib/typed.js/2.0.12/typed.min.js":"sha384-NMn9+T8zIKnDUstqb5le7vdLNSyAgSU9DtEPT/b7ks9NJQpPk4Dc9b1tI8oyzimc"};</script></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 0vh;">
+  <svg class="ax-sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="ax-nav-home" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3.5 10.5 12 3.5l8.5 7"></path>
+      <path d="M5.5 9.5V20h13V9.5"></path>
+      <path d="M9.5 20v-6h5v6"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-nav-archive" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 8.5h15v11h-15z"></path>
+      <path d="M6.5 5.5h11"></path>
+      <path d="M8.5 12h7M8.5 15.5h7"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-nav-category" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+    </g>
+  </symbol>
+  <symbol id="ax-nav-tag" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 4.5h6l9 9-6 6-9-9z"></path>
+      <circle cx="8.5" cy="8.5" r="1.2"></circle>
+    </g>
+  </symbol>
+  <symbol id="ax-nav-series" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 4.5h4v15H5zM10.5 4.5h4v15h-4z"></path>
+      <path d="M16 6l3.5-.8 2 12.2-3.5.8z"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-nav-skill" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 3 20 7.5v9L12 21 4 16.5v-9z"></path>
+      <path d="M4 7.5 12 12 20 7.5"></path>
+      <path d="M12 12v9"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-nav-user" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="8" r="3.2"></circle>
+      <path d="M5.5 20c.5-3.4 3.1-5.5 6.5-5.5s6 2.1 6.5 5.5"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-nav-search" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <circle cx="10.5" cy="10.5" r="5.5"></circle>
+      <path d="m15 15 4.5 4.5"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-nav-sun" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <circle cx="12" cy="12" r="3.6"></circle>
+      <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-nav-moon" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"></path>
+  </symbol>
+  <symbol id="ax-nav-github" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 21v-3.5a4.8 4.8 0 0 0-1-3.4c3 0 5.5-1.9 5.5-5.4 0-1.1-.4-2.2-1-3 .2-1 .2-2.1 0-3.1 0 0-1 0-3 1.4a10.4 10.4 0 0 0-5 0C8.5 2.6 7.5 2.6 7.5 2.6c-.2 1-.2 2.1 0 3.1-.6.8-1 1.9-1 3 0 3.5 2.5 5.4 5.5 5.4-.4.5-.7 1-.9 1.6-.2.6-.2 1.2-.1 1.8V21"></path>
+      <path d="M9 18.5c-3.8 1.5-4.2-1.9-5.8-1.9"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-arrow-left" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M14.5 5.5 8 12l6.5 6.5"></path>
+  </symbol>
+  <symbol id="ax-icon-arrow-right" viewBox="0 0 24 24">
+    <path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M9.5 5.5 16 12l-6.5 6.5"></path>
+  </symbol>
+  <symbol id="ax-icon-arrow-up" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 19V5"></path>
+      <path d="m6 11 6-6 6 6"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-arrow-down" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 5v14"></path>
+      <path d="m6 13 6 6 6-6"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-articles" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M6 3.5h8l4 4V20H6z"></path>
+      <path d="M14 3.5V8h4"></path>
+      <path d="M9 12h6M9 15.5h6"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-date" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="4" y="5.5" width="16" height="14.5" rx="2"></rect>
+      <path d="M8 3.5v4M16 3.5v4M4 10h16"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-chart" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 19.5V4.5"></path>
+      <path d="M4.5 19.5H20"></path>
+      <path d="M8 16v-5M12 16V8M16 16v-3"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-clock" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="8.5"></circle>
+      <path d="M12 7v5.5l3.5 2"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-eye" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"></path>
+      <circle cx="12" cy="12" r="2.8"></circle>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-copy" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="8.5" y="8.5" width="11" height="11" rx="1.5"></rect>
+      <path d="M15.5 8.5v-3h-11v11h3"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-success" viewBox="0 0 24 24">
+    <path d="m5 12 4 4 10-10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+  </symbol>
+  <symbol id="ax-icon-link" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11 6.8"></path>
+      <path d="M14 10.5a4 4 0 0 0-5.7 0L5.5 13.3a4 4 0 0 0 5.7 5.7l1.8-1.8"></path>
+    </g>
+  </symbol>
+  <symbol id="ax-icon-cc-by" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.4">
+      <circle cx="12" cy="12" r="9"></circle>
+    </g>
+    <text x="12" y="15.2" text-anchor="middle" font-size="7" font-family="sans-serif" fill="currentColor">BY</text>
+  </symbol>
+  <symbol id="ax-icon-cc-sa" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.4">
+      <circle cx="12" cy="12" r="9"></circle>
+    </g>
+    <text x="12" y="15.2" text-anchor="middle" font-size="7" font-family="sans-serif" fill="currentColor">SA</text>
+  </symbol>
+  <symbol id="ax-icon-cc-nc" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.4">
+      <circle cx="12" cy="12" r="9"></circle>
+    </g>
+    <text x="12" y="15.2" text-anchor="middle" font-size="7" font-family="sans-serif" fill="currentColor">NC</text>
+  </symbol>
+  <symbol id="ax-icon-cc-nd" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.4">
+      <circle cx="12" cy="12" r="9"></circle>
+    </g>
+    <text x="12" y="15.2" text-anchor="middle" font-size="7" font-family="sans-serif" fill="currentColor">ND</text>
+  </symbol>
+  <symbol id="ax-icon-cc-zero" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.4">
+      <circle cx="12" cy="12" r="9"></circle>
+    </g>
+    <text x="12" y="15.6" text-anchor="middle" font-size="8" font-family="sans-serif" fill="currentColor">0</text>
+  </symbol>
+</svg>
+
+
+<nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>AsterXu Lab</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self" aria-current="false">
+                
+                
+                  <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-home"></use></svg>
+                
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self" aria-current="false">
+                
+                
+                  <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-archive"></use></svg>
+                
+                <span>文章</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self" aria-current="false">
+                
+                
+                  <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-category"></use></svg>
+                
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self" aria-current="false">
+                
+                
+                  <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-tag"></use></svg>
+                
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            
+            <li class="nav-item">
+              <a class="nav-link" href="/series/" target="_self" aria-current="false">
+                
+                
+                  <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-series"></use></svg>
+                
+                <span>系列</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            
+            <li class="nav-item">
+              <a class="nav-link" href="/skills/" target="_self" aria-current="false">
+                
+                
+                  <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-skill"></use></svg>
+                
+                <span>技能</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self" aria-current="false">
+                
+                
+                  <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-user"></use></svg>
+                
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+      </ul>
+      <div class="ax-actions">
+        
+          <a class="ax-iconbtn" href="https://github.com/aster-xu-lab" target="_blank" rel="noopener" aria-label="GitHub（在新窗口打开）">
+            <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-github"></use></svg>
+          </a>
+        
+        
+          <button class="ax-iconbtn" type="button" id="search-btn" data-toggle="modal" data-target="#modalSearch" aria-label="搜索" aria-keyshortcuts="Control+K Meta+K" title="搜索（Ctrl/⌘ K）">
+            <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-search"></use></svg>
+          </button>
+          
+        
+        
+          <button class="ax-iconbtn" type="button" id="color-toggle-btn" aria-label="切换深色模式" aria-pressed="false">
+            <svg class="ax-nav-ico ax-theme__sun" aria-hidden="true" focusable="false"><use href="#ax-nav-sun"></use></svg>
+            <svg class="ax-nav-ico ax-theme__moon" aria-hidden="true" focusable="false"><use href="#ax-nav-moon"></use></svg>
+          </button>
+        
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none" aria-hidden="true" inert>
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  
+                  
+                    <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-home"></use></svg>
+                  
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  
+                  
+                    <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-archive"></use></svg>
+                  
+                  <span>文章</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  
+                  
+                    <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-category"></use></svg>
+                  
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  
+                  
+                    <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-tag"></use></svg>
+                  
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/series/" target="_self">
+                <div class="mobile-grid-item">
+                  
+                  
+                    <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-series"></use></svg>
+                  
+                  <span>系列</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/skills/" target="_self">
+                <div class="mobile-grid-item">
+                  
+                  
+                    <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-skill"></use></svg>
+                  
+                  <span>技能</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  
+                  
+                    <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-user"></use></svg>
+                  
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell mobile-grid-cell--tool">
+            <a href="https://github.com/aster-xu-lab" target="_blank" rel="noopener" aria-label="GitHub（在新窗口打开）">
+              <div class="mobile-grid-item">
+                <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-github"></use></svg>
+                <span>GitHub</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell mobile-grid-cell--tool" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="搜索">
+              <div class="mobile-grid-item">
+                <svg class="ax-nav-ico" aria-hidden="true" focusable="false"><use href="#ax-nav-search"></use></svg>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell mobile-grid-cell--tool" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="切换深色模式">
+              <div class="mobile-grid-item">
+                <svg class="ax-nav-ico ax-theme__sun" aria-hidden="true" focusable="false"><use href="#ax-nav-sun"></use></svg>
+                <svg class="ax-nav-ico ax-theme__moon" aria-hidden="true" focusable="false"><use href="#ax-nav-moon"></use></svg>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<svg class="ax-sprite" width="0" height="0" aria-hidden="true" focusable="false">
+  <symbol id="ax-ico-category" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"></rect>
+    </g>
+  </symbol>
+  <symbol id="ax-ico-tag" viewBox="0 0 24 24">
+    <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4.5 4.5h6l9 9-6 6-9-9z"></path>
+      <circle cx="8.5" cy="8.5" r="1.2"></circle>
+    </g>
+  </symbol>
+</svg>
+
+<div class="container-full-width nopadding-x ax-page ax-post">
+  <div class="row nomargin-x ax-post-row">
+    <div class="side-col ax-post-aside d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md ax-post-main">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <header class="ax-post-head">
+            <p class="ax-eyebrow">架构设计</p>
+            <h1 class="ax-post-head__title">本地库打不开之后：一次表结构升级事故的复盘</h1>
+            <div class="ax-post-head__meta">
+              
+  <div>
+    
+    
+      <span class="post-meta">
+        <svg class="ax-inline-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-date"></use></svg>
+        <time datetime="2026-11-25 20:27" pubdate>
+          2026年11月25日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div>
+    
+      <span class="post-meta mr-2">
+        <svg class="ax-inline-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-chart"></use></svg>
+        
+          4.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <svg class="ax-inline-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-clock"></use></svg>
+        
+        
+        
+          36 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+            </div>
+            
+            
+              <p class="ax-post-series">所属系列：<a href="/series/electron/">Electron 桌面实战</a></p>
+            
+          </header>
+          
+            <details class="ax-mobile-toc d-lg-none" id="mobile-toc" hidden>
+              <summary>目录</summary>
+            </details>
+          
+          <article class="post-content ax-prose">
+            <p id="seo-header">本地库打不开之后：一次表结构升级事故的复盘</p>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>一次版本升级之后，应用能启动，窗口也在，但所有导入相关功能都没了：顶部显示「已登录」，任何操作都提示「请先登录」。卸载重装也没用——因为用户数据不在安装目录里。</p>
+<p>最后在错误框里找到一行：<code>IMPORT_IPC_INIT_FAILED: no such column: capture_rel_dir</code>。这篇复盘讲三件事：旧库为什么会在升级后少一列，这一列为什么能让整块功能消失，以及最后怎么把「结构」变成一个可收敛的状态。</p>
+</blockquote>
+<h2 id="一、现象：不是功能坏了，是注册没跑完"><a href="#一、现象：不是功能坏了，是注册没跑完" class="headerlink" title="一、现象：不是功能坏了，是注册没跑完"></a>一、现象：不是功能坏了，是注册没跑完</h2><p>第一反应通常是「某个查询写错了」。但现场有三条互相矛盾的线索：</p>
+<ul>
+<li>顶部商家芯片显示「已登录」；</li>
+<li>所有导入、任务、复核操作都提示「请先登录商家端」；</li>
+<li>删除应用、重新下载安装包，问题依旧。</li>
+</ul>
+<p>第三条先排除了安装包的问题：桌面应用的用户数据在 <code>userData</code> 目录，卸载程序不会删它。旧库一直在，所以每次启动都在同一个地方失败。</p>
+<p>真正的原因在第二条：异常发生在<strong>主进程注册 IPC 的阶段</strong>，而不是某个按钮的处理函数里。注册循环在第一处抛错就中断了，后面的三十二条 <code>importer:*</code> 通道一条都没注册。渲染层调用 <code>getMerchantContext()</code> 失败，被 <code>catch</code> 吞掉，<code>merchantId</code> 保持空字符串；界面据此判断「没有本地范围」，于是所有入口统一显示未登录。</p>
+<p><strong>一条 SQL 报错的最终形态，是「用户没登录」。</strong> 这个映射关系错得很彻底：真正的原因是本地库读不了，和登录状态没有关系。</p>
+<h2 id="二、为什么升级后才出现"><a href="#二、为什么升级后才出现" class="headerlink" title="二、为什么升级后才出现"></a>二、为什么升级后才出现</h2><p>根因可以压缩成两行代码：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 建表时的写法</span><br><span class="hljs-keyword">CREATE TABLE</span> IF <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">EXISTS</span> import_products ( ... );<br><br><span class="hljs-comment">-- 后来加列时的写法</span><br><span class="hljs-comment">-- 什么都没有</span><br></code></pre></td></tr></table></figure>
+
+<p><code>CREATE TABLE IF NOT EXISTS</code> 对已经存在的表是 <strong>no-op</strong>。它不会比对列，也不会补列。所以只要版本升级时在 DDL 里新增一列，<strong>老机器上的库永远拿不到它</strong>，第一次查询该列就会得到 <code>no such column</code>。</p>
+<p>这不是偶发，是必然。当时的 schema 版本停在 10，升级逻辑只有一条：</p>
+<figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-keyword">if</span> (currentVersion &gt;= <span class="hljs-number">10</span>) <span class="hljs-keyword">return</span>   <span class="hljs-comment">// 什么都不做</span><br></code></pre></td></tr></table></figure>
+
+<p>也就是说，v10 基线之后任何结构变化都没有迁移路径。这次事故只是第一个撞上来的列。</p>
+<p>还有一层顺序问题：旧数据的迁移函数在仓储打开<strong>之前</strong>执行。它把旧库搬到商家目录后，直接 <code>SELECT ... capture_rel_dir</code> 改写路径——它假设新列已经存在。而真正会做结构升级的代码在更后面。<strong>先查新列，后升级结构</strong>，顺序反了。</p>
+<h2 id="三、三段各自正确的代码"><a href="#三、三段各自正确的代码" class="headerlink" title="三、三段各自正确的代码"></a>三、三段各自正确的代码</h2><p>把链路摊开，每一段单看都没问题：</p>
+<table>
+<thead>
+<tr>
+<th>环节</th>
+<th>它假设什么</th>
+<th>现实</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>旧库迁移</td>
+<td>新列已经存在</td>
+<td>旧库是更早的结构</td>
+</tr>
+<tr>
+<td>仓储初始化</td>
+<td>版本 &lt; 10 才需要重建</td>
+<td>版本 10 的库也可能缺列</td>
+</tr>
+<tr>
+<td>IPC 注册</td>
+<td>商家范围恢复不会失败</td>
+<td>迁移失败会直接抛异常</td>
+</tr>
+<tr>
+<td>渲染层</td>
+<td>拿不到商家上下文 &#x3D; 未登录</td>
+<td>是本地库打不开</td>
+</tr>
+</tbody></table>
+<p>问题不在某一段，而在它们之间的<strong>契约</strong>：上游假设下游已经完成结构升级，下游又假设上游不会失败。任何一处例外都会向下游传播，最后被 UI 解释成一句最常见的提示。</p>
+<p>这类事故的修复重点，不是给某个查询加个 <code>try/catch</code>，而是回答两个问题：</p>
+<ol>
+<li>打开一个本地库时，如何判断它是不是当前结构？</li>
+<li>判断与升级都失败时，应用应该怎么继续？</li>
+</ol>
+<h2 id="四、业界怎么做"><a href="#四、业界怎么做" class="headerlink" title="四、业界怎么做"></a>四、业界怎么做</h2><p>查了一圈同类产品，结论比想象中保守：</p>
+<table>
+<thead>
+<tr>
+<th>做法</th>
+<th>代表</th>
+<th>适用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>迁移失败拒绝启动</td>
+<td>Room、Realm、Signal、Chrome&#x2F;Firefox</td>
+<td>持久业务数据</td>
+</tr>
+<tr>
+<td>破坏性重建</td>
+<td>Room <code>fallbackToDestructiveMigration</code></td>
+<td>缓存 &#x2F; 可重建数据，且要显式 opt-in</td>
+</tr>
+<tr>
+<td>只加列（additive-only）</td>
+<td>多数本地库</td>
+<td>向前兼容，旧版本代码不用改</td>
+</tr>
+<tr>
+<td>逐版本迁移</td>
+<td>Rails、Flyway、Room 迁移链</td>
+<td>数据语义需要按序转换</td>
+</tr>
+<tr>
+<td>更高版本门禁</td>
+<td>Chrome&#x2F;Firefox profile</td>
+<td>防止旧程序改写新数据</td>
+</tr>
+</tbody></table>
+<p>两个容易被忽略的点：</p>
+<ul>
+<li><strong>「程序可用」是对外壳的要求，不是对持久数据的授权。</strong> 外壳永远能起来；数据要么迁移成功，要么原样保留并明确告知，不能静默清空。</li>
+<li><strong>加列本身在 SQLite 里有硬限制</strong>：不能加主键&#x2F;唯一列，NOT NULL 必须带非空默认值。真到删列、改约束，官方给的是十二步重建表。</li>
+</ul>
+<p>落到这次改造，目标就明确了：结构必须能收敛；收敛不了时，保留文件、保证应用可用、把原因告诉用户。</p>
+<h2 id="五、改造：打开时对齐，而不是相信版本号"><a href="#五、改造：打开时对齐，而不是相信版本号" class="headerlink" title="五、改造：打开时对齐，而不是相信版本号"></a>五、改造：打开时对齐，而不是相信版本号</h2><p>新的做法是把「结构」当成一个可以反复计算的状态：<strong>唯一一份 canonical DDL，打开时把库对齐到它。</strong></p>
+<pre><code class=" mermaid">graph TD
+  A[&quot;打开本地库&quot;] --&gt; B&#123;&quot;能读到 sqlite_master?&quot;&#125;
+  B --&gt;|否| Q[&quot;隔离为 .corrupt-(时间戳)&lt;br/&gt;新建空库 + 提示&quot;]
+  B --&gt;|是| C&#123;&quot;版本 &gt; 当前版本?&quot;&#125;
+  C --&gt;|是| R[&quot;拒绝打开&lt;br/&gt;文件原样保留 + 提示&quot;]
+  C --&gt;|否| D&#123;&quot;版本 &lt; 10 且缺实例模型两表?&quot;&#125;
+  D --&gt;|是| S[&quot;备份 .bak&lt;br/&gt;重建空库 + 提示&quot;]
+  D --&gt;|否| E[&quot;结构对齐&lt;br/&gt;补表 / 补索引 / 按列重建&quot;]
+</code></pre>
+
+<p>几个关键决定：</p>
+<p><strong>比对的是建表语句，不是版本号。</strong> 从 <code>sqlite_master</code> 读出每张表实际存储的 <code>CREATE TABLE</code> 文本，归一化空白后与 canonical DDL 比较。这样 UNIQUE、CHECK、索引变化也能识别——只比列名会漏掉约束。</p>
+<p><strong>漂移的表按列交集重建。</strong> 旧表重命名，按 canonical 建新表，然后用两边都有的列做 <code>INSERT ... SELECT</code>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">ALTER TABLE</span> import_products RENAME <span class="hljs-keyword">TO</span> __legacy_import_products;<br><span class="hljs-keyword">CREATE TABLE</span> import_products ( ... );  <span class="hljs-comment">-- canonical</span><br><span class="hljs-keyword">INSERT INTO</span> import_products (a, b, c)<br>  <span class="hljs-keyword">SELECT</span> a, b, <span class="hljs-built_in">COALESCE</span>(c, <span class="hljs-string">&#x27;&#x27;</span>) <span class="hljs-keyword">FROM</span> __legacy_import_products;<br><span class="hljs-keyword">DROP</span> <span class="hljs-keyword">TABLE</span> __legacy_import_products;<br></code></pre></td></tr></table></figure>
+
+<p>行保留，未知的旧列被丢弃，缺失的列按声明恢复。<code>COALESCE</code> 处理「旧表允许 NULL、新表 NOT NULL」的情况；整表重建后自增 id 的最大值会把 <code>sqlite_sequence</code> 带上去，后续插入不会撞号。</p>
+<p><strong>重置只针对真正的旧模型。</strong> 不能只看版本号——版本标记可能丢失。判定条件是「是否缺实例模型的两张表」，缺了才说明是 pre-v10 的结构；只是丢了标记、但结构已经是新的库，只补版本号，不重建。</p>
+<p><strong>更高版本不碰。</strong> 如果库的版本高于当前程序，说明它由更新的客户端写入。这时对齐等于降级，会丢掉未来列。正确做法是拒绝打开、文件原样保留，让用户去装对应版本。</p>
+<p><strong>失败也要分层。</strong> 读不了的文件隔离后新建；能读但不能升级的（比如约束冲突）也隔离，而不是让每次启动都失败。隔离前先移 <code>-wal/-shm/-journal</code>，再移主库——Windows 上连接没关就改名会 <code>EBUSY</code>。</p>
+<p><strong>备份用快照，不用裸拷贝。</strong> <code>VACUUM INTO</code> 生成一致的 <code>.bak</code>，包含已提交的 WAL 帧；checkpoint 失败时直接拷贝主文件可能少数据。</p>
+<p>最后一层是失败隔离：启动恢复商家范围失败，只记录一条降级提示，不再中断剩余通道的注册。渲染层也不再用商家上下文推断「本地库可用」——那两者在故障时本来就会分叉。</p>
+<h2 id="六、审查之后改掉的细节"><a href="#六、审查之后改掉的细节" class="headerlink" title="六、审查之后改掉的细节"></a>六、审查之后改掉的细节</h2><p>第一版改完，离线用例全过。但让一个审查视角专门找反例后，发现了四个会真正丢数据的边界：</p>
+<ol>
+<li><strong>丢了 <code>schema_meta</code> 的库被判成旧库。</strong> 版本号返回 0，结构其实已经是新的，结果整库被重置。修正为按实例模型判定。</li>
+<li><strong>更高版本的库被「对齐」回当前版本。</strong> 版本号从 99 改回 11，未来列被丢弃。修正为拒绝打开。</li>
+<li><strong>重建违反 NOT NULL 时直接抛错。</strong> 旧表某列允许 NULL，新表不允许，整库每次启动都失败。修正为 <code>COALESCE</code>，兜不住时走隔离。</li>
+<li><strong>隔离只移了主文件。</strong> 残留的 WAL 会跟着新库被重放。修正为先移 sidecar 再移主库。</li>
+</ol>
+<p>还有一条是审查同时否掉了过度设计：一开始想保留多份带时间戳的备份目录。后来确认本地任务与采集产物都可以重新生成，单槽 <code>.bak</code> 加重命名隔离已经够用；备份目录带来的磁盘增长、清理策略和隐私问题，收益不成比例。<strong>取舍的依据是数据能不能重建，不是备份看起来多完整。</strong></p>
+<h2 id="七、验证：按「起始形态」造夹具"><a href="#七、验证：按「起始形态」造夹具" class="headerlink" title="七、验证：按「起始形态」造夹具"></a>七、验证：按「起始形态」造夹具</h2><p>这次没有只测「从空库开始」。新增的离线校验按库的<strong>起始形态</strong>造夹具，共十七组：</p>
+<ul>
+<li>空文件、损坏文件；</li>
+<li>v10 缺一列、多一列、缺一张表；</li>
+<li>自增表重建（检查 id 与序列）；</li>
+<li>丢失版本标记但结构完整；</li>
+<li>更高版本（必须拒绝且不改文件）；</li>
+<li>重建会违反 NOT NULL；</li>
+<li>约束冲突导致无法升级（必须隔离）；</li>
+<li>旧库迁移的两种形态（pre-v10 与 v10 缺列）。</li>
+</ul>
+<p>另外用真实应用跑了七组构造的 <code>userData</code>：正常库、缺列库、旧库迁移、损坏文件、更高版本、丢版本标记。每组都在退出后直接读 SQLite 和备份文件核对，而不只看界面。</p>
+<p>已经验证的：结构收敛、行保留、备份与隔离文件、未来版本不被改写、应用在所有故障形态下都能启动。</p>
+<p>没有验证的：真实安装包从旧版本升级的完整路径、Windows 上的坏库恢复、以及登录后提示的补发。这三项单独列在测试报告的「未验证」里，不用离线通过去替代。</p>
+<h2 id="八、几个可以带走的判断"><a href="#八、几个可以带走的判断" class="headerlink" title="八、几个可以带走的判断"></a>八、几个可以带走的判断</h2><ul>
+<li><code>CREATE TABLE IF NOT EXISTS</code> 不是迁移。它只负责「表不存在时建表」，不负责「表存在时对齐」。</li>
+<li>版本号可以帮你判断，但不能替你决定删除。丢失标记的库和真正的旧库，要用结构特征区分。</li>
+<li>失败时的第一优先级不是「让开」，而是「别丢」；第二优先级才是「能开」。两者都要，但顺序不能反。</li>
+<li>单个组件的异常，不要让它沿着调用链变成另一种语义。SQL 错误不该显示成「未登录」。</li>
+</ul>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><ol>
+<li>本地库升级的核心不是写一条 ALTER，而是让「任意起始结构」都有确定的收敛路径。</li>
+<li>判断是否重置，依据结构特征而不是单一版本号；判断是否降级，依据版本方向而不是「能不能打开」。</li>
+<li>应用可用与数据安全可以同时满足：读不了就隔离、保留文件、说清原因；能做就重建、保留行、留好备份。</li>
+</ol>
+<hr>
+<p><em>发表于 2026 年 11 月 · 标签: Electron, 数据库, 故障排查, 工程实践</em></p>
+
+                
+              </div>
+            
+            <div>
+              <div class="post-metas">
+  
+    <div class="post-meta post-meta--cat mr-3 d-flex align-items-center">
+      <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-category"></use></svg>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/%E6%9E%B6%E6%9E%84%E8%AE%BE%E8%AE%A1/" class="category-chain-item">架构设计</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta post-meta--tags">
+      <svg class="ax-ico" aria-hidden="true" focusable="false"><use href="#ax-ico-tag"></use></svg>
+      
+        <a href="/tags/%E6%95%85%E9%9A%9C%E6%8E%92%E6%9F%A5/" class="print-no-link">#故障排查</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93/" class="print-no-link">#数据库</a>
+      
+        <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/" class="print-no-link">#工程实践</a>
+      
+        <a href="/tags/Electron/" class="print-no-link">#Electron</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>本地库打不开之后：一次表结构升级事故的复盘</div>
+      <div>https://aster-xu-lab.github.io/2026/11/25/2026-11-25-本地库打不开之后-一次表结构升级事故的复盘/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>AsterXu</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2026年11月25日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" rel="noopener noreferrer" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <svg class="ax-cc-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-cc-by"></use></svg>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/11/20/2026-11-20-%E8%B7%A8%E5%9F%9Fiframe%E9%87%8C%E7%9A%84%E5%95%86%E5%93%81%E6%8F%8F%E8%BF%B0-%E8%AF%BB%E4%B8%8D%E5%88%B0DOM%E6%97%B6%E6%80%8E%E4%B9%88%E5%8F%96/" title="跨域 iframe 里的商品描述：读不到 DOM 时怎么取">
+                        <span class="hidden-mobile">跨域 iframe 里的商品描述：读不到 DOM 时怎么取</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <svg class="ax-inline-ico ax-prevnext-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-arrow-right"></use></svg>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  <span class="sr-only" id="code-copy-status" role="status"></span>
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  <script>
+  AsterXuTheme.utils.createScript('/lib/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    AsterXuTheme.utils.listenDOMLoaded(function() {
+      AsterXuTheme.events.registerRefreshCallback(function() {
+        if ('mermaid' in window) {
+          mermaid.init();
+        }
+      });
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <svg class="ax-scroll-top-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-arrow-up"></use></svg>
+      </a>
+    
+
+    
+  </main>
+
+  
+    <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h2 class="modal-title w-100 font-weight-bold h4" id="ModalLabel">搜索</h2>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate" autocomplete="off"
+                 aria-controls="local-search-result" aria-describedby="local-search-hint">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <p class="sr-only" id="local-search-hint">输入关键词后，按上下方向键选择结果，回车打开。</p>
+        <p class="sr-only" id="local-search-status" role="status" aria-live="polite"></p>
+        <div class="list-group" id="local-search-result" role="region" aria-label="搜索结果"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <span class="ax-footer__brand">AsterXu Lab</span> <span class="ax-footer__sep">·</span> <span>分布式系统 / 中台架构 / AI 系统工程</span> <span class="ax-footer__sep">·</span> <a href="https://github.com/aster-xu-lab" target="_blank" rel="noopener">GitHub</a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="/lib/nprogress/0.2.0/nprogress.min.js" integrity="sha384-WVrcwN/kiINFnwTi170GvMPVLHVBao1WfcXL/BZAK3VaUaaWX0OOsxMgCiFmrIb1" ></script>
+  <link  rel="stylesheet" href="/lib/nprogress/0.2.0/nprogress.min.css" integrity="sha384-QUGa0w7S89w/V+840rnBtrQYyUEd1VHb88E0/8vc9FvgRy7b7wHlk8S+o0bNJcv0" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100,"barSelector":".bar","spinnerSelector":".spinner","template":"<div class=\"bar\" aria-hidden=\"true\"><div class=\"peg\"></div></div><div class=\"spinner\" aria-hidden=\"true\"><div class=\"spinner-icon\"></div></div>"})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="/lib/jquery/3.6.4/jquery.min.js" integrity="sha384-UG8ao2jwOWB7/oDdObZc6ItJmwUkR/PfMyt9Qs5AwX7PsnYn1CRKCTWyncPTWvaS" ></script>
+<script  src="/lib/bootstrap/4.6.1/js/bootstrap.min.js" integrity="sha384-VHvPCCyXqtD5DqJeNxl2dtTyhF78xXNXdkwX1CZeRusQfRKp+tA7hAShOK/B/fQ2" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  AsterXuTheme.utils.createScript('/lib/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+    var mobileToc = document.getElementById('mobile-toc');
+    if (mobileToc) {
+      var desktopSlot = toc[0].parentElement;
+      var mobile = window.matchMedia('(max-width: 991.98px)');
+      function placeToc(event) {
+        (event.matches ? mobileToc : desktopSlot).appendChild(toc[0]);
+      }
+      mobile.addEventListener('change', placeToc);
+      placeToc(mobile);
+    }
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed)
+        .attr('aria-expanded', collapsed ? 'false' : 'true');
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<button type="button" class="toc-toggle toc-toggle-expanded" aria-label="Toggle table of contents" aria-expanded="true">›</button>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    function updateTocVisibility() {
+      var hasLinks = toc.find('.toc-list-item').length > 0;
+      toc.css('visibility', hasLinks ? 'visible' : 'hidden');
+      if (mobileToc) mobileToc.hidden = !hasLinks;
+    }
+    updateTocVisibility();
+    expandAllToc();
+    bindTocToggle();
+
+    AsterXuTheme.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        updateTocVisibility();
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src="/lib/clipboard.js/2.0.11/clipboard.min.js" integrity="sha384-J08i8An/QeARD9ExYpvphB8BsyOj3Gh2TSh1aLINKO3L0cMSH2dN3E22zFoXEi0Q"></script>
+
+  <script>AsterXuTheme.plugins.codeWidget();</script>
+
+
+  
+<script>
+  AsterXuTheme.utils.createScript('/lib/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    AsterXuTheme.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  AsterXuTheme.utils.createScript('/lib/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    AsterXuTheme.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>AsterXuTheme.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
