@@ -23,12 +23,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞： 先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发消息">
+    <meta name="description" content="订单中台里，一个典型场景是&quot;订单下发下游系统&quot;：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是&quot;先发消息，再提交业务&quot;，或者反过来&quot;先提交业务，再发消息&quot;。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="RocketMQ事务消息：半消息与回查，怎么做到&quot;业务成功消息必达&quot;">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/01/2024-04-01-RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF-%E5%8D%8A%E6%B6%88%E6%81%AF%E4%B8%8E%E5%9B%9E%E6%9F%A5/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="先抛一个问题：业务成功了，消息却没发出去订单中台里，一个典型场景是”订单下发下游系统”：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是”先发消息，再提交业务”，或者反过来”先提交业务，再发消息”。但两种都有漏洞： 先发消息再提交业务：消息发出去，下游立刻来消费，可本地事务还没提交，读到的是”还没落定”的数据，甚至本地事务最后回滚了——消息是幽灵消息； 先提交业务再发消息">
+<meta property="og:description" content="订单中台里，一个典型场景是&quot;订单下发下游系统&quot;：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是&quot;先发消息，再提交业务&quot;，或者反过来&quot;先提交业务，再发消息&quot;。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:published_time" content="2024-04-01T15:51:33.000Z">

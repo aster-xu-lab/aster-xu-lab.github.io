@@ -23,12 +23,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="先看一次最普通的”读文件发网络”你的服务要从磁盘读一个文件，通过 socket 发给客户端。直觉上这是一次很简单的操作，但操作系统底层要为它搬 4 次数据： 123磁盘 ──①DMA──▶ 内核页缓存 ──②CPU──▶ 用户态缓冲区 │网卡 ◀──④DMA── 内核 socket 缓冲区 ──③CPU──┘ ① DMA：磁盘 → 内核页缓存。DMA（Direct Memory Access）由硬">
+    <meta name="description" content="你的服务要从磁盘读一个文件，通过 socket 发给客户端。直觉上这是一次很简单的操作，但操作系统底层要为它搬 4 次数据： ① DMA：磁盘 → 内核页缓存。DMA（Direct Memory Access）由硬件&#x2F;驱动完成搬运，不占 CPU。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="零拷贝：4次拷贝变2次，Kafka和Netty的&quot;零&quot;其实是两回事">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/03/06/2022-03-06-%E9%9B%B6%E6%8B%B7%E8%B4%9D-4%E6%AC%A1%E6%8B%B7%E8%B4%9D%E5%8F%982%E6%AC%A1/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="先看一次最普通的”读文件发网络”你的服务要从磁盘读一个文件，通过 socket 发给客户端。直觉上这是一次很简单的操作，但操作系统底层要为它搬 4 次数据： 123磁盘 ──①DMA──▶ 内核页缓存 ──②CPU──▶ 用户态缓冲区 │网卡 ◀──④DMA── 内核 socket 缓冲区 ──③CPU──┘ ① DMA：磁盘 → 内核页缓存。DMA（Direct Memory Access）由硬">
+<meta property="og:description" content="你的服务要从磁盘读一个文件，通过 socket 发给客户端。直觉上这是一次很简单的操作，但操作系统底层要为它搬 4 次数据： ① DMA：磁盘 → 内核页缓存。DMA（Direct Memory Access）由硬件&#x2F;驱动完成搬运，不占 CPU。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:published_time" content="2022-03-06T07:14:56.000Z">

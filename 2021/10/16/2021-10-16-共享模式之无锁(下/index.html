@@ -23,12 +23,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="7、原子累加器累加器性能比较12345678910111213141516171819202122private static &lt;T&gt; void demo(Supplier&lt;T&gt; adderSupplier, Consumer&lt;T&gt; action) &#123; T adder &#x3D; adderSupplier.get(); List&lt;Thread&gt;">
+    <meta name="description" content="比较AtomicLong 与 LongAdder 输出 性能提升的原因很简单，就是在有竞争时，设置多个累加单元，Thread-0累加Cell[0]，Thread-1累加Cell[1]...最后将结果汇总。这样他们在累加时操作的不同Cell变量，因此减少了CAS重试失败，从而提高性能。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="5、共享模式之无锁(下）">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/10/16/2021-10-16-%E5%85%B1%E4%BA%AB%E6%A8%A1%E5%BC%8F%E4%B9%8B%E6%97%A0%E9%94%81(%E4%B8%8B/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="7、原子累加器累加器性能比较12345678910111213141516171819202122private static &lt;T&gt; void demo(Supplier&lt;T&gt; adderSupplier, Consumer&lt;T&gt; action) &#123; T adder &#x3D; adderSupplier.get(); List&lt;Thread&gt;">
+<meta property="og:description" content="比较AtomicLong 与 LongAdder 输出 性能提升的原因很简单，就是在有竞争时，设置多个累加单元，Thread-0累加Cell[0]，Thread-1累加Cell[1]...最后将结果汇总。这样他们在累加时操作的不同Cell变量，因此减少了CAS重试失败，从而提高性能。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8202efd29bf3f979d78c34ba3d3db0f3.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e8f833eabe3b15fbbb667239a04ff369.png">

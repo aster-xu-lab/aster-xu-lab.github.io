@@ -23,12 +23,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。 一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读目录">
+    <meta name="description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="借道商家会话：桌面端不再自己签 API 请求">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2026/11/19/2026-11-19-%E5%80%9F%E9%81%93%E5%95%86%E5%AE%B6%E4%BC%9A%E8%AF%9D-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E4%B8%8D%E5%86%8D%E8%87%AA%E5%B7%B1%E7%AD%BEAPI%E8%AF%B7%E6%B1%82/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。 一、签名通道的问题不在签名最初的方案很自然：桌面端作为 OpenAPI 客户端，自己持有凭据、自己签名，直接调平台接口。读目录">
+<meta property="og:description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/153d0fe0e67ce257b638b474bf045856.png">
 <meta property="article:published_time" content="2026-11-19T13:47:36.000Z">

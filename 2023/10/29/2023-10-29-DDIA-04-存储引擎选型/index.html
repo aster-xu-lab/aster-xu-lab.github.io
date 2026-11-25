@@ -23,12 +23,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="前言前面我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊存储引擎。 坦白说，2019年我第一次读DDIA这部分时，只觉得是”数据库内部的机械结构”，跟我的日常工作有什么关系？我又不写数据库。 现在回头看，这个想法错得离谱。 过去几年，我经历了三种典型的存储场景：订单核心的读写混合（InnoDB扛了五年），任">
+    <meta name="description" content="前面我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊存储引擎。 坦白说，2019年我第一次读DDIA这部分时，只觉得是&quot;数据库内部的机械结构&quot;，跟我的日常工作有什么关系？我又不写数据库。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-04-从RocksDB到MySQL InnoDB：不同场景的存储引擎选型">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2023/10/29/2023-10-29-DDIA-04-%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E%E9%80%89%E5%9E%8B/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="前言前面我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊存储引擎。 坦白说，2019年我第一次读DDIA这部分时，只觉得是”数据库内部的机械结构”，跟我的日常工作有什么关系？我又不写数据库。 现在回头看，这个想法错得离谱。 过去几年，我经历了三种典型的存储场景：订单核心的读写混合（InnoDB扛了五年），任">
+<meta property="og:description" content="前面我们聊了DDIA第三章的数据模型——关系模型 vs 文档模型，以及我们为什么在订单系统中选择了关系型数据库。今天我们把镜头往下沉一层，聊一聊存储引擎。 坦白说，2019年我第一次读DDIA这部分时，只觉得是&quot;数据库内部的机械结构&quot;，跟我的日常工作有什么关系？我又不写数据库。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:published_time" content="2023-10-29T08:11:54.000Z">

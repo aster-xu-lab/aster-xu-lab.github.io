@@ -23,12 +23,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="可达性分析，要面对一个残酷的现实JVM 判定对象能否回收，靠可达性分析：从 GC Roots（栈帧局部变量、静态变量、常量引用、native 引用、活跃线程&#x2F;锁对象等）沿着引用往下走，从根可达的存活，其余回收。 这个过程要遍历整个对象图，很慢。最早的收集器选择”全停顿”来做——STW 期间业务线程全停，图不会变，标记很安全，代价是停顿时间长。 于是有了 CMS、G1 这样的并发收集器：大">
+    <meta name="description" content="JVM 判定对象能否回收，靠可达性分析：从 GC Roots（栈帧局部变量、静态变量、常量引用、native 引用、活跃线程&#x2F;锁对象等）沿着引用往下走，从根可达的存活，其余回收。 这个过程要遍历整个对象图，很慢。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="三色标记：并发GC如何做到不漏标不误回收">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2021/06/01/2021-06-01-%E4%B8%89%E8%89%B2%E6%A0%87%E8%AE%B0-%E5%B9%B6%E5%8F%91GC%E5%A6%82%E4%BD%95%E4%B8%8D%E6%BC%8F%E6%A0%87/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="可达性分析，要面对一个残酷的现实JVM 判定对象能否回收，靠可达性分析：从 GC Roots（栈帧局部变量、静态变量、常量引用、native 引用、活跃线程&#x2F;锁对象等）沿着引用往下走，从根可达的存活，其余回收。 这个过程要遍历整个对象图，很慢。最早的收集器选择”全停顿”来做——STW 期间业务线程全停，图不会变，标记很安全，代价是停顿时间长。 于是有了 CMS、G1 这样的并发收集器：大">
+<meta property="og:description" content="JVM 判定对象能否回收，靠可达性分析：从 GC Roots（栈帧局部变量、静态变量、常量引用、native 引用、活跃线程&#x2F;锁对象等）沿着引用往下走，从根可达的存活，其余回收。 这个过程要遍历整个对象图，很慢。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:published_time" content="2021-05-31T17:27:26.000Z">

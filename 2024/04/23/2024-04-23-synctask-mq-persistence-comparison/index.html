@@ -23,12 +23,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="问题的起点最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？ 答案是有相似的内核，但设计目标完全不同。本文以订单中心项目中的实际代码为例，深入对比三种持久化机制。 订单中心的三种持久化机制 1234">
+    <meta name="description" content="最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？">
 <meta property="og:type" content="article">
 <meta property="og:title" content="SyncTask Job 与基于日志的消息中间件 - 持久化机制对比">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/04/23/2024-04-23-synctask-mq-persistence-comparison/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="问题的起点最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？ 答案是有相似的内核，但设计目标完全不同。本文以订单中心项目中的实际代码为例，深入对比三种持久化机制。 订单中心的三种持久化机制 1234">
+<meta property="og:description" content="最近在 review 订单中心的 SyncTask 同步任务引擎时，产生了一个疑问：SyncTask 这种把任务写到数据库表里，然后定时轮询拉取执行的模式，跟 Kafka&#x2F;RocketMQ 那种基于日志的消息中间件，在持久化方面是不是很类似？">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/ff8d7ae975db6fee834901d1e514e71f.png">
 <meta property="article:published_time" content="2024-04-23T12:32:06.000Z">

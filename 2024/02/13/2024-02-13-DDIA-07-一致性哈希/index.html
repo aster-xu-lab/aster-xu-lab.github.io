@@ -23,12 +23,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="引言：一次扩容引发的血案凌晨两点，告警群炸了。 Redis 缓存命中率从 98% 直线掉到 12%，MySQL 连接池瞬间打满，订单查询超时，用户端白屏。值班同学紧急回滚扩容操作，15 分钟后恢复。事后复盘，根因只有一句话：缓存 key 用 hash(key) % N 计算分片，加了一台 Redis 后 N 从 10 变成 11，90% 的缓存 key 指向了错误节点，缓存集体失效，DB 被穿透。">
+    <meta name="description" content="凌晨两点，告警群炸了。 Redis 缓存命中率从 98% 直线掉到 12%，MySQL 连接池瞬间打满，订单查询超时，用户端白屏。值班同学紧急回滚扩容操作，15 分钟后恢复。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="DDIA-07-一致性哈希：当分片不再是2的幂次">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2024/02/13/2024-02-13-DDIA-07-%E4%B8%80%E8%87%B4%E6%80%A7%E5%93%88%E5%B8%8C/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="引言：一次扩容引发的血案凌晨两点，告警群炸了。 Redis 缓存命中率从 98% 直线掉到 12%，MySQL 连接池瞬间打满，订单查询超时，用户端白屏。值班同学紧急回滚扩容操作，15 分钟后恢复。事后复盘，根因只有一句话：缓存 key 用 hash(key) % N 计算分片，加了一台 Redis 后 N 从 10 变成 11，90% 的缓存 key 指向了错误节点，缓存集体失效，DB 被穿透。">
+<meta property="og:description" content="凌晨两点，告警群炸了。 Redis 缓存命中率从 98% 直线掉到 12%，MySQL 连接池瞬间打满，订单查询超时，用户端白屏。值班同学紧急回滚扩容操作，15 分钟后恢复。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d0c0fb0a33401c6be8cc21a5a4c60308.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9256ec0125fdf0c9d25be91789689e7a.png">

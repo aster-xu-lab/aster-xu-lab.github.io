@@ -23,12 +23,12 @@
   <meta name="author" content="AsterXu">
   <meta name="keywords" content="Java, Hexo, 博客, AsterXu">
   
-    <meta name="description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题： RDB 快照 AOF 日志 内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof） 恢复 快（直接加载快照） 慢（逐条重放命令） 丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度） 文件 小、二进制 大、文本，可重写 RDB：某一时刻的完整快照，恢复快，但快照间隔内的写">
+    <meta name="description" content="Redis 持久化两种方式，解决不同的问题： RDB：某一时刻的完整快照，恢复快，但快照间隔内的写入会丢； AOF：每一条写命令，恢复慢，但按策略（每秒&#x2F;每次写）几乎不丢数据。 组合用法：RDB 做快照备份&#x2F;副本初始化（恢复快），AOF 保数据（丢得少）。生产通常两个都开。">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Redis 持久化：RDB 与 AOF 的取舍，fork+COW 为什么不停顿">
 <meta property="og:url" content="https://aster-xu-lab.github.io/2022/02/13/2022-02-13-Redis%E6%8C%81%E4%B9%85%E5%8C%96-RDB%E4%B8%8EAOF%E7%9A%84%E5%8F%96%E8%88%8D/">
 <meta property="og:site_name" content="AsterXu Lab">
-<meta property="og:description" content="一、两种持久化，两套取舍Redis 持久化两种方式，解决不同的问题： RDB 快照 AOF 日志 内容 全量数据的二进制快照（.rdb） 每次写命令的追加日志（.aof） 恢复 快（直接加载快照） 慢（逐条重放命令） 丢数据 多（两次快照之间的写会丢） 少（everysec&#x2F;always 配置粒度） 文件 小、二进制 大、文本，可重写 RDB：某一时刻的完整快照，恢复快，但快照间隔内的写">
+<meta property="og:description" content="Redis 持久化两种方式，解决不同的问题： RDB：某一时刻的完整快照，恢复快，但快照间隔内的写入会丢； AOF：每一条写命令，恢复慢，但按策略（每秒&#x2F;每次写）几乎不丢数据。 组合用法：RDB 做快照备份&#x2F;副本初始化（恢复快），AOF 保数据（丢得少）。生产通常两个都开。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
 <meta property="article:published_time" content="2022-02-13T02:08:34.000Z">
