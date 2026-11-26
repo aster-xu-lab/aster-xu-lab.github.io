@@ -30,13 +30,13 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="定位：学习笔记。目前我用 Docker 部署，还没系统用 K8s——先把容器原理这一层搞清楚，是我投大厂想补的一块。 一句话：容器不是&quot;轻量虚拟机&quot;，是&quot;被隔离的进程&quot;。 它靠两个内核机制实现隔离： Namespace（命名空间）：让容器里的进程&quot;以为自己在独立机器上&quot;；">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/587240b28c3762b32adb279df770fc9a.png">
 <meta property="article:published_time" content="2023-03-31T21:23:46.000Z">
 <meta property="article:modified_time" content="2023-03-31T21:23:46.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="云原生">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/587240b28c3762b32adb279df770fc9a.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"容器原理：Namespace 隔离\"看到什么\"，Cgroups 限制\"能用多少\"","datePublished":"2023-03-31T21:23:46.000Z","dateModified":"2023-03-31T21:23:46.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/04/01/2023-04-01-%E5%AE%B9%E5%99%A8%E5%8E%9F%E7%90%86-Namespace%E4%B8%8ECgroups/"}}</script>
@@ -709,6 +709,7 @@
 </tr>
 </tbody></table>
 <p>所以容器里 <code>ps</code> 看到 PID 1 是自己的进程，<code>ifconfig</code> 看到的是自己的 IP——<strong>但它们共用宿主内核</strong>。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/587240b28c3762b32adb279df770fc9a.png#pic_center" srcset="/img/loading.gif" lazyload alt="容器：Namespace 管「看到什么」，Cgroups 管「能用多少」" width="1600" height="900"></p>
 <h2 id="三、Cgroups：限制”能用多少”"><a href="#三、Cgroups：限制”能用多少”" class="headerlink" title="三、Cgroups：限制”能用多少”"></a>三、Cgroups：限制”能用多少”</h2><p>Namespace 管”看得到什么”，Cgroups 管”能用多少资源”：把进程分到控制组，限制&#x2F;记账 <strong>CPU 份额、内存上限、IO</strong>。防止一个容器吃光整个宿主机的 CPU&#x2F;内存。</p>
 <h2 id="四、容器-vs-虚拟机：本质区别"><a href="#四、容器-vs-虚拟机：本质区别" class="headerlink" title="四、容器 vs 虚拟机：本质区别"></a>四、容器 vs 虚拟机：本质区别</h2><table>
 <thead>

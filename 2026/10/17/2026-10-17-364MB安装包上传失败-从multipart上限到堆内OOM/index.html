@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="上传接口对 2KB、32MB、128MB、192MB 都返回 200，到 256MB 开始稳定 500；364MB 的真实安装包直接失败。第一反应是 multipart 上限，但配置里写的是 1000MB。真正的原因在 JVM 堆里，而且错误被 catch (Exception) 吞掉了。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a98e04a6ddef2dc4969b76b80f744bb7.png">
 <meta property="article:published_time" content="2026-10-17T00:44:58.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:10.000Z">
 <meta property="article:author" content="AsterXu">
@@ -39,7 +39,7 @@
 <meta property="article:tag" content="故障排查">
 <meta property="article:tag" content="文件上传">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a98e04a6ddef2dc4969b76b80f744bb7.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"一个 364MB 的安装包传不上去：从 multipart 上限排到堆内 OOM","datePublished":"2026-10-17T00:44:58.000Z","dateModified":"2026-11-19T10:45:10.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/10/17/2026-10-17-364MB%E5%AE%89%E8%A3%85%E5%8C%85%E4%B8%8A%E4%BC%A0%E5%A4%B1%E8%B4%A5-%E4%BB%8Emultipart%E4%B8%8A%E9%99%90%E5%88%B0%E5%A0%86%E5%86%85OOM/"}}</script>
@@ -702,6 +702,7 @@
 </tr>
 </tbody></table>
 <p>这个分布很有信息量：不是网络中断，不是鉴权失败，也不是大小校验提前拒绝——服务端把整个文件收完了，然后才在处理阶段炸掉。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a98e04a6ddef2dc4969b76b80f744bb7.png#pic_center" srcset="/img/loading.gif" lazyload alt="364MB 上传失败的根因链" width="1600" height="900"></p>
 <h2 id="二、排除-multipart：配置是-1000MB"><a href="#二、排除-multipart：配置是-1000MB" class="headerlink" title="二、排除 multipart：配置是 1000MB"></a>二、排除 multipart：配置是 1000MB</h2><p>最像的原因当然是上传大小限制。但把 Nacos 里该环境实际生效的配置拉出来看：</p>
 <figure class="highlight properties"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs properties"><span class="hljs-attr">spring.servlet.multipart.max-file-size</span>=<span class="hljs-string">1000MB</span><br><span class="hljs-attr">spring.servlet.multipart.max-request-size</span>=<span class="hljs-string">1000MB</span><br></code></pre></td></tr></table></figure>
 

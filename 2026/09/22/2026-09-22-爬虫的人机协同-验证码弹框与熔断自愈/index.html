@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="反爬最难受的不是&quot;被拦&quot;，而是&quot;不知道被拦了还是代码坏了&quot;。这篇文章讲怎么把采集失败分类、把验证码做成一次人工确认、把会话崩溃做成自愈，而不是无限重试或者静默把失败当成功。 采集失败的原因很多，但处理方式只有几类。所以第一件事是让每种失败都有独立的错误码，而不是笼统的&quot;采集失败&quot;：">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/beaa70276dc72386e48e0a164efa377b.png">
 <meta property="article:published_time" content="2026-09-22T13:29:27.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:10.000Z">
 <meta property="article:author" content="AsterXu">
@@ -38,7 +38,7 @@
 <meta property="article:tag" content="数据采集">
 <meta property="article:tag" content="高并发">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/beaa70276dc72386e48e0a164efa377b.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"爬虫的人机协同：验证码弹框，而不是硬刚","datePublished":"2026-09-22T13:29:27.000Z","dateModified":"2026-11-19T10:45:10.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/09/22/2026-09-22-%E7%88%AC%E8%99%AB%E7%9A%84%E4%BA%BA%E6%9C%BA%E5%8D%8F%E5%90%8C-%E9%AA%8C%E8%AF%81%E7%A0%81%E5%BC%B9%E6%A1%86%E4%B8%8E%E7%86%94%E6%96%AD%E8%87%AA%E6%84%88/"}}</script>
@@ -712,6 +712,7 @@
 <p>分类的价值在下一步才显现：只有分对了，才谈得上”哪一类该弹框、哪一类该重试、哪一类该放弃”。</p>
 <h2 id="二、验证码走人机协同（HITL）"><a href="#二、验证码走人机协同（HITL）" class="headerlink" title="二、验证码走人机协同（HITL）"></a>二、验证码走人机协同（HITL）</h2><p>验证码是采集里最尴尬的一类：<strong>程序过不去，但人可以轻松过去一次</strong>。</p>
 <p>所以产品路径不是”硬刚”，而是把控制权交还给用户：</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/beaa70276dc72386e48e0a164efa377b.png#pic_center" srcset="/img/loading.gif" lazyload alt="验证码人机协同：把控制权交还给用户" width="1600" height="900"></p>
 <ol>
 <li>采集线程检出验证码，发出一个 <code>awaiting_human</code> 事件；</li>
 <li>应用弹出模态框，提示用户去浏览器里过一次验证；</li>
