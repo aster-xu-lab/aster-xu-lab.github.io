@@ -30,14 +30,14 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="同一套 Skill、规则和角色，要同时喂给 Claude Code、Codex 和 Cursor。最大的风险不是写不出来，而是三份副本慢慢漂移：改了一处，忘了另外两处，最后每个宿主的行为都不一样。这篇讲我们怎么从「符号链接」换到「共享源 + 生成薄入口」，以及生成器必须守住的几条边界。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/62938afc802f3f5bf6cc3ba93d64ae21.png">
 <meta property="article:published_time" content="2026-11-03T13:58:41.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="AI">
 <meta property="article:tag" content="工程实践">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/62938afc802f3f5bf6cc3ba93d64ae21.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"一套资产，三个宿主：Agent 规则的单一源与生成入口","datePublished":"2026-11-03T13:58:41.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/11/03/2026-11-03-%E4%B8%80%E5%A5%97%E8%B5%84%E4%BA%A7%E4%B8%89%E4%B8%AA%E5%AE%BF%E4%B8%BB-Agent%E8%A7%84%E5%88%99%E7%9A%84%E5%8D%95%E4%B8%80%E6%BA%90%E4%B8%8E%E7%94%9F%E6%88%90%E5%85%A5%E5%8F%A3/"}}</script>
@@ -710,6 +710,7 @@
 <li>排查「为什么这个宿主行为不对」时，第一件事是猜它读的是哪一版。</li>
 </ul>
 <p><strong>多份副本不是备份，是三个真相。</strong></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/62938afc802f3f5bf6cc3ba93d64ae21.png#pic_center" srcset="/img/loading.gif" lazyload alt="一套资产，三个宿主：共享源 → 生成薄入口" width="1600" height="900"></p>
 <h2 id="二、第一版：符号链接"><a href="#二、第一版：符号链接" class="headerlink" title="二、第一版：符号链接"></a>二、第一版：符号链接</h2><p>为了消掉副本，第一版用了符号链接：<code>.claude/skills</code> 指向 <code>.agents/skills</code>，<code>.cursor/agents</code> 指向同一份角色目录。</p>
 <p>在本机 macOS 上这很好用：改一次，三个宿主立刻看到。</p>
 <p>但放到跨平台仓库里，问题很快出现：</p>
