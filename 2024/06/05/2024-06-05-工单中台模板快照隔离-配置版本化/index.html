@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="工单中台的核心实体是&quot;工单模板&quot;：定义了工单的字段、流程节点、处理人规则、SLA 时限等一套配置。业务方会频繁调整模板——加一个字段、改一道审批、换一个处理人。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bcd19536816e9c9b7bce89e20c95dd06.png">
 <meta property="article:published_time" content="2024-06-04T16:44:37.000Z">
 <meta property="article:modified_time" content="2024-06-04T16:44:37.000Z">
 <meta property="article:author" content="AsterXu">
@@ -40,7 +40,7 @@
 <meta property="article:tag" content="状态机">
 <meta property="article:tag" content="配置版本">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bcd19536816e9c9b7bce89e20c95dd06.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"工单中台模板快照隔离：配置版本化，一个从0到1项目最该做的决策","datePublished":"2024-06-04T16:44:37.000Z","dateModified":"2024-06-04T16:44:37.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/06/05/2024-06-05-%E5%B7%A5%E5%8D%95%E4%B8%AD%E5%8F%B0%E6%A8%A1%E6%9D%BF%E5%BF%AB%E7%85%A7%E9%9A%94%E7%A6%BB-%E9%85%8D%E7%BD%AE%E7%89%88%E6%9C%AC%E5%8C%96/"}}</script>
@@ -687,6 +687,7 @@
 </ul>
 <p>正确的做法是<strong>模板快照隔离</strong>：<strong>创建工单实例的那一刻，把当时生效的模板配置打一份快照，固化到工单实例上。</strong> 之后模板怎么改，都不影响已创建的工单。</p>
 <h2 id="二、模板快照：把”当时生效”的配置固化"><a href="#二、模板快照：把”当时生效”的配置固化" class="headerlink" title="二、模板快照：把”当时生效”的配置固化"></a>二、模板快照：把”当时生效”的配置固化</h2><p>实现上，模板表和快照表分开：</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bcd19536816e9c9b7bce89e20c95dd06.png#pic_center" srcset="/img/loading.gif" lazyload alt="模板快照隔离：活模板 → 快照 → 工单实例" width="1600" height="900"></p>
 <figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs 1c">工单模板表：业务方持续编辑的<span class="hljs-string">&quot;活配置&quot;</span>（唯一最新版）<br>工单快照表：创建工单时，从模板复制一份配置，关联到工单实例<br></code></pre></td></tr></table></figure>
 
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 创建工单：模板 → 快照 → 工单</span><br><span class="hljs-type">WorkOrderTemplate</span> <span class="hljs-variable">template</span> <span class="hljs-operator">=</span> loadTemplate(templateId);          <span class="hljs-comment">// 当前生效配置</span><br><span class="hljs-type">WorkOrderSnapshot</span> <span class="hljs-variable">snapshot</span> <span class="hljs-operator">=</span> snapshotService.create(template);  <span class="hljs-comment">// 打快照，固化</span><br><span class="hljs-type">WorkOrder</span> <span class="hljs-variable">order</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">WorkOrder</span>();<br>order.setSnapshotId(snapshot.getId());                          <span class="hljs-comment">// 工单绑定快照</span><br>order.setTemplateVersion(template.getVersion());                <span class="hljs-comment">// 记录当时版本</span><br></code></pre></td></tr></table></figure>

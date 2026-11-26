@@ -30,14 +30,14 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="渲染进程调主进程，四十多个通道散在 4 个文件里（整改时是 45 个），有的校验、有的不校验，有的手写 if，有的直接信类型。TypeScript 的声明不会在运行时校验跨进程数据，所以主进程把收到的业务参数当作 unknown 解析。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/37a588573fa2c3df944405e91db1a5d3.png">
 <meta property="article:published_time" content="2026-11-19T17:26:09.000Z">
 <meta property="article:modified_time" content="2026-11-24T07:57:26.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Electron">
 <meta property="article:tag" content="工程实践">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/37a588573fa2c3df944405e91db1a5d3.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"IPC 不该有 45 种入口：单一注册缝与运行时校验","datePublished":"2026-11-19T17:26:09.000Z","dateModified":"2026-11-24T07:57:26.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/11/20/2026-11-20-IPC%E4%B8%8D%E8%AF%A5%E6%9C%8945%E7%A7%8D%E5%85%A5%E5%8F%A3-%E5%8D%95%E4%B8%80%E6%B3%A8%E5%86%8C%E7%BC%9D%E4%B8%8E%E8%BF%90%E8%A1%8C%E6%97%B6%E6%A0%A1%E9%AA%8C/"}}</script>
@@ -692,6 +692,7 @@
 <figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-title function_">registerHandle</span>(channel, handler)                    <span class="hljs-comment">// 无参数，请求/响应</span><br><span class="hljs-title function_">registerValidatedHandle</span>(channel, parse, handler)    <span class="hljs-comment">// 有参数，先解析</span><br><span class="hljs-title function_">registerListener</span>(channel, handler)                  <span class="hljs-comment">// 无参数，单向</span><br><span class="hljs-title function_">registerValidatedListener</span>(channel, parse, handler)  <span class="hljs-comment">// 有参数，单向</span><br></code></pre></td></tr></table></figure>
 
 <p>规则只有一条：<strong>任何参数在进入业务 handler 之前，必须先经过 <code>parse</code>。</strong></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/37a588573fa2c3df944405e91db1a5d3.png#pic_center" srcset="/img/loading.gif" lazyload alt="单一注册缝：从 45 个入口收成一个缝" width="1600" height="900"></p>
 <figure class="highlight ts"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs ts"><span class="hljs-title function_">registerValidatedHandle</span>(<br>  <span class="hljs-variable constant_">IMPORTER_CHANNELS</span>.<span class="hljs-property">listApprovedBrands</span>,<br>  parseListApprovedBrandsRequest,<br>  <span class="hljs-title function_">async</span> (_event, request) =&gt; merchantBrandService.<span class="hljs-title function_">listApprovedBrands</span>(request)<br>)<br></code></pre></td></tr></table></figure>
 
 <p>单向通道的解析器可以返回 <code>undefined</code>，表示「这一帧不合法，直接丢弃」。这比在 <code>ipcMain.on</code> 里抛异常更安全：监听器抛错不会有人接，只会污染进程。</p>
