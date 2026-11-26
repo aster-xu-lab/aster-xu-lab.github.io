@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="定位：分布式锁的理论与共识基础（锁的语义、fencing token、共识算法）见 DDIA-10《分布式锁》；本文只讲 Redis 实现与高可用。 Redis 分布式锁的最基础形态是一条命令： NX：key 不存在才设置（互斥）；">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2b5edefc2f9cf6c921910374ef2c640b.png">
 <meta property="article:published_time" content="2024-02-05T13:22:57.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:10.000Z">
 <meta property="article:author" content="AsterXu">
@@ -38,7 +38,7 @@
 <meta property="article:tag" content="一致性">
 <meta property="article:tag" content="分布式锁">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2b5edefc2f9cf6c921910374ef2c640b.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Redis 分布式锁与高可用：三大坑、Redisson、主从哨兵 Cluster","datePublished":"2024-02-05T13:22:57.000Z","dateModified":"2026-11-19T10:45:10.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/02/05/2024-02-05-Redis%E5%88%86%E5%B8%83%E5%BC%8F%E9%94%81%E4%B8%8E%E9%AB%98%E5%8F%AF%E7%94%A8-%E4%B8%89%E5%A4%A7%E5%9D%91%E4%B8%8E%E9%9B%86%E7%BE%A4%E6%BC%94%E8%BF%9B/"}}</script>
@@ -699,6 +699,7 @@
 <li><strong>watchDog 看门狗</strong>：默认锁 30 秒，每 10 秒自动续期，业务结束释放——业务没跑完锁不丢；</li>
 <li><strong>可重入</strong>：同一线程可重复加锁，计数。</li>
 </ul>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2b5edefc2f9cf6c921910374ef2c640b.png#pic_center" srcset="/img/loading.gif" lazyload alt="watchDog 续期时序：锁 30 秒，每 10 秒续一次" width="1600" height="900"></p>
 <p>我在订单中台把它封装成了 <code>XLock</code>，业务侧只需要声明式调用，锁的续期&#x2F;释放&#x2F;重入全交给 Redisson。</p>
 <h2 id="四、深水区：主从切换，锁会丢吗"><a href="#四、深水区：主从切换，锁会丢吗" class="headerlink" title="四、深水区：主从切换，锁会丢吗"></a>四、深水区：主从切换，锁会丢吗</h2><p>单机&#x2F;主从 Redis 上有个致命问题：<strong>锁写在主节点，主挂了没同步到从节点 → 从节点成为新主，那把锁丢了</strong>——两个客户端都可能以为自己持锁，出现并发。</p>
 <p><strong>RedLock 的思路</strong>：向 <strong>N 个独立 Redis 节点</strong>（通常 3~5 个）逐个加锁，<strong>过半节点成功 + 总耗时 &lt; 锁有效期</strong>，才算拿到锁。这样即使某个主挂了，多数节点还持锁，别人拿不到过半数。</p>

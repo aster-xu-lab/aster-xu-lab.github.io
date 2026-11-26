@@ -30,14 +30,14 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="Redis 五种数据类型（String&#x2F;Hash&#x2F;List&#x2F;Set&#x2F;ZSet）各有底层结构。以下按 Redis 7.x 口径：7.0 起 Hash&#x2F;List&#x2F;ZSet 的紧凑编码由 ziplist 换成 listpack，Set 到 7.2 才支持 listpack；">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c66704f45794127bf9b37c365fc7f8ce.png">
 <meta property="article:published_time" content="2022-02-05T02:53:40.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Redis">
 <meta property="article:tag" content="算法">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c66704f45794127bf9b37c365fc7f8ce.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"Redis 底层数据结构：一条\"省内存\"的主线","datePublished":"2022-02-05T02:53:40.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2022/02/05/2022-02-05-Redis%E5%BA%95%E5%B1%82%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84-%E7%9C%81%E5%86%85%E5%AD%98%E4%B8%BB%E7%BA%BF/"}}</script>
@@ -704,7 +704,8 @@
 <td>listpack → <strong>跳表 + 哈希表</strong></td>
 </tr>
 </tbody></table>
-<p>两张表放在一起，能看出一条清晰的主线——<strong>“数据小用紧凑编码省内存，数据大升级成哈希表&#x2F;跳表换性能”</strong>。这是理解 Redis 内存设计的关键。</p>
+<p>两张表放在一起，能看出一条清晰的主线——<strong>“数据小用紧凑编码省内存，数据大升级成哈希表&#x2F;跳表换性能”</strong>。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c66704f45794127bf9b37c365fc7f8ce.png#pic_center" srcset="/img/loading.gif" lazyload alt="Redis 五种类型：紧凑编码与升级阈值" width="1600" height="900">这是理解 Redis 内存设计的关键。</p>
 <h2 id="二、String-→-SDS：比-C-字符串聪明在哪"><a href="#二、String-→-SDS：比-C-字符串聪明在哪" class="headerlink" title="二、String → SDS：比 C 字符串聪明在哪"></a>二、String → SDS：比 C 字符串聪明在哪</h2><p>Redis 的 String 不用普通 C 字符串（<code>\0</code> 结尾），而是 SDS，三个核心点：</p>
 <ol>
 <li><strong>显式记录长度</strong>：SDS 头部存了长度字段，<strong>O(1) 拿到长度</strong>，不用 <code>strlen</code> 从头数到 <code>\0</code>；</li>
