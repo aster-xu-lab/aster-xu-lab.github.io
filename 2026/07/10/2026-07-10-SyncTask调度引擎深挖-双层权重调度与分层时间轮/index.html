@@ -687,7 +687,7 @@
 <li><strong>扫描要全但要省</strong>（几十个任务不能每个都高频扫）。</li>
 </ol>
 <p>如果调度层引入一个专门的延迟队列&#x2F;退避算法，要自己实现”定时 + 优先级 + 容量”——重。我的答案：<strong>不写代码，用调度组合</strong>。</p>
-<h2 id="二、双层权重调度：两层配合"><a href="#二、双层权重调度：两层配合" class="headerlink" title="二、双层权重调度：两层配合"></a>二、双层权重调度：两层配合</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/435fbe4205165d0e71ce030a6f9cb940.png#pic_center" srcset="/img/loading.gif" lazyload alt="双层权重调度：用 cron 组合替代延迟队列" width="1520" height="860"></p>
+<h2 id="二、双层权重调度：两层配合"><a href="#二、双层权重调度：两层配合" class="headerlink" title="二、双层权重调度：两层配合"></a>二、双层权重调度：两层配合</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/435fbe4205165d0e71ce030a6f9cb940.png#pic_center" srcset="/img/loading.gif" lazyload alt="双层权重调度：用 cron 组合替代延迟队列" width="1520" height="885"></p>
 <h3 id="第一层：状态分层（每个-Job-只拉单一状态）"><a href="#第一层：状态分层（每个-Job-只拉单一状态）" class="headerlink" title="第一层：状态分层（每个 Job 只拉单一状态）"></a>第一层：状态分层（每个 Job 只拉单一状态）</h3><p>引擎不在一个 Job 里混合拉取多种状态，而是让每个 XXL-Job 实例只负责一种状态：</p>
 <ul>
 <li><strong>INIT（待处理）</strong>——新任务优先处理；</li>

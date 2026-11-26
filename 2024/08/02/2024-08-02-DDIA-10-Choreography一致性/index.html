@@ -31,7 +31,7 @@
 <meta property="og:description" content="2024年双十一前夕，凌晨3点，我们的商品同步链路突然卡住了。 排查日志发现：任务A（供应商商品数据拉取）执行成功，写入了临时表；任务B（数据清洗与标准化）依赖任务A的输出，但由于临时表中某个JSON字段格式异常，B的解析逻辑抛了NPE，整条链路中断。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a267b3ff41903aa0de552040ee68e2a3.png">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9a864e5e2d8da1e7d207eb31cbe335e8.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/84f17d60cccbf920386455b6f7c94c7d.png">
 <meta property="article:published_time" content="2024-08-01T16:47:13.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -738,7 +738,7 @@
 <p>最棘手的是场景1：A已经提交了数据库事务，B失败后，A的数据成为”孤儿数据”——没有后续Handler会处理它，也没有机制清理它。</p>
 <h3 id="核心矛盾"><a href="#核心矛盾" class="headerlink" title="核心矛盾"></a>核心矛盾</h3><p>Choreography模式天然缺少一个”全局事务协调器”。在Orchestration模式下，DAG引擎可以维护一个全局事务上下文，一旦B失败，引擎可以回调A的补偿方法。但Choreography模式下，A根本不知道B是否成功——两个人背对背跳舞。</p>
 <h2 id="SyncTask的解决方案：五层防御"><a href="#SyncTask的解决方案：五层防御" class="headerlink" title="SyncTask的解决方案：五层防御"></a>SyncTask的解决方案：五层防御</h2><p>面对一致性挑战，我们没有选择”加一个DAG引擎”的简单方案，而是在Choreography模式的约束下，构建了五层防御体系。</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9a864e5e2d8da1e7d207eb31cbe335e8.png#pic_center" srcset="/img/loading.gif" lazyload alt="Choreography 的五层防御" width="1520" height="860"></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/84f17d60cccbf920386455b6f7c94c7d.png#pic_center" srcset="/img/loading.gif" lazyload alt="SyncTask 的五层防御：Choreography 下的一致性兜底" width="1600" height="900"></p>
 <h3 id="第一层：状态机管理"><a href="#第一层：状态机管理" class="headerlink" title="第一层：状态机管理"></a>第一层：状态机管理</h3><p>每个TaskHandler执行前后，引擎会严格维护其状态机：</p>
 <figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-attribute">PENDING</span> → RUNNING → SUCCESS<br>                  → FAILED<br>                  → SKIPPED<br></code></pre></td></tr></table></figure>
 

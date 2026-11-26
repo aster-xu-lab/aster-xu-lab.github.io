@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="长事务是怎么一步步把系统拖垮的？死锁到底怎么排查？乐观锁和悲观锁分别在什么场景下用？本文结合130万日订单峰值（历史口径）的实战，从订单批量处理锁表事故，到扣库存用版本号+CAS，再到SyncTask引擎事务边界设计的V1→V2修复，完整还原事务踩坑与自救的全过程。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/705404a46c0aa67caa0a65d9182c786f.png">
 <meta property="article:published_time" content="2024-05-08T14:26:47.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -42,7 +42,7 @@
 <meta property="article:tag" content="实战">
 <meta property="article:tag" content="锁">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/705404a46c0aa67caa0a65d9182c786f.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验","datePublished":"2024-05-08T14:26:47.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/05/08/2024-05-08-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/"}}</script>
@@ -736,6 +736,7 @@
 <td>事务A等事务B释放锁，事务B也在等事务A释放锁</td>
 </tr>
 </tbody></table>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/705404a46c0aa67caa0a65d9182c786f.png#pic_center" srcset="/img/loading.gif" lazyload alt="死锁：两个事务互相等待的等待环" width="1600" height="900"></p>
 <p>四个条件缺一不可。但实际操作中，<strong>只需打破其中任意一个</strong>就能消灭死锁。应用层最常打破的是「持有并等待」——缩短事务时间，或者一次性获取所有需要的锁。</p>
 <h3 id="2-2-MySQL的死锁检测和排查"><a href="#2-2-MySQL的死锁检测和排查" class="headerlink" title="2.2 MySQL的死锁检测和排查"></a>2.2 MySQL的死锁检测和排查</h3><p>InnoDB 对死锁有两层机制：</p>
 <p><strong>第一层：<code>innodb_lock_wait_timeout</code>（默认50秒）</strong>。一个事务等待行锁超过这个时间就自动回滚。50秒对于 Web 请求来说太长了——用户的请求早就超时了，但数据库连接还在被这个等待中的事务所占用。这是一个被动防御，不是解决方案。</p>

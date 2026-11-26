@@ -717,7 +717,7 @@
 </tr>
 </tbody></table>
 <p>结论：<strong>要么重、要么领域不匹配</strong>。于是决定自己做一个”恰好够用”的引擎——并主动选择<strong>不做三件事</strong>。</p>
-<h2 id="三、三个”不做”决策"><a href="#三、三个”不做”决策" class="headerlink" title="三、三个”不做”决策"></a>三、三个”不做”决策</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0e7381a8c3de8692f43ad3b5b084a1c1.png#pic_center" srcset="/img/loading.gif" lazyload alt="SyncTask 引擎：主动不做的三件事" width="1520" height="860"></p>
+<h2 id="三、三个”不做”决策"><a href="#三、三个”不做”决策" class="headerlink" title="三、三个”不做”决策"></a>三、三个”不做”决策</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0e7381a8c3de8692f43ad3b5b084a1c1.png#pic_center" srcset="/img/loading.gif" lazyload alt="SyncTask 引擎：主动不做的三件事" width="1520" height="891"></p>
 <h3 id="1-不引入-DAG-编排引擎"><a href="#1-不引入-DAG-编排引擎" class="headerlink" title="1. 不引入 DAG 编排引擎"></a>1. 不引入 DAG 编排引擎</h3><p><strong>90% 的同步任务之间无依赖关系</strong>——每个任务独立跑就行，DAG 的”依赖编排”能力根本用不上。</p>
 <p>有依赖的少数场景（比如”先同步库存、再同步订单”），用 <strong>afterExecute 埋点</strong>（Choreography 模式）实现：</p>
 <figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">Handler A 完成 → afterExecute 触发 → 写 <span class="hljs-keyword">sync_task </span>表（事件载体；v2 标准表名，生产 <span class="hljs-built_in">v1</span> 为 <span class="hljs-keyword">or_sync_task）</span><br><span class="hljs-keyword"></span>→ 下一轮调度发现 → 执行 Handler <span class="hljs-keyword">B</span><br></code></pre></td></tr></table></figure>

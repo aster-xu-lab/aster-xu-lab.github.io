@@ -697,7 +697,7 @@
             
               <div class="markdown-body">
                 
-                <h2 id="堆的核心概念"><a href="#堆的核心概念" class="headerlink" title="堆的核心概念"></a>堆的核心概念</h2><p>堆针对一个JVM进程来说是唯一的，也就是一个进程只有一个JVM，但是进程包含多个线程，他们是共享同一堆空间的。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9b1435f2df9f207579d66aa99b1a4221.png" srcset="/img/loading.gif" lazyload alt="堆空间被多线程共享示意图" width="1052" height="446"><br>一个JVM实例只存在一个堆内存，堆也是Java内存管理的核心区域。<br>Java堆区在JVM启动的时候即被创建，其空间大小也就确定了。是JVM管理的最大一块内存空间。</p>
+                <h2 id="堆的核心概念"><a href="#堆的核心概念" class="headerlink" title="堆的核心概念"></a>堆的核心概念</h2><p>堆针对一个JVM进程来说是唯一的，也就是一个进程只有一个JVM，但是进程包含多个线程，他们是共享同一堆空间的。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/9b1435f2df9f207579d66aa99b1a4221.png" srcset="/img/loading.gif" lazyload alt="堆空间被多线程共享示意图" width="1066" height="465"><br>一个JVM实例只存在一个堆内存，堆也是Java内存管理的核心区域。<br>Java堆区在JVM启动的时候即被创建，其空间大小也就确定了。是JVM管理的最大一块内存空间。</p>
 <ul>
 <li>堆内存的大小是可以调节的。</li>
 </ul>
@@ -725,7 +725,7 @@
 <ul>
 <li>Young Generation Space新生区 Young&#x2F;New 又被划分为Eden区和Survivor区</li>
 <li>Tenure generation space 养老区 Old&#x2F;Tenure</li>
-<li>Meta Space 元空间 Meta<br>约定：新生区 -&gt; 新生代 -&gt; 年轻代 、 养老区 -&gt; 老年区 -&gt; 老年代、 永久区 -&gt; 永久代<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/03b34abcb406bafc76ea232400cc6de3.png" srcset="/img/loading.gif" lazyload alt="JDK7 堆内存新生代老年代永久代划分图" width="782" height="547"><br>堆空间内部结构，JDK1.8之前从永久代 替换成 元空间<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e717a15dce0192838df8ee13d287413f.png" srcset="/img/loading.gif" lazyload alt="JDK8 堆内存新生代老年代元空间划分图" width="1051" height="506"></li>
+<li>Meta Space 元空间 Meta<br>约定：新生区 -&gt; 新生代 -&gt; 年轻代 、 养老区 -&gt; 老年区 -&gt; 老年代、 永久区 -&gt; 永久代<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/03b34abcb406bafc76ea232400cc6de3.png" srcset="/img/loading.gif" lazyload alt="JDK7 堆内存新生代老年代永久代划分图" width="796" height="566"><br>堆空间内部结构，JDK1.8之前从永久代 替换成 元空间<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e717a15dce0192838df8ee13d287413f.png" srcset="/img/loading.gif" lazyload alt="JDK8 堆内存新生代老年代元空间划分图" width="1051" height="506"></li>
 </ul>
 <h3 id="设置堆内存大小与OOM"><a href="#设置堆内存大小与OOM" class="headerlink" title="设置堆内存大小与OOM"></a>设置堆内存大小与OOM</h3><p>Java堆区用于存储Java对象实例，那么堆的大小在JVM启动时就已经设定好了，大家可以通过选项”-Xmx”和”-Xms”来进行设置。</p>
 <ul>
@@ -766,7 +766,7 @@
 <li><p>可以修改-XX:NewRatio&#x3D;4，表示新生代占1，老年代占4，新生代占整个堆的1&#x2F;5</p>
 </li>
 </ul>
-<p>当发现在整个项目中，生命周期长的对象偏多，那么就可以通过调整 老年代的大小，来进行调优。<br>在HotSpot中，Eden空间和另外两个survivor空间缺省所占的比例是8：1：1当然开发人员可以通过选项“-xx:SurvivorRatio”调整这个空间比例。比如-xx:SurvivorRatio&#x3D;8。<br>几乎所有的Java对象都是在Eden区被new出来的。绝大部分的Java对象的销毁都在新生代进行了。（有些大的对象在Eden区无法存储时候，将直接进入老年代）。<br>IBM公司的专门研究表明，新生代中80%的对象都是“朝生夕死”的。<br>可以使用选项”-Xmn”设置新生代最大内存大小<br>这个参数一般使用默认值就可以了。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f34d7d0a25c58da602877a679b7d5467.png" srcset="/img/loading.gif" lazyload alt="堆内存各区域默认比例示意图" width="1035" height="379"></p>
+<p>当发现在整个项目中，生命周期长的对象偏多，那么就可以通过调整 老年代的大小，来进行调优。<br>在HotSpot中，Eden空间和另外两个survivor空间缺省所占的比例是8：1：1当然开发人员可以通过选项“-xx:SurvivorRatio”调整这个空间比例。比如-xx:SurvivorRatio&#x3D;8。<br>几乎所有的Java对象都是在Eden区被new出来的。绝大部分的Java对象的销毁都在新生代进行了。（有些大的对象在Eden区无法存储时候，将直接进入老年代）。<br>IBM公司的专门研究表明，新生代中80%的对象都是“朝生夕死”的。<br>可以使用选项”-Xmn”设置新生代最大内存大小<br>这个参数一般使用默认值就可以了。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f34d7d0a25c58da602877a679b7d5467.png" srcset="/img/loading.gif" lazyload alt="堆内存各区域默认比例示意图" width="1049" height="415"></p>
 <h2 id="图解对象分配过程"><a href="#图解对象分配过程" class="headerlink" title="图解对象分配过程"></a>图解对象分配过程</h2><h3 id="概念"><a href="#概念" class="headerlink" title="概念"></a>概念</h3><p>为新对象分配内存是一件非常严谨和复杂的任务，JVM的设计者们不仅需要考虑内存如何分配、在哪里分配等问题，并且由于内存分配算法与内存回收算法密切相关，所以还需要考虑GC执行完内存回收后是否会在内存空间中产生内存碎片。</p>
 <ul>
 <li>new的对象先放伊甸园区。此区有大小限制。</li>
@@ -790,7 +790,7 @@
 <figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs diff"><span class="hljs-deletion">-Xms600m -Xmx600m</span><br></code></pre></td></tr></table></figure>
 <p>然后cmd输入下面命令，打开VisualVM图形化界面</p>
 <figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">jvisualvm</span><br></code></pre></td></tr></table></figure>
-<p>然后通过执行上面代码，通过VisualGC进行动态化查看<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1d24762d1336641460d1e451859e3aae.gif#pic_center" srcset="/img/loading.gif" lazyload alt="VisualGC 动态查看对象分配过程" width="1919" height="247"><br>最终，在老年代和新生代都满了，就出现OOM</p>
+<p>然后通过执行上面代码，通过VisualGC进行动态化查看<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/1d24762d1336641460d1e451859e3aae.gif#pic_center" srcset="/img/loading.gif" lazyload alt="VisualGC 动态查看对象分配过程" width="1919" height="1013"><br>最终，在老年代和新生代都满了，就出现OOM</p>
 <figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs stylus">Exception <span class="hljs-keyword">in</span> thread <span class="hljs-string">&quot;main&quot;</span> java<span class="hljs-selector-class">.lang</span><span class="hljs-selector-class">.OutOfMemoryError</span>: Java heap space<br>	at com<span class="hljs-selector-class">.atguigu</span><span class="hljs-selector-class">.java</span><span class="hljs-selector-class">.chapter08</span><span class="hljs-selector-class">.HeapInstanceTest</span>.&lt;init&gt;(HeapInstanceTest<span class="hljs-selector-class">.java</span>:<span class="hljs-number">13</span>)<br>	at com<span class="hljs-selector-class">.atguigu</span><span class="hljs-selector-class">.java</span><span class="hljs-selector-class">.chapter08</span><span class="hljs-selector-class">.HeapInstanceTest</span><span class="hljs-selector-class">.main</span>(HeapInstanceTest<span class="hljs-selector-class">.java</span>:<span class="hljs-number">17</span>)<br></code></pre></td></tr></table></figure>
 <h2 id="常用的调优工具"><a href="#常用的调优工具" class="headerlink" title="常用的调优工具"></a>常用的调优工具</h2><ul>
 <li>JDK命令行</li>
@@ -892,11 +892,11 @@
 <p>为避免多个线程操作同一地址，需要使用加锁等机制，进而影响分配速度。</p>
 <h3 id="什么是TLAB"><a href="#什么是TLAB" class="headerlink" title="什么是TLAB"></a>什么是TLAB</h3><p>从内存模型而不是垃圾收集的角度，对Eden区域继续进行划分，JVM为每个线程分配了一个私有缓存区域，它包含在Eden空间内。</p>
 <p>多线程同时分配内存时，使用TLAB可以避免一系列的非线程安全问题，同时还能够提升内存分配的吞吐量，因此我们可以将这种内存分配方式称之为快速分配策略。</p>
-<p>据我所知所有OpenJDK衍生出来的JVM都提供了TLAB的设计。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2be4d7828e5c01481fd6c8c1e9b8b3bc.png" srcset="/img/loading.gif" lazyload alt="TLAB 在 Eden 区中的位置示意图" width="1019" height="508"><br>尽管不是所有的对象实例都能够在TLAB中成功分配内存，但JVM确实是将TLAB作为内存分配的首选。</p>
+<p>据我所知所有OpenJDK衍生出来的JVM都提供了TLAB的设计。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2be4d7828e5c01481fd6c8c1e9b8b3bc.png" srcset="/img/loading.gif" lazyload alt="TLAB 在 Eden 区中的位置示意图" width="1033" height="531"><br>尽管不是所有的对象实例都能够在TLAB中成功分配内存，但JVM确实是将TLAB作为内存分配的首选。</p>
 <p>在程序中，开发人员可以通过选项“-Xx:UseTLAB”设置是否开启TLAB空间。</p>
 <p>默认情况下，TLAB空间的内存非常小，仅占有整个Eden空间的1，当然我们可以通过选项“-Xx:TLABWasteTargetPercent”设置TLAB空间所占用Eden空间的百分比大小。</p>
 <p>一旦对象在TLAB空间分配内存失败时，JVM就会尝试着通过使用加锁机制确保数据操作的原子性，从而直接在Eden空间中分配内存。</p>
-<h3 id="TLAB分配过程"><a href="#TLAB分配过程" class="headerlink" title="TLAB分配过程"></a>TLAB分配过程</h3><p>对象首先是通过TLAB开辟空间，如果不能放入，那么需要通过Eden来进行分配<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ddf3dedbad7ff5f3d58c8b68439e213.png" srcset="/img/loading.gif" lazyload alt="对象 TLAB 分配与 Eden 回退流程图" width="1048" height="487"></p>
+<h3 id="TLAB分配过程"><a href="#TLAB分配过程" class="headerlink" title="TLAB分配过程"></a>TLAB分配过程</h3><p>对象首先是通过TLAB开辟空间，如果不能放入，那么需要通过Eden来进行分配<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/2ddf3dedbad7ff5f3d58c8b68439e213.png" srcset="/img/loading.gif" lazyload alt="对象 TLAB 分配与 Eden 回退流程图" width="1062" height="510"></p>
 <h2 id="小结：堆空间的参数设置"><a href="#小结：堆空间的参数设置" class="headerlink" title="小结：堆空间的参数设置"></a>小结：堆空间的参数设置</h2><ul>
 <li><p>-XX：+PrintFlagsInitial：查看所有的参数的默认初始值</p>
 </li>

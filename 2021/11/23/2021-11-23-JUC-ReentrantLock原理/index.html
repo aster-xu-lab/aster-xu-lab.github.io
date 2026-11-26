@@ -695,10 +695,10 @@
             
               <div class="markdown-body">
                 
-                <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/69f1e64c68d7e08af3b9d68a2ec0a976.png" srcset="/img/loading.gif" lazyload alt="ReentrantLock 原理内容总览示意图" width="1219" height="577"></p>
+                <p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/69f1e64c68d7e08af3b9d68a2ec0a976.png" srcset="/img/loading.gif" lazyload alt="ReentrantLock 原理内容总览示意图" width="1219" height="598"></p>
 <h2 id="1、非公平锁实现原理"><a href="#1、非公平锁实现原理" class="headerlink" title="1、非公平锁实现原理"></a>1、非公平锁实现原理</h2><h3 id="加锁解锁流程"><a href="#加锁解锁流程" class="headerlink" title="加锁解锁流程"></a>加锁解锁流程</h3><p>先从构造器开始看，默认为非公平锁的实现</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-title function_">ReentrantLock</span><span class="hljs-params">()</span> &#123;<br> 	sync = <span class="hljs-keyword">new</span> <span class="hljs-title class_">NonfairSync</span>();<br>&#125;<br></code></pre></td></tr></table></figure>
-<p>NofairSync 继承自 AQS<br>没有竞争时<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/15db51cd6534cccbf95ceeb9490e2cf1.png" srcset="/img/loading.gif" lazyload alt="没有竞争时的加锁状态图" width="1135" height="538"><br>第一个竞争出现时<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b5c09fa2e05a4f8721ec90d376566b5.png" srcset="/img/loading.gif" lazyload alt="第一个竞争出现时状态图" width="1191" height="530"><br>Thread-1执行了</p>
+<p>NofairSync 继承自 AQS<br>没有竞争时<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/15db51cd6534cccbf95ceeb9490e2cf1.png" srcset="/img/loading.gif" lazyload alt="没有竞争时的加锁状态图" width="1135" height="538"><br>第一个竞争出现时<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/0b5c09fa2e05a4f8721ec90d376566b5.png" srcset="/img/loading.gif" lazyload alt="第一个竞争出现时状态图" width="1191" height="578"><br>Thread-1执行了</p>
 <ol>
 <li>CAS尝试将state由0改为1，结果失败</li>
 <li>进入tryAcquire逻辑，这时state已经是1，结果仍然失败</li>

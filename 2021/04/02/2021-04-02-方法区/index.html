@@ -698,7 +698,7 @@
             
               <div class="markdown-body">
                 
-                <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这次所讲述的是运行时数据区的最后一个部分<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61e641c97d8c357eb53b95255d280af4.png" srcset="/img/loading.gif" lazyload alt="JVM 运行时数据区结构示意图" width="1130" height="380"><br>从线程共享与否的角度来看<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4b85454ebd564c0c89c1551e4d4dfc0c.png" srcset="/img/loading.gif" lazyload alt="运行时数据区线程共享与私有划分图" width="1049" height="500"><br>ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理</p>
+                <h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>这次所讲述的是运行时数据区的最后一个部分<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/61e641c97d8c357eb53b95255d280af4.png" srcset="/img/loading.gif" lazyload alt="JVM 运行时数据区结构示意图" width="1144" height="401"><br>从线程共享与否的角度来看<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4b85454ebd564c0c89c1551e4d4dfc0c.png" srcset="/img/loading.gif" lazyload alt="运行时数据区线程共享与私有划分图" width="1049" height="500"><br>ThreadLocal：如何保证多个线程在并发环境下的安全性？典型应用就是数据库连接管理，以及会话管理</p>
 <h2 id="栈、堆、方法区的交互关系"><a href="#栈、堆、方法区的交互关系" class="headerlink" title="栈、堆、方法区的交互关系"></a>栈、堆、方法区的交互关系</h2><p>下面就涉及了对象的访问定位<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7acebc411e227a043623c3fa049a3083.png" srcset="/img/loading.gif" lazyload alt="栈、堆与方法区交互关系示意图" width="1149" height="600"></p>
 <ul>
 <li>Person：存放在元空间，也可以说方法区</li>
@@ -706,7 +706,7 @@
 <li>new Person()：存放在Java堆中</li>
 </ul>
 <h2 id="方法区的理解"><a href="#方法区的理解" class="headerlink" title="方法区的理解"></a>方法区的理解</h2><p>《Java虚拟机规范》中明确说明：“尽管所有的方法区在逻辑上是属于堆的一部分，但一些简单的实现可能不会选择去进行垃圾收集或者进行压缩。”但对于HotSpotJVM而言，方法区还有一个别名叫做Non-Heap（非堆），目的就是要和堆分开。</p>
-<p>所以，方法区看作是一块独立于Java堆的内存空间。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8098ea6e466fd2a6d892d9d354e2a9a8.png" srcset="/img/loading.gif" lazyload alt="方法区与 Java 堆的关系示意图" width="805" height="298"><br>方法区主要存放的是 Class，而堆中主要存放的是 实例化的对象</p>
+<p>所以，方法区看作是一块独立于Java堆的内存空间。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/8098ea6e466fd2a6d892d9d354e2a9a8.png" srcset="/img/loading.gif" lazyload alt="方法区与 Java 堆的关系示意图" width="819" height="325"><br>方法区主要存放的是 Class，而堆中主要存放的是 实例化的对象</p>
 <ul>
 <li>方法区（Method Area）与Java堆一样，是各个线程共享的内存区域。</li>
 <li>方法区在JVM启动的时候被创建，并且它的实际的物理内存空间中和Java堆区一样都可以是不连续的。</li>
@@ -749,7 +749,7 @@
 <li><p>如果不存在内存泄漏，换句话说就是内存中的对象确实都还必须存活着，那就应当检查虚拟机的堆参数（-Xmx与-Xms），与机器物理内存对比看是否还可以调大，从代码上检查是否存在某些对象生命周期过长、持有状态时间过长的情况，尝试减少程序运行期的内存消耗。</p>
 </li>
 </ul>
-<h2 id="方法区的内部结构"><a href="#方法区的内部结构" class="headerlink" title="方法区的内部结构"></a>方法区的内部结构</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/636ad46300f7e527ae511a2c5d6a91dc.png" srcset="/img/loading.gif" lazyload alt="方法区内部存储结构示意图" width="1144" height="657"><br>《深入理解Java虚拟机》书中对方法区（Method Area）存储内容描述如下：它用于存储已被虚拟机加载的类型信息、常量、静态变量、即时编译器编译后的代码缓存等。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/637f2834c67ee73c0261d69bd4d6d0ed.png" srcset="/img/loading.gif" lazyload alt="方法区存储内容分类示意图" width="1058" height="191"></p>
+<h2 id="方法区的内部结构"><a href="#方法区的内部结构" class="headerlink" title="方法区的内部结构"></a>方法区的内部结构</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/636ad46300f7e527ae511a2c5d6a91dc.png" srcset="/img/loading.gif" lazyload alt="方法区内部存储结构示意图" width="1144" height="657"><br>《深入理解Java虚拟机》书中对方法区（Method Area）存储内容描述如下：它用于存储已被虚拟机加载的类型信息、常量、静态变量、即时编译器编译后的代码缓存等。<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/637f2834c67ee73c0261d69bd4d6d0ed.png" srcset="/img/loading.gif" lazyload alt="方法区存储内容分类示意图" width="1082" height="206"></p>
 <h3 id="类型信息"><a href="#类型信息" class="headerlink" title="类型信息"></a>类型信息</h3><p>对每个加载的类型（类class、接口interface、枚举enum、注解annotation），JVm必须在方法区中存储以下类型信息：</p>
 <ul>
 <li>这个类型的完整有效名称（全名&#x3D;包名.类名）</li>
@@ -846,7 +846,7 @@
 <h3 id="静态变量存放在那里？"><a href="#静态变量存放在那里？" class="headerlink" title="静态变量存放在那里？"></a>静态变量存放在那里？</h3><p>静态引用对应的对象实体始终都存在堆空间</p>
 <p>可以使用 jhsdb.ext，需要在jdk9的时候才引入的</p>
 <p>staticobj随着Test的类型信息存放在方法区，instanceobj随着Test的对象实例存放在Java堆，localobject则是存放在foo（）方法栈帧的局部变量表中。</p>
-<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e5265f982ea81cc12d3a86319a079e5b.png" srcset="/img/loading.gif" lazyload alt="三个对象内存地址落在 Eden 区示意图" width="924" height="102"><br>测试发现：三个对象的数据在内存中的地址都落在Eden区范围内，所以结论：只要是对象实例必然会在Java堆中分配。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/e5265f982ea81cc12d3a86319a079e5b.png" srcset="/img/loading.gif" lazyload alt="三个对象内存地址落在 Eden 区示意图" width="924" height="131"><br>测试发现：三个对象的数据在内存中的地址都落在Eden区范围内，所以结论：只要是对象实例必然会在Java堆中分配。</p>
 <p>接着，找到了一个引用该staticobj对象的地方，是在一个java.lang.Class的实例里，并且给出了这个实例的地址，通过Inspector查看该对象实例，可以清楚看到这确实是一个java.lang.Class类型的对象实例，里面有一个名为staticobj的实例字段：<br><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/650d961c71a15ce93466af8b302c4cf6.png" srcset="/img/loading.gif" lazyload alt="Class 实例中 staticobj 字段示意图" width="1192" height="235"><br>从《Java虚拟机规范》所定义的概念模型来看，所有Class相关的信息都应该存放在方法区之中，但方法区该如何实现，《Java虚拟机规范》并未做出规定，这就成了一件允许不同虚拟机自己灵活把握的事情。JDK7及其以后版本的HotSpot虚拟机选择把静态变量与类型在Java语言一端的映射class对象存放在一起，存储于Java堆之中，从我们的实验中也明确验证了这一点</p>
 <h2 id="方法区的垃圾回收"><a href="#方法区的垃圾回收" class="headerlink" title="方法区的垃圾回收"></a>方法区的垃圾回收</h2><p>有些人认为方法区（如Hotspot虚拟机中的元空间或者永久代）是没有垃圾收集行为的，其实不然。《Java虚拟机规范》对方法区的约束是非常宽松的，提到过可以不要求虚拟机在方法区中实现垃圾收集。事实上也确实有未实现或未能完整实现方法区类型卸载的收集器存在（如JDK11时期的zGC收集器就不支持类卸载）。</p>
 <p>一般来说这个区域的回收效果比较难令人满意，尤其是类型的卸载，条件相当苛刻。但是这部分区域的回收有时又确实是必要的。以前sun公司的Bug列表中，曾出现过的若干个严重的Bug就是由于低版本的HotSpot虚拟机对此区域未完全回收而导致内存泄漏。</p>

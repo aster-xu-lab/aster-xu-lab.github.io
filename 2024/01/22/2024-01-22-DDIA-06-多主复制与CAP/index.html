@@ -31,6 +31,7 @@
 <meta property="og:description" content="上一篇文章我们聊了单主复制的实现细节——一个 Leader 负责所有写入，若干 Follower 异步追赶日志。这是绝大多数关系型数据库的默认模式，简单、可靠、符合直觉。 但现实世界的需求远比&quot;一主多从&quot;复杂。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7df76cdb765b23692fb1ec521b94cd54.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c11e6c058a7d7f8c9d48641e6563c8ea.png">
 <meta property="article:published_time" content="2024-01-21T16:57:01.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -715,6 +716,7 @@
 <li>读取时至少读 R&#x3D;2 个副本，从最新值中取结果。</li>
 </ul>
 <p>只要 <strong>W + R &gt; N</strong>，读操作就一定能碰到最新的写入——因为写入的 W 个节点和读取的 R 个节点必有交集。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c11e6c058a7d7f8c9d48641e6563c8ea.png#pic_center" srcset="/img/loading.gif" lazyload alt="Quorum 读写：W + R &gt; N 为什么必有交集" width="1600" height="900"></p>
 <p>这给了运维一个调节旋钮：</p>
 <table>
 <thead>

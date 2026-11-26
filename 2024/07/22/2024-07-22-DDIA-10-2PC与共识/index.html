@@ -31,6 +31,7 @@
 <meta property="og:description" content="两阶段提交(2PC)和Raft&#x2F;Paxos共识算法看起来都涉及多节点协调，但它们的本质完全不同。本文从电商库存扣减场景切入，厘清原子提交与共识的边界。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4696969d4800cfb81b51cd08d1750f0.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f431da785ea7d26a60da0cc031338cca.png">
 <meta property="article:published_time" content="2024-07-22T12:11:55.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -694,6 +695,7 @@
 <p>这里有一个容易混淆的点：2PC确实也有投票和多数派的概念（所有参与者都YES才提交），这和Paxos的Prepare&#x2F;Promise机制看似相似。但区别在于——2PC的”投票”是为了<strong>原子性的决策</strong>（全局是commit还是abort），而Paxos&#x2F;Raft的”投票”是为了<strong>在多个副本之间选出一个值</strong>，保证读到同一个值的人不会读到不同版本。目标和语义完全不同。</p>
 <h2 id="三、2PC的致命弱点：容错"><a href="#三、2PC的致命弱点：容错" class="headerlink" title="三、2PC的致命弱点：容错"></a>三、2PC的致命弱点：容错</h2><p>DDIA用了一整节讲2PC的容错问题，核心就一句话：<strong>2PC在协调者故障时，参与者会陷入in-doubt状态，无法自主恢复。</strong></p>
 <p>具体展开一下。假设协调者在发送了”YES”投票后崩溃，参与者就处于一个尴尬的位置：</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f431da785ea7d26a60da0cc031338cca.png#pic_center" srcset="/img/loading.gif" lazyload alt="2PC：协调者崩溃后的 in-doubt 阻塞" width="1600" height="900"></p>
 <ul>
 <li>它不知道其他参与者投了什么票。</li>
 <li>如果它自己投了YES，它既不能单方面提交（万一别人投了NO，协调者最终要Abort），也不能单方面回滚（万一所有人都投了YES，协调者最终要Commit）。</li>
