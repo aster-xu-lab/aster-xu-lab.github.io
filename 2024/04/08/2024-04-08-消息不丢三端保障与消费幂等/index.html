@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="生产端 → Broker → 消费端。任何一个环节都可能丢消息、重消息。所以&quot;消息可靠性&quot;从来不是一个单点问题，而是三端各自的职责： 三端合起来，才构成&quot;不丢&quot;。只靠任何一端都是空谈。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c61b54e5f0dcb6b53f4d5f48678f6136.png">
 <meta property="article:published_time" content="2024-04-07T17:14:17.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:10.000Z">
 <meta property="article:author" content="AsterXu">
@@ -38,7 +38,7 @@
 <meta property="article:tag" content="幂等">
 <meta property="article:tag" content="消息队列">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c61b54e5f0dcb6b53f4d5f48678f6136.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"消息不丢的三端保障与消费幂等：分布式系统的最后一公里","datePublished":"2024-04-07T17:14:17.000Z","dateModified":"2026-11-19T10:45:10.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/04/08/2024-04-08-%E6%B6%88%E6%81%AF%E4%B8%8D%E4%B8%A2%E4%B8%89%E7%AB%AF%E4%BF%9D%E9%9A%9C%E4%B8%8E%E6%B6%88%E8%B4%B9%E5%B9%82%E7%AD%89/"}}</script>
@@ -702,6 +702,7 @@
 </tr>
 </tbody></table>
 <p>三端合起来，才构成”不丢”。只靠任何一端都是空谈。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c61b54e5f0dcb6b53f4d5f48678f6136.png#pic_center" srcset="/img/loading.gif" lazyload alt="消息不丢的三端保障：生产端 → Broker → 消费端" width="1600" height="900"></p>
 <h2 id="一、生产端：消息发出去，怎么确认真到了"><a href="#一、生产端：消息发出去，怎么确认真到了" class="headerlink" title="一、生产端：消息发出去，怎么确认真到了"></a>一、生产端：消息发出去，怎么确认真到了</h2><p>最简单的确认机制是 <strong>Confirm 确认</strong>：Producer 发消息后，Broker 落盘成功会回一个确认（ack）；没收到确认就重试。</p>
 <p>但 Confirm + 重试还有一个经典缺口：<strong>业务提交了，消息却没发出去</strong>。这不是网络问题，是”本地事务和发消息”的原子性问题——我在 RocketMQ 事务消息那篇里详细讲过：先发消息再提交有幽灵消息，先提交再发消息会漏消息。</p>
 <p>所以生产端真正的强保证是两个方案：</p>

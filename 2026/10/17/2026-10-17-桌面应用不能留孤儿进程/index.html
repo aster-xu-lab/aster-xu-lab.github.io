@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="用户关掉窗口，任务栏里还留着 Chromium；再打开一次，机器上多一份 JVM。这类问题不会立刻报错，但会一直吃内存、占端口，最后表现成「应用越用越卡」。这篇文章讲三类孤儿是怎么产生的，以及退出路径应该怎么设计。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5036b38afedea915c33bfe9d5eb19d98.png">
 <meta property="article:published_time" content="2026-10-17T14:01:48.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:10.000Z">
 <meta property="article:author" content="AsterXu">
@@ -39,7 +39,7 @@
 <meta property="article:tag" content="故障排查">
 <meta property="article:tag" content="进程">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5036b38afedea915c33bfe9d5eb19d98.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"桌面应用不能留孤儿进程：Chromium、JVM 与退出语义","datePublished":"2026-10-17T14:01:48.000Z","dateModified":"2026-11-19T10:45:10.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/10/17/2026-10-17-%E6%A1%8C%E9%9D%A2%E5%BA%94%E7%94%A8%E4%B8%8D%E8%83%BD%E7%95%99%E5%AD%A4%E5%84%BF%E8%BF%9B%E7%A8%8B/"}}</script>
@@ -685,6 +685,7 @@
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">应用启动 → JVM 起来 → 默认 context 开 Chromium（约 2s）<br>        → 用户关窗（10s 前）→ 缓存还是空的 → kill 被跳过<br>        → session 根本没打开<br></code></pre></td></tr></table></figure>
 
 <p>结果就是 Chromium 留在后台。修法有两条：</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5036b38afedea915c33bfe9d5eb19d98.png#pic_center" srcset="/img/loading.gif" lazyload alt="孤儿进程的时序窗口：应用退出先于 session 打开" width="1600" height="900"></p>
 <ol>
 <li><strong>缓存提前</strong>：runtime 一解析出来就记下 Chromium 路径，不等 session；</li>
 <li><strong>同步兜底</strong>：缓存仍为空时，退出路径同步推导出随包 Chromium 目录，不依赖异步工作。</li>
