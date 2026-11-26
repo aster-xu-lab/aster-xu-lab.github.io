@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="桌面端要读商家后台的目录、上传图片、提交草稿。最早我们走 OpenAPI 签名通道；这一版改成在嵌入式商家页里，用页面自己的会话发请求。变化不只是「少维护一套签名」，而是把会话变成了一个有代次、有作用域、有失效时机的运行时对象。这篇讲它怎么工作，以及哪些边界仍然没被证明。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/153d0fe0e67ce257b638b474bf045856.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f2f9b1e4894b8481a99e06f24506ca68.png">
 <meta property="article:published_time" content="2026-11-19T13:47:36.000Z">
 <meta property="article:modified_time" content="2026-11-19T13:47:36.000Z">
 <meta property="article:author" content="AsterXu">
@@ -39,7 +39,7 @@
 <meta property="article:tag" content="一致性">
 <meta property="article:tag" content="会话管理">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/153d0fe0e67ce257b638b474bf045856.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f2f9b1e4894b8481a99e06f24506ca68.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"借道商家会话：桌面端不再自己签 API 请求","datePublished":"2026-11-19T13:47:36.000Z","dateModified":"2026-11-19T13:47:36.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2026/11/19/2026-11-19-%E5%80%9F%E9%81%93%E5%95%86%E5%AE%B6%E4%BC%9A%E8%AF%9D-%E6%A1%8C%E9%9D%A2%E7%AB%AF%E4%B8%8D%E5%86%8D%E8%87%AA%E5%B7%B1%E7%AD%BEAPI%E8%AF%B7%E6%B1%82/"}}</script>
@@ -699,7 +699,7 @@
 <li>返回值只能是可序列化的文本。响应体、上传文件都要跨一次进程边界。</li>
 <li>文件上传得用 base64 把字节送进页面，再由页面构造 <code>FormData</code>。内存占用会翻倍，所以图片按 8 个一批上传，每批 120 秒超时，并核对返回的 URL 数量。</li>
 </ul>
-<h2 id="三、会话不只是「登录了没有」"><a href="#三、会话不只是「登录了没有」" class="headerlink" title="三、会话不只是「登录了没有」"></a>三、会话不只是「登录了没有」</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/153d0fe0e67ce257b638b474bf045856.png#pic_center" srcset="/img/loading.gif" lazyload alt="借道商家会话的请求时序：主进程把脚本送进商家页面，页面读取本地会话并发请求，网关返回 status&#x2F;text；主进程用 generation 判断是否丢弃迟到结果" width="2400" height="1680"></p>
+<h2 id="三、会话不只是「登录了没有」"><a href="#三、会话不只是「登录了没有」" class="headerlink" title="三、会话不只是「登录了没有」"></a>三、会话不只是「登录了没有」</h2><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f2f9b1e4894b8481a99e06f24506ca68.png#pic_center" srcset="/img/loading.gif" lazyload alt="借道商家会话：主进程注入脚本，页面读取本地会话并自带凭证请求平台 API，回传 status&#x2F;text；主进程用 generation 丢弃迟到结果" width="1600" height="900"></p>
 <p>一旦开始借道，会话就不再是一个布尔值。它至少有三层含义：</p>
 <figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">页面层：origin + 身份 + token 是否存在<br>主进程层：这次请求绑定的是哪一代会话<br>业务层：当前商家 / 店铺 / 租户是否还是发起时的那个<br></code></pre></td></tr></table></figure>
 
