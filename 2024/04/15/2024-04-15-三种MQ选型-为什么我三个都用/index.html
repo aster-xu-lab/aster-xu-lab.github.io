@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="这其实是 MQ 选型里最值得想清楚的问题。我用过的三种 MQ——RocketMQ、RabbitMQ、Kafka——不是堆技术栈，是各司其职。这篇把选型逻辑讲透。 选型的关键判断： 要事务消息、要可靠、核心交易 → RocketMQ；">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/59a0f11db56672bf9eda1170f32e98af.png">
 <meta property="article:published_time" content="2024-04-15T13:21:12.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:10.000Z">
 <meta property="article:author" content="AsterXu">
@@ -38,7 +38,7 @@
 <meta property="article:tag" content="消息队列">
 <meta property="article:tag" content="选型">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/59a0f11db56672bf9eda1170f32e98af.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"RocketMQ、RabbitMQ、Kafka选型：为什么我三个都用","datePublished":"2024-04-15T13:21:12.000Z","dateModified":"2026-11-19T10:45:10.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/04/15/2024-04-15-%E4%B8%89%E7%A7%8DMQ%E9%80%89%E5%9E%8B-%E4%B8%BA%E4%BB%80%E4%B9%88%E6%88%91%E4%B8%89%E4%B8%AA%E9%83%BD%E7%94%A8/"}}</script>
@@ -730,6 +730,7 @@
 <li><strong>数据量巨大、日志&#x2F;流&#x2F;埋点</strong> → Kafka。</li>
 </ul>
 <h2 id="二、三种-MQ-的底层模型差异"><a href="#二、三种-MQ-的底层模型差异" class="headerlink" title="二、三种 MQ 的底层模型差异"></a>二、三种 MQ 的底层模型差异</h2><p>选型的深层原因在于<strong>存储模型</strong>：</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/59a0f11db56672bf9eda1170f32e98af.png#pic_center" srcset="/img/loading.gif" lazyload alt="三种 MQ 的存储模型：CommitLog &#x2F; 分区日志 &#x2F; 队列" width="1600" height="900"></p>
 <p><strong>RocketMQ：消息模型。</strong> 所有消息顺序追加进一个 CommitLog，靠 ConsumeQueue 做逻辑队列索引。事务消息、延迟消息、死信重试这些<strong>交易场景的机制</strong>是它的主场。</p>
 <p><strong>RabbitMQ：路由模型。</strong> 基于 AMQP 协议，Exchange 按 binding 规则把消息路由到队列，灵活度最高。但吞吐受限于单队列处理，适合中小流量。</p>
 <p><strong>Kafka：日志模型。</strong> 每个分区一个独立的顺序日志文件，靠”追加日志 + 消费位点（offset）”工作。它本质是<strong>持久化的日志流</strong>，吞吐天花板最高，所以适合大数据&#x2F;流处理，但不擅长复杂路由和事务场景（虽然新版有事务 API）。</p>
