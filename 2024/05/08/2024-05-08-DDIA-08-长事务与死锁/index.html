@@ -30,6 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="长事务是怎么一步步把系统拖垮的？死锁到底怎么排查？乐观锁和悲观锁分别在什么场景下用？本文结合130万日订单峰值（历史口径）的实战，从订单批量处理锁表事故，到扣库存用版本号+CAS，再到SyncTask引擎事务边界设计的V1→V2修复，完整还原事务踩坑与自救的全过程。">
 <meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c62fcb0a8185361d33f0a0f0342052a.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/705404a46c0aa67caa0a65d9182c786f.png">
 <meta property="article:published_time" content="2024-05-08T14:26:47.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
@@ -42,7 +43,7 @@
 <meta property="article:tag" content="实战">
 <meta property="article:tag" content="锁">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/705404a46c0aa67caa0a65d9182c786f.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c62fcb0a8185361d33f0a0f0342052a.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-08-事务不是万能的：长事务、死锁与乐观锁实战经验","datePublished":"2024-05-08T14:26:47.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/05/08/2024-05-08-DDIA-08-%E9%95%BF%E4%BA%8B%E5%8A%A1%E4%B8%8E%E6%AD%BB%E9%94%81/"}}</script>
@@ -695,6 +696,7 @@
 <p>从数据库的角度看，一个事务持有的锁从第一条写SQL开始，到 COMMIT 才释放。如果这个间隔是5秒，那锁就持有了5秒。在线程池只有50个连接的情况下，5个并发这样的操作就能把所有连接占满。</p>
 <p>连接数被占满 → 新来的请求排队等连接 → 等了30秒超时 → 用户看到报错 → 重试 → 重试带着新请求再排队 → 更慢 → <strong>雪崩</strong>。</p>
 <p>这就是长事务的杀伤链：</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/6c62fcb0a8185361d33f0a0f0342052a.png#pic_center" srcset="/img/loading.gif" lazyload alt="长事务的杀伤链：从持锁到雪崩" width="1600" height="900"></p>
 <figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs applescript">长事务持有锁时间过长<br>    → 数据库连接数被占满<br>        → 新请求等待获取连接<br>            → 等待超时（connection <span class="hljs-keyword">timeout</span>）<br>                → 上游重试 + 用户刷新<br>                    → 请求量翻倍<br>                        → 雪崩<br></code></pre></td></tr></table></figure>
 
 <h3 id="1-2-一个真实的事故：订单批量处理锁了10万行"><a href="#1-2-一个真实的事故：订单批量处理锁了10万行" class="headerlink" title="1.2 一个真实的事故：订单批量处理锁了10万行"></a>1.2 一个真实的事故：订单批量处理锁了10万行</h3><p>我在处理订单中心一个批量发货功能时，踩过一个经典的坑。</p>

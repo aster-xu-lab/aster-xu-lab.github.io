@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="面试官问：&quot;说一下事务的 ACID 特性&quot;，大部分候选人的回答是标准八股文版本： A（Atomicity）：要么全成功，要么全失败 C（Consistency）：事务前后数据满足约束 I（Isolation）：多个事务之间互不干扰">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7e748f50eac14fa64cf1af8f35d463b1.png">
 <meta property="article:published_time" content="2024-04-17T12:44:04.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -38,7 +38,7 @@
 <meta property="article:tag" content="事务">
 <meta property="article:tag" content="数据库">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7e748f50eac14fa64cf1af8f35d463b1.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-08-ACID到底是什么意思：比面试官问的深一点","datePublished":"2024-04-17T12:44:04.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/04/17/2024-04-17-DDIA-08-ACID%E7%9C%9F%E6%AD%A3%E5%90%AB%E4%B9%89/"}}</script>
@@ -780,7 +780,8 @@
 <td>吞吐量大幅下降</td>
 </tr>
 </tbody></table>
-<p>注意一个关键事实：<strong>没有任何一种隔离级别是”完美的”</strong>。即使是 Serializable，它也有代价——吞吐量、延迟、死锁率都会受影响。</p>
+<p>注意一个关键事实：<strong>没有任何一种隔离级别是”完美的”</strong>。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/7e748f50eac14fa64cf1af8f35d463b1.png#pic_center" srcset="/img/loading.gif" lazyload alt="隔离级别的逐层收敛" width="1600" height="900">即使是 Serializable，它也有代价——吞吐量、延迟、死锁率都会受影响。</p>
 <h3 id="容易被忽略的并发异常"><a href="#容易被忽略的并发异常" class="headerlink" title="容易被忽略的并发异常"></a>容易被忽略的并发异常</h3><p>面试一般只问脏读、不可重复读、幻读这三个。但 DDIA 第 8 章花了相当篇幅讨论两个更隐蔽的问题：</p>
 <p><strong>写倾斜（Write Skew）</strong>：两个事务读到了相同的数据，然后各自基于读到的结果去修改不同的数据，导致最终状态违反业务约束。经典案例：医院值班系统——“至少有一名医生值班”，两个事务同时读到了”还有一名医生在值班”，然后各自把最后一名医生移出值班表。</p>
 <p><strong>丢失更新（Lost Update）</strong>：读-修改-写周期的竞争条件。经典案例：两个用户同时编辑同一个 wiki 页面，后保存的覆盖了先保存的。</p>

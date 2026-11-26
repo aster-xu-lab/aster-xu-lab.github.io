@@ -31,6 +31,7 @@
 <meta property="og:description" content="去年双十一大促前的一次压测，订单中心一个从库的磁盘满了。由于我们当时用的是异步复制，主库照常写入，从库复制延迟从30ms飙升到60秒，主从数据差距超过200万行。促销开始时，读请求被路由到这个延迟的从库，用户看到下单后几分钟才出现的订单状态，客服电话被打爆。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/044c68d7fa714736b438e8bbb793d104.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/087e67528acfc6b1706361e9a60b472a.png">
 <meta property="article:published_time" content="2023-12-31T17:10:38.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -727,6 +728,7 @@
 <li>多数派节点（N&#x2F;2+1）确认收到冲突检测通过后，事务在所有节点上commit；</li>
 <li>少数派节点通过网络分区自动退出组，保证脑裂不会发生。</li>
 </ol>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/087e67528acfc6b1706361e9a60b472a.png#pic_center" srcset="/img/loading.gif" lazyload alt="MGR write set 广播与三种复制模式对比" width="1600" height="900"></p>
 <p>对比三种模式：</p>
 <table>
 <thead>

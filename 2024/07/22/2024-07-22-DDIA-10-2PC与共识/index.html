@@ -32,6 +32,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f4696969d4800cfb81b51cd08d1750f0.png">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f431da785ea7d26a60da0cc031338cca.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4d3034369eabda6fddf901dbeff4fbc9.png">
 <meta property="article:published_time" content="2024-07-22T12:11:55.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -639,7 +640,7 @@
       <span class="post-meta mr-2">
         <svg class="ax-inline-ico" aria-hidden="true" focusable="false"><use href="#ax-icon-chart"></use></svg>
         
-          7.2k 字
+          6.8k 字
         
       </span>
     
@@ -650,7 +651,7 @@
         
         
         
-          60 分钟
+          58 分钟
         
       </span>
     
@@ -773,8 +774,7 @@
 <p><strong>第二层：配置中心。</strong> 配置下发需要保证每个服务实例看到的配置是一致的。Apollo用Eureka做注册、数据库做存储，但新一代配置中心（如K&#x2F;V Store生态）用Raft做配置更新的原子广播。这不是事务，但确实依赖共识来保证一致性。</p>
 <p><strong>第三层：事务协调器本身。</strong> 这个比较有意思。如果你的TCC框架里有一个统一的”事务协调器”维护全局事务状态，那这个协调器的高可用可以用Raft来保证——多个协调器实例之间通过Raft复制状态，任意一个挂了其他的顶上。<strong>但这是为了让协调器不成为单点，而不是用Raft替代TCC。</strong> 协调器做了高可用之后，执行Confirm&#x2F;Cancel的还是TCC协议本身。</p>
 <p>把这个图景画出来就是：</p>
-<figure class="highlight crmsh"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs crmsh">┌──────────────────────────────────────────┐<br>│         业务事务层 (TCC / Saga)            │<br>│   订单服务 ◄────协调器────► 库存服务       │<br>│   (状态机 + 幂等 + 补偿)                   │<br>├──────────────────────────────────────────┤<br>│         数据复制层 (Raft / Paxos)          │<br>│   订单DB副本组        库存DB副本组          │<br>│   (日志一致 + 自动切换)                    │<br>├──────────────────────────────────────────┤<br>│         元数据/协调层 (Raft)               │<br>│   配置中心  调度<span class="hljs-keyword">Master</span>  <span class="hljs-title">协调器HA</span>            │<br>└──────────────────────────────────────────┘<br></code></pre></td></tr></table></figure>
-
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/4d3034369eabda6fddf901dbeff4fbc9.png#pic_center" srcset="/img/loading.gif" lazyload alt="2PC 与共识：三层协议栈与跨库原子性的空缺" width="1600" height="900"></p>
 <p>每一层都由不同的协议支撑，顶层和下层的关注点完全不交叉。这就是”偷懒”想用一层协议解决所有问题的荒谬之处——它把不同抽象层次的问题强行坍缩成了一个。</p>
 <h2 id="七、DDIA第8章与第10章的中心论题：从原子提交到共识的跃迁"><a href="#七、DDIA第8章与第10章的中心论题：从原子提交到共识的跃迁" class="headerlink" title="七、DDIA第8章与第10章的中心论题：从原子提交到共识的跃迁"></a>七、DDIA第8章与第10章的中心论题：从原子提交到共识的跃迁</h2><p>DDIA的第8章（事务）用一节讲2PC与原子提交，第10章（一致性与共识）讨论共识，两者其实是一个递进结构。第8章的结论是：2PC的提交决策绑定在协调者上，协调者故障会让参与者陷入in-doubt。第10章则把这个结论反过来：<strong>原子提交可以转化为共识问题——让多个节点对一个二值结果（commit&#x2F;abort）达成一致。</strong></p>
 <p>这句话很漂亮，但需要细品。它不是说2PC可以当共识协议用（因为2PC不解决容错），而是说如果有一个足够健壮的共识协议，原子提交可以转化为共识问题。DDIA举的例子是ZooKeeper的原子广播（ZAB）和Google Spanner的TrueTime+Paxos组合。这些系统的做法是：<strong>把”所有参与者是否同意的决策”变成”把决策写入共识日志”</strong>——只要共识层保证了日志的一致性和容错，上层就不再需要协调者了，也不用担心in-doubt。</p>

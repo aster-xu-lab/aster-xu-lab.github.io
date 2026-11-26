@@ -31,6 +31,7 @@
 <meta property="og:description" content="分布式锁的难点不在“如何加锁”，而在“加锁之后共享资源是否安全”。从Redis SET NX的陷阱到RedLock的争议，再到ZooKeeper临时顺序节点和etcd的Lease机制，本文结合SyncTask驿传引擎的实战，深入探讨为什么你应该使用Redisson而不是自己写一把锁。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c3466f03bc670303257f7cb3dbd73722.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5d17210c22622e984c07fecb8c097ba2.png">
 <meta property="article:published_time" content="2024-09-03T15:57:45.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -753,6 +754,7 @@
 <p>这就是Fencing Token（栅栏令牌）要解决的问题。<strong>锁服务在授予锁的同时，返回一个单调递增的令牌编号。共享资源只接受编号更大的写请求，拒绝编号更小的”僵尸”写入。</strong></p>
 <figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs routeros">锁服务：lock(<span class="hljs-string">&quot;my_resource&quot;</span>) -&gt; <span class="hljs-attribute">token</span>=33<br>客户端A拿到<span class="hljs-attribute">token</span>=33，开始操作<br>客户端A GC停顿<span class="hljs-built_in">..</span>.<br><br>--- 锁过期 ---<br><br>客户端B：lock(<span class="hljs-string">&quot;my_resource&quot;</span>) -&gt; <span class="hljs-attribute">token</span>=34<br>客户端B带着<span class="hljs-attribute">token</span>=34写存储<br>存储记录当前<span class="hljs-attribute">max_token</span>=34<br><br>客户端A醒来，带着<span class="hljs-attribute">token</span>=33写存储<br>存储检查：33 &lt; 34，拒绝写入！<br></code></pre></td></tr></table></figure>
 
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/5d17210c22622e984c07fecb8c097ba2.png#pic_center" srcset="/img/loading.gif" lazyload alt="Fencing Token：一次 GC 停顿下的僵尸写入" width="1600" height="900"></p>
 <p>实现Fencing Token，ZooKeeper可以直接用顺序节点的序号（znode的cversion或序号后缀）；etcd可以用事务的ModRevision。Redisson本身不提供Fencing Token机制，但你可以基于Redis的 <code>INCR</code> 命令自己实现。</p>
 <p>这个设计的深刻之处在于：它把”锁的安全性”从锁服务转移到了共享资源——如果共享资源有能力拒绝过期的请求，那么即使锁偶尔出问题，整体系统仍然是安全的。</p>
 <h2 id="七、实战：SyncTask驿传引擎的分布式锁"><a href="#七、实战：SyncTask驿传引擎的分布式锁" class="headerlink" title="七、实战：SyncTask驿传引擎的分布式锁"></a>七、实战：SyncTask驿传引擎的分布式锁</h2><p>回到真实项目。SyncTask驿传引擎是我司的异步任务调度框架，峰值日处理130万订单（历史峰值口径，主口径见订单中台系列）的履约同步，部署了8个服务实例。核心约束是：同一个租户的任务，同一时刻只能有一个实例在执行。</p>
