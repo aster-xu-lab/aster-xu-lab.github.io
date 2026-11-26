@@ -30,14 +30,14 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="TCC 用了 Try&#x2F;Confirm&#x2F;Cancel 三阶段，但网络是不可靠的——请求可能丢、可能乱序、可能重试。由此产生三个经典问题。 场景：Cancel 被调用，但 Try 没执行&#x2F;没成功（Try 请求网络丢了，或 Cancel 先到了）。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bcec5b57d9195aec65c1d5791062cefc.png">
 <meta property="article:published_time" content="2023-01-11T12:26:02.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:10.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="分布式事务">
 <meta property="article:tag" content="幂等">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bcec5b57d9195aec65c1d5791062cefc.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"TCC 深水区：空回滚、悬挂、幂等，以及 Seata AT 到底怎么回滚","datePublished":"2023-01-11T12:26:02.000Z","dateModified":"2026-11-19T10:45:10.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2023/01/11/2023-01-11-TCC%E6%B7%B1%E6%B0%B4%E5%8C%BA-%E7%A9%BA%E5%9B%9E%E6%BB%9A%E6%82%AC%E6%8C%82%E5%B9%82%E7%AD%89%E4%B8%8ESeata-AT%E5%9B%9E%E6%BB%9A%E6%9C%BA%E5%88%B6/"}}</script>
@@ -684,6 +684,7 @@
 <h3 id="坑-3：幂等"><a href="#坑-3：幂等" class="headerlink" title="坑 3：幂等"></a>坑 3：幂等</h3><p><strong>场景</strong>：网络重试导致 Confirm&#x2F;Cancel 重复执行。</p>
 <p><strong>解决</strong>：Confirm&#x2F;Cancel <strong>按业务主键做幂等</strong>（预留记录上打状态&#x2F;版本号），重复执行只生效一次。</p>
 <p><strong>本质</strong>：TCC 三个坑都在解决”<strong>网络不可靠下的状态错乱</strong>“——用<strong>预留记录 + 状态标记 + 幂等</strong>兜住空回滚、悬挂、重复。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/bcec5b57d9195aec65c1d5791062cefc.png#pic_center" srcset="/img/loading.gif" lazyload alt="TCC 乱序消息下的非法状态迁移：空回滚、悬挂与重复" width="1600" height="900"></p>
 <h2 id="二、Seata-AT-模式的-undo-log-到底怎么回滚"><a href="#二、Seata-AT-模式的-undo-log-到底怎么回滚" class="headerlink" title="二、Seata AT 模式的 undo_log 到底怎么回滚"></a>二、Seata AT 模式的 undo_log 到底怎么回滚</h2><p>我在工单系统的跨库链路用 Seata AT（同库多表用本地事务），被问”AT 怎么自动回滚”要能讲机制：</p>
 <p><strong>一阶段</strong>：</p>
 <figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">① 拦截器先记录该行的 <span class="hljs-keyword">before</span>-image（查一次）<br>② 执行业务 <span class="hljs-keyword">SQL</span><br>③ 再查 <span class="hljs-keyword">after</span>-image<br>④ 把前后镜像 + 业务 <span class="hljs-keyword">SQL</span> 写进 undo_log 表（和业务同库、同一本地事务）<br>⑤ 业务 <span class="hljs-keyword">SQL</span> 正常提交<br>⑥ 全局锁记在锁表<br></code></pre></td></tr></table></figure>

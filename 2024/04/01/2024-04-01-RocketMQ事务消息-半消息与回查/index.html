@@ -30,13 +30,13 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="订单中台里，一个典型场景是&quot;订单下发下游系统&quot;：先在自己的库里提交订单状态，再发一条 MQ 消息通知下游。 最朴素的做法是&quot;先发消息，再提交业务&quot;，或者反过来&quot;先提交业务，再发消息&quot;。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/20617022d7ce51e216d1dc1b3ef70471.png">
 <meta property="article:published_time" content="2024-04-01T15:51:33.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:10.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="消息队列">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/20617022d7ce51e216d1dc1b3ef70471.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"RocketMQ事务消息：半消息与回查，怎么做到\"业务成功消息必达\"","datePublished":"2024-04-01T15:51:33.000Z","dateModified":"2026-11-19T10:45:10.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/04/01/2024-04-01-RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF-%E5%8D%8A%E6%B6%88%E6%81%AF%E4%B8%8E%E5%9B%9E%E6%9F%A5/"}}</script>
@@ -685,6 +685,7 @@
 <h2 id="二、事务消息：半消息-回查"><a href="#二、事务消息：半消息-回查" class="headerlink" title="二、事务消息：半消息 + 回查"></a>二、事务消息：半消息 + 回查</h2><p>核心思路是”<strong>先把消息寄存起来，等本地事务的结果出来再决定放行还是销毁</strong>“。完整流程：</p>
 <figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql">①  Producer 发&quot;半消息&quot;（half message）──▶ Broker<br>    半消息暂存，消费者此刻看不到它<br>②  Producer 收到半消息 ACK 后，执行本地事务（如扣库存、改订单状态）<br>③  本地事务成功 → 发 <span class="hljs-keyword">Commit</span>  → 半消息转正，消费者可见<br>    本地事务失败 → 发 <span class="hljs-keyword">Rollback</span> → 半消息销毁，消费者永远看不到<br>④  兜底：Producer 发完半消息就宕机<span class="hljs-operator">/</span>超时没回 <span class="hljs-keyword">Commit</span>，<br>    Broker 定时&quot;回查&quot; Producer，询问本地事务结果，再决定 <span class="hljs-keyword">Commit</span> 还是 <span class="hljs-keyword">Rollback</span><br></code></pre></td></tr></table></figure>
 
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/20617022d7ce51e216d1dc1b3ef70471.png#pic_center" srcset="/img/loading.gif" lazyload alt="RocketMQ 事务消息：半消息、本地事务与回查" width="1600" height="900"></p>
 <p>几个关键点：</p>
 <ul>
 <li><strong>半消息对消费者不可见</strong>——避免”消息到了，业务还没提交”的幽灵消息问题；</li>

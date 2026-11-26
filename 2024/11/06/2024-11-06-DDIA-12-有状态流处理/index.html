@@ -31,6 +31,7 @@
 <meta property="og:description" content="无状态流处理是最直观的处理模型：每条消息独立处理，不依赖任何历史信息。比如流式ETL中的字段映射、简单的过滤算子、消息格式转换，每条记录进来，处理完就输出，算子本身不保留任何记忆。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/d326c0dc7a9edf3788370fa0e38dbabe.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f718f8e02142c39b3877ec6a348c4612.png">
 <meta property="article:published_time" content="2024-11-06T12:31:14.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -726,6 +727,7 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 水印生成策略：允许最多5秒的延迟</span><br>WatermarkStrategy.&lt;OrderEvent&gt;forBoundedOutOfOrderness(Duration.ofSeconds(<span class="hljs-number">5</span>))<br>    .withTimestampAssigner((event, timestamp) -&gt; event.getEventTime());<br></code></pre></td></tr></table></figure>
 
 <p>水印的具体实现比这个设定要微妙得多。在并行度为N的算子中，每个subtask独立维护自己的水印，而算子的实际水印是所有subtask水印的<strong>最小值</strong>。这意味着一个慢分区会影响整个算子的水印推进，形成经典的”木桶效应”。</p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/f718f8e02142c39b3877ec6a348c4612.png#pic_center" srcset="/img/loading.gif" lazyload alt="水印与事件时间：乱序消息、水位线推进与窗口触发" width="1600" height="900"></p>
 <p>由此引出一个实践中的关键权衡：</p>
 <ul>
 <li><strong>水印延迟设得太小</strong>：窗口触发太快，乱序数据沦为”迟到数据”被丢弃或旁路处理</li>

@@ -31,6 +31,7 @@
 <meta property="og:description" content="深入理解事件溯源（Event Sourcing）与CQRS的核心思想、实践推演，以及与DDIA流处理和数据系统未来的内在呼应。">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c81c31e2b489662a87e8b81dddf9669f.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/065ea4d7bcdf10cfdcbc084fbdf8d90d.png">
 <meta property="article:published_time" content="2024-12-07T22:02:05.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -746,6 +747,7 @@
 <p>一个订单的状态变迁路径天然就是一个状态机：</p>
 <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs">待支付 → 已支付 → 已发货 → 已收货<br>                     ↓<br>                   已退款<br></code></pre></td></tr></table></figure>
 
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/065ea4d7bcdf10cfdcbc084fbdf8d90d.png#pic_center" srcset="/img/loading.gif" lazyload alt="订单状态机：事件驱动的状态迁移与退款路径" width="1600" height="900"></p>
 <p>传统做法是在数据库里维护一个 <code>order_status</code> 字段，随着订单流转不断 Update：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// CRUD 做法</span><br>order.setStatus(OrderStatus.PAID);<br>order.setPaidAt(now());<br>orderRepository.save(order);<br></code></pre></td></tr></table></figure>
 
