@@ -30,14 +30,14 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="你的服务要从磁盘读一个文件，通过 socket 发给客户端。直觉上这是一次很简单的操作，但操作系统底层要为它搬 4 次数据： ① DMA：磁盘 → 内核页缓存。DMA（Direct Memory Access）由硬件&#x2F;驱动完成搬运，不占 CPU。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06321b7fdaf46fbe3b8c4f334ae6dbc7.png">
 <meta property="article:published_time" content="2022-03-06T07:14:56.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
 <meta property="article:tag" content="Kafka">
 <meta property="article:tag" content="网络编程">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06321b7fdaf46fbe3b8c4f334ae6dbc7.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"零拷贝：4次拷贝变2次，Kafka和Netty的\"零\"其实是两回事","datePublished":"2022-03-06T07:14:56.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2022/03/06/2022-03-06-%E9%9B%B6%E6%8B%B7%E8%B4%9D-4%E6%AC%A1%E6%8B%B7%E8%B4%9D%E5%8F%982%E6%AC%A1/"}}</script>
@@ -684,7 +684,8 @@
 <li><strong>③ CPU 拷贝：用户态 → 内核 socket 缓冲区</strong>。把数据写进 socket（<code>SocketOutputStream.write()</code>）。</li>
 <li><strong>④ DMA：内核 socket 缓冲区 → 网卡</strong>。发出去。</li>
 </ul>
-<p>所以是 <strong>2 次 DMA + 2 次 CPU 拷贝</strong>，而且中间还夹着 <strong>4 次用户态&#x2F;内核态切换</strong>（<code>read</code> 进入内核、返回用户态各一次，<code>write</code> 进入内核、返回用户态各一次）。</p>
+<p>所以是 <strong>2 次 DMA + 2 次 CPU 拷贝</strong>，而且中间还夹着 <strong>4 次用户态&#x2F;内核态切换</strong></p>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/06321b7fdaf46fbe3b8c4f334ae6dbc7.png#pic_center" srcset="/img/loading.gif" lazyload alt="零拷贝：4 次拷贝怎么变成 2 次" width="1600" height="900">（<code>read</code> 进入内核、返回用户态各一次，<code>write</code> 进入内核、返回用户态各一次）。</p>
 <p>问题很清楚：<strong>数据为了”看一眼”用户态，被 CPU 拷贝了两次</strong>——明明只是从磁盘搬到网卡，中间根本不关心内容，却要在用户态兜一大圈。</p>
 <h2 id="二、零拷贝-sendfile：让数据别来用户态"><a href="#二、零拷贝-sendfile：让数据别来用户态" class="headerlink" title="二、零拷贝 sendfile：让数据别来用户态"></a>二、零拷贝 sendfile：让数据别来用户态</h2><p>零拷贝的思路一句话：<strong>数据全程留在内核里，从磁盘直接 DMA 到网卡，不经过用户态</strong>。</p>
 <figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">磁盘 ──①DMA──▶ 内核页缓存 ──②DMA──▶ 网卡<br></code></pre></td></tr></table></figure>
