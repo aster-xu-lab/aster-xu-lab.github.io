@@ -30,7 +30,8 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="我现在的项目是日订单峰值130万（历史峰值口径，主口径见订单中台系列）的电商中台。目前所有数据跑在单一MySQL实例上，还没做过分库分表。但我每天看着监控大盘上的慢SQL数量和单表体积增长曲线，心里很清楚：那一天不远了。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a70bce4ed2b690620ed12fc323b160ae.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c90506b17aea05768c8209675da481c6.png">
 <meta property="article:published_time" content="2024-02-23T16:17:33.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -39,7 +40,7 @@
 <meta property="article:tag" content="分库分表">
 <meta property="article:tag" content="实战">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a70bce4ed2b690620ed12fc323b160ae.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-07-实战：峰值130万日订单的分库分表推演——基于ShardingSphere-JDBC","datePublished":"2024-02-23T16:17:33.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/02/24/2024-02-24-DDIA-07-%E5%88%86%E5%BA%93%E5%88%86%E8%A1%A8%E6%8E%A8%E6%BC%94/"}}</script>
@@ -799,6 +800,7 @@
 <h3 id="5-2-雪花算法（Snowflake）的原理"><a href="#5-2-雪花算法（Snowflake）的原理" class="headerlink" title="5.2 雪花算法（Snowflake）的原理"></a>5.2 雪花算法（Snowflake）的原理</h3><p>雪花算法生成64位Long型ID，结构如下：</p>
 <figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----------+</span>-----------------------<span class="hljs-code">+-----------+</span>------------+<br><span class="hljs-section">| 1bit(0)  |  41bit (毫秒时间戳)    | 10bit机器ID | 12bit序列号 |</span><br><span class="hljs-section">+----------+-----------------------+-----------+------------+</span><br></code></pre></td></tr></table></figure>
 
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/a70bce4ed2b690620ed12fc323b160ae.png#pic_center" srcset="/img/loading.gif" lazyload alt="雪花 ID：64 位字段布局" width="1600" height="900"></p>
 <ul>
 <li><strong>1位符号位</strong>：永远为0（正数）</li>
 <li><strong>41位时间戳</strong>：从2016年11月1日起算，约可用69年</li>
@@ -811,7 +813,8 @@
 <p>不过有一件事必须说明：<strong>雪花算法的worker-id是单点配置</strong>。如果你在一个K8s集群中自动扩缩容应用实例，worker-id的管理会变成一个分布式协调问题。ShardingSphere默认用递增分配（从0开始），但在动态扩缩容时可能出现冲突。这在生产环境中需要用ZooKeeper或数据库来做worker-id的注册与回收——这是学习阶段需要进一步研究的方向。</p>
 <hr>
 <h2 id="六、数据迁移方案：双写-历史数据批量迁移-灰度切换"><a href="#六、数据迁移方案：双写-历史数据批量迁移-灰度切换" class="headerlink" title="六、数据迁移方案：双写 + 历史数据批量迁移 + 灰度切换"></a>六、数据迁移方案：双写 + 历史数据批量迁移 + 灰度切换</h2><p>分库分表的配置写好了，但数据还在单库里。怎么把1.17亿行订单平滑迁移到256个分片、线上业务不停机？</p>
-<h3 id="6-1-迁移四阶段"><a href="#6-1-迁移四阶段" class="headerlink" title="6.1 迁移四阶段"></a>6.1 迁移四阶段</h3><figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs clean">┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐<br>│ 阶段<span class="hljs-number">1</span>        │ -&gt; │ 阶段<span class="hljs-number">2</span>        │ -&gt; │ 阶段<span class="hljs-number">3</span>        │ -&gt; │ 阶段<span class="hljs-number">4</span>        │<br>│ 双写+全量     │    │ 灰度切换读    │    │ 切换写       │    │ 清理旧库     │<br>└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘<br></code></pre></td></tr></table></figure>
+<h3 id="6-1-迁移四阶段"><a href="#6-1-迁移四阶段" class="headerlink" title="6.1 迁移四阶段"></a>6.1 迁移四阶段</h3><p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/c90506b17aea05768c8209675da481c6.png#pic_center" srcset="/img/loading.gif" lazyload alt="分库分表迁移四阶段：双写方向、灰度比例与回退路径" width="1600" height="900"></p>
+<figure class="highlight clean"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs clean">┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐<br>│ 阶段<span class="hljs-number">1</span>        │ -&gt; │ 阶段<span class="hljs-number">2</span>        │ -&gt; │ 阶段<span class="hljs-number">3</span>        │ -&gt; │ 阶段<span class="hljs-number">4</span>        │<br>│ 双写+全量     │    │ 灰度切换读    │    │ 切换写       │    │ 清理旧库     │<br>└─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘<br></code></pre></td></tr></table></figure>
 
 <p><strong>阶段1：双写 + 全量迁移</strong></p>
 <p>在应用层或中间件层实现双写——订单创建时，同时写入旧单库和新分片集群。与此同时，启动一个批处理任务，把历史数据按user_id分片逻辑，批量迁移到256个分片中。</p>

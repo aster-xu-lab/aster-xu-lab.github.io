@@ -30,7 +30,7 @@
 <meta property="og:site_name" content="AsterXu Lab">
 <meta property="og:description" content="《Designing Data-Intensive Applications》第 9 章「分布式系统的麻烦」是全书最硬核的章节之一，第 10 章才进入一致性与共识。">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta property="og:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/97ca3315a45e5c6c1b530700805f7215.png">
 <meta property="article:published_time" content="2024-06-10T12:25:04.000Z">
 <meta property="article:modified_time" content="2026-11-19T10:45:09.000Z">
 <meta property="article:author" content="AsterXu">
@@ -39,7 +39,7 @@
 <meta property="article:tag" content="幂等">
 <meta property="article:tag" content="故障排查">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://aster-xu-lab.github.io/img/default.png">
+<meta name="twitter:image" content="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/97ca3315a45e5c6c1b530700805f7215.png">
   
   
     <script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"DDIA-09-分布式系统的三大问题：不可靠网络、不可靠时钟、部分失效","datePublished":"2024-06-10T12:25:04.000Z","dateModified":"2026-11-19T10:45:09.000Z","author":{"@type":"Person","name":"AsterXu"},"publisher":{"@type":"Organization","name":"AsterXu Lab"},"mainEntityOfPage":{"@type":"WebPage","@id":"https://aster-xu-lab.github.io/2024/06/10/2024-06-10-DDIA-09-%E5%88%86%E5%B8%83%E5%BC%8F%E7%B3%BB%E7%BB%9F%E4%B8%89%E5%A4%A7%E9%97%AE%E9%A2%98/"}}</script>
@@ -727,7 +727,10 @@
 <ul>
 <li>即 <code>System.currentTimeMillis()</code> 或 <code>new Date()</code> 返回的时间。</li>
 <li><strong>问题一：NTP 同步误差。</strong> 两个节点的墙上时钟可能相差几百毫秒甚至几秒——取决于 NTP 同步频率和网络状况。</li>
-<li><strong>问题二：NTP 回拨。</strong> 如果 NTP 发现本地时钟比服务器快了，它会<strong>跳回</strong>到正确时间。你的代码可能看到时间「倒着跑」——刚才还是 10:00:05，现在突然变成了 10:00:01。</li>
+<li><strong>问题二：NTP 回拨。</strong> 如果 NTP 发现本地时钟比服务器快了，它会<strong>跳回</strong>到正确时间。</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/aster-xu-lab/asterxu-images/master/97ca3315a45e5c6c1b530700805f7215.png#pic_center" srcset="/img/loading.gif" lazyload alt="两种时钟，两种误差：墙上时钟 vs 单调时钟" width="1600" height="900">你的代码可能看到时间「倒着跑」——刚才还是 10:00:05，现在突然变成了 10:00:01。</p>
+<ul>
 <li><strong>问题三：闰秒。</strong> 闰秒调整可能让同一秒出现两次（正闰秒）或跳过一秒（负闰秒），直接破坏了「时间线性递增」这个基本假设。</li>
 </ul>
 <p><strong>单调时钟（Monotonic Clock）：</strong></p>
